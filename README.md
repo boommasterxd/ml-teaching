@@ -16,7 +16,7 @@ Willkommen bei **The Teachable Machine** – einem interaktiven Webprojekt, das 
 Die Nutzung von The Teachable Machine ist kinderleicht!
 
 1.  **Öffne die Anwendung:** Klicke einfach auf den folgenden Link (oder öffne die `index.html` Datei, wenn du das Projekt lokal hostest):
-    [Jetzt öfnen](https://theteachablemachine.boomapps.de/)
+    [Jetzt öffnen](https://theteachablemachine.boomapps.de/)
 
 2.  **Interagiere und Lehre:** Befolge die Anweisungen auf dem Bildschirm, um deiner Maschine Daten zu präsentieren und sie zu trainieren. Experimentiere mit verschiedenen Eingaben und beobachte, wie sich das Verhalten der Maschine ändert.
 
