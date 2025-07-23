@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <title>KI-Abenteuer mit der Lern-Maschine</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="images/alp_logo.png">
+
+    <!-- Font Awesome für Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- Dein neues Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- NEU: Lade-Overlay -->
+    <div id="loading-overlay">
+        <div class="loading-box">
+            <h2>Initialisierung...</h2>
+            <p>Bitte einen Moment Geduld, die Anwendung wird vorbereitet.</p>
+            <ul class="loading-steps">
+                <li id="loading-step-camera">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Kamerazugriff erlauben</span>
+                </li>
+                <li id="loading-step-model">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>KI-Modell wird geladen</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+
+    <!-- Die Hauptinhalte sind initial ausgeblendet -->
+    <header class="hidden">
+        <div class="header-content">
+            <img src="images/alp_logo.png" alt="ALP Logo" class="header-logo">
+            <div class="header-text">
+                <h1>The teachable machine </h1>
+                <p>Bringe dem Computer bei, Dinge mit deiner Webcam zu erkennen!</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="single-column-layout hidden">
+
+        <!-- Hauptspalte für den gesamten Prozess -->
+        <section id="main-column" class="column">
+            <div>
+                <h2><i class="fas fa-layer-group"></i> 1. Sammle deine Daten</h2>
+                <p>Füge Klassen hinzu und zeige dem Computer, was er lernen soll.</p>
+            </div>
+
+            <div id="class-cards-container"></div>
+
+            <button id="add-new-class"><i class="fas fa-plus"></i> Neue Klasse hinzufügen</button>
+
+            <div class="card training-card">
+                <h3><i class="fas fa-brain"></i> 2. Modell trainieren</h3>
+                <p>Du brauchst mindestens 2 Klassen mit je 10+ Bildern.</p>
+                <button id="train-model" disabled>Modell trainieren</button>
+
+                <div id="training-progress-container">
+                    <div id="training-status"></div>
+                    <div class="probability-bar">
+                        <div id="training-progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vorschau-Karte, initial ausgeblendet -->
+            <div class="card preview-card" id="preview-card" style="display: none;">
+                <h3><i class="fas fa-eye"></i> 3. Was sieht der Computer?</h3>
+                <div id="main-webcam-container" style="display: none;">
+                    <video autoplay playsinline muted id="webcam" width="224" height="224"></video>
+                </div>
+                <div id="prediction-results">
+                    <p class="placeholder-text">Trainiere das Modell, um Ergebnisse zu sehen!</p>
+                    <!-- Wahrscheinlichkeitsbalken werden hier dynamisch hinzugefügt -->
+                </div>
+            </div>
+
+            <div id="explanation">
+                <h3><i class="fas fa-question-circle"></i> Was passiert hier?</h3>
+                <p>Du zeigst dem Computer Bilder (das sind <strong>Daten</strong>). Wenn du auf "Modell trainieren"
+                    klickst, sucht der Computer nach Mustern in den Bildern (das nennt man <strong>Training</strong>).
+                    Danach kann er in Echtzeit raten, was er durch die Webcam sieht (das ist die
+                    <strong>Vorhersage</strong>). Das ist eine einfache Art von <strong>Künstlicher
+                        Intelligenz</strong>!
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal für Bildvorschau -->
+    <div id="image-modal" class="image-modal">
+        <div class="image-modal-content">
+            <button class="image-modal-close" id="modal-close">&times;</button>
+            <canvas id="modal-canvas"></canvas>
+            <button class="image-modal-delete" id="modal-delete">
+                <i class="fas fa-trash-alt"></i> Bild löschen
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Bibliotheken -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-data@4.20.0/dist/tf-data.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier@1.2.2/dist/knn-classifier.min.js"></script>
+    <script src="script.js"></script>
+
+</body>
+
+</html>
