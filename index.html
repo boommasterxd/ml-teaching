@@ -9,8 +9,9 @@
     <!-- Favicon -->
     <link rel="icon" type="image/jpeg" href="images/alp_logo.png">
 
-    <!-- Font Awesome für Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Lokale Schriftarten & Icons -->
+    <link rel="stylesheet" href="./fonts/poppins.css">
+    <link rel="stylesheet" href="./fontawesome-free-6.7.2-web/css/all.min.css">
 
     <!-- Dein neues Stylesheet -->
     <link rel="stylesheet" href="style.css">
@@ -77,8 +78,11 @@
             <!-- Vorschau-Karte, initial ausgeblendet -->
             <div class="card preview-card" id="preview-card" style="display: none;">
                 <h3><i class="fas fa-eye"></i> 3. Was sieht der Computer?</h3>
-                <div id="main-webcam-container" style="display: none;">
-                    <video autoplay playsinline muted id="webcam" width="224" height="224"></video>
+                <div id="main-webcam-container" class="webcam-preview" style="display: none;">
+                    <video autoplay playsinline muted id="webcam"></video>
+                    <button id="camera-switch-btn" class="camera-switch-button" style="display: none;" title="Kamera wechseln">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                 </div>
                 <div id="prediction-results">
                     <p class="placeholder-text">Trainiere das Modell, um Ergebnisse zu sehen!</p>
@@ -99,6 +103,20 @@
 
     </main>
 
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="#" id="impressum-link">Impressum</a>
+                <span class="footer-separator">|</span>
+                <a href="#" id="datenschutz-link">Datenschutzerklärung</a>
+            </div>
+            <div class="footer-copyright">
+                <p>&copy; 2025 BoomApps. Alle Rechte vorbehalten.</p>
+            </div>
+        </div>
+    </footer>
+
     <!-- Modal für Bildvorschau -->
     <div id="image-modal" class="image-modal">
         <div class="image-modal-content">
@@ -110,12 +128,24 @@
         </div>
     </div>
 
+    <!-- Modal für Impressum und Datenschutz -->
+    <div id="legal-modal" class="legal-modal">
+        <div class="legal-modal-content">
+            <div class="legal-modal-header">
+                <h2 id="legal-modal-title">Titel</h2>
+                <button class="legal-modal-close" id="legal-modal-close">&times;</button>
+            </div>
+            <div class="legal-modal-body" id="legal-modal-body">
+                <!-- Inhalt wird dynamisch geladen -->
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript Bibliotheken -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-data@4.20.0/dist/tf-data.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
-    <script
-        src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier@1.2.2/dist/knn-classifier.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier@1.2.2/dist/knn-classifier.min.js"></script>
     <script src="script.js"></script>
 
 </body>

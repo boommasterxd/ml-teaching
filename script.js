@@ -5,6 +5,9 @@ let isPredicting = false;
 let isCapturing = false;
 let classNames = [];
 let allClassExamples = [];
+let currentFacingMode = 'user'; // 'user' für Frontkamera, 'environment' für Rückkamera
+let availableCameras = [];
+let isSwitchingCamera = false; // Verhindert mehrfache Kamerawechsel während Animation
 
 // Hilfsfunktion zum Erstellen eines HTML-Elements
 function createElement(tag, classes = [], id = '', textContent = '', innerHTML = '') {
@@ -30,32 +33,307 @@ function updateScrollBehavior(classId) {
     }
 }
 
+// Funktion zum Ermitteln verfügbarer Kameras
+async function getAvailableCameras() {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        availableCameras = devices.filter(device => device.kind === 'videoinput');
+        console.log('Verfügbare Kameras:', availableCameras.length);
+        
+        // Aktualisiere Button-Sichtbarkeit
+        updateCameraSwitchButtonVisibility(availableCameras.length > 1);
+        
+        return availableCameras.length > 1; // Gibt true zurück, wenn mehr als eine Kamera verfügbar ist
+    } catch (error) {
+        console.error('Fehler beim Ermitteln der verfügbaren Kameras:', error);
+        updateCameraSwitchButtonVisibility(false);
+        return false;
+    }
+}
+
+// Funktion zum Aktualisieren der Button-Sichtbarkeit
+function updateCameraSwitchButtonVisibility(hasMultipleCameras) {
+    const switchButton = document.getElementById('camera-switch-btn');
+    if (switchButton) {
+        switchButton.style.display = hasMultipleCameras ? 'flex' : 'none';
+    }
+}
+
+// Funktion zum Aktualisieren aller Event-Listener basierend auf Kamera-Verfügbarkeit
+async function updateAllCameraSwitchListeners() {
+    const hasMultipleCameras = await getAvailableCameras();
+    
+    // Entferne alle bestehenden Event-Listener Markierungen
+    const allVideos = document.querySelectorAll('video[data-camera-switch-listener]');
+    allVideos.forEach(video => {
+        video.removeAttribute('data-camera-switch-listener');
+    });
+    
+    // Setze neue Event-Listener basierend auf aktueller Verfügbarkeit
+    const mainWebcam = document.getElementById('webcam');
+    if (mainWebcam) {
+        await addCameraSwitchListener(mainWebcam);
+    }
+    
+    const previewVideos = document.querySelectorAll('[id^="webcam-preview-"]');
+    for (const video of previewVideos) {
+        await addCameraSwitchListener(video);
+    }
+}
+
+// Funktion zum Wechseln zwischen Front- und Rückkamera mit Animation
+async function switchCamera() {
+    // Verhindere mehrfache Aufrufe während einer Animation
+    if (isSwitchingCamera) {
+        console.log('Kamerawechsel bereits im Gange - Aufruf ignoriert');
+        return;
+    }
+    
+    try {
+        isSwitchingCamera = true;
+        const wasPredicting = isPredicting;
+        
+        // Stoppe temporär die Vorhersage
+        if (wasPredicting) {
+            isPredicting = false;
+            console.log('Vorhersage temporär gestoppt für Kamerawechsel');
+        }
+        
+        // Starte die Animation auf allen Video-Elementen
+        const allVideos = document.querySelectorAll('video');
+        const switchButton = document.getElementById('camera-switch-btn');
+        
+        // Füge Animations-Klassen hinzu
+        allVideos.forEach(video => {
+            video.classList.add('camera-switching');
+        });
+        
+        if (switchButton) {
+            switchButton.classList.add('switching');
+        }
+        
+        // Warte bis etwa 1/3 der Animation (früherer Wechsel für Ladezeit)
+        await new Promise(resolve => setTimeout(resolve, 350));
+        
+        // Stoppe den aktuellen Stream
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+        }
+
+        // Wechsle die Facing-Mode
+        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+        console.log('Wechsle zu Kamera:', currentFacingMode === 'user' ? 'Frontkamera' : 'Rückkamera');
+
+        // Starte die Webcam mit der neuen Facing-Mode
+        await setupWebcamWithFacingMode(currentFacingMode);
+        
+        // Warte bis die Animation vollständig abgeschlossen ist
+        await new Promise(resolve => setTimeout(resolve, 650));
+        
+        // Entferne Animations-Klassen
+        allVideos.forEach(video => {
+            video.classList.remove('camera-switching');
+        });
+        
+        if (switchButton) {
+            switchButton.classList.remove('switching');
+        }
+        
+        // Starte die Vorhersage wieder, falls sie vorher aktiv war
+        if (wasPredicting) {
+            setTimeout(() => {
+                isPredicting = true;
+                console.log('Vorhersage wieder gestartet nach Kamerawechsel');
+                // Starte die Vorhersageschleife neu
+                requestAnimationFrame(predictLoop);
+            }, 200);
+        }
+        
+        console.log('Kamera erfolgreich gewechselt zu:', currentFacingMode === 'user' ? 'Frontkamera' : 'Rückkamera');
+    } catch (error) {
+        console.error('Fehler beim Wechseln der Kamera:', error);
+        
+        // Entferne Animations-Klassen bei Fehler
+        const allVideos = document.querySelectorAll('video');
+        const switchButton = document.getElementById('camera-switch-btn');
+        
+        allVideos.forEach(video => {
+            video.classList.remove('camera-switching');
+        });
+        
+        if (switchButton) {
+            switchButton.classList.remove('switching');
+        }
+        
+        // Falls der Wechsel fehlschlägt, versuche zur ursprünglichen Kamera zurückzukehren
+        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+        try {
+            await setupWebcamWithFacingMode(currentFacingMode);
+            // Vorhersage wieder starten, falls sie vorher aktiv war
+            if (isPredicting === false) {
+                setTimeout(() => {
+                    isPredicting = true;
+                    requestAnimationFrame(predictLoop);
+                }, 200);
+            }
+        } catch (fallbackError) {
+            console.error('Fehler beim Zurückwechseln zur ursprünglichen Kamera:', fallbackError);
+        }
+    } finally {
+        // Stelle sicher, dass der Lock immer zurückgesetzt wird
+        isSwitchingCamera = false;
+    }
+}
+
+// Erweiterte setupWebcam-Funktion mit Facing-Mode-Unterstützung
+async function setupWebcamWithFacingMode(facingMode = 'user') {
+    try {
+        // Konfiguration für getUserMedia
+        const constraints = {
+            video: {
+                facingMode: facingMode,
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            }
+        };
+
+        // Fordere den Kamerazugriff mit der spezifizierten Facing-Mode an
+        mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log(`Webcam-Stream mit ${facingMode === 'user' ? 'Frontkamera' : 'Rückkamera'} erfolgreich abgerufen.`);
+
+        // Aktualisiere alle Video-Elemente
+        await updateAllVideoElements();
+
+        return document.getElementById('webcam');
+    } catch (error) {
+        console.error('Fehler beim Starten der Kamera mit Facing-Mode:', error);
+        throw error;
+    }
+}
+
+// Funktion zum Aktualisieren aller Video-Elemente mit dem neuen Stream
+async function updateAllVideoElements() {
+    const mainWebcam = document.getElementById('webcam');
+    const wasPredicting = isPredicting;
+    
+    // Stoppe temporär die Vorhersage während des Stream-Wechsels
+    if (wasPredicting) {
+        isPredicting = false;
+    }
+    
+    if (mainWebcam && mediaStream) {
+        // Speichere die aktuellen Dimensionen, falls vorhanden
+        const currentWidth = mainWebcam.style.width || mainWebcam.offsetWidth;
+        const currentHeight = mainWebcam.style.height || mainWebcam.offsetHeight;
+        
+        mainWebcam.srcObject = mediaStream;
+        await new Promise((resolve, reject) => {
+            mainWebcam.onloadedmetadata = async () => {
+                try {
+                    await mainWebcam.play();
+                    
+                    // Stelle sicher, dass die Dimensionen konsistent bleiben
+                    if (currentWidth && currentHeight) {
+                        mainWebcam.style.width = typeof currentWidth === 'number' ? `${currentWidth}px` : currentWidth;
+                        mainWebcam.style.height = typeof currentHeight === 'number' ? `${currentHeight}px` : currentHeight;
+                    }
+                    
+                    console.log('Main webcam stream updated and playing.');
+                    
+                    // Füge Doppelklick-Listener hinzu (nur wenn mehrere Kameras verfügbar)
+                    await addCameraSwitchListener(mainWebcam);
+                    
+                    resolve(mainWebcam);
+                } catch (error) {
+                    console.error('Fehler beim Abspielen der Webcam:', error);
+                    reject(error);
+                }
+            };
+            mainWebcam.onerror = (err) => {
+                console.error('Webcam metadata error:', err);
+                reject(new Error('Fehler beim Laden der Webcam-Metadaten.'));
+            }
+        });
+    }
+
+    // Aktualisiere auch alle Klassen-Webcam-Previews
+    const previewVideos = document.querySelectorAll('[id^="webcam-preview-"]');
+    for (const video of previewVideos) {
+        if (mediaStream) {
+            // Speichere die aktuellen Dimensionen für Preview-Videos
+            const currentWidth = video.style.width || video.offsetWidth;
+            const currentHeight = video.style.height || video.offsetHeight;
+            
+            video.srcObject = mediaStream;
+            try {
+                await video.play();
+                
+                // Stelle sicher, dass die Dimensionen konsistent bleiben
+                if (currentWidth && currentHeight) {
+                    video.style.width = typeof currentWidth === 'number' ? `${currentWidth}px` : currentWidth;
+                    video.style.height = typeof currentHeight === 'number' ? `${currentHeight}px` : currentHeight;
+                }
+            } catch (error) {
+                console.error('Fehler beim Abspielen des Preview-Videos:', error);
+            }
+            // Füge Doppelklick-Listener zu Klassen-Webcam-Previews hinzu (nur wenn mehrere Kameras verfügbar)
+            await addCameraSwitchListener(video);
+        }
+    }
+    
+    // Wichtig: Starte die Vorhersage NICHT automatisch wieder - das macht die switchCamera Funktion
+    console.log('Alle Video-Elemente wurden aktualisiert');
+}
+
+// Funktion zum Hinzufügen von Doppelklick-Event-Listenern zu Video-Elementen
+async function addCameraSwitchListener(videoElement) {
+    // Prüfe, ob der Event-Listener bereits hinzugefügt wurde
+    if (videoElement.hasAttribute('data-camera-switch-listener')) {
+        return;
+    }
+    
+    // Prüfe, ob mehrere Kameras verfügbar sind
+    const hasMultipleCameras = await getAvailableCameras();
+    
+    if (hasMultipleCameras) {
+        videoElement.addEventListener('dblclick', async (e) => {
+            e.preventDefault();
+            console.log('Doppelklick auf Video erkannt - versuche Kamera zu wechseln');
+            await switchCamera();
+        });
+        
+        // Füge einen visuellen Hinweis hinzu (Cursor-Style)
+        videoElement.style.cursor = 'pointer';
+        videoElement.title = 'Doppelklick um zwischen Kameras zu wechseln';
+    } else {
+        // Entferne Cursor-Style wenn keine mehreren Kameras verfügbar
+        videoElement.style.cursor = 'default';
+        videoElement.title = '';
+    }
+    
+    // Markiere das Element als bereits verarbeitet
+    videoElement.setAttribute('data-camera-switch-listener', 'true');
+}
+
 // Funktion zum Initialisieren der Webcam.
 async function setupWebcam() {
     try {
-        // Fordere den Kamerazugriff an
-        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        console.log('Webcam-Stream erfolgreich abgerufen.');
-
-        const mainWebcam = document.getElementById('webcam');
-        if (mainWebcam) {
-            mainWebcam.srcObject = mediaStream;
-            // Warte, bis die Metadaten des Videos geladen sind, bevor es abgespielt wird
-            await new Promise((resolve, reject) => {
-                mainWebcam.onloadedmetadata = () => {
-                    mainWebcam.play();
-                    console.log('Main webcam stream loaded and playing.');
-                    resolve(mainWebcam);
-                };
-                mainWebcam.onerror = (err) => {
-                    console.error('Webcam metadata error:', err);
-                    reject(new Error('Fehler beim Laden der Webcam-Metadaten.'));
-                }
+        // Verwende die neue setupWebcamWithFacingMode Funktion
+        const webcamElement = await setupWebcamWithFacingMode(currentFacingMode);
+        
+        // Überprüfe verfügbare Kameras und konfiguriere Button
+        await getAvailableCameras();
+        
+        // Füge Event Listener zum Switch-Button hinzu
+        const switchButton = document.getElementById('camera-switch-btn');
+        if (switchButton && !switchButton.hasAttribute('data-listener-added')) {
+            switchButton.addEventListener('click', async () => {
+                await switchCamera();
             });
-            return mainWebcam; // Gib das Video-Element zurück, wenn alles geklappt hat
-        } else {
-             throw new Error("Webcam-Element nicht im HTML gefunden.");
+            switchButton.setAttribute('data-listener-added', 'true');
         }
+        
+        return webcamElement;
     } catch (error) {
         console.error('Fehler beim Starten der Kamera:', error);
         // Wirf den Fehler erneut, damit er in der app() Funktion gefangen werden kann
@@ -101,6 +379,7 @@ async function addNewClassCard(initialName = '') {
     webcamPreviewVideo.autoplay = true;
     webcamPreviewVideo.playsinline = true;
     webcamPreviewVideo.muted = true;
+    
     webcamPreviewDiv.appendChild(webcamPreviewVideo);
     classCard.appendChild(webcamPreviewDiv);
 
@@ -165,6 +444,9 @@ async function addNewClassCard(initialName = '') {
     if (mediaStream) {
         webcamPreviewVideo.srcObject = mediaStream;
         webcamPreviewVideo.play();
+        
+        // Füge Doppelklick-Listener auch für Klassen-Webcam-Previews hinzu (nur wenn mehrere Kameras verfügbar)
+        await addCameraSwitchListener(webcamPreviewVideo);
     }
 
     updateTrainButtonState();
@@ -204,6 +486,12 @@ async function captureLoop(classId) {
         requestAnimationFrame(() => captureLoop(classId));
         return;
     }
+    
+    // Überprüfe, ob das Video tatsächlich Daten liefert
+    if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+        requestAnimationFrame(() => captureLoop(classId));
+        return;
+    }
 
     let img;
     try {
@@ -234,12 +522,16 @@ async function captureLoop(classId) {
         updateScrollBehavior(classId);
         
         updateTrainButtonState();
+    } catch (error) {
+        console.error('Fehler in captureLoop:', error);
     } finally {
         img?.dispose();
     }
 
-    // Rufe die nächste Iteration im nächsten Frame auf
-    requestAnimationFrame(() => captureLoop(classId));
+    // Rufe die nächste Iteration im nächsten Frame auf, nur wenn noch capturing aktiv ist
+    if (isCapturing) {
+        requestAnimationFrame(() => captureLoop(classId));
+    }
 }
 
 function startCapturing(classId) {
@@ -407,13 +699,12 @@ async function trainModel() {
     status.textContent = 'Fertig mit dem Lernen!';
     trainButton.disabled = false;
     
-    setTimeout(() => {
+    setTimeout(async () => {
         progressContainer.style.display = 'none';
         status.textContent = '';
         progressBar.style.width = '0%';
+        await startPrediction();
     }, 2000);
-
-    startPrediction();
 }
 
 function updatePredictionDisplay() {
@@ -443,6 +734,12 @@ async function startPrediction() {
     document.getElementById('prediction-results').innerHTML = '';
     document.getElementById('main-webcam-container').style.display = 'flex';
 
+    // Füge Doppelklick-Listener zum Haupt-Webcam-Element hinzu (nur wenn mehrere Kameras verfügbar)
+    const mainWebcam = document.getElementById('webcam');
+    if (mainWebcam) {
+        await addCameraSwitchListener(mainWebcam);
+    }
+
     classNames.forEach((name, index) => {
         if (name !== null && allClassExamples[index]?.length > 0) {
             const barContainer = createElement('div', ['probability-bar-container']);
@@ -465,7 +762,15 @@ async function predictLoop() {
     let img;
     try {
         const videoElement = document.getElementById('webcam');
+        
+        // Überprüfe, ob das Video-Element existiert und bereit ist
         if (!videoElement || !videoElement.srcObject || videoElement.paused || videoElement.ended) {
+            requestAnimationFrame(predictLoop);
+            return;
+        }
+        
+        // Überprüfe, ob das Video tatsächlich Daten liefert
+        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
             requestAnimationFrame(predictLoop);
             return;
         }
@@ -487,9 +792,22 @@ async function predictLoop() {
                 }
             }
         });
+    } catch (error) {
+        console.error('Fehler in predictLoop:', error);
+        // Bei Fehlern kurz warten, bevor der nächste Versuch gestartet wird
+        setTimeout(() => {
+            if (isPredicting) {
+                requestAnimationFrame(predictLoop);
+            }
+        }, 100);
+        return;
     } finally {
         img?.dispose();
         await tf.nextFrame();
+    }
+    
+    // Nur fortfahren, wenn Vorhersage noch aktiv ist
+    if (isPredicting) {
         requestAnimationFrame(predictLoop);
     }
 }
@@ -582,12 +900,257 @@ async function app() {
         }
     });
     
-    // ESC-Taste zum Schließen des Modals
+    // Event Listener für das Legal-Modal
+    document.getElementById('impressum-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        openLegalModal('impressum');
+    });
+    
+    document.getElementById('datenschutz-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        openLegalModal('datenschutz');
+    });
+    
+    document.getElementById('legal-modal-close').addEventListener('click', closeLegalModal);
+    document.getElementById('legal-modal').addEventListener('click', (e) => {
+        // Schließe Modal wenn auf den Hintergrund geklickt wird
+        if (e.target.id === 'legal-modal') {
+            closeLegalModal();
+        }
+    });
+    
+    // ESC-Taste zum Schließen der Modals
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeImageModal();
+            closeLegalModal();
         }
     });
+}
+
+// Legal Modal Funktionalität
+function openLegalModal(type) {
+    const modal = document.getElementById('legal-modal');
+    const title = document.getElementById('legal-modal-title');
+    const body = document.getElementById('legal-modal-body');
+    
+    if (type === 'impressum') {
+        title.textContent = 'Impressum';
+        body.innerHTML = getImpressumContent();
+    } else if (type === 'datenschutz') {
+        title.textContent = 'Datenschutzerklärung';
+        body.innerHTML = getDatenschutzContent();
+    }
+    
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Verhindert Scrollen im Hintergrund
+}
+
+function closeLegalModal() {
+    const modal = document.getElementById('legal-modal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto'; // Erlaubt wieder Scrollen
+}
+
+function getImpressumContent() {
+    return `
+        <h2>Angaben gemäß § 5 TMG</h2>
+        <p>
+            <strong>Verantwortlich für den Inhalt:</strong><br>
+            Yannick Schäfer<br>
+            Am Mäuerchen 12<br>
+            67591 Mölsheim<br>
+            Deutschland
+        </p>
+        
+        <h2>Kontakt</h2>
+        <p>
+            <strong>E-Mail:</strong> yannickschaefer@boomapps.de<br>
+            <strong>Telefon:</strong> +4915757934851
+        </p>
+        
+        <h2>Verantwortlich für journalistisch-redaktionelle Inhalte</h2>
+        <p>
+            Verantwortlich für journalistisch-redaktionelle Inhalte gem. § 18 Abs. 2 MStV:<br>
+            Yannick Schäfer<br>
+            Am Mäuerchen 12, 67591 Mölsheim
+        </p>
+        
+        <h2>EU-Streitschlichtung</h2>
+        <p>
+            Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:
+            <a href="https://ec.europa.eu/consumers/odr/" target="_blank">
+                https://ec.europa.eu/consumers/odr/
+            </a><br>
+            Unsere E-Mail-Adresse finden Sie oben im Impressum.
+        </p>
+        
+        <h2>Verbraucherstreitbeilegung/Universalschlichtungsstelle</h2>
+        <p>
+            Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer 
+            Verbraucherschlichtungsstelle teilzunehmen.
+        </p>
+        
+        <h2>Zentrale Kontaktstelle nach dem Digital Services Act - DSA (Verordnung (EU) 2022/065)</h2>
+        <p>
+            Unsere zentrale Kontaktstelle für Nutzer und Behörden nach Art. 11, 12 DSA erreichen Sie wie folgt:<br>
+            E-Mail: yannickschaefer@boomapps.de
+        </p>
+        
+        <h2>Hinweise zur Website</h2>
+        <p>
+            Diese Anwendung nutzt Künstliche Intelligenz (KI) zur Bilderkennung. Alle Datenverarbeitung 
+            erfolgt lokal in Ihrem Browser. Es werden keine Bilder oder persönlichen Daten an externe 
+            Server übertragen.
+        </p>
+        
+        <p>
+            Die Anwendung verwendet TensorFlow.js und vortrainierte Modelle für maschinelles Lernen. 
+            Diese Technologien ermöglichen es, direkt im Browser ohne externe Datenübertragung zu arbeiten.
+        </p>
+    `;
+}
+
+function getDatenschutzContent() {
+    return `
+        <div class="highlight-box">
+            <h3><i class="fas fa-shield-alt"></i> Datenschutz-Kurzfassung</h3>
+            <p>
+                <strong>Diese Anwendung respektiert Ihre Privatsphäre vollständig:</strong>
+                Alle Daten (Kamerabilder, KI-Modelle) werden ausschließlich lokal in Ihrem Browser verarbeitet. 
+                Es findet keine Übertragung an externe Server statt.
+            </p>
+        </div>
+        
+        <h2>1. Datenschutz auf einen Blick</h2>
+        
+        <h3>Allgemeine Hinweise</h3>
+        <p>
+            Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten 
+            passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie 
+            persönlich identifiziert werden können.
+        </p>
+        
+        <h3>Datenerfassung auf dieser Website</h3>
+        <p>
+            <strong>Wer ist verantwortlich für die Datenerfassung auf dieser Website?</strong><br>
+            Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten 
+            können Sie dem Abschnitt „Hinweis zur Verantwortlichen Stelle" in dieser Datenschutzerklärung entnehmen.
+        </p>
+        
+        <p>
+            <strong>Wie erfassen wir Ihre Daten?</strong><br>
+            Diese Anwendung verwendet ausschließlich lokale Datenverarbeitung. Ihre Kamerabilder und erstellten 
+            KI-Modelle verlassen nie Ihren Browser und werden nicht an externe Server übertragen.
+        </p>
+        
+        <h2>2. Hosting und Content Delivery Networks (CDN)</h2>
+        
+        <h3>Externes Hosting</h3>
+        <p>
+            Diese Website wird bei einem externen Dienstleister gehostet (Hoster). Die personenbezogenen Daten, 
+            die auf dieser Website erfasst werden, werden auf den Servern des Hosters gespeichert.
+        </p>
+        
+        <h3>TensorFlow.js und Machine Learning Bibliotheken</h3>
+        <p>
+            Diese Anwendung lädt die folgenden externen JavaScript-Bibliotheken:
+        </p>
+        <ul>
+            <li>TensorFlow.js von cdn.jsdelivr.net</li>
+            <li>MobileNet Modell von cdn.jsdelivr.net</li>
+            <li>KNN-Classifier von cdn.jsdelivr.net</li>
+            <li>Font Awesome Icons von cdnjs.cloudflare.com</li>
+        </ul>
+        <p>
+            Diese Bibliotheken werden einmalig beim Laden der Seite heruntergeladen. Danach erfolgt die gesamte 
+            Datenverarbeitung lokal in Ihrem Browser.
+        </p>
+        
+        <h2>3. Kameranutzung und Bildverarbeitung</h2>
+        
+        <h3>Webcam-Zugriff</h3>
+        <p>
+            Diese Anwendung fordert Zugriff auf Ihre Kamera an, um Bilder für das maschinelle Lernen zu erfassen. 
+            Folgende Prinzipien gelten:
+        </p>
+        <ul>
+            <li><strong>Lokale Verarbeitung:</strong> Alle Kamerabilder werden ausschließlich in Ihrem Browser verarbeitet</li>
+            <li><strong>Keine Übertragung:</strong> Kamerabilder werden niemals an externe Server gesendet</li>
+            <li><strong>Temporäre Speicherung:</strong> Bilder werden nur temporär im Browser-Speicher gehalten</li>
+            <li><strong>Vollständige Kontrolle:</strong> Sie bestimmen, welche Bilder aufgenommen werden</li>
+            <li><strong>Sofortiges Löschen:</strong> Beim Schließen der Anwendung werden alle Daten gelöscht</li>
+        </ul>
+        
+        <h3>KI-Modell Training</h3>
+        <p>
+            Das Training der Künstlichen Intelligenz erfolgt vollständig in Ihrem Browser mittels TensorFlow.js. 
+            Die trainierten Modelle verlassen niemals Ihren Computer.
+        </p>
+        
+        <h2>4. Allgemeine Hinweise und Pflichtinformationen</h2>
+        
+        <h3>Datenschutz</h3>
+        <p>
+            Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre 
+            personenbezogenen Daten vertraulich und entsprechend den gesetzlichen Datenschutzbestimmungen sowie 
+            dieser Datenschutzerklärung.
+        </p>
+        
+        <h3>Hinweis zur verantwortlichen Stelle</h3>
+        <p>
+            Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:
+        </p>
+        <p>
+            Yannick Schäfer<br>
+            Am Mäuerchen 12<br>
+            67591 Mölsheim<br>
+            E-Mail: yannickschaefer@boomapps.de
+        </p>
+        
+        <h3>Speicherdauer</h3>
+        <p>
+            Da alle Daten ausschließlich lokal in Ihrem Browser verarbeitet werden, gibt es keine dauerhafte 
+            Speicherung auf externen Servern. Alle Daten werden beim Schließen der Anwendung automatisch gelöscht.
+        </p>
+        
+        <h2>5. Ihre Rechte</h2>
+        
+        <p>
+            Sie haben jederzeit das Recht:
+        </p>
+        <ul>
+            <li>unentgeltlich Auskunft über Herkunft, Empfänger und Zweck Ihrer gespeicherten personenbezogenen Daten zu erhalten</li>
+            <li>Berichtigung oder Löschung dieser Daten zu verlangen</li>
+            <li>eine Einschränkung der Datenverarbeitung zu verlangen</li>
+            <li>der Datenverarbeitung zu widersprechen</li>
+            <li>sich bei einer Aufsichtsbehörde zu beschweren</li>
+        </ul>
+        
+        <p>
+            Da diese Anwendung keine personenbezogenen Daten dauerhaft speichert, sind die meisten dieser Rechte 
+            durch die Architektur der Anwendung bereits gewährleistet.
+        </p>
+        
+        <h2>6. Browser-Einstellungen und Kamera-Berechtigung</h2>
+        
+        <p>
+            Sie können die Kamera-Berechtigung jederzeit in Ihren Browser-Einstellungen widerrufen. Die Anwendung 
+            funktioniert ohne Kamerazugriff nicht, respektiert aber Ihre Entscheidung vollständig.
+        </p>
+        
+        <h2>7. Kontakt</h2>
+        
+        <p>
+            Bei Fragen zum Datenschutz können Sie sich jederzeit an uns wenden:
+        </p>
+        <p>
+            E-Mail: yannickschaefer@boomapps.de<br>
+            Die Kontaktdaten finden Sie im Impressum.
+        </p>
+        
+        <p><em>Stand: Januar 2025</em></p>
+    `;
 }
 
 // Starte die App, sobald das gesamte HTML-Dokument geladen ist

@@ -1,5 +1,5 @@
-/* --- Google Font Import --- */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+/* --- Lokale Schriftarten --- */
+@import url('./fonts/poppins.css');
 
 /* --- CSS Variablen --- */
 :root {
@@ -222,12 +222,16 @@ main.single-column-layout {
 
 .card h2, .card h3 {
     color: var(--primary-color);
-    margin-bottom: var(--space-md);
+    margin-bottom: calc(2 * var(--space-md));
     border-bottom: 2px solid var(--border-color);
     padding-bottom: var(--space-sm);
     display: flex;
     align-items: center;
     gap: 0.75rem;
+}
+
+.training-card h2, .training-card h3 {
+    margin-bottom: var(--space-md);
 }
 
 .column > h2, .column > p {
@@ -336,20 +340,136 @@ button {
     font-style: italic;
 }
 
+.camera-hint {
+    background-color: #f0f8ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 6px;
+    padding: var(--space-sm);
+    margin-bottom: var(--space-md);
+    font-size: 0.9rem;
+    color: #2c5aa0;
+    text-align: center;
+}
+
+.camera-hint-small {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: var(--space-xs);
+    margin: var(--space-xs) 0;
+    font-size: 0.8rem;
+    color: #666;
+    text-align: center;
+    font-style: italic;
+}
+
 /* --- Webcam & Vorschau --- */
 .webcam-preview, #main-webcam-container {
     display: flex;
     justify-content: center;
     margin-bottom: var(--space-md);
+    position: relative;
+}
+
+.camera-switch-button {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.camera-switch-button:hover {
+    background-color: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+}
+
+.camera-switch-button:active {
+    transform: scale(0.95);
 }
 
 video {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     width: 100%;
-    max-width: 224px;
+    max-width: 35vw; /* Proportional zur Viewport-Breite */
     height: auto;
     background-color: #eee;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    /* Responsive Größe für das Haupt-Webcam-Element */
+    min-width: 25vw;
+    min-height: 25vw;
+    object-fit: cover;
+}
+
+video:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+video:active {
+    transform: scale(0.98);
+}
+
+/* Animation für Kamerawechsel */
+.camera-switching {
+    animation: cameraFlip 1s ease-in-out;
+}
+
+@keyframes cameraFlip {
+    0% {
+        transform: rotateY(0deg) scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: rotateY(90deg) scale(0.8);
+        opacity: 0.3;
+    }
+    100% {
+        transform: rotateY(0deg) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Zusätzliche Animation für den Switch-Button */
+.camera-switch-button.switching {
+    animation: buttonSpin 0.6s ease-in-out;
+    pointer-events: none;
+}
+
+@keyframes buttonSpin {
+    0% {
+        transform: rotate(0deg) scale(1);
+    }
+    50% {
+        transform: rotate(180deg) scale(1.2);
+    }
+    100% {
+        transform: rotate(360deg) scale(1);
+    }
+}
+
+/* Spezielle Regeln für Klassen-Preview-Videos */
+.webcam-preview video {
+    width: 100%;
+    max-width: 30vw; /* Proportional zur Viewport-Breite */
+    min-width: 20vw;
+    min-height: 15vw; /* 4:3 Verhältnis beibehalten */
+    object-fit: cover;
+    aspect-ratio: 4/3;
 }
 
 .image-previews {
@@ -529,7 +649,6 @@ video {
 /* --- Erklärungs-Box --- */
 #explanation {
     max-width: 800px;
-    margin-bottom: var(--space-xxl);
     margin-left: auto;
     margin-right: auto;
     padding: var(--space-xl);
@@ -591,4 +710,266 @@ video {
 @keyframes progress-bar-stripes {
     from { background-position: 40px 0; }
     to { background-position: 0 0; }
+}
+
+/* --- Footer Styles --- */
+footer {
+    background-color: var(--card-background);
+    border-top: 1px solid var(--border-color);
+    margin-top: var(--space-xxl);
+    padding: var(--space-lg) 0;
+    box-shadow: var(--shadow);
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-md);
+    text-align: center;
+}
+
+.footer-links {
+    margin-bottom: var(--space-md);
+}
+
+.footer-links a {
+    color: var(--text-color-light);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
+    cursor: pointer;
+}
+
+.footer-links a:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.footer-separator {
+    margin: 0 var(--space-md);
+    color: var(--text-color-light);
+}
+
+.footer-copyright {
+    color: var(--text-color-light);
+    font-size: 0.8rem;
+}
+
+.footer-copyright p {
+    margin: 0;
+}
+
+/* --- Legal Modal Styles --- */
+.legal-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+}
+
+.legal-modal-content {
+    background-color: var(--card-background);
+    margin: 2% auto;
+    padding: 0;
+    border-radius: var(--border-radius);
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.legal-modal-header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: var(--space-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.legal-modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.legal-modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.legal-modal-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.legal-modal-body {
+    padding: var(--space-xl);
+    overflow-y: auto;
+    flex: 1;
+    line-height: 1.7;
+}
+
+.legal-modal-body h2 {
+    color: var(--primary-color);
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-md);
+    border-left: 4px solid var(--primary-color);
+    padding-left: var(--space-md);
+    font-size: 1.2rem;
+}
+
+.legal-modal-body h2:first-of-type {
+    margin-top: 0;
+}
+
+.legal-modal-body h3 {
+    color: var(--text-color);
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-md);
+    font-size: 1.1rem;
+}
+
+.legal-modal-body p {
+    margin-bottom: var(--space-md);
+    color: var(--text-color);
+}
+
+.legal-modal-body p:last-of-type {
+    margin-bottom: 0;
+}
+
+.legal-modal-body ul {
+    margin-bottom: var(--space-md);
+    padding-left: var(--space-xl);
+}
+
+.legal-modal-body li {
+    margin-bottom: var(--space-sm);
+}
+
+.legal-modal-body a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.legal-modal-body a:hover {
+    text-decoration: underline;
+}
+
+.legal-modal-body strong {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.legal-modal-body .highlight-box {
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--space-lg);
+    margin-top: 0;
+    margin-bottom: var(--space-lg);
+    border-left: 4px solid var(--success-color);
+}
+
+.legal-modal-body .highlight-box h3 {
+    color: var(--success-color);
+    margin-top: 0;
+}
+
+/* --- Responsive Footer und Modal --- */
+@media (max-width: 768px) {
+    .footer-links {
+        flex-direction: column;
+        gap: var(--space-sm);
+    }
+    
+    .footer-separator {
+        display: none;
+    }
+    
+    .footer-links a {
+        display: block;
+        margin-bottom: var(--space-sm);
+    }
+
+    .legal-modal-content {
+        margin: 5% auto;
+        width: 95%;
+        max-height: 85vh;
+    }
+
+    .legal-modal-header {
+        padding: var(--space-md);
+    }
+
+    .legal-modal-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .legal-modal-body {
+        padding: var(--space-md);
+    }
+}
+
+/* Responsive Anpassungen für Video-Größen */
+@media (max-width: 1200px) {
+    video {
+        max-width: 40vw;
+        min-width: 30vw;
+        min-height: 30vw;
+    }
+    
+    .webcam-preview video {
+        max-width: 35vw;
+        min-width: 25vw;
+        min-height: 19vw; /* 4:3 Verhältnis */
+    }
+}
+
+@media (max-width: 768px) {
+    video {
+        max-width: 50vw;
+        min-width: 40vw;
+        min-height: 40vw;
+    }
+    
+    .webcam-preview video {
+        max-width: 45vw;
+        min-width: 35vw;
+        min-height: 26vw; /* 4:3 Verhältnis */
+    }
+}
+
+@media (max-width: 480px) {
+    video {
+        max-width: 70vw;
+        min-width: 60vw;
+        min-height: 60vw;
+    }
+    
+    .webcam-preview video {
+        max-width: 65vw;
+        min-width: 55vw;
+        min-height: 41vw; /* 4:3 Verhältnis */
+    }
 }
