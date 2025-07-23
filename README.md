@@ -72,7 +72,7 @@ Ideen oder Verbesserungsvorschläge? Wir freuen uns über jeden Beitrag! Erstell
 
 ## 📄 Lizenz
 
-Dieses Projekt steht unter der MIT-Lizenz. Weitere Details findest du in der `LICENSE.txt` Datei (falls vorhanden).
+Dieses Projekt steht unter der MIT-Lizenz. Weitere Details findest du in der `LICENSE.txt` Datei.
 
 ---
 
@@ -94,7 +94,7 @@ Welcome to **The Teachable Machine** – an interactive web project that playful
 Using The Teachable Machine is super easy!
 
 1.  **Open the Application:** Simply click on the following link (or open the `index.html` file if you are hosting the project locally):
-    [Link to Live Demo (if available, otherwise remove)](https://your-live-demo-url.com)
+    [Open Now](https://theteachablemachine.boomapps.de/)
 
 2.  **Interact and Teach:** Follow the on-screen instructions to present data to your machine and train it. Experiment with different inputs and observe how the machine's behavior changes.
 
@@ -150,4 +150,4 @@ Ideas or suggestions for improvement? We welcome all contributions! Simply creat
 
 ## 📄 License
 
-This project is licensed under the MIT License. More details can be found in the `LICENSE.txt` file (if available).
+This project is licensed under the MIT License. More details can be found in the `LICENSE.txt` file.
