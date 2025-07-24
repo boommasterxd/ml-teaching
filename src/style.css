@@ -1,7 +1,7 @@
-/* --- Lokale Schriftarten --- */
+/* Local Font Imports */
 @import url('./fonts/poppins.css');
 
-/* --- CSS Variablen --- */
+/* CSS Custom Properties */
 :root {
     --primary-color: #D51317;
     --primary-color-dark: #a10f12;
@@ -15,7 +15,7 @@
     --shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     --border-radius: 12px;
 
-    /* Globales Abstandssystem */
+    /* Global spacing system for consistent layout */
     --space-unit: 0.5rem;
     --space-sm: var(--space-unit);         /* 0.5rem */
     --space-md: calc(var(--space-unit) * 2); /* 1rem   */
@@ -24,11 +24,18 @@
     --space-xxl: calc(var(--space-unit) * 6);/* 3rem   */
 }
 
-/* --- Globale Styles & Reset --- */
+/* Global Styles & CSS Reset */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 body {
@@ -36,9 +43,11 @@ body {
     background-color: var(--background-light);
     color: var(--text-color);
     line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
 }
 
-/* --- Lade-Overlay Styles --- */
+/* Loading Overlay Styles */
 #loading-overlay {
     position: fixed;
     top: 0;
@@ -88,7 +97,7 @@ body {
 
 .loading-steps li i {
     font-size: 1.5rem;
-    width: 35px; /* Feste Breite für Ausrichtung */
+    width: 35px; 
     text-align: center;
     margin-right: var(--space-md);
     color: var(--primary-color);
@@ -117,16 +126,16 @@ body {
     font-size: 0.9rem;
     font-weight: 400;
     color: var(--text-color-light);
-    margin-left: calc(35px + var(--space-md)); /* Einrücken unter den Text */
+    margin-left: calc(35px + var(--space-md));
 }
 
 
-/* --- Hilfsklasse zum Ausblenden --- */
+/* Utility Class for Hiding Elements */
 .hidden {
     display: none !important;
 }
 
-/* --- Header --- */
+/* Header */
 header {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-color-dark));
     color: white;
@@ -169,7 +178,7 @@ header p {
     animation: fadeInUp 1s ease-out;
 }
 
-/* Responsive Anpassung für kleinere Bildschirme */
+/* Responsive adjustments for smaller screens */
 @media (max-width: 600px) {
     .header-content {
         flex-direction: column;
@@ -185,13 +194,13 @@ header p {
     }
 }
 
-/* --- Layout (Angepasst auf eine Spalte) --- */
+/* Layout (Single Column Layout) */
 main.single-column-layout {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-xxl);
     padding: 0 var(--space-xl);
-    max-width: 800px; /* Breiter für besseren Look */
+    max-width: 800px; 
     margin: 0 auto;
 }
 
@@ -204,7 +213,7 @@ main.single-column-layout {
     margin-top: var(--space-xxl);
 }
 
-/* --- Allgemeine Karten-Styles --- */
+/* General Card Styles */
 .card {
     background-color: var(--card-background);
     border-radius: var(--border-radius);
@@ -238,16 +247,16 @@ main.single-column-layout {
     padding: 0 0.5rem;
 }
 
-/* --- Spezifische Karten-Styles --- */
+/* Specific Card Styles */
 
-/* KORRIGIERT: Container für die Klassenkarten */
+/* Container for class cards */
 #class-cards-container {
     display: flex;
     flex-direction: column;
-    gap: var(--space-xxl); /* Sorgt für einheitlichen Abstand zwischen den Karten */
+    gap: var(--space-xxl); 
 }
 
-/* KORRIGIERT: Blendet den Container aus, wenn er leer ist, um den doppelten Abstand zu vermeiden */
+/* Hide the container when empty to avoid double spacing */
 #class-cards-container:empty {
     display: none !important;
 }
@@ -256,7 +265,7 @@ main.single-column-layout {
     justify-content: space-between;
 }
 
-/* --- Button Styles --- */
+/* Button styles with mobile touch optimizations */
 button {
     font-family: 'Poppins', sans-serif;
     padding: 0.8rem 1.5rem;
@@ -271,6 +280,13 @@ button {
     justify-content: center;
     gap: 0.5rem;
     width: 100%;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 #train-model, .class-card .input-group button {
@@ -317,7 +333,7 @@ button {
     box-shadow: none;
 }
 
-/* --- Formular- & Input-Elemente --- */
+/* Form inputs and elements styling */
 .class-card input[type="text"] {
     border: none;
     font-size: 1.2rem;
@@ -363,12 +379,15 @@ button {
     font-style: italic;
 }
 
-/* --- Webcam & Vorschau --- */
+/* Webcam containers and preview elements */
 .webcam-preview, #main-webcam-container {
     display: flex;
     justify-content: center;
     margin-bottom: var(--space-md);
     position: relative;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .camera-switch-button {
@@ -381,13 +400,32 @@ button {
     border-radius: 50%;
     width: 36px;
     height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 36px;
+    max-height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 18px;
     transition: all 0.3s ease;
     z-index: 10;
+    padding: 1.2rem;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Position button at bottom right for class previews and main webcam */
+.camera-switch-button.bottom-right {
+    left: auto !important;
+    right: 8px !important;
 }
 
 .camera-switch-button:hover {
@@ -399,20 +437,43 @@ button {
     transform: scale(0.95);
 }
 
+/* Click animation for camera switch button */
+.camera-switch-button.clicked {
+    animation: buttonClickSpin 0.6s ease-in-out;
+}
+
+@keyframes buttonClickSpin {
+    0% {
+        transform: rotate(0deg) scale(1);
+    }
+    50% {
+        transform: rotate(180deg) scale(1.1);
+    }
+    100% {
+        transform: rotate(360deg) scale(1);
+    }
+}
+
+/* Video element base styling with responsive sizing */
 video {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     width: 100%;
-    max-width: 35vw; /* Proportional zur Viewport-Breite */
+    max-width: 35vw;
     height: auto;
     background-color: #eee;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    
-    /* Responsive Größe für das Haupt-Webcam-Element */
     min-width: 25vw;
     min-height: 25vw;
     object-fit: cover;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 video:hover {
@@ -424,7 +485,7 @@ video:active {
     transform: scale(0.98);
 }
 
-/* Animation für Kamerawechsel */
+/* Camera switching animation effect */
 .camera-switching {
     animation: cameraFlip 1s ease-in-out;
 }
@@ -444,7 +505,7 @@ video:active {
     }
 }
 
-/* Zusätzliche Animation für den Switch-Button */
+/* Additional animation for the switch button during camera change */
 .camera-switch-button.switching {
     animation: buttonSpin 0.6s ease-in-out;
     pointer-events: none;
@@ -462,12 +523,12 @@ video:active {
     }
 }
 
-/* Spezielle Regeln für Klassen-Preview-Videos */
+/* Specific styling for class preview videos */
 .webcam-preview video {
     width: 100%;
-    max-width: 30vw; /* Proportional zur Viewport-Breite */
+    max-width: 30vw;
     min-width: 20vw;
-    min-height: 15vw; /* 4:3 Verhältnis beibehalten */
+    min-height: 15vw;
     object-fit: cover;
     aspect-ratio: 4/3;
 }
@@ -502,7 +563,7 @@ video:active {
     transform: scale(1.1);
 }
 
-/* Modal für Bildvorschau */
+/* Modal for image preview */
 .image-modal {
     position: fixed;
     top: 0;
@@ -591,7 +652,7 @@ video:active {
     background: darkred;
 }
 
-/* --- Trainings- & Vorhersage-Status --- */
+/* Training progress and prediction status indicators */
 #training-progress-container {
     display: none;
     margin-top: var(--space-md);
@@ -621,6 +682,29 @@ video:active {
     color: var(--text-color-light);
 }
 
+.retrain-warning {
+    text-align: center;
+    padding: var(--space-xl);
+    color: var(--danger-color);
+    font-weight: 600;
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 2px solid var(--danger-color);
+    border-radius: var(--border-radius);
+    margin: var(--space-md);
+    animation: pulseWarning 2s ease-in-out infinite;
+}
+
+@keyframes pulseWarning {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.02);
+        opacity: 0.9;
+    }
+}
+
 .probability-bar-container {
     margin-bottom: var(--space-md);
 }
@@ -646,7 +730,7 @@ video:active {
     transition: width 0.4s ease-out;
 }
 
-/* --- Erklärungs-Box --- */
+/* Explanation box for displaying information */
 #explanation {
     max-width: 800px;
     margin-left: auto;
@@ -662,7 +746,7 @@ video:active {
     padding-bottom: 0;
 }
 
-/* --- Animationen --- */
+/* Animation keyframes */
 @keyframes fadeInDown {
     from {
         opacity: 0;
@@ -712,7 +796,7 @@ video:active {
     to { background-position: 0 0; }
 }
 
-/* --- Footer Styles --- */
+/* Footer styling */
 footer {
     background-color: var(--card-background);
     border-top: 1px solid var(--border-color);
@@ -759,7 +843,7 @@ footer {
     margin: 0;
 }
 
-/* --- Legal Modal Styles --- */
+/* Legal modal styles for terms and privacy */
 .legal-modal {
     display: none;
     position: fixed;
@@ -896,7 +980,7 @@ footer {
     margin-top: 0;
 }
 
-/* --- Responsive Footer und Modal --- */
+/* Responsive design for footer and modal on mobile */
 @media (max-width: 768px) {
     .footer-links {
         flex-direction: column;
@@ -931,7 +1015,7 @@ footer {
     }
 }
 
-/* Responsive Anpassungen für Video-Größen */
+/* Responsive video sizing for different screen sizes */
 @media (max-width: 1200px) {
     video {
         max-width: 40vw;
@@ -942,7 +1026,7 @@ footer {
     .webcam-preview video {
         max-width: 35vw;
         min-width: 25vw;
-        min-height: 19vw; /* 4:3 Verhältnis */
+        min-height: 19vw;
     }
 }
 
@@ -956,7 +1040,7 @@ footer {
     .webcam-preview video {
         max-width: 45vw;
         min-width: 35vw;
-        min-height: 26vw; /* 4:3 Verhältnis */
+        min-height: 26vw;
     }
 }
 
@@ -970,6 +1054,6 @@ footer {
     .webcam-preview video {
         max-width: 65vw;
         min-width: 55vw;
-        min-height: 41vw; /* 4:3 Verhältnis */
+        min-height: 41vw;
     }
 }
