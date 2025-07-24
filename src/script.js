@@ -1,3 +1,32 @@
+/**
+ * The Teachable Machine - A Browser-Based Machine Learning Application
+ * 
+ * This application allows users to create and train their own machine learning models
+ * for image classification directly in their web browser using TensorFlow.js and MobileNet.
+ * All processing happens locally - no data is sent to external servers.
+ * 
+ * Key Features:
+ * - Real-time camera input
+ * - Multiple class training
+ * - Local image processing
+ * - Camera switching (front/back)
+ * - Responsive UI with touch support
+ * 
+ * Dependencies:
+ * - TensorFlow.js
+ * - MobileNet pre-trained model
+ * - KNN Classifier
+ * 
+ * This project is inspired by Google's Teachable Machine and aims to provide a similar
+ * user-friendly interface for training machine learning models in the browser.
+ * 
+ * See the README for more details on setup and usage.
+ * 
+ * @author Yannick Schäfer
+ * @version 1.0.0
+ */
+
+// Global Application State
 const classifier = knnClassifier.create();
 let net;
 let mediaStream = null;
@@ -5,11 +34,20 @@ let isPredicting = false;
 let isCapturing = false;
 let classNames = [];
 let allClassExamples = [];
-let currentFacingMode = 'user'; // 'user' für Frontkamera, 'environment' für Rückkamera
+let currentFacingMode = 'user';
 let availableCameras = [];
-let isSwitchingCamera = false; // Verhindert mehrfache Kamerawechsel während Animation
+let isSwitchingCamera = false;
 
-// Hilfsfunktion zum Erstellen eines HTML-Elements
+/**
+ * Utility function to create HTML elements with optional properties
+ * 
+ * @param {string} tag - HTML tag name
+ * @param {Array} classes - Array of CSS classes to add
+ * @param {string} id - Element ID
+ * @param {string} textContent - Text content for the element
+ * @param {string} innerHTML - HTML content for the element
+ * @returns {HTMLElement} Created DOM element
+ */
 function createElement(tag, classes = [], id = '', textContent = '', innerHTML = '') {
     const element = document.createElement(tag);
     if (classes.length > 0) element.classList.add(...classes);
@@ -19,13 +57,17 @@ function createElement(tag, classes = [], id = '', textContent = '', innerHTML =
     return element;
 }
 
-// Hilfsfunktion zur Verwaltung des Scrollverhaltens bei Bildvorschauen
+/**
+ * Updates scroll behavior for image previews based on the number of images
+ * Enables scrolling when there are more than 20 images (approximately 3 rows)
+ * 
+ * @param {number} classId - The class identifier
+ */
 function updateScrollBehavior(classId) {
     const previewsDiv = document.getElementById(`class-${classId}-previews`);
     if (!previewsDiv) return;
     
     const imageCount = allClassExamples[classId] ? allClassExamples[classId].length : 0;
-    // Aktiviere Scrolling ab der dritten Zeile (etwa 20+ Bilder bei ~10 Bildern pro Zeile)
     if (imageCount > 20) {
         previewsDiv.classList.add('scrollable');
     } else {
@@ -33,43 +75,58 @@ function updateScrollBehavior(classId) {
     }
 }
 
-// Funktion zum Ermitteln verfügbarer Kameras
+/**
+ * Detects and stores available camera devices
+ * Updates UI button visibility based on camera availability
+ * 
+ * @returns {Promise<boolean>} True if multiple cameras are available
+ */
 async function getAvailableCameras() {
     try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         availableCameras = devices.filter(device => device.kind === 'videoinput');
-        console.log('Verfügbare Kameras:', availableCameras.length);
+        console.log('Available cameras:', availableCameras.length);
         
-        // Aktualisiere Button-Sichtbarkeit
         updateCameraSwitchButtonVisibility(availableCameras.length > 1);
         
-        return availableCameras.length > 1; // Gibt true zurück, wenn mehr als eine Kamera verfügbar ist
+        return availableCameras.length > 1;
     } catch (error) {
-        console.error('Fehler beim Ermitteln der verfügbaren Kameras:', error);
+        console.error('Error detecting available cameras:', error);
         updateCameraSwitchButtonVisibility(false);
         return false;
     }
 }
 
-// Funktion zum Aktualisieren der Button-Sichtbarkeit
+/**
+ * Updates visibility of camera switch buttons based on camera availability
+ * Shows buttons only when multiple cameras are detected
+ * 
+ * @param {boolean} hasMultipleCameras - Whether multiple cameras are available
+ */
 function updateCameraSwitchButtonVisibility(hasMultipleCameras) {
     const switchButton = document.getElementById('camera-switch-btn');
     if (switchButton) {
         switchButton.style.display = hasMultipleCameras ? 'flex' : 'none';
     }
+    
+    const classButtons = document.querySelectorAll('[id^="camera-switch-btn-"]');
+    classButtons.forEach(button => {
+        button.style.display = hasMultipleCameras ? 'flex' : 'none';
+    });
 }
 
-// Funktion zum Aktualisieren aller Event-Listener basierend auf Kamera-Verfügbarkeit
+/**
+ * Updates all camera switch event listeners based on current camera availability
+ * Refreshes listeners when camera configuration changes
+ */
 async function updateAllCameraSwitchListeners() {
     const hasMultipleCameras = await getAvailableCameras();
     
-    // Entferne alle bestehenden Event-Listener Markierungen
     const allVideos = document.querySelectorAll('video[data-camera-switch-listener]');
     allVideos.forEach(video => {
         video.removeAttribute('data-camera-switch-listener');
     });
     
-    // Setze neue Event-Listener basierend auf aktueller Verfügbarkeit
     const mainWebcam = document.getElementById('webcam');
     if (mainWebcam) {
         await addCameraSwitchListener(mainWebcam);
@@ -81,11 +138,14 @@ async function updateAllCameraSwitchListeners() {
     }
 }
 
-// Funktion zum Wechseln zwischen Front- und Rückkamera mit Animation
+/**
+ * Switches between front and back camera with smooth animation
+ * Prevents multiple simultaneous camera switches and handles errors gracefully
+ * Temporarily pauses prediction during switch to avoid conflicts
+ */
 async function switchCamera() {
-    // Verhindere mehrfache Aufrufe während einer Animation
     if (isSwitchingCamera) {
-        console.log('Kamerawechsel bereits im Gange - Aufruf ignoriert');
+        console.log('Camera switch already in progress - call ignored');
         return;
     }
     
@@ -93,17 +153,14 @@ async function switchCamera() {
         isSwitchingCamera = true;
         const wasPredicting = isPredicting;
         
-        // Stoppe temporär die Vorhersage
         if (wasPredicting) {
             isPredicting = false;
-            console.log('Vorhersage temporär gestoppt für Kamerawechsel');
+            console.log('Prediction temporarily stopped for camera switch');
         }
         
-        // Starte die Animation auf allen Video-Elementen
         const allVideos = document.querySelectorAll('video');
         const switchButton = document.getElementById('camera-switch-btn');
         
-        // Füge Animations-Klassen hinzu
         allVideos.forEach(video => {
             video.classList.add('camera-switching');
         });
@@ -112,25 +169,19 @@ async function switchCamera() {
             switchButton.classList.add('switching');
         }
         
-        // Warte bis etwa 1/3 der Animation (früherer Wechsel für Ladezeit)
         await new Promise(resolve => setTimeout(resolve, 350));
         
-        // Stoppe den aktuellen Stream
         if (mediaStream) {
             mediaStream.getTracks().forEach(track => track.stop());
         }
 
-        // Wechsle die Facing-Mode
         currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-        console.log('Wechsle zu Kamera:', currentFacingMode === 'user' ? 'Frontkamera' : 'Rückkamera');
+        console.log('Switching to camera:', currentFacingMode === 'user' ? 'Front camera' : 'Back camera');
 
-        // Starte die Webcam mit der neuen Facing-Mode
         await setupWebcamWithFacingMode(currentFacingMode);
         
-        // Warte bis die Animation vollständig abgeschlossen ist
         await new Promise(resolve => setTimeout(resolve, 650));
         
-        // Entferne Animations-Klassen
         allVideos.forEach(video => {
             video.classList.remove('camera-switching');
         });
@@ -139,21 +190,18 @@ async function switchCamera() {
             switchButton.classList.remove('switching');
         }
         
-        // Starte die Vorhersage wieder, falls sie vorher aktiv war
         if (wasPredicting) {
             setTimeout(() => {
                 isPredicting = true;
-                console.log('Vorhersage wieder gestartet nach Kamerawechsel');
-                // Starte die Vorhersageschleife neu
+                console.log('Prediction restarted after camera switch');
                 requestAnimationFrame(predictLoop);
             }, 200);
         }
         
-        console.log('Kamera erfolgreich gewechselt zu:', currentFacingMode === 'user' ? 'Frontkamera' : 'Rückkamera');
+        console.log('Camera successfully switched to:', currentFacingMode === 'user' ? 'Front camera' : 'Back camera');
     } catch (error) {
-        console.error('Fehler beim Wechseln der Kamera:', error);
+        console.error('Error switching camera:', error);
         
-        // Entferne Animations-Klassen bei Fehler
         const allVideos = document.querySelectorAll('video');
         const switchButton = document.getElementById('camera-switch-btn');
         
@@ -165,11 +213,9 @@ async function switchCamera() {
             switchButton.classList.remove('switching');
         }
         
-        // Falls der Wechsel fehlschlägt, versuche zur ursprünglichen Kamera zurückzukehren
         currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
         try {
             await setupWebcamWithFacingMode(currentFacingMode);
-            // Vorhersage wieder starten, falls sie vorher aktiv war
             if (isPredicting === false) {
                 setTimeout(() => {
                     isPredicting = true;
@@ -177,18 +223,22 @@ async function switchCamera() {
                 }, 200);
             }
         } catch (fallbackError) {
-            console.error('Fehler beim Zurückwechseln zur ursprünglichen Kamera:', fallbackError);
+            console.error('Error reverting to original camera:', fallbackError);
         }
     } finally {
-        // Stelle sicher, dass der Lock immer zurückgesetzt wird
         isSwitchingCamera = false;
     }
 }
 
-// Erweiterte setupWebcam-Funktion mit Facing-Mode-Unterstützung
+/**
+ * Sets up webcam with specified facing mode (front or back camera)
+ * Configures media constraints and initializes video stream
+ * 
+ * @param {string} facingMode - Camera facing mode ('user' for front, 'environment' for back)
+ * @returns {Promise<HTMLVideoElement>} The main webcam video element
+ */
 async function setupWebcamWithFacingMode(facingMode = 'user') {
     try {
-        // Konfiguration für getUserMedia
         const constraints = {
             video: {
                 facingMode: facingMode,
@@ -197,32 +247,32 @@ async function setupWebcamWithFacingMode(facingMode = 'user') {
             }
         };
 
-        // Fordere den Kamerazugriff mit der spezifizierten Facing-Mode an
         mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-        console.log(`Webcam-Stream mit ${facingMode === 'user' ? 'Frontkamera' : 'Rückkamera'} erfolgreich abgerufen.`);
+        console.log(`Webcam stream with ${facingMode === 'user' ? 'front camera' : 'back camera'} successfully obtained.`);
 
-        // Aktualisiere alle Video-Elemente
         await updateAllVideoElements();
 
         return document.getElementById('webcam');
     } catch (error) {
-        console.error('Fehler beim Starten der Kamera mit Facing-Mode:', error);
+        console.error('Error starting camera with facing mode:', error);
         throw error;
     }
 }
 
-// Funktion zum Aktualisieren aller Video-Elemente mit dem neuen Stream
+/**
+ * Updates all video elements with the new media stream
+ * Preserves video dimensions and adds necessary event listeners
+ * Temporarily pauses prediction during stream updates
+ */
 async function updateAllVideoElements() {
     const mainWebcam = document.getElementById('webcam');
     const wasPredicting = isPredicting;
     
-    // Stoppe temporär die Vorhersage während des Stream-Wechsels
     if (wasPredicting) {
         isPredicting = false;
     }
     
     if (mainWebcam && mediaStream) {
-        // Speichere die aktuellen Dimensionen, falls vorhanden
         const currentWidth = mainWebcam.style.width || mainWebcam.offsetWidth;
         const currentHeight = mainWebcam.style.height || mainWebcam.offsetHeight;
         
@@ -232,7 +282,6 @@ async function updateAllVideoElements() {
                 try {
                     await mainWebcam.play();
                     
-                    // Stelle sicher, dass die Dimensionen konsistent bleiben
                     if (currentWidth && currentHeight) {
                         mainWebcam.style.width = typeof currentWidth === 'number' ? `${currentWidth}px` : currentWidth;
                         mainWebcam.style.height = typeof currentHeight === 'number' ? `${currentHeight}px` : currentHeight;
@@ -240,27 +289,24 @@ async function updateAllVideoElements() {
                     
                     console.log('Main webcam stream updated and playing.');
                     
-                    // Füge Doppelklick-Listener hinzu (nur wenn mehrere Kameras verfügbar)
                     await addCameraSwitchListener(mainWebcam);
                     
                     resolve(mainWebcam);
                 } catch (error) {
-                    console.error('Fehler beim Abspielen der Webcam:', error);
+                    console.error('Error playing webcam:', error);
                     reject(error);
                 }
             };
             mainWebcam.onerror = (err) => {
                 console.error('Webcam metadata error:', err);
-                reject(new Error('Fehler beim Laden der Webcam-Metadaten.'));
+                reject(new Error('Error loading webcam metadata.'));
             }
         });
     }
 
-    // Aktualisiere auch alle Klassen-Webcam-Previews
     const previewVideos = document.querySelectorAll('[id^="webcam-preview-"]');
     for (const video of previewVideos) {
         if (mediaStream) {
-            // Speichere die aktuellen Dimensionen für Preview-Videos
             const currentWidth = video.style.width || video.offsetWidth;
             const currentHeight = video.style.height || video.offsetHeight;
             
@@ -268,66 +314,71 @@ async function updateAllVideoElements() {
             try {
                 await video.play();
                 
-                // Stelle sicher, dass die Dimensionen konsistent bleiben
                 if (currentWidth && currentHeight) {
                     video.style.width = typeof currentWidth === 'number' ? `${currentWidth}px` : currentWidth;
                     video.style.height = typeof currentHeight === 'number' ? `${currentHeight}px` : currentHeight;
                 }
             } catch (error) {
-                console.error('Fehler beim Abspielen des Preview-Videos:', error);
+                console.error('Error playing preview video:', error);
             }
-            // Füge Doppelklick-Listener zu Klassen-Webcam-Previews hinzu (nur wenn mehrere Kameras verfügbar)
             await addCameraSwitchListener(video);
         }
     }
     
-    // Wichtig: Starte die Vorhersage NICHT automatisch wieder - das macht die switchCamera Funktion
-    console.log('Alle Video-Elemente wurden aktualisiert');
+    console.log('All video elements have been updated');
 }
 
-// Funktion zum Hinzufügen von Doppelklick-Event-Listenern zu Video-Elementen
+/**
+ * Adds double-click event listeners to video elements for camera switching
+ * Only adds listeners when multiple cameras are available
+ * Provides visual feedback with cursor styles and tooltips
+ * 
+ * @param {HTMLVideoElement} videoElement - Video element to add listener to
+ */
 async function addCameraSwitchListener(videoElement) {
-    // Prüfe, ob der Event-Listener bereits hinzugefügt wurde
     if (videoElement.hasAttribute('data-camera-switch-listener')) {
         return;
     }
     
-    // Prüfe, ob mehrere Kameras verfügbar sind
     const hasMultipleCameras = await getAvailableCameras();
     
     if (hasMultipleCameras) {
         videoElement.addEventListener('dblclick', async (e) => {
             e.preventDefault();
-            console.log('Doppelklick auf Video erkannt - versuche Kamera zu wechseln');
             await switchCamera();
         });
         
-        // Füge einen visuellen Hinweis hinzu (Cursor-Style)
         videoElement.style.cursor = 'pointer';
         videoElement.title = 'Doppelklick um zwischen Kameras zu wechseln';
     } else {
-        // Entferne Cursor-Style wenn keine mehreren Kameras verfügbar
         videoElement.style.cursor = 'default';
         videoElement.title = '';
     }
     
-    // Markiere das Element als bereits verarbeitet
     videoElement.setAttribute('data-camera-switch-listener', 'true');
 }
 
-// Funktion zum Initialisieren der Webcam.
+/**
+ * Initializes the webcam with the current facing mode
+ * Sets up camera detection and switch button event listeners
+ * 
+ * @returns {Promise<HTMLVideoElement>} The webcam video element
+ */
 async function setupWebcam() {
     try {
-        // Verwende die neue setupWebcamWithFacingMode Funktion
         const webcamElement = await setupWebcamWithFacingMode(currentFacingMode);
         
-        // Überprüfe verfügbare Kameras und konfiguriere Button
         await getAvailableCameras();
         
-        // Füge Event Listener zum Switch-Button hinzu
         const switchButton = document.getElementById('camera-switch-btn');
         if (switchButton && !switchButton.hasAttribute('data-listener-added')) {
             switchButton.addEventListener('click', async () => {
+                switchButton.classList.add('clicked');
+                
+                setTimeout(() => {
+                    switchButton.classList.remove('clicked');
+                }, 600);
+                
                 await switchCamera();
             });
             switchButton.setAttribute('data-listener-added', 'true');
@@ -335,15 +386,19 @@ async function setupWebcam() {
         
         return webcamElement;
     } catch (error) {
-        console.error('Fehler beim Starten der Kamera:', error);
-        // Wirf den Fehler erneut, damit er in der app() Funktion gefangen werden kann
+        console.error('Error starting camera:', error);
         throw error;
     }
 }
 
-// Funktion zum Hinzufügen einer neuen Klasse
+/**
+ * Creates a new class card with webcam preview and capture functionality
+ * Includes camera switching, touch support, and image management
+ * Ensures webcam is ready before allowing class creation
+ * 
+ * @param {string} initialName - Initial name for the class (optional)
+ */
 async function addNewClassCard(initialName = '') {
-    // Stelle sicher, dass die Webcam bereit ist, bevor eine Karte hinzugefügt wird
     if (!mediaStream) {
         alert("Bitte erlaube zuerst den Kamerazugriff.");
         return;
@@ -380,14 +435,31 @@ async function addNewClassCard(initialName = '') {
     webcamPreviewVideo.playsinline = true;
     webcamPreviewVideo.muted = true;
     
+    const cameraSwitchButton = createElement('button', ['camera-switch-button', 'bottom-right'], `camera-switch-btn-${classId}`);
+    cameraSwitchButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
+    cameraSwitchButton.title = 'Kamera wechseln';
+    cameraSwitchButton.style.display = 'none'; 
+    
+    cameraSwitchButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        cameraSwitchButton.classList.add('clicked');
+        
+        setTimeout(() => {
+            cameraSwitchButton.classList.remove('clicked');
+        }, 600);
+        
+        switchCamera();
+    });
+    
     webcamPreviewDiv.appendChild(webcamPreviewVideo);
+    webcamPreviewDiv.appendChild(cameraSwitchButton);
     classCard.appendChild(webcamPreviewDiv);
 
     const inputGroup = createElement('div', ['input-group']);
     const webcamButton = createElement('button', [], `add-class-${classId}`);
     webcamButton.innerHTML = '<i class="fas fa-camera"></i> Bild aufnehmen';
     
-    // --- KORRIGIERT: Event Listener mit manueller Style-Kontrolle ---
     const applyActiveStyle = (btn) => {
         btn.style.backgroundColor = 'var(--primary-color-dark)';
         btn.style.transform = 'translateY(-2px)';
@@ -395,14 +467,11 @@ async function addNewClassCard(initialName = '') {
     };
 
     const resetStyle = (btn) => {
-        // Setzt die Farbe explizit auf den ursprünglichen Wert zurück,
-        // um "klebende" :hover-Styles auf Mobilgeräten zu überschreiben.
         btn.style.backgroundColor = 'var(--primary-color)'; 
         btn.style.transform = '';
         btn.style.boxShadow = '';
     };
 
-    // Maus-Events
     webcamButton.addEventListener('mousedown', () => {
         applyActiveStyle(webcamButton);
         startCapturing(classId);
@@ -412,16 +481,14 @@ async function addNewClassCard(initialName = '') {
         stopCapturing();
     });
     webcamButton.addEventListener('mouseleave', () => {
-        // Style nur zurücksetzen und stoppen, wenn die Aufnahme aktiv war
         if (isCapturing) {
             resetStyle(webcamButton);
             stopCapturing();
         }
     });
     
-    // Touch-Events für mobile Geräte
     webcamButton.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // Verhindert Standard-Touch-Verhalten wie Scrollen oder Zoomen
+        e.preventDefault();
         applyActiveStyle(webcamButton);
         startCapturing(classId);
     });
@@ -445,16 +512,28 @@ async function addNewClassCard(initialName = '') {
         webcamPreviewVideo.srcObject = mediaStream;
         webcamPreviewVideo.play();
         
-        // Füge Doppelklick-Listener auch für Klassen-Webcam-Previews hinzu (nur wenn mehrere Kameras verfügbar)
         await addCameraSwitchListener(webcamPreviewVideo);
+        
+        const hasMultipleCameras = await getAvailableCameras();
+        updateCameraSwitchButtonVisibility(hasMultipleCameras);
     }
 
     updateTrainButtonState();
+    
+    if (isPredicting) {
+        stopPredictionAndShowRetrain();
+    }
 }
 
-// Funktion zum Löschen einer Klasse (AKTUALISIERT)
+/**
+ * Deletes a class and all associated training data
+ * Properly disposes of TensorFlow tensors to prevent memory leaks
+ * Updates UI state and stops prediction if active
+ * 
+ * @param {number} classId - The ID of the class to delete
+ */
 function deleteClass(classId) {
-    console.log('deleteClass aufgerufen für Klasse:', classId);
+    console.log('deleteClass called for class:', classId);
     const classCard = document.getElementById(`class-card-${classId}`);
     if (classCard) classCard.remove();
     
@@ -464,20 +543,30 @@ function deleteClass(classId) {
     
     classNames[classId] = null;
     allClassExamples[classId] = null;
-    isPredicting = false;
     
     updateTrainButtonState();
-    updatePredictionDisplay();
+    
+    if (isPredicting) {
+        stopPredictionAndShowRetrain();
+    } else {
+        updatePredictionDisplay();
+    }
     
     if (classifier.getNumClasses() > 0) {
         classifier.clearAllClasses();
         const status = document.getElementById('training-status');
         if(status) status.textContent = 'Klasse gelöscht. Bitte trainiere das Modell erneut.';
     }
-    console.log('Klasse erfolgreich gelöscht');
+    console.log('Class successfully deleted');
 }
 
-// Asynchrone Aufnahmeschleife, die die UI nicht blockiert
+/**
+ * Asynchronous image capture loop that doesn't block the UI
+ * Captures images from webcam feed and processes them with MobileNet
+ * Creates canvas previews and manages training data
+ * 
+ * @param {number} classId - The class ID to capture images for
+ */
 async function captureLoop(classId) {
     if (!isCapturing) return;
 
@@ -487,7 +576,6 @@ async function captureLoop(classId) {
         return;
     }
     
-    // Überprüfe, ob das Video tatsächlich Daten liefert
     if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
         requestAnimationFrame(() => captureLoop(classId));
         return;
@@ -504,10 +592,8 @@ async function captureLoop(classId) {
         canvas.height = img.shape[0];
         await tf.browser.toPixels(img, canvas);
         
-        // Index des aktuellen Bildes für Löschfunktion
         const imageIndex = allClassExamples[classId].length - 1;
         
-        // Event Listener für Canvas (Vorschau öffnen)
         canvas.addEventListener('click', () => {
             openImageModal(canvas, classId, imageIndex);
         });
@@ -518,131 +604,152 @@ async function captureLoop(classId) {
         const countSpan = document.getElementById(`class-${classId}-count`);
         if (countSpan) countSpan.textContent = `${allClassExamples[classId].length} Bilder`;
         
-        // Aktualisiere das Scrollverhalten basierend auf der Bildanzahl
         updateScrollBehavior(classId);
         
         updateTrainButtonState();
     } catch (error) {
-        console.error('Fehler in captureLoop:', error);
+        console.error('Error in captureLoop:', error);
     } finally {
         img?.dispose();
     }
 
-    // Rufe die nächste Iteration im nächsten Frame auf, nur wenn noch capturing aktiv ist
     if (isCapturing) {
         requestAnimationFrame(() => captureLoop(classId));
     }
 }
 
+/**
+ * Starts the image capture process for a specific class
+ * Disables train button during capture to prevent conflicts
+ * 
+ * @param {number} classId - The class ID to start capturing for
+ */
 function startCapturing(classId) {
     isCapturing = true;
     document.getElementById('train-model').disabled = true;
     captureLoop(classId);
 }
 
+/**
+ * Stops the image capture process
+ * Re-enables UI elements and updates button states
+ */
 function stopCapturing() {
     isCapturing = false;
     updateTrainButtonState();
 }
 
-// Funktion zum Löschen eines einzelnen Bildes
+/**
+ * Deletes a single image from a class
+ * Properly manages tensor disposal and updates image indices
+ * Triggers model retraining requirement notification
+ * 
+ * @param {number} classId - The class ID containing the image
+ * @param {number} imageIndex - Index of the image to delete
+ * @param {HTMLCanvasElement} canvasElement - Canvas element to remove
+ */
 function deleteImage(classId, imageIndex, canvasElement) {
-    // Entferne den Tensor aus dem Speicher
     if (allClassExamples[classId][imageIndex]) {
         allClassExamples[classId][imageIndex].dispose();
     }
     
-    // Entferne das Bild aus dem Array
     allClassExamples[classId].splice(imageIndex, 1);
     
-    // Entferne das HTML-Element
     canvasElement.remove();
     
-    // Aktualisiere die Bildanzahl
     const countSpan = document.getElementById(`class-${classId}-count`);
     if (countSpan) countSpan.textContent = `${allClassExamples[classId].length} Bilder`;
     
-    // Aktualisiere die Indizes der verbleibenden Bilder
     updateImageIndices(classId);
     
-    // Aktualisiere das Scrollverhalten basierend auf der neuen Bildanzahl
     updateScrollBehavior(classId);
     
-    // Aktualisiere den Trainingszustand
     updateTrainButtonState();
     
-    // Falls das Modell bereits trainiert war, muss es neu trainiert werden
     if (classifier.getNumClasses() > 0) {
-        isPredicting = false;
+        if (isPredicting) {
+            stopPredictionAndShowRetrain();
+        } else {
+            updatePredictionDisplay();
+        }
         const status = document.getElementById('training-status');
         if(status) status.textContent = 'Bild entfernt. Bitte trainiere das Modell erneut.';
-        updatePredictionDisplay();
     }
 }
 
-// Hilfsfunktion zum Aktualisieren der Bildindizes nach dem Löschen
+/**
+ * Updates image indices after deletion to maintain proper event listeners
+ * Recreates canvas elements with correct click handlers
+ * 
+ * @param {number} classId - The class ID to update indices for
+ */
 function updateImageIndices(classId) {
     const previewsDiv = document.getElementById(`class-${classId}-previews`);
     if (!previewsDiv) return;
     
     const canvases = previewsDiv.querySelectorAll('canvas');
     canvases.forEach((canvas, newIndex) => {
-        // Erstelle ein neues Canvas mit dem gleichen Inhalt
         const newCanvas = document.createElement('canvas');
         newCanvas.width = canvas.width;
         newCanvas.height = canvas.height;
         
-        // Kopiere den Bildinhalt
         const ctx = newCanvas.getContext('2d');
         ctx.drawImage(canvas, 0, 0);
         
-        // Kopiere CSS-Klassen
         newCanvas.className = canvas.className;
         
-        // Füge Event Listener hinzu
         newCanvas.addEventListener('click', () => {
             openImageModal(newCanvas, classId, newIndex);
         });
         
-        // Ersetze das alte Canvas
         canvas.parentNode.replaceChild(newCanvas, canvas);
     });
 }
 
-// Funktion zum Öffnen des Bildvorschau-Modals
+/**
+ * Opens the image preview modal for detailed view and deletion
+ * Sets up modal content and event handlers
+ * 
+ * @param {HTMLCanvasElement} sourceCanvas - Canvas element containing the image
+ * @param {number} classId - The class ID of the image
+ * @param {number} imageIndex - Index of the image in the class
+ */
 function openImageModal(sourceCanvas, classId, imageIndex) {
     const modal = document.getElementById('image-modal');
     const modalCanvas = document.getElementById('modal-canvas');
     const deleteButton = document.getElementById('modal-delete');
     
-    // Kopiere das Bild in das Modal-Canvas
     const ctx = modalCanvas.getContext('2d');
     modalCanvas.width = sourceCanvas.width;
     modalCanvas.height = sourceCanvas.height;
     ctx.drawImage(sourceCanvas, 0, 0);
     
-    // Entferne alte Event Listener vom Lösch-Button
     const newDeleteButton = deleteButton.cloneNode(true);
     deleteButton.parentNode.replaceChild(newDeleteButton, deleteButton);
     
-    // Füge neuen Event Listener hinzu
     newDeleteButton.addEventListener('click', () => {
         closeImageModal();
         deleteImage(classId, imageIndex, sourceCanvas);
     });
     
-    // Zeige das Modal
     modal.style.display = 'flex';
 }
 
-// Funktion zum Schließen des Modals
+/**
+ * Closes the image preview modal
+ */
 function closeImageModal() {
     const modal = document.getElementById('image-modal');
     modal.style.display = 'none';
 }
 
+/**
+ * Updates the state of the train button based on current conditions
+ * Requires at least 2 active classes with minimum 10 images each
+ * Prevents state changes during active image capture
+ */
 function updateTrainButtonState() {
-    if (isCapturing) return; // Zustand nicht ändern, während aufgenommen wird
+    if (isCapturing) return;
     const trainButton = document.getElementById('train-model');
     const activeClasses = classNames.filter(name => name !== null);
     let hasEnoughExamples = activeClasses.length >= 2;
@@ -657,7 +764,11 @@ function updateTrainButtonState() {
     trainButton.disabled = !hasEnoughExamples;
 }
 
-// Asynchrones Training, das die UI nicht blockiert
+/**
+ * Asynchronous model training that doesn't block the UI
+ * Displays progress feedback and manages classifier state
+ * Automatically starts prediction after successful training
+ */
 async function trainModel() {
     const progressContainer = document.getElementById('training-progress-container');
     const status = document.getElementById('training-status');
@@ -671,7 +782,6 @@ async function trainModel() {
 
     classifier.clearAllClasses();
     
-    // Sammle alle Beispiele, die hinzugefügt werden müssen
     const examplesToAdd = [];
     classNames.forEach((name, classId) => {
         if (name !== null && allClassExamples[classId]) {
@@ -707,6 +817,10 @@ async function trainModel() {
     }, 2000);
 }
 
+/**
+ * Updates prediction display to show placeholder when no model is trained
+ * Resets prediction state and hides preview elements
+ */
 function updatePredictionDisplay() {
     const predictionResults = document.getElementById('prediction-results');
     const previewCard = document.getElementById('preview-card');
@@ -717,6 +831,31 @@ function updatePredictionDisplay() {
     predictionResults.innerHTML = '<p class="placeholder-text">Trainiere das Modell, um Ergebnisse zu sehen!</p>';
 }
 
+/**
+ * Stops prediction and displays retrain warning message
+ * Called when classes are modified and model needs retraining
+ */
+function stopPredictionAndShowRetrain() {
+    if (isPredicting) {
+        isPredicting = false;
+        
+        const predictionResults = document.getElementById('prediction-results');
+        const previewCard = document.getElementById('preview-card');
+        
+        if (predictionResults && previewCard) {
+            // Zeige Hinweistext an
+            predictionResults.innerHTML = '<p class="retrain-warning">Klassen wurden geändert. Bitte trainiere das Modell erneut, um Vorhersagen zu erhalten!</p>';
+            
+            console.log('Prediction stopped - classes were modified');
+        }
+    }
+}
+
+/**
+ * Starts the prediction process after successful model training
+ * Sets up UI elements and initializes the prediction loop
+ * Creates probability bars for each trained class
+ */
 async function startPrediction() {
     if (classifier.getNumClasses() === 0) {
         alert('Bitte trainiere den Computer zuerst mit Bildern!');
@@ -734,7 +873,6 @@ async function startPrediction() {
     document.getElementById('prediction-results').innerHTML = '';
     document.getElementById('main-webcam-container').style.display = 'flex';
 
-    // Füge Doppelklick-Listener zum Haupt-Webcam-Element hinzu (nur wenn mehrere Kameras verfügbar)
     const mainWebcam = document.getElementById('webcam');
     if (mainWebcam) {
         await addCameraSwitchListener(mainWebcam);
@@ -756,6 +894,11 @@ async function startPrediction() {
     predictLoop();
 }
 
+/**
+ * Main prediction loop that runs real-time classification
+ * Processes webcam frames and updates probability displays
+ * Includes confidence threshold to filter low-confidence predictions
+ */
 async function predictLoop() {
     if (!isPredicting) return;
 
@@ -763,13 +906,11 @@ async function predictLoop() {
     try {
         const videoElement = document.getElementById('webcam');
         
-        // Überprüfe, ob das Video-Element existiert und bereit ist
         if (!videoElement || !videoElement.srcObject || videoElement.paused || videoElement.ended) {
             requestAnimationFrame(predictLoop);
             return;
         }
         
-        // Überprüfe, ob das Video tatsächlich Daten liefert
         if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
             requestAnimationFrame(predictLoop);
             return;
@@ -793,8 +934,7 @@ async function predictLoop() {
             }
         });
     } catch (error) {
-        console.error('Fehler in predictLoop:', error);
-        // Bei Fehlern kurz warten, bevor der nächste Versuch gestartet wird
+        console.error('Error in predictLoop:', error);
         setTimeout(() => {
             if (isPredicting) {
                 requestAnimationFrame(predictLoop);
@@ -806,33 +946,34 @@ async function predictLoop() {
         await tf.nextFrame();
     }
     
-    // Nur fortfahren, wenn Vorhersage noch aktiv ist
     if (isPredicting) {
         requestAnimationFrame(predictLoop);
     }
 }
 
-// Hauptfunktion der App mit neuer Lade-Logik
+/**
+ * Main application initialization function
+ * Handles parallel loading of webcam and MobileNet model
+ * Manages loading UI states and error handling
+ * Sets up all application event listeners
+ */
 async function app() {
-    // Hole Referenzen zu den UI-Elementen für den Lade- und Hauptbildschirm
     const loadingOverlay = document.getElementById('loading-overlay');
     const mainContent = document.querySelector('main');
     const header = document.querySelector('header');
     const cameraStep = document.getElementById('loading-step-camera');
     const modelStep = document.getElementById('loading-step-model');
 
-    // Hilfsfunktion, um einen Ladeschritt in der UI zu aktualisieren (Erfolg/Misserfolg)
     const updateStep = (stepElement, success, message = '') => {
         const icon = stepElement.querySelector('i');
         if (success) {
             icon.classList.remove('fa-spinner', 'fa-spin');
-            icon.classList.add('fa-check-circle'); // Grüner Haken
+            icon.classList.add('fa-check-circle');
             stepElement.classList.add('completed');
         } else {
             icon.classList.remove('fa-spinner', 'fa-spin');
-            icon.classList.add('fa-times-circle'); // Rotes Kreuz
+            icon.classList.add('fa-times-circle');
             stepElement.classList.add('failed');
-            // Füge eine detailliertere Fehlermeldung hinzu, falls vorhanden
             if (message) {
                 const errorSpan = createElement('span', ['error-message'], '', message);
                 stepElement.appendChild(errorSpan);
@@ -840,10 +981,9 @@ async function app() {
         }
     };
 
-    // Definiere die beiden Lade-Aufgaben (Promises)
     const webcamPromise = setupWebcam()
         .then(webcamResult => {
-            updateStep(cameraStep, true); // Update UI: Kamera erfolgreich
+            updateStep(cameraStep, true);
             return webcamResult;
         })
         .catch(err => {
@@ -853,7 +993,7 @@ async function app() {
 
     const modelPromise = mobilenet.load({ version: 2, alpha: 1.0 })
         .then(loadedNet => {
-            updateStep(modelStep, true); // Update UI: Modell erfolgreich
+            updateStep(modelStep, true);
             return loadedNet;
         })
         .catch(err => {
@@ -861,46 +1001,36 @@ async function app() {
             throw err; // Fehler weiterwerfen
         });
 
-    // Warte, bis BEIDE Aufgaben abgeschlossen sind
     try {
         const [webcamResult, loadedNet] = await Promise.all([webcamPromise, modelPromise]);
         
-        // Weise das geladene Modell der globalen Variable zu
         net = loadedNet;
-        console.log('MobileNet und Kamera erfolgreich geladen. App wird gestartet.');
+        console.log('MobileNet and camera successfully loaded. Starting app.');
 
-        // Kurze Verzögerung, damit der Benutzer die grünen Haken sieht, dann App einblenden
         setTimeout(() => {
-            loadingOverlay.style.opacity = '0'; // Fade out
-            // Nachdem die Animation beendet ist, das Overlay aus dem Layout entfernen
+            loadingOverlay.style.opacity = '0';
             loadingOverlay.addEventListener('transitionend', () => {
                 loadingOverlay.classList.add('hidden');
             });
             
-            // Hauptinhalt einblenden
             header.classList.remove('hidden');
             mainContent.classList.remove('hidden');
         }, 500);
 
     } catch (error) {
-        console.error("Initialisierung fehlgeschlagen:", error);
-        // Die Fehlermeldung wird bereits im jeweiligen Schritt angezeigt.
+        console.error("Initialization failed:", error);
     }
 
-    // Event Listener für die Buttons der App hinzufügen
     document.getElementById('add-new-class').addEventListener('click', () => addNewClassCard());
     document.getElementById('train-model').addEventListener('click', trainModel);
     
-    // Event Listener für das Bildvorschau-Modal
     document.getElementById('modal-close').addEventListener('click', closeImageModal);
     document.getElementById('image-modal').addEventListener('click', (e) => {
-        // Schließe Modal wenn auf den Hintergrund geklickt wird
         if (e.target.id === 'image-modal') {
             closeImageModal();
         }
     });
     
-    // Event Listener für das Legal-Modal
     document.getElementById('impressum-link').addEventListener('click', (e) => {
         e.preventDefault();
         openLegalModal('impressum');
@@ -913,13 +1043,11 @@ async function app() {
     
     document.getElementById('legal-modal-close').addEventListener('click', closeLegalModal);
     document.getElementById('legal-modal').addEventListener('click', (e) => {
-        // Schließe Modal wenn auf den Hintergrund geklickt wird
         if (e.target.id === 'legal-modal') {
             closeLegalModal();
         }
     });
     
-    // ESC-Taste zum Schließen der Modals
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeImageModal();
@@ -928,7 +1056,17 @@ async function app() {
     });
 }
 
-// Legal Modal Funktionalität
+/**
+ * Legal Modal Management Functions
+ * Handles display of legal information (Impressum and Privacy Policy)
+ */
+
+/**
+ * Opens the legal modal with specified content type
+ * Prevents background scrolling while modal is open
+ * 
+ * @param {string} type - Content type ('impressum' or 'datenschutz')
+ */
 function openLegalModal(type) {
     const modal = document.getElementById('legal-modal');
     const title = document.getElementById('legal-modal-title');
@@ -943,15 +1081,22 @@ function openLegalModal(type) {
     }
     
     modal.style.display = 'block';
-    document.body.style.overflow = 'hidden'; // Verhindert Scrollen im Hintergrund
+    document.body.style.overflow = 'hidden';
 }
 
+/**
+ * Closes the legal modal and restores background scrolling
+ */
 function closeLegalModal() {
     const modal = document.getElementById('legal-modal');
     modal.style.display = 'none';
-    document.body.style.overflow = 'auto'; // Erlaubt wieder Scrollen
+    document.body.style.overflow = 'auto';
 }
 
+/**
+ * Returns the German legal imprint content
+ * @returns {string} HTML content for Impressum
+ */
 function getImpressumContent() {
     return `
         <h2>Angaben gemäß § 5 TMG</h2>
@@ -1011,6 +1156,12 @@ function getImpressumContent() {
     `;
 }
 
+/**
+ * Returns the German privacy policy content
+ * Comprehensive privacy documentation for local data processing
+ * 
+ * @returns {string} HTML content for privacy policy
+ */
 function getDatenschutzContent() {
     return `
         <div class="highlight-box">
@@ -1153,5 +1304,8 @@ function getDatenschutzContent() {
     `;
 }
 
-// Starte die App, sobald das gesamte HTML-Dokument geladen ist
+/**
+ * Application Entry Point
+ * Starts the application when the DOM is fully loaded
+ */
 document.addEventListener('DOMContentLoaded', app);
