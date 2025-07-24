@@ -53,10 +53,17 @@ async function getAvailableCameras() {
 
 // Funktion zum Aktualisieren der Button-Sichtbarkeit
 function updateCameraSwitchButtonVisibility(hasMultipleCameras) {
+    // Haupt-Kamera-Switch-Button
     const switchButton = document.getElementById('camera-switch-btn');
     if (switchButton) {
         switchButton.style.display = hasMultipleCameras ? 'flex' : 'none';
     }
+    
+    // Alle Klassen-Preview-Kamera-Switch-Buttons
+    const classButtons = document.querySelectorAll('[id^="camera-switch-btn-"]');
+    classButtons.forEach(button => {
+        button.style.display = hasMultipleCameras ? 'flex' : 'none';
+    });
 }
 
 // Funktion zum Aktualisieren aller Event-Listener basierend auf Kamera-Verfügbarkeit
@@ -328,6 +335,14 @@ async function setupWebcam() {
         const switchButton = document.getElementById('camera-switch-btn');
         if (switchButton && !switchButton.hasAttribute('data-listener-added')) {
             switchButton.addEventListener('click', async () => {
+                // Füge die Click-Animation hinzu
+                switchButton.classList.add('clicked');
+                
+                // Entferne die Animation nach Abschluss
+                setTimeout(() => {
+                    switchButton.classList.remove('clicked');
+                }, 600);
+                
                 await switchCamera();
             });
             switchButton.setAttribute('data-listener-added', 'true');
@@ -380,7 +395,29 @@ async function addNewClassCard(initialName = '') {
     webcamPreviewVideo.playsinline = true;
     webcamPreviewVideo.muted = true;
     
+    // Erstelle Kamera-Switch-Button für diesen Preview
+    const cameraSwitchButton = createElement('button', ['camera-switch-button', 'bottom-right'], `camera-switch-btn-${classId}`);
+    cameraSwitchButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
+    cameraSwitchButton.title = 'Kamera wechseln';
+    cameraSwitchButton.style.display = 'none'; // Initial ausgeblendet
+    
+    // Event-Listener für den Kamera-Switch-Button
+    cameraSwitchButton.addEventListener('click', (e) => {
+        e.stopPropagation(); // Verhindert, dass das Event an das Video weitergegeben wird
+        
+        // Füge die Click-Animation hinzu
+        cameraSwitchButton.classList.add('clicked');
+        
+        // Entferne die Animation nach Abschluss
+        setTimeout(() => {
+            cameraSwitchButton.classList.remove('clicked');
+        }, 600);
+        
+        switchCamera();
+    });
+    
     webcamPreviewDiv.appendChild(webcamPreviewVideo);
+    webcamPreviewDiv.appendChild(cameraSwitchButton);
     classCard.appendChild(webcamPreviewDiv);
 
     const inputGroup = createElement('div', ['input-group']);
@@ -447,6 +484,10 @@ async function addNewClassCard(initialName = '') {
         
         // Füge Doppelklick-Listener auch für Klassen-Webcam-Previews hinzu (nur wenn mehrere Kameras verfügbar)
         await addCameraSwitchListener(webcamPreviewVideo);
+        
+        // Aktualisiere die Button-Sichtbarkeit für den neuen Kamera-Switch-Button
+        const hasMultipleCameras = await getAvailableCameras();
+        updateCameraSwitchButtonVisibility(hasMultipleCameras);
     }
 
     updateTrainButtonState();
