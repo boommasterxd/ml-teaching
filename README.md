@@ -55,7 +55,7 @@ Du möchtest The Teachable Machine auf deinem eigenen System ausführen oder wei
 
 ### Wichtiger Hinweis für das Hosting
 
-Bitte beachte, dass du die Daten im Impressum und in der Datenschutzerklärung (falls vorhanden und relevant für deine Nutzung) anpassen musst, um den gesetzlichen Anforderungen zu entsprechen.
+Bitte beachte, dass du die Daten im Impressum und in der Datenschutzerklärung anpassen musst, um den gesetzlichen Anforderungen zu entsprechen.
 
 ## 🛠️ Verwendete Technologien
 
@@ -133,7 +133,7 @@ Do you want to run or develop The Teachable Machine on your own system? No probl
 
 ### Important Note for Hosting
 
-Please note that you must adjust the data in the impressum (legal notice) and privacy policy (if available and relevant for your use) to comply with legal requirements.
+Please note that you must adjust the data in the impressum (legal notice) and privacy policy to comply with legal requirements.
 
 ## 🛠️ Technologies Used
 
