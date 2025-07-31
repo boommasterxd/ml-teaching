@@ -1028,6 +1028,7 @@ footer {
 @media (max-width: 768px) {
     main.single-column-layout {
         padding: var(--space-xl) var(--space-md);
+        max-width: calc(100vw - 2 * var(--space-md)); /* Ensure cards don't exceed viewport */
     }
     .footer-links {
         flex-direction: column;
@@ -1092,6 +1093,28 @@ footer {
 }
 
 @media (max-width: 480px) {
+    main.single-column-layout {
+        padding: var(--space-md) var(--space-sm);
+        max-width: calc(100vw - 2 * var(--space-sm)); /* Even tighter constraints for small phones */
+    }
+
+    .card {
+        padding: var(--space-md); /* Reduce card padding on small screens */
+    }
+
+    .cta-card {
+        padding: var(--space-lg);
+    }
+
+
+    #animation-card {
+        display: none; /* Hide animation card on very small screens */
+    }
+
+    #animation-explanation {
+        display: none; /* Hide animation explanation on very small screens */
+    }
+
     video {
         max-width: 70vw;
         min-width: 60vw;
@@ -1102,6 +1125,45 @@ footer {
         max-width: 65vw;
         min-width: 55vw;
         min-height: 41vw;
+    }
+}
+
+/* Extra small screens (phones under 375px) */
+@media (max-width: 375px) {
+    main.single-column-layout {
+        padding: var(--space-sm);
+        max-width: calc(100vw - 2 * var(--space-sm));
+    }
+
+    .card {
+        padding: var(--space-sm) calc(var(--space-sm) * 1.5); /* Minimal but usable padding */
+        max-width: calc(100vw - 2 * calc(1.5 *var(--space-sm)));
+        margin-left: var(--space-sm);
+        margin-right: var(--space-sm);
+    }
+
+    .cta-card {
+        padding: var(--space-lg);
+    }
+
+    header {
+        padding: var(--space-lg) var(--space-sm);
+    }
+
+    .header-content {
+        gap: var(--space-sm);
+    }
+
+    .header-logo {
+        height: 40px;
+    }
+
+    header h1 {
+        font-size: 1.3rem;
+    }
+
+    header p {
+        font-size: 0.9rem;
     }
 }
 
