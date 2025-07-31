@@ -1026,6 +1026,9 @@ footer {
 
 /* Responsive design for footer and modal on mobile */
 @media (max-width: 768px) {
+    main.single-column-layout {
+        padding: var(--space-xl) var(--space-md);
+    }
     .footer-links {
         flex-direction: column;
         gap: var(--space-sm);
