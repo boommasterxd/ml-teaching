@@ -45,6 +45,12 @@ body {
     line-height: 1.6;
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
+    opacity: 1;
+    transition: opacity 0.4s ease-in-out;
+}
+
+body.is-loading {
+    opacity: 0;
 }
 
 /* Loading Overlay Styles */
@@ -141,10 +147,11 @@ header {
     color: white;
     text-align: center;
     padding: var(--space-xl) var(--space-md);
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-xxl);
     border-bottom-left-radius: var(--border-radius);
     border-bottom-right-radius: var(--border-radius);
     box-shadow: var(--shadow);
+    position: relative;
 }
 
 .header-content {
@@ -154,6 +161,22 @@ header {
     gap: var(--space-lg);
     max-width: 800px;
     margin: 0 auto;
+}
+
+.back-button {
+    position: absolute;
+    left: var(--space-xl);
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    font-size: 2rem;
+    text-decoration: none;
+    transition: transform 0.2s ease;
+    padding: var(--space-sm);
+}
+
+.back-button:hover {
+    transform: translateY(-50%) scale(1.1);
 }
 
 .header-logo {
@@ -202,6 +225,7 @@ main.single-column-layout {
     padding: 0 var(--space-xl);
     max-width: 800px; 
     margin: 0 auto;
+    padding-bottom: var(--space-xxl);
 }
 
 .column {
@@ -266,7 +290,7 @@ main.single-column-layout {
 }
 
 /* Button styles with mobile touch optimizations */
-button {
+button, .cta-button {
     font-family: 'Poppins', sans-serif;
     padding: 0.8rem 1.5rem;
     border: none;
@@ -731,7 +755,7 @@ video:active {
 }
 
 /* Explanation box for displaying information */
-#explanation {
+#explanation, .explanation-box {
     max-width: 800px;
     margin-left: auto;
     margin-right: auto;
@@ -739,11 +763,16 @@ video:active {
     background-color: var(--card-background);
     border-radius: var(--border-radius);
     border-left: 5px solid var(--primary-color);
+    box-shadow: var(--shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: popIn 0.5s ease-out forwards;
+    opacity: 0;
 }
 
-#explanation h3 {
+#explanation h3, .explanation-box h3 {
     border-bottom: none;
     padding-bottom: 0;
+    margin-bottom: var(--space-md);
 }
 
 /* Animation keyframes */
@@ -814,6 +843,21 @@ footer {
 
 .footer-links {
     margin-bottom: var(--space-md);
+}
+
+.footer-project-notice {
+    margin-bottom: var(--space-md);
+    color: var(--text-color-light);
+    font-size: 0.9rem;
+}
+
+.footer-project-notice a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.footer-project-notice a:hover {
+    text-decoration: underline;
 }
 
 .footer-links a {
@@ -1056,4 +1100,88 @@ footer {
         min-width: 55vw;
         min-height: 41vw;
     }
+}
+
+/* Styles for the explanation page (index.html) */
+.step {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.step:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+.step h3 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    border-bottom: none; /* Override card h3 style */
+    padding-bottom: 0;
+    margin-bottom: var(--space-sm);
+    color: var(--text-color);
+}
+
+.step h3 .step-number {
+    color: white;
+}
+
+.step h3 i {
+    color: var(--text-color);
+}
+
+.step-number {
+    background-color: var(--text-color);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.cta-card {
+    text-align: center;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-color-dark));
+    color: white;
+}
+
+.cta-card h2, .cta-card p {
+    color: white;
+}
+
+.cta-card h2 {
+    border-bottom: none;
+    justify-content: center;
+}
+
+.cta-button {
+    display: inline-block;
+    width: auto; /* Override default button width */
+    margin-top: var(--space-lg);
+    background-color: white;
+    color: var(--primary-color);
+    padding: 0.8rem 2.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+
+#animation-placeholder {
+    border-radius: 8px; 
+    padding: 1rem;
+    display: block; 
+    margin-top: 1rem;
 }
