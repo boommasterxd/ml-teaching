@@ -27,7 +27,7 @@
  */
 
 // Global Application State
-const classifier = knnClassifier.create();
+let classifier;
 let net;
 let mediaStream = null;
 let isPredicting = false;
@@ -273,8 +273,12 @@ async function updateAllVideoElements() {
     }
 
     if (mainWebcam && mediaStream) {
-        const currentWidth = mainWebcam.style.width || mainWebcam.offsetWidth;
-        const currentHeight = mainWebcam.style.height || mainWebcam.offsetHeight;
+        const computedStyle = window.getComputedStyle(mainWebcam);
+        const currentWidth = mainWebcam.style.width || computedStyle.width;
+        const currentHeight = mainWebcam.style.height || computedStyle.height;
+        
+        const absoluteWidth = parseInt(currentWidth) + 'px';
+        const absoluteHeight = parseInt(currentHeight) + 'px';
 
         mainWebcam.srcObject = mediaStream;
         await new Promise((resolve, reject) => {
@@ -282,12 +286,16 @@ async function updateAllVideoElements() {
                 try {
                     await mainWebcam.play();
 
-                    if (currentWidth && currentHeight) {
-                        mainWebcam.style.width = typeof currentWidth === 'number' ? `${currentWidth}px` : currentWidth;
-                        mainWebcam.style.height = typeof currentHeight === 'number' ? `${currentHeight}px` : currentHeight;
+                    if (absoluteWidth && absoluteHeight && parseInt(absoluteWidth) > 0 && parseInt(absoluteHeight) > 0) {
+                        mainWebcam.style.width = absoluteWidth;
+                        mainWebcam.style.height = absoluteHeight;
+                        mainWebcam.style.objectFit = 'cover';
+                        mainWebcam.style.maxWidth = 'none';
+                        mainWebcam.style.minWidth = 'unset';
+                        mainWebcam.style.minHeight = 'unset';
                     }
 
-                    console.log('Main webcam stream updated and playing.');
+                    console.log('Main webcam stream updated and playing with preserved dimensions:', absoluteWidth, absoluteHeight);
 
                     await addCameraSwitchListener(mainWebcam);
 
@@ -307,17 +315,28 @@ async function updateAllVideoElements() {
     const previewVideos = document.querySelectorAll('[id^="webcam-preview-"]');
     for (const video of previewVideos) {
         if (mediaStream) {
-            const currentWidth = video.style.width || video.offsetWidth;
-            const currentHeight = video.style.height || video.offsetHeight;
+            const computedStyle = window.getComputedStyle(video);
+            const currentWidth = video.style.width || computedStyle.width;
+            const currentHeight = video.style.height || computedStyle.height;
+            
+            const absoluteWidth = parseInt(currentWidth) + 'px';
+            const absoluteHeight = parseInt(currentHeight) + 'px';
 
             video.srcObject = mediaStream;
             try {
                 await video.play();
 
-                if (currentWidth && currentHeight) {
-                    video.style.width = typeof currentWidth === 'number' ? `${currentWidth}px` : currentWidth;
-                    video.style.height = typeof currentHeight === 'number' ? `${currentHeight}px` : currentHeight;
+                if (absoluteWidth && absoluteHeight && parseInt(absoluteWidth) > 0 && parseInt(absoluteHeight) > 0) {
+                    video.style.width = absoluteWidth;
+                    video.style.height = absoluteHeight;
+                    video.style.objectFit = 'cover';
+                    video.style.maxWidth = 'none';
+                    video.style.minWidth = 'unset';
+                    video.style.minHeight = 'unset';
+                    video.style.aspectRatio = 'unset';
                 }
+                
+                console.log('Preview video updated with preserved dimensions:', absoluteWidth, absoluteHeight);
             } catch (error) {
                 console.error('Error playing preview video:', error);
             }
@@ -740,7 +759,9 @@ function openImageModal(sourceCanvas, classId, imageIndex) {
  */
 function closeImageModal() {
     const modal = document.getElementById('image-modal');
-    modal.style.display = 'none';
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 /**
@@ -958,95 +979,115 @@ async function predictLoop() {
  * Sets up all application event listeners
  */
 async function app() {
-    const loadingOverlay = document.getElementById('loading-overlay');
-    const mainContent = document.querySelector('main');
-    const header = document.querySelector('header');
-    const cameraStep = document.getElementById('loading-step-camera');
-    const modelStep = document.getElementById('loading-step-model');
+    const impressumLink = document.getElementById('impressum-link');
+    const datenschutzLink = document.getElementById('datenschutz-link');
+    const legalModalClose = document.getElementById('legal-modal-close');
+    const legalModal = document.getElementById('legal-modal');
 
-    const updateStep = (stepElement, success, message = '') => {
-        const icon = stepElement.querySelector('i');
-        if (success) {
-            icon.classList.remove('fa-spinner', 'fa-spin');
-            icon.classList.add('fa-check-circle');
-            stepElement.classList.add('completed');
-        } else {
-            icon.classList.remove('fa-spinner', 'fa-spin');
-            icon.classList.add('fa-times-circle');
-            stepElement.classList.add('failed');
-            if (message) {
-                const errorSpan = createElement('span', ['error-message'], '', message);
-                stepElement.appendChild(errorSpan);
-            }
-        }
-    };
-
-    const webcamPromise = setupWebcam()
-        .then(webcamResult => {
-            updateStep(cameraStep, true);
-            return webcamResult;
-        })
-        .catch(err => {
-            updateStep(cameraStep, false, 'Zugriff verweigert oder Kamera nicht gefunden.');
-            throw err; // Wichtig: Fehler weiterwerfen, damit Promise.all fehlschlägt
+    if (impressumLink) {
+        impressumLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openLegalModal('impressum');
         });
-
-    const modelPromise = mobilenet.load({ version: 2, alpha: 1.0 })
-        .then(loadedNet => {
-            updateStep(modelStep, true);
-            return loadedNet;
-        })
-        .catch(err => {
-            updateStep(modelStep, false, 'Netzwerkfehler beim Laden des Modells.');
-            throw err; // Fehler weiterwerfen
-        });
-
-    try {
-        const [webcamResult, loadedNet] = await Promise.all([webcamPromise, modelPromise]);
-
-        net = loadedNet;
-        console.log('MobileNet and camera successfully loaded. Starting app.');
-
-        setTimeout(() => {
-            loadingOverlay.style.opacity = '0';
-            loadingOverlay.addEventListener('transitionend', () => {
-                loadingOverlay.classList.add('hidden');
-            });
-
-            header.classList.remove('hidden');
-            mainContent.classList.remove('hidden');
-        }, 500);
-
-    } catch (error) {
-        console.error("Initialization failed:", error);
     }
 
-    document.getElementById('add-new-class').addEventListener('click', () => addNewClassCard());
-    document.getElementById('train-model').addEventListener('click', trainModel);
+    if (datenschutzLink) {
+        datenschutzLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openLegalModal('datenschutz');
+        });
+    }
 
-    document.getElementById('modal-close').addEventListener('click', closeImageModal);
-    document.getElementById('image-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'image-modal') {
-            closeImageModal();
+    if (legalModalClose) {
+        legalModalClose.addEventListener('click', closeLegalModal);
+    }
+
+    if (legalModal) {
+        legalModal.addEventListener('click', (e) => {
+            if (e.target.id === 'legal-modal') {
+                closeLegalModal();
+            }
+        });
+    }
+
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) {
+        classifier = knnClassifier.create();
+        const mainContent = document.querySelector('main');
+        const header = document.querySelector('header');
+        const cameraStep = document.getElementById('loading-step-camera');
+        const modelStep = document.getElementById('loading-step-model');
+
+        const updateStep = (stepElement, success, message = '') => {
+            const icon = stepElement.querySelector('i');
+            if (success) {
+                icon.classList.remove('fa-spinner', 'fa-spin');
+                icon.classList.add('fa-check-circle');
+                stepElement.classList.add('completed');
+            } else {
+                icon.classList.remove('fa-spinner', 'fa-spin');
+                icon.classList.add('fa-times-circle');
+                stepElement.classList.add('failed');
+                if (message) {
+                    const errorSpan = createElement('span', ['error-message'], '', message);
+                    stepElement.appendChild(errorSpan);
+                }
+            }
+        };
+
+        const webcamPromise = setupWebcam()
+            .then(webcamResult => {
+                updateStep(cameraStep, true);
+                return webcamResult;
+            })
+            .catch(err => {
+                updateStep(cameraStep, false, 'Zugriff verweigert oder Kamera nicht gefunden.');
+                throw err; 
+            });
+
+        const modelPromise = mobilenet.load({ version: 2, alpha: 1.0 })
+            .then(loadedNet => {
+                updateStep(modelStep, true);
+                return loadedNet;
+            })
+            .catch(err => {
+                updateStep(modelStep, false, 'Netzwerkfehler beim Laden des Modells.');
+                throw err; 
+            });
+
+        try {
+            const [webcamResult, loadedNet] = await Promise.all([webcamPromise, modelPromise]);
+
+            net = loadedNet;
+            console.log('MobileNet and camera successfully loaded. Starting app.');
+
+            setTimeout(() => {
+                loadingOverlay.style.opacity = '0';
+                loadingOverlay.addEventListener('transitionend', () => {
+                    loadingOverlay.classList.add('hidden');
+                });
+
+                header.classList.remove('hidden');
+                mainContent.classList.remove('hidden');
+            }, 500);
+
+        } catch (error) {
+            console.error("Initialization failed:", error);
         }
-    });
 
-    document.getElementById('impressum-link').addEventListener('click', (e) => {
-        e.preventDefault();
-        openLegalModal('impressum');
-    });
+        document.getElementById('add-new-class').addEventListener('click', () => addNewClassCard());
+        document.getElementById('train-model').addEventListener('click', trainModel);
 
-    document.getElementById('datenschutz-link').addEventListener('click', (e) => {
-        e.preventDefault();
-        openLegalModal('datenschutz');
-    });
-
-    document.getElementById('legal-modal-close').addEventListener('click', closeLegalModal);
-    document.getElementById('legal-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'legal-modal') {
-            closeLegalModal();
-        }
-    });
+        const modalClose = document.getElementById('modal-close');
+        if(modalClose) modalClose.addEventListener('click', closeImageModal);
+        
+        const imageModal = document.getElementById('image-modal');
+        if(imageModal) imageModal.addEventListener('click', (e) => {
+            if (e.target.id === 'image-modal') {
+                closeImageModal();
+            }
+        });
+    }
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -1264,3 +1305,10 @@ function getDatenschutzContent() {
  * Starts the application when the DOM is fully loaded
  */
 document.addEventListener('DOMContentLoaded', app);
+
+window.addEventListener('load', () => {
+    // Prevents a flicker of the header on page reload when scrolled down
+    if (document.body.classList.contains('is-loading')) {
+        document.body.classList.remove('is-loading');
+    }
+});

@@ -1,0 +1,199 @@
+/* Keyframe animation for the activation pulse */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(213, 19, 23, 0.7);
+    }
+    70% {
+        transform: scale(1.1);
+        box-shadow: 0 0 10px 15px rgba(213, 19, 23, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(213, 19, 23, 0);
+    }
+}
+
+#animation-placeholder .main-container {
+    text-align: center;
+    width: 100%;
+    max-width: 100%; 
+    padding: 0;
+}
+
+#animation-placeholder .controls {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#animation-placeholder .cta-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin: 0 8px;
+    width: auto; 
+    display: inline-flex;
+}
+
+#animation-placeholder .cta-button:hover {
+    background-color: var(--primary-color-dark);
+    transform: translateY(-2px);
+}
+
+#animation-placeholder .cta-button:active {
+    transform: translateY(0);
+}
+
+#animation-placeholder .cta-button:disabled {
+    background-color: var(--text-color-light);
+    cursor: not-allowed;
+    transform: translateY(0);
+}
+
+#animation-placeholder .network-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 3fr 1fr;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+}
+
+/* Styles for the network visualization */
+#animation-placeholder .network-visualization {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    min-height: 200px;
+    position: relative;
+}
+
+#animation-placeholder .layer {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    height: 150px;
+    align-items: center;
+    z-index: 2;
+}
+
+#animation-placeholder .layer-title {
+    color: var(--text-color-light);
+    font-weight: bold;
+    margin-bottom: 1rem;
+    position: absolute;
+    top: -5px;
+    background-color: var(--card-background);
+    padding: 0 5px;
+    font-size: 0.9rem;
+}
+
+#animation-placeholder .combined-hidden-title {
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--text-color-light);
+    font-weight: bold;
+    background-color: var(--card-background);
+    padding: 0 10px;
+    z-index: 3;
+    font-size: 0.9rem;
+}
+
+/* Styles for the nodes (neurons) */
+#animation-placeholder .node {
+    width: 25px;
+    height: 25px;
+    background-color: var(--card-background);
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+#animation-placeholder .node.active {
+    border-color: var(--primary-color);
+    background-color: var(--primary-color);
+    animation: pulse 0.6s ease-out;
+}
+
+/* SVG container for the connections */
+#animation-placeholder .connections {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+#animation-placeholder .connection {
+    stroke: var(--border-color);
+    stroke-width: 2;
+    transition: stroke 0.3s ease, stroke-width 0.3s ease;
+}
+
+#animation-placeholder .connection.active {
+    stroke: var(--primary-color);
+    stroke-width: 3;
+}
+
+/* Input and Output Panels */
+#animation-placeholder .input-panel, #animation-placeholder .output-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    height: 100%;
+    z-index: 2;
+}
+
+#animation-placeholder .input-icon-container {
+    border: 3px solid transparent;
+    border-radius: 12px;
+    padding: 5px;
+    transition: all 0.3s ease;
+    color: var(--text-color-light);
+}
+
+#animation-placeholder .input-icon-container.active {
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+#animation-placeholder .input-icon-container i {
+    font-size: 50px;
+    display: block;
+}
+
+#animation-placeholder .output-display {
+    border: 3px solid var(--border-color);
+    border-radius: 12px;
+    padding: 15px;
+    width: 100px;
+    min-height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+#animation-placeholder .output-display.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px var(--primary-color);
+}
+
+#animation-placeholder #output-text {
+    color: var(--primary-color);
+    font-weight: bold;
+    font-size: 1rem;
+}
