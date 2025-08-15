@@ -16,93 +16,152 @@
 
     <!-- Main application stylesheet -->
     <link rel="stylesheet" href="style.css">
+    <!-- Animation styles -->
+    <link rel="stylesheet" href="animation.css">
 </head>
 
-<body>
+<body class="is-loading">
 
-    <!-- Loading overlay shown during app initialization -->
-    <div id="loading-overlay">
-        <div class="loading-box">
-            <h2>Initialisierung...</h2>
-            <p>Bitte einen Moment Geduld, die Anwendung wird vorbereitet.</p>
-            <ul class="loading-steps">
-                <li id="loading-step-camera">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <span>Kamerazugriff erlauben</span>
-                </li>
-                <li id="loading-step-model">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <span>KI-Modell wird geladen</span>
-                </li>
-            </ul>
-        </div>
-    </div>
-
-
-    <!-- Main content - initially hidden until app is ready -->
-    <header class="hidden">
+    <!-- Header Section -->
+    <header>
         <div class="header-content">
             <img src="images/alp_logo.png" alt="ALP Logo" class="header-logo">
             <div class="header-text">
-                <h1>The teachable machine</h1>
-                <p>Bringe dem Computer bei, Dinge mit deiner Webcam zu erkennen!</p>
+                <h1>Willkommen bei The Teachable Machine</h1>
+                <p>Eine einfache Einführung in die Welt der Künstlichen Intelligenz.</p>
             </div>
         </div>
     </header>
 
-    <main class="single-column-layout hidden">
+    <!-- Main Content Area -->
+    <main class="single-column-layout">
+        <section id="explanation-section" class="column">
 
-        <!-- Main column containing the entire training workflow -->
-        <section id="main-column" class="column">
-            <div>
-                <h2><i class="fas fa-layer-group"></i> 1. Sammle deine Daten</h2>
-                <p>Füge Klassen hinzu und zeige dem Computer, was er lernen soll.</p>
+            <!-- Introduction Card -->
+            <div class="card">
+                <h2><i class="fas fa-rocket"></i> Was ist das hier?</h2>
+                <p>Mit "The Teachable Machine" kannst du einem Computer beibringen, Objekte mit deiner Kamera zu
+                    erkennen – ganz ohne Programmierkenntnisse! Du trainierst ein eigenes KI-Modell direkt in deinem
+                    Browser. Alle deine Daten bleiben dabei sicher auf deinem Gerät.</p>
             </div>
 
-            <div id="class-cards-container"></div>
+            <!-- "How it works" Card -->
+            <div class="card">
+                <h2><i class="fas fa-cogs"></i> So funktioniert's: In 3 einfachen Schritten</h2>
 
-            <button id="add-new-class"><i class="fas fa-plus"></i> Neue Klasse hinzufügen</button>
+                <div class="step">
+                    <h3><span class="step-number">1</span>Daten sammeln</h3>
+                    <p>Gib den Dingen, die der Computer lernen soll, einen Namen (z.B. "Meine Hand" oder "Kaffeetasse").
+                        Halte dann das Objekt in die Kamera und nimm viele Bilder aus verschiedenen Winkeln auf. Je mehr
+                        Bilder, desto besser lernt die KI!</p>
+                </div>
 
-            <div class="card training-card">
-                <h3><i class="fas fa-brain"></i> 2. Modell trainieren</h3>
-                <p>Du brauchst mindestens 2 Klassen mit je 10+ Bildern.</p>
-                <button id="train-model" disabled>Modell trainieren</button>
+                <div class="step">
+                    <h3><span class="step-number">2</span>Modell trainieren</h3>
+                    <p>Wenn du genug Bilder für mindestens zwei verschiedene Objekte gesammelt hast, klicke auf "Modell
+                        trainieren". Der Computer analysiert nun die Bilder und lernt die visuellen Muster für jedes
+                        Objekt. Das dauert nur einen kleinen Moment.</p>
+                </div>
 
-                <div id="training-progress-container">
-                    <div id="training-status"></div>
-                    <div class="probability-bar">
-                        <div id="training-progress-bar"></div>
+                <div class="step">
+                    <h3><span class="step-number">3</span>Ausprobieren!</h3>
+                    <p>Nach dem Training ist dein KI-Modell fertig! Halte nun die trainierten Objekte in die Kamera und
+                        schau zu, wie der Computer in Echtzeit erkennt, was er sieht. Die Balken zeigen dir an, wie
+                        sicher sich die KI bei ihrer Entscheidung ist.</p>
+                </div>
+            </div>
+
+            <!-- Animation Placeholder Card -->
+            <div class="card" id="animation-card">
+                <h2><i class="fas fa-sitemap"></i> Wie das funktioniert: Ein Blick ins Innere</h2>
+                <p>Die Animation unten zeigt ein stark vereinfachtes <strong>neuronales Netz</strong> bei der Arbeit,
+                    das Gehirn unserer KI.</p>
+                <div id="animation-placeholder">
+                    <div class="controls">
+                        <button id="dog-btn" class="cta-button">Hund</button>
+                        <button id="cat-btn" class="cta-button">Katze</button>
+                    </div>
+            
+                    <div class="network-wrapper">
+                        <!-- SVG container for the connections, now directly inside the wrapper -->
+                        <svg class="connections"></svg>
+            
+                        <!-- Input Panel with Icons -->
+                        <div class="input-panel">
+                            <div class="input-icon-container" id="dog-icon-container">
+                                <i class="fas fa-dog"></i>
+                            </div>
+                             <div class="input-icon-container" id="cat-icon-container">
+                                <i class="fas fa-cat"></i>
+                            </div>
+                        </div>
+            
+                        <!-- Network Visualization -->
+                        <div class="network-visualization">
+                            <!-- Centered title for hidden layers -->
+                            <div class="combined-hidden-title">Hidden</div>
+            
+                            <div class="layer input-layer">
+                                <div class="layer-title">Input</div>
+                                <div class="node" id="input-1"></div>
+                                <div class="node" id="input-2"></div>
+                            </div>
+                            <div class="layer hidden-layer-1">
+                                <!-- Title removed -->
+                                <div class="node" id="h1-1"></div>
+                                <div class="node" id="h1-2"></div>
+                                <div class="node" id="h1-3"></div>
+                            </div>
+                            <div class="layer hidden-layer-2">
+                                <!-- Title removed -->
+                                <div class="node" id="h2-1"></div>
+                                <div class="node" id="h2-2"></div>
+                            </div>
+                            <div class="layer output-layer">
+                                <div class="layer-title">Output</div>
+                                <div class="node" id="output-node"></div>
+                            </div>
+                        </div>
+            
+                        <!-- Output Panel with Result -->
+                        <div class="output-panel">
+                            <div class="output-display" id="output-display">
+                                <span id="output-text">...</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Preview section - initially hidden until model is trained -->
-            <div class="card preview-card" id="preview-card" style="display: none;">
-                <h3><i class="fas fa-eye"></i> 3. Was sieht der Computer?</h3>
-                <div id="main-webcam-container" class="webcam-preview" style="display: none;">
-                    <video autoplay playsinline muted id="webcam"></video>
-                    <button id="camera-switch-btn" class="camera-switch-button bottom-right" style="display: none;" title="Kamera wechseln">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-                <div id="prediction-results">
-                    <p class="placeholder-text">Trainiere das Modell, um Ergebnisse zu sehen!</p>
-                    <!-- Probability bars are dynamically added here -->
-                </div>
-            </div>
-
-            <div id="explanation">
-                <h3><i class="fas fa-question-circle"></i> Was passiert hier?</h3>
-                <p>Du zeigst dem Computer Bilder (das sind <strong>Daten</strong>). Wenn du auf "Modell trainieren"
-                    klickst, sucht der Computer nach Mustern in den Bildern (das nennt man <strong>Training</strong>).
-                    Danach kann er in Echtzeit raten, was er durch die Webcam sieht (das ist die
-                    <strong>Vorhersage</strong>). Das ist eine einfache Art von <strong>Künstlicher
-                        Intelligenz</strong>!
+            <!-- Explanation of the Neural Network Animation -->
+            <div class="explanation-box" id="animation-explanation">
+                <h3><i class="fas fa-question-circle"></i> Was passiert in der Animation?</h3>
+                <p>
+                    <strong>1. Input Layer (Eingabe):</strong> Die KI erhält ein Bild, z.B. von einer Katze. Das Bild
+                    wird in einfache Informationen zerlegt, die der Computer verstehen kann.
+                </p>
+                <p>
+                    <strong>2. Hidden Layers (Versteckte Schichten):</strong> Diese Informationen durchlaufen mehrere
+                    Ebenen. In jeder Schicht sucht die KI nach Mustern – wie Ecken, Kanten, Fellstrukturen oder
+                    Ohrenformen. Je tiefer die Schicht, desto komplexere Muster kann sie erkennen.
+                </p>
+                <p>
+                    <strong>3. Output Layer (Ausgabe):</strong> Am Ende werden alle erkannten Muster zusammengefügt.
+                    Basierend auf den Mustern, die am stärksten auf "Katze" hindeuten, trifft die KI ihre Entscheidung
+                    und gibt das Wort "Katze" aus.
                 </p>
             </div>
-        </section>
 
+            <!-- Call to Action Card -->
+            <div class="card cta-card">
+                <h2><i class="fas fa-play-circle"></i> Bereit, es auszuprobieren?</h2>
+                <p>Leg jetzt los und trainiere dein eigenes KI-Modell!</p>
+                <a href="diy.html" class="cta-button">Anwendung starten</a>
+            </div>
+
+        </section>
     </main>
+
 
     <!-- Application footer with legal links -->
     <footer>
@@ -112,22 +171,14 @@
                 <span class="footer-separator">|</span>
                 <a href="#" id="datenschutz-link">Datenschutzerklärung</a>
             </div>
+            <div class="footer-project-notice">
+                <p>In Zusammenarbeit mit dem <a href="https://ada-lovelace.de/" target="_blank" rel="noopener noreferrer">Ada Lovelace Projekt</a> entwickelt.</p>
+            </div>
             <div class="footer-copyright">
                 <p>&copy; 2025 BoomApps. Alle Rechte vorbehalten.</p>
             </div>
         </div>
     </footer>
-
-    <!-- Modal for image preview and deletion -->
-    <div id="image-modal" class="image-modal">
-        <div class="image-modal-content">
-            <button class="image-modal-close" id="modal-close">&times;</button>
-            <canvas id="modal-canvas"></canvas>
-            <button class="image-modal-delete" id="modal-delete">
-                <i class="fas fa-trash-alt"></i> Bild löschen
-            </button>
-        </div>
-    </div>
 
     <!-- Modal for legal information (Impressum and Privacy Policy) -->
     <div id="legal-modal" class="legal-modal">
@@ -142,12 +193,9 @@
         </div>
     </div>
 
-    <!-- External JavaScript libraries for TensorFlow.js and ML models -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-data@4.20.0/dist/tf-data.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier@1.2.2/dist/knn-classifier.min.js"></script>
     <script src="script.js"></script>
+    <script src="animation.js"></script>
+
 
 </body>
 
