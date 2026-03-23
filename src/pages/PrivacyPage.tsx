@@ -250,10 +250,16 @@ export default function PrivacyPage() {
             Diese Website nutzt clientseitige KI-Modelle zur Bilderkennung (MobileNet). Um Ihre Privatsphäre zu schützen, werden diese Modelle nicht automatisch beim Laden der Website, sondern erst nach Ihrer ausdrücklichen Zustimmung (2-Klick-Lösung) von Servern des Anbieters Google geladen.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
+            Anbieter der KI-Modelle ist die Google Ireland Limited („Google“), Gordon House, Barrow Street, Dublin 4, Irland.
+          </p>
+          <p className="text-zinc-600 leading-relaxed mb-4">
             Erst wenn Sie die KI-Funktionen aktiv starten und der damit verbundenen Datenübertragung zustimmen, wird eine Verbindung zu den Servern von Google hergestellt und Ihre IP-Adresse an Google übertragen. Die eigentliche Verarbeitung der Bilddaten erfolgt jedoch auch nach dem Laden der Modelle ausschließlich lokal in Ihrem Browser; es findet zu keinem Zeitpunkt ein Upload von privatem Bildmaterial auf externe Server statt.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Die Nutzung dieser KI-gestützten Funktionen erfolgt auf Grundlage Ihrer Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG. Sie können Ihre Einwilligung jederzeit für die Zukunft widerrufen.
+          </p>
+          <p className="text-zinc-600 leading-relaxed mb-4">
+            Das Unternehmen verfügt über eine Zertifizierung nach dem „EU-US Data Privacy Framework“ (DPF). Der DPF ist ein Übereinkommen zwischen der Europäischen Union und den USA, der die Einhaltung europäischer Datenschutzstandards bei Datenverarbeitungen in den USA gewährleisten soll. Jedes nach dem DPF zertifizierte Unternehmen verpflichtet sich, diese Datenschutzstandards einzuhalten. Weitere Informationen hierzu erhalten Sie vom Anbieter unter folgendem Link: <a href="https://www.dataprivacyframework.gov/participant/5780" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">https://www.dataprivacyframework.gov/participant/5780</a>.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Wenn Sie auf unserer Website mit Elementen interagieren, in denen künstliche Intelligenz zum Einsatz kommt, werden Ihre Eingaben inklusive Metadaten verarbeitet, um die gewünschte Analyse oder Reaktion lokal zu generieren. Wir haben ein berechtigtes Interesse daran (Art. 6 Abs. 1 lit. f DSGVO), moderne und datenschutzfreundliche Technologien einzusetzen, die eine lokale Verarbeitung ermöglichen.
