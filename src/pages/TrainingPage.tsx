@@ -895,7 +895,7 @@ export default function TrainingPage() {
                   type="checkbox" 
                   checked={privacyChecked}
                   onChange={(e) => setPrivacyChecked(e.target.checked)}
-                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus-visible:ring-indigo-500"
                 />
                 <span className="text-zinc-700 text-sm leading-relaxed">
                   Ich habe die <a href="/datenschutz" target="_blank" className="text-indigo-600 hover:underline font-medium">Datenschutzerklärung</a> zur Kenntnis genommen und stimme der Verarbeitung meiner Daten gemäß den dort beschriebenen Bedingungen zu.
@@ -907,7 +907,7 @@ export default function TrainingPage() {
                   type="checkbox" 
                   checked={modelChecked}
                   onChange={(e) => setModelChecked(e.target.checked)}
-                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus-visible:ring-indigo-500"
                 />
                 <span className="text-zinc-700 text-sm leading-relaxed">
                   Ich willige ein, dass für die Ausführung der Anwendung notwendige KI-Modelle (MobileNet) von Google-Servern geladen werden. Mir ist bewusst, dass hierbei meine IP-Adresse an Google übertragen wird (siehe <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-medium">Google Datenschutzerklärung</a>). Die Verarbeitung der aufgenommenen Bilddaten erfolgt dabei ausschließlich lokal auf meinem Endgerät; es findet kein Upload von Bildmaterial statt.
@@ -1131,7 +1131,7 @@ function ClassCard({
               onChange={(e) => onUpdateName(e.target.value)}
               className={cn(
                 "font-semibold bg-transparent border-b border-transparent focus:ring-0 p-0 w-[160px] focus:outline-none text-sm transition-colors",
-                errorMsg ? "border-red-500 text-red-600" : "text-zinc-800 focus:border-zinc-300"
+                errorMsg ? "border-red-500 text-red-600" : "text-zinc-800 focus-visible:border-zinc-300"
               )}
               placeholder="Klassenname"
               aria-label={`Name für Klasse ${cls.name || 'ohne Namen'}`}

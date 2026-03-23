@@ -35,7 +35,7 @@ export default function LandingPage() {
           </p>
           <button
             onClick={() => navigate('/lernen')}
-            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors shadow-lg shadow-red-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-600/30"
           >
             Jetzt ausprobieren <ArrowRight className="ml-2 w-5 h-5" aria-hidden="true" />
           </button>
@@ -316,7 +316,7 @@ function NeuralNetViz() {
           onClick={() => triggerAnimation('dog')}
           disabled={animating}
           className={cn(
-            "flex flex-col items-center p-4 rounded-2xl border-2 transition-all",
+            "flex flex-col items-center p-4 rounded-2xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50",
             activeSignal === 'dog' ? "border-red-500 bg-red-500/20" : "border-zinc-600 hover:border-zinc-500 bg-zinc-700/50",
             animating && activeSignal !== 'dog' ? "opacity-50" : ""
           )}
@@ -328,7 +328,7 @@ function NeuralNetViz() {
           onClick={() => triggerAnimation('cat')}
           disabled={animating}
           className={cn(
-            "flex flex-col items-center p-4 rounded-2xl border-2 transition-all",
+            "flex flex-col items-center p-4 rounded-2xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50",
             activeSignal === 'cat' ? "border-blue-500 bg-blue-500/20" : "border-zinc-600 hover:border-zinc-500 bg-zinc-700/50",
             animating && activeSignal !== 'cat' ? "opacity-50" : ""
           )}
