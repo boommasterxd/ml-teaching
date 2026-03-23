@@ -8,6 +8,7 @@ import {
   AlertCircle, CheckCircle2, Loader2, SwitchCamera, Brain, X, Image as ImageIcon, Upload, RotateCcw
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 // Types
 interface MLImage {
@@ -28,7 +29,7 @@ interface Prediction {
   confidences: { [label: string]: number };
 }
 
-const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+const COLORS = ['#dc2626', '#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777'];
 
 export default function TrainingPage() {
   const navigate = useNavigate();
@@ -74,6 +75,15 @@ export default function TrainingPage() {
   // Refs
   const requestRef = useRef<number>(undefined);
   const predictVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Focus Traps for Modals
+  const selectedImageRef = useFocusTrap(!!selectedImage);
+  const showClearConfirmRef = useFocusTrap(showClearConfirm);
+  const classToClearRef = useFocusTrap(!!classToClear);
+  const classToRemoveRef = useFocusTrap(!!classToRemove);
+  const hasConsentedRef = useFocusTrap(!hasConsented);
+  const isModelLoadingRef = useFocusTrap(hasConsented && isModelLoading);
+  const cameraConsentRef = useFocusTrap(hasConsented && !isModelLoading && !cameraConsent);
 
   // Initialize ML Models
   useEffect(() => {
@@ -512,7 +522,7 @@ export default function TrainingPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowClearConfirm(true)}
-                className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-200 text-rose-600 hover:bg-rose-50 hover:border-rose-200 rounded-xl text-sm font-medium transition-colors shadow-sm"
+                className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-200 text-red-600 hover:bg-red-50 hover:border-red-200 rounded-xl text-sm font-medium transition-colors shadow-sm"
                 title="Alles zurücksetzen"
                 aria-label="Alle Klassen und Bilder zurücksetzen"
               >
@@ -572,7 +582,7 @@ export default function TrainingPage() {
             <div className="p-5">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-zinc-500">Klassen bereit:</span>
-                <span className={cn("font-semibold", canTrain ? "text-emerald-600" : "text-rose-500")}>
+                <span className={cn("font-semibold", canTrain ? "text-emerald-700" : "text-red-600")}>
                   {classes.filter(c => c.images.length >= 10).length} / {Math.max(2, classes.length)}
                 </span>
               </div>
@@ -602,7 +612,7 @@ export default function TrainingPage() {
                 )}
               </button>
               
-              <p className="text-xs text-zinc-400 mt-3 text-center" aria-live="polite">
+              <p className="text-xs text-zinc-600 mt-3 text-center" aria-live="polite">
                 {isTraining
                   ? "Bitte warten, das Modell wird trainiert..."
                   : hasInvalidNames
@@ -621,7 +631,7 @@ export default function TrainingPage() {
           {/* Prediction Card */}
           <div className={cn(
             "bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col flex-1 transition-opacity duration-300",
-            !hasTrainedModel ? "opacity-50 pointer-events-none" : "opacity-100"
+            !hasTrainedModel ? "opacity-60 pointer-events-none" : "opacity-100"
           )}>
             <div className="px-5 py-4 border-b border-zinc-100 flex justify-between items-center">
               <h2 className="text-base font-bold text-zinc-800 flex items-center">
@@ -697,7 +707,7 @@ export default function TrainingPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-zinc-400 text-sm text-center">
+                  <div className="h-full flex items-center justify-center text-zinc-800 text-sm text-center">
                     Starte die Vorhersage, um Ergebnisse zu sehen.
                   </div>
                 )}
@@ -711,6 +721,7 @@ export default function TrainingPage() {
       {/* Image Modal */}
       {selectedImage && (
         <div 
+          ref={selectedImageRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -735,7 +746,7 @@ export default function TrainingPage() {
               />
               <button
                 onClick={() => removeImage(selectedImage.classId, selectedImage.image.id)}
-                className="w-full py-2.5 px-4 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center"
+                className="w-full py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center"
               >
                 <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" /> Bild löschen
               </button>
@@ -747,6 +758,7 @@ export default function TrainingPage() {
       {/* Clear Confirm Modal */}
       {showClearConfirm && (
         <div 
+          ref={showClearConfirmRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -755,7 +767,7 @@ export default function TrainingPage() {
         >
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full">
             <div className="p-6">
-              <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4" aria-hidden="true">
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4" aria-hidden="true">
                 <AlertCircle className="w-6 h-6" />
               </div>
               <h3 id="clear-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Daten unwiderruflich löschen?</h3>
@@ -771,7 +783,7 @@ export default function TrainingPage() {
                 </button>
                 <button
                   onClick={clearAll}
-                  className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition-colors"
+                  className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors"
                 >
                   Unwiderruflich löschen
                 </button>
@@ -784,6 +796,7 @@ export default function TrainingPage() {
       {/* Class Clear Confirm Modal */}
       {classToClear && (
         <div 
+          ref={classToClearRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -791,7 +804,7 @@ export default function TrainingPage() {
           aria-describedby="class-clear-modal-description"
         >
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6">
-            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
               <RotateCcw className="w-6 h-6" />
             </div>
             <h3 id="class-clear-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Bilder dieser Klasse löschen?</h3>
@@ -814,7 +827,7 @@ export default function TrainingPage() {
                   clearClass(id);
                   setClassToClear(null);
                 }}
-                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition-colors"
+                className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors"
               >
                 Zurücksetzen
               </button>
@@ -826,6 +839,7 @@ export default function TrainingPage() {
       {/* Class Remove Confirm Modal */}
       {classToRemove && (
         <div 
+          ref={classToRemoveRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -833,7 +847,7 @@ export default function TrainingPage() {
           aria-describedby="class-remove-modal-description"
         >
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6">
-            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
               <Trash2 className="w-6 h-6" />
             </div>
             <h3 id="class-remove-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Klasse löschen?</h3>
@@ -854,7 +868,7 @@ export default function TrainingPage() {
                   removeClass(id);
                   setClassToRemove(null);
                 }}
-                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition-colors"
+                className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors"
               >
                 Löschen
               </button>
@@ -866,6 +880,7 @@ export default function TrainingPage() {
       {/* Consent Modal */}
       {!hasConsented && (
         <div 
+          ref={hasConsentedRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -922,6 +937,7 @@ export default function TrainingPage() {
       {/* Loading Modal */}
       {hasConsented && isModelLoading && (
         <div 
+          ref={isModelLoadingRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -938,6 +954,7 @@ export default function TrainingPage() {
       {/* Camera Consent Modal */}
       {hasConsented && !isModelLoading && !cameraConsent && (
         <div 
+          ref={cameraConsentRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -1118,12 +1135,14 @@ function ClassCard({
               )}
               placeholder="Klassenname"
               aria-label={`Name für Klasse ${cls.name || 'ohne Namen'}`}
+              aria-invalid={!!errorMsg}
+              aria-errormessage={errorMsg ? `error-${cls.id}` : undefined}
             />
           </div>
-          {errorMsg && <span className="text-[10px] text-red-500 mt-1 ml-[22px]">{errorMsg}</span>}
+          {errorMsg && <span id={`error-${cls.id}`} className="text-[10px] text-red-500 mt-1 ml-[22px]">{errorMsg}</span>}
         </div>
         <div className="flex items-center gap-3 mt-1 sm:mt-0">
-          <span className="text-xs font-mono text-zinc-400 bg-zinc-100 px-2 py-1 rounded-md">
+          <span className="text-xs font-mono text-zinc-600 bg-zinc-100 px-2 py-1 rounded-md">
             {cls.images.length} Bilder
           </span>
           <button 
@@ -1136,7 +1155,7 @@ function ClassCard({
           </button>
           <button 
             onClick={onRemove}
-            className="text-zinc-400 hover:text-rose-500 transition-colors"
+            className="text-zinc-400 hover:text-red-500 transition-colors"
             title="Klasse löschen"
             aria-label={`Klasse ${cls.name || 'ohne Namen'} löschen`}
           >
@@ -1209,7 +1228,7 @@ function ClassCard({
         {/* Right: Thumbnails */}
         <div className="flex-1 relative min-h-[160px] sm:min-h-0 flex flex-col">
           <div className="flex justify-between items-center mb-2 px-1">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
               {isSelectionMode ? `${selectedIds.size} ausgewählt` : 'Gesammelte Bilder'}
             </span>
             <div className="flex gap-2">
@@ -1285,7 +1304,7 @@ function ClassCard({
                 ))}
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center px-4 text-zinc-400">
+              <div className="h-full flex flex-col items-center justify-center text-center px-4 text-zinc-600">
                 <ImageIcon className="w-6 h-6 mb-2 opacity-20" />
                 <p className="text-xs">
                   Halte "Aufnehmen" gedrückt, um Bilder zu sammeln.
