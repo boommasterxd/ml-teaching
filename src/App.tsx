@@ -9,6 +9,7 @@ import TrainingPage from './pages/TrainingPage';
 import ImprintPage from './pages/ImprintPage';
 import PrivacyPage from './pages/PrivacyPage';
 import Footer from './components/Footer';
+import CookieBanner from './components/CookieBanner';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           </Routes>
         </main>
         <Footer />
+        <CookieBanner />
       </div>
     </Router>
   );
