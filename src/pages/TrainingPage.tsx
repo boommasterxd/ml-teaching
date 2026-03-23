@@ -8,6 +8,7 @@ import {
   AlertCircle, CheckCircle2, Loader2, SwitchCamera, Brain, X, Image as ImageIcon, Upload, RotateCcw
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 // Types
 interface MLImage {
@@ -74,6 +75,15 @@ export default function TrainingPage() {
   // Refs
   const requestRef = useRef<number>(undefined);
   const predictVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Focus Traps for Modals
+  const selectedImageRef = useFocusTrap(!!selectedImage);
+  const showClearConfirmRef = useFocusTrap(showClearConfirm);
+  const classToClearRef = useFocusTrap(!!classToClear);
+  const classToRemoveRef = useFocusTrap(!!classToRemove);
+  const hasConsentedRef = useFocusTrap(!hasConsented);
+  const isModelLoadingRef = useFocusTrap(hasConsented && isModelLoading);
+  const cameraConsentRef = useFocusTrap(hasConsented && !isModelLoading && !cameraConsent);
 
   // Initialize ML Models
   useEffect(() => {
@@ -711,6 +721,7 @@ export default function TrainingPage() {
       {/* Image Modal */}
       {selectedImage && (
         <div 
+          ref={selectedImageRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -747,6 +758,7 @@ export default function TrainingPage() {
       {/* Clear Confirm Modal */}
       {showClearConfirm && (
         <div 
+          ref={showClearConfirmRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -784,6 +796,7 @@ export default function TrainingPage() {
       {/* Class Clear Confirm Modal */}
       {classToClear && (
         <div 
+          ref={classToClearRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -826,6 +839,7 @@ export default function TrainingPage() {
       {/* Class Remove Confirm Modal */}
       {classToRemove && (
         <div 
+          ref={classToRemoveRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -866,6 +880,7 @@ export default function TrainingPage() {
       {/* Consent Modal */}
       {!hasConsented && (
         <div 
+          ref={hasConsentedRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -922,6 +937,7 @@ export default function TrainingPage() {
       {/* Loading Modal */}
       {hasConsented && isModelLoading && (
         <div 
+          ref={isModelLoadingRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -938,6 +954,7 @@ export default function TrainingPage() {
       {/* Camera Consent Modal */}
       {hasConsented && !isModelLoading && !cameraConsent && (
         <div 
+          ref={cameraConsentRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -1118,9 +1135,11 @@ function ClassCard({
               )}
               placeholder="Klassenname"
               aria-label={`Name für Klasse ${cls.name || 'ohne Namen'}`}
+              aria-invalid={!!errorMsg}
+              aria-errormessage={`error-${cls.id}`}
             />
           </div>
-          {errorMsg && <span className="text-[10px] text-red-500 mt-1 ml-[22px]">{errorMsg}</span>}
+          {errorMsg && <span id={`error-${cls.id}`} className="text-[10px] text-red-500 mt-1 ml-[22px]">{errorMsg}</span>}
         </div>
         <div className="flex items-center gap-3 mt-1 sm:mt-0">
           <span className="text-xs font-mono text-zinc-400 bg-zinc-100 px-2 py-1 rounded-md">
