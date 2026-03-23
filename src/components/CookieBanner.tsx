@@ -42,7 +42,7 @@ export default function CookieBanner() {
           role="alertdialog"
           aria-modal="true"
           aria-label="Cookie-Informationen"
-          className="fixed bottom-6 left-6 right-6 md:left-1/2 md:-translate-x-1/2 md:max-w-4xl z-50 p-6 md:p-8 bg-[#121212] text-white shadow-2xl rounded-3xl border border-white/10 focus:outline-none"
+          className="fixed bottom-6 left-6 right-6 md:left-1/2 md:-translate-x-1/2 md:max-w-4xl z-50 p-6 md:p-8 bg-[#121212] text-white shadow-2xl rounded-3xl border border-white/10 focus:outline-none overscroll-contain"
         >
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12">
             <button

@@ -16,6 +16,8 @@ export default function useScrollLock(lock: boolean) {
       // If this is the first lock, apply the style
       if (lockCount === 1) {
         document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overscrollBehavior = 'none';
       }
       
       return () => {
@@ -23,6 +25,8 @@ export default function useScrollLock(lock: boolean) {
         // Only restore scroll if no other components are locking it
         if (lockCount === 0) {
           document.body.style.overflow = '';
+          document.documentElement.style.overflow = '';
+          document.body.style.overscrollBehavior = '';
         }
       };
     }

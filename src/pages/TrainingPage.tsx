@@ -731,7 +731,7 @@ export default function TrainingPage() {
       {selectedImage && (
         <div 
           ref={selectedImageRef}
-          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto overscroll-contain"
           role="dialog"
           aria-modal="true"
           aria-labelledby="image-modal-title"
@@ -768,7 +768,7 @@ export default function TrainingPage() {
       {showClearConfirm && (
         <div 
           ref={showClearConfirmRef}
-          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto overscroll-contain"
           role="dialog"
           aria-modal="true"
           aria-labelledby="clear-modal-title"
@@ -806,7 +806,7 @@ export default function TrainingPage() {
       {classToClear && (
         <div 
           ref={classToClearRef}
-          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto overscroll-contain"
           role="dialog"
           aria-modal="true"
           aria-labelledby="class-clear-modal-title"
@@ -849,7 +849,7 @@ export default function TrainingPage() {
       {classToRemove && (
         <div 
           ref={classToRemoveRef}
-          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto overscroll-contain"
           role="dialog"
           aria-modal="true"
           aria-labelledby="class-remove-modal-title"
@@ -890,7 +890,7 @@ export default function TrainingPage() {
       {!hasConsented && (
         <div 
           ref={hasConsentedRef}
-          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto overscroll-contain"
           role="dialog"
           aria-modal="true"
           aria-labelledby="consent-modal-title"
@@ -949,7 +949,7 @@ export default function TrainingPage() {
       {hasConsented && isModelLoading && (
         <div 
           ref={isModelLoadingRef}
-          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto overscroll-contain"
           role="dialog"
           aria-modal="true"
           aria-labelledby="loading-modal-title"
@@ -966,7 +966,7 @@ export default function TrainingPage() {
       {hasConsented && !isModelLoading && !cameraConsent && (
         <div 
           ref={cameraConsentRef}
-          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto overscroll-contain"
           role="dialog"
           aria-modal="true"
           aria-labelledby="camera-modal-title"
