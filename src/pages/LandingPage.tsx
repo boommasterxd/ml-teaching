@@ -50,7 +50,7 @@ export default function LandingPage() {
             <div className="w-16 h-16 bg-zinc-100 text-zinc-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold" aria-hidden="true">1</div>
             <Camera className="w-10 h-10 mx-auto text-zinc-400 mb-4" aria-hidden="true" />
             <h3 className="text-xl font-semibold mb-3">Daten sammeln</h3>
-            <p className="text-zinc-600">Nutze deine Webcam, um Bilder für verschiedene Kategorien aufzunehmen. Zeige der KI, was sie lernen soll.</p>
+            <p className="text-zinc-600">Nutze deine Kamera, um Bilder für verschiedene Kategorien aufzunehmen. Zeige der KI, was sie lernen soll.</p>
           </div>
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-zinc-100 text-center relative">
             <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold" aria-hidden="true">2</div>
@@ -74,7 +74,7 @@ export default function LandingPage() {
             <h2 className="text-3xl font-bold mb-6">Wie lernt ein Computer?</h2>
             <p className="text-zinc-400 max-w-3xl mx-auto text-lg">
               Ein künstliches neuronales Netz besteht aus Schichten (Layers) von "Neuronen". 
-              Bilder werden in die <strong>Input Layer</strong> eingespeist. Die <strong>Hidden Layers</strong> erkennen Muster (wie Kanten, Formen, Ohren). 
+              Bilder werden an die <strong>Input Layer</strong> übergeben. Die <strong>Hidden Layers</strong> erkennen Muster (wie Kanten, Formen, Ohren). 
               Die <strong>Output Layer</strong> liefert das finale Ergebnis. Probier es aus!
             </p>
           </div>
@@ -301,7 +301,7 @@ function NeuralNetViz() {
           )}
         >
           <Dog className="w-12 h-12 mb-2 text-red-400" aria-hidden="true" />
-          <span className="font-medium">Hund einspeisen</span>
+          <span className="font-medium">Hundebild zeigen</span>
         </button>
         <button
           onClick={() => triggerAnimation('cat')}
@@ -313,7 +313,7 @@ function NeuralNetViz() {
           )}
         >
           <Cat className="w-12 h-12 mb-2 text-blue-400" aria-hidden="true" />
-          <span className="font-medium">Katze einspeisen</span>
+          <span className="font-medium">Katzenbild zeigen</span>
         </button>
       </div>
 
