@@ -1201,6 +1201,18 @@ function ClassCard({
               onTouchEnd={stopRecording}
               onTouchCancel={stopRecording}
               onContextMenu={(e) => e.preventDefault()}
+              onKeyDown={(e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                  e.preventDefault();
+                  startRecording();
+                }
+              }}
+              onKeyUp={(e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                  e.preventDefault();
+                  stopRecording();
+                }
+              }}
               className={cn(
                 "flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center select-none touch-none",
                 isRecording 
@@ -1280,10 +1292,12 @@ function ClassCard({
             {cls.images.length > 0 ? (
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {cls.images.map((img) => (
-                  <div 
+                  <button 
                     key={img.id} 
+                    type="button"
+                    aria-label={isSelectionMode ? (selectedIds.has(img.id) ? "Bild abwählen" : "Bild auswählen") : "Bild vergrößern"}
                     className={cn(
-                      "aspect-square rounded-lg overflow-hidden border cursor-pointer transition-all relative",
+                      "aspect-square rounded-lg overflow-hidden border cursor-pointer transition-all relative block w-full h-full p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500",
                       isSelectionMode 
                         ? selectedIds.has(img.id) 
                           ? "ring-2" 
@@ -1311,7 +1325,7 @@ function ClassCard({
                         {selectedIds.has(img.id) && <CheckCircle2 className="w-3 h-3" />}
                       </div>
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (
