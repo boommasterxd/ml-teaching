@@ -452,7 +452,7 @@ function NeuralNetViz() {
         ))}
       </div>
 
-      <div className="mt-12 text-center h-16">
+      <div className="mt-12 text-center h-16" aria-live="polite">
         {result ? (
           <div className={cn(
             "inline-block px-6 py-3 rounded-xl text-xl font-bold animate-in fade-in slide-in-from-bottom-4",

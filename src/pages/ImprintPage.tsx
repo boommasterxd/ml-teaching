@@ -32,9 +32,9 @@ export default function ImprintPage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-12" role="main" aria-labelledby="imprint-title">
         <div className="bg-white p-8 sm:p-12 rounded-3xl border border-zinc-200 shadow-sm prose prose-zinc max-w-none">
-          <h1 className="text-3xl font-extrabold text-zinc-900 mb-8 border-b border-zinc-100 pb-4">Impressum</h1>
+          <h1 id="imprint-title" className="text-3xl font-extrabold text-zinc-900 mb-8 border-b border-zinc-100 pb-4">Impressum</h1>
           
           <div className="space-y-1 text-zinc-600 mb-8">
             <p className="font-semibold text-zinc-900 text-lg">Yannick Schäfer</p>
@@ -50,7 +50,7 @@ export default function ImprintPage() {
             </p>
             <p className="flex items-center gap-2">
               <span className="font-semibold text-zinc-900 w-20">E-Mail:</span>
-              <a href="mailto:yannickschaefer@boomapps.de" className="text-zinc-600 hover:text-zinc-900 underline transition-colors">yannickschaefer@boomapps.de</a>
+              <a href="mailto:yannickschaefer@boomapps.de" className="text-zinc-600 hover:text-zinc-900 underline transition-colors" aria-label="E-Mail an Yannick Schäfer schreiben">yannickschaefer@boomapps.de</a>
             </p>
           </div>
 
