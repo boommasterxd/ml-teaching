@@ -50,7 +50,7 @@ export default function LandingPage() {
             <div className="w-16 h-16 bg-zinc-100 text-zinc-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold" aria-hidden="true">1</div>
             <Camera className="w-10 h-10 mx-auto text-zinc-400 mb-4" aria-hidden="true" />
             <h3 className="text-xl font-semibold mb-3">Daten sammeln</h3>
-            <p className="text-zinc-600">Nutze deine Webcam, um Bilder für verschiedene Kategorien aufzunehmen. Zeige der KI, was sie lernen soll.</p>
+            <p className="text-zinc-600">Nutze deine Kamera, um Bilder für verschiedene Kategorien aufzunehmen. Zeige der KI, was sie lernen soll.</p>
           </div>
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-zinc-100 text-center relative">
             <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold" aria-hidden="true">2</div>
