@@ -317,7 +317,10 @@ export default function TrainingPage() {
         nextNum = prev.length + 1;
       }
 
-      const newId = `class-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const newId =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? `class-${crypto.randomUUID()}`
+          : `class-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
       return [...prev, { 
         id: newId, 
         name: `Klasse ${nextNum}`, 
