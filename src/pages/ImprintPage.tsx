@@ -14,7 +14,7 @@ export default function ImprintPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
           <button 
             onClick={() => navigate('/')}
-            className="flex items-center text-zinc-500 hover:text-zinc-900 transition-colors font-medium text-sm flex-shrink-0"
+            className="flex items-center text-zinc-600 hover:text-zinc-900 transition-colors font-medium text-sm flex-shrink-0"
             aria-label="Zurück zur Startseite"
           >
             <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
