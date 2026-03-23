@@ -806,13 +806,14 @@ export default function TrainingPage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="class-remove-modal-title"
+          aria-describedby="class-remove-modal-description"
         >
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6">
             <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4">
               <Trash2 className="w-6 h-6" />
             </div>
             <h3 id="class-remove-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Klasse löschen?</h3>
-            <p className="text-zinc-600 mb-6 text-sm">
+            <p id="class-remove-modal-description" className="text-zinc-600 mb-6 text-sm">
               Möchten Sie die Klasse <strong>"{classes.find(c => c.id === classToRemove)?.name}"</strong> und alle zugehörigen Bilder wirklich entfernen?
             </p>
             <div className="flex gap-3">
