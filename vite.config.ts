@@ -1,3 +1,8 @@
+/**
+ * Vite configuration file for the Teachable Machine application.
+ * Configures React and Tailwind CSS plugins, path aliases, and development server settings.
+ */
+
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';

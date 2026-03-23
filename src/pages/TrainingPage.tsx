@@ -1,3 +1,7 @@
+/**
+ * Training page where users can collect image data for different classes,
+ * train a custom KNN classifier on top of MobileNet, and test the model in real-time.
+ */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as tf from '@tensorflow/tfjs';

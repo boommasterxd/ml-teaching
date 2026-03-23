@@ -1,3 +1,7 @@
+/**
+ * Landing page that provides an overview of the AI Image Recognition application,
+ * featuring interactive visualizations and educational content.
+ */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Brain, Camera, Zap, ArrowRight, Dog, Cat, Users, ImagePlus, Lightbulb, Car, Smartphone, Stethoscope } from 'lucide-react';
