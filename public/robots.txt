@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://theteachablemachine.boomapps.de/sitemap.xml
