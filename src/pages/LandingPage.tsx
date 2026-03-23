@@ -13,7 +13,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
       {/* Top Navigation */}
-      <nav className="bg-white border-b border-zinc-200 px-6 sm:px-12 lg:px-24 py-4 flex items-center justify-between">
+      <nav className="bg-white border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <img 
             src="/ada-logo.png" 
@@ -26,7 +26,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <header className="bg-white border-b border-zinc-200 py-16 px-6 sm:px-12 lg:px-24">
+      <header className="bg-white border-b border-zinc-200 py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center">
           <div className="inline-flex items-center justify-center p-3 bg-red-50 text-red-600 rounded-2xl mb-6">
             <Brain className="w-10 h-10" aria-hidden="true" />
@@ -47,7 +47,7 @@ export default function LandingPage() {
       </header>
 
       {/* 3 Steps Section */}
-      <section className="py-20 px-6 sm:px-12 lg:px-24 max-w-7xl mx-auto">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <h2 className="text-3xl font-bold text-center mb-16">In 3 Schritten zur eigenen KI</h2>
         <div className="grid md:grid-cols-3 gap-10">
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-zinc-100 text-center relative">
@@ -72,7 +72,7 @@ export default function LandingPage() {
       </section>
 
       {/* Interactive Neural Net Visualization */}
-      <section className="py-20 bg-zinc-900 text-white px-6 sm:px-12 lg:px-24">
+      <section className="py-20 bg-zinc-900 text-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-6">Wie lernt ein Computer?</h2>
@@ -91,7 +91,7 @@ export default function LandingPage() {
 
       {/* Explanation Section for Students */}
       <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-6 text-zinc-900">Wie funktioniert das hier genau?</h2>
             <p className="text-zinc-600 max-w-3xl mx-auto text-lg">
@@ -138,7 +138,7 @@ export default function LandingPage() {
       </section>
 
       {/* Tips for a Smart Model */}
-      <section className="py-20 bg-zinc-50 px-6 sm:px-12 lg:px-24">
+      <section className="py-20 bg-zinc-50 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-6 text-zinc-900">Tipps für ein schlaues Modell</h2>
@@ -182,7 +182,7 @@ export default function LandingPage() {
       </section>
 
       {/* Real World Examples */}
-      <section className="py-20 bg-white px-6 sm:px-12 lg:px-24">
+      <section className="py-20 bg-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-6 text-zinc-900">Wo findest du das im Alltag?</h2>
@@ -226,7 +226,7 @@ export default function LandingPage() {
       </section>
       
       {/* Final Call to Action */}
-      <section className="py-24 bg-zinc-900 text-white px-6 sm:px-12 lg:px-24 text-center relative overflow-hidden">
+      <section className="py-24 bg-zinc-900 text-white px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} aria-hidden="true"></div>
         <div className="max-w-3xl mx-auto relative z-10">
           <h2 className="text-3xl md:text-5xl font-bold mb-6">Bereit für dein eigenes Experiment?</h2>
