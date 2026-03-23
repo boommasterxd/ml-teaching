@@ -50,7 +50,7 @@ export default function PrivacyPage() {
 
           <h4 className="text-lg font-bold mt-6 mb-3 text-zinc-800">Wie erfassen wir Ihre Daten?</h4>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Ihre Daten werden zum einen dadurch erhoben, dass Sie uns diese mitteilen. Hierbei kann es sich z.&nbsp;B. um Daten handeln, die Sie in ein Kontaktformular eingeben.
+            Ihre Daten werden zum einen dadurch erhoben, dass Sie uns diese mitteilen. Hierbei kann es sich z.&nbsp;B. um Daten handeln, die Sie uns per E-Mail zukommen lassen.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Andere Daten werden automatisch oder nach Ihrer Einwilligung beim Besuch der Website durch unsere IT-Systeme erfasst. Das sind vor allem technische Daten (z.B. Internetbrowser, Betriebssystem oder Uhrzeit des Seitenaufrufs). Die Erfassung dieser Daten erfolgt automatisch, sobald Sie diese Website betreten.
