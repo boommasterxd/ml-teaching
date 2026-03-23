@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 const rootDir = process.cwd();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = Number(process.env.PORT) || 3000;
 
 /**
  * 1. Proxy-Trust (Essentiell für Traefik)
