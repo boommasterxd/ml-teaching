@@ -1141,7 +1141,7 @@ function ClassCard({
               value={cls.name}
               onChange={(e) => onUpdateName(e.target.value)}
               className={cn(
-                "font-semibold bg-transparent border-b border-transparent focus:ring-0 p-0 w-[160px] focus:outline-none text-sm transition-colors",
+                "font-semibold bg-transparent border-b border-transparent focus:ring-0 p-0 w-[120px] sm:w-[160px] focus:outline-none text-sm transition-colors",
                 errorMsg ? "border-red-500 text-red-600" : "text-zinc-800 focus-visible:border-zinc-300"
               )}
               placeholder="Klassenname"
@@ -1152,8 +1152,8 @@ function ClassCard({
           </div>
           {errorMsg && <span id={`error-${cls.id}`} className="text-[10px] text-red-500 mt-1 ml-[22px]">{errorMsg}</span>}
         </div>
-        <div className="flex items-center gap-3 mt-1 sm:mt-0">
-          <span className="text-xs font-mono text-zinc-600 bg-zinc-100 px-2 py-1 rounded-md">
+        <div className="flex items-center gap-3 mt-1 sm:mt-0 flex-shrink-0">
+          <span className="text-xs font-mono text-zinc-600 bg-zinc-100 px-2 py-1 rounded-md whitespace-nowrap flex-shrink-0">
             {cls.images.length} Bilder
           </span>
           <button 
