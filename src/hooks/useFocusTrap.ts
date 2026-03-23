@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export function useFocusTrap(isActive: boolean) {
+export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = true) {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -14,8 +14,12 @@ export function useFocusTrap(isActive: boolean) {
     const firstElement = focusableElements[0] as HTMLElement;
     const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
-    if (firstElement) {
+    if (autoFocusFirst && firstElement) {
       firstElement.focus();
+    } else if (!autoFocusFirst) {
+      // Fokus auf den Container selbst setzen, falls kein Element automatisch fokussiert werden soll
+      // Das hilft, die Outline auf Buttons zu vermeiden, während die Accessibility erhalten bleibt
+      root.focus();
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
