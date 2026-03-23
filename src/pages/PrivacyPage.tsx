@@ -34,48 +34,7 @@ export default function PrivacyPage() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         <div className="bg-white p-8 sm:p-12 rounded-3xl border border-zinc-200 shadow-sm prose prose-zinc max-w-none">
-          <h2>1. Datenschutz auf einen Blick</h2>
-          <h3>Allgemeine Hinweise</h3>
-          <p>
-            Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.
-          </p>
-
-          <h2>2. Datenerfassung auf dieser Website</h2>
-          <h3>Kamerazugriff und Bilddaten</h3>
-          <p>
-            Diese Anwendung nutzt die Kamera Ihres Geräts, um Bilder für das Training eines Machine-Learning-Modells aufzunehmen. 
-            <strong>Wichtig: Alle aufgenommenen Bilder und das Training des Modells finden ausschließlich lokal in Ihrem Browser statt.</strong> 
-            Es werden zu keinem Zeitpunkt Bilder oder Kameradaten an unsere Server oder Server von Dritten übertragen.
-          </p>
-
-          <h3>Laden von KI-Modellen (TensorFlow.js)</h3>
-          <p>
-            Um die Bilderkennung zu ermöglichen, verwendet diese Anwendung ein vortrainiertes neuronales Netz (MobileNet) über die Bibliothek TensorFlow.js. 
-            Die Modelldateien (Gewichte) werden beim Start des Trainings von den Servern von Google (Google Cloud Storage / TFHub) heruntergeladen. 
-            Dabei wird Ihre IP-Adresse an Google übertragen, da dies technisch für den Download der Dateien notwendig ist.
-            Wir haben auf der Trainingsseite eine explizite Checkbox eingerichtet, damit Sie diesem Download vorab zustimmen können.
-          </p>
-
-          <h3>Server-Log-Dateien</h3>
-          <p>
-            Der Provider der Seiten erhebt und speichert automatisch Informationen in so genannten Server-Log-Dateien, die Ihr Browser automatisch an uns übermittelt. Dies sind:
-          </p>
-          <ul>
-            <li>Browsertyp und Browserversion</li>
-            <li>verwendetes Betriebssystem</li>
-            <li>Referrer URL</li>
-            <li>Hostname des zugreifenden Rechners</li>
-            <li>Uhrzeit der Serveranfrage</li>
-            <li>IP-Adresse</li>
-          </ul>
-          <p>
-            Eine Zusammenführung dieser Daten mit anderen Datenquellen wird nicht vorgenommen.
-          </p>
-
-          <h2>3. Ihre Rechte</h2>
-          <p>
-            Sie haben jederzeit das Recht, unentgeltlich Auskunft über Herkunft, Empfänger und Zweck Ihrer gespeicherten personenbezogenen Daten zu erhalten. Sie haben außerdem ein Recht, die Berichtigung oder Löschung dieser Daten zu verlangen. Hierzu sowie zu weiteren Fragen zum Thema Datenschutz können Sie sich jederzeit an uns wenden.
-          </p>
+        
         </div>
       </main>
     </div>
