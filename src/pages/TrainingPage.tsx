@@ -1,0 +1,1059 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import * as tf from '@tensorflow/tfjs';
+import * as mobilenet from '@tensorflow-models/mobilenet';
+import * as knnClassifier from '@tensorflow-models/knn-classifier';
+import { 
+  ArrowLeft, Plus, Trash2, Camera, Play, Square, 
+  AlertCircle, CheckCircle2, Loader2, SwitchCamera, Brain, X, Image as ImageIcon, Upload, RotateCcw
+} from 'lucide-react';
+import { cn } from '../lib/utils';
+
+// Types
+interface MLImage {
+  id: string;
+  dataUrl: string;
+  featureArray: number[];
+}
+
+interface MLClass {
+  id: string;
+  name: string;
+  images: MLImage[];
+  color: string;
+}
+
+interface Prediction {
+  label: string;
+  confidences: { [label: string]: number };
+}
+
+const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+
+export default function TrainingPage() {
+  const navigate = useNavigate();
+  
+  // App State
+  const [isModelLoading, setIsModelLoading] = useState(true);
+  const [loadingText, setLoadingText] = useState('Initialisiere TensorFlow.js...');
+  const [error, setError] = useState<string | null>(null);
+  
+  // ML State
+  const [classifier, setClassifier] = useState<knnClassifier.KNNClassifier | null>(null);
+  const [mobilenetModel, setMobilenetModel] = useState<mobilenet.MobileNet | null>(null);
+  
+  // Data State
+  const [classes, setClasses] = useState<MLClass[]>([
+    { id: 'class-1', name: 'Klasse 1', images: [], color: COLORS[0] },
+    { id: 'class-2', name: 'Klasse 2', images: [], color: COLORS[1] },
+  ]);
+  
+  // Camera State
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [streamState, setStreamState] = useState<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  
+  // Training & Inference State
+  const [isTraining, setIsTraining] = useState(false);
+  const [isPredicting, setIsPredicting] = useState(false);
+  const [prediction, setPrediction] = useState<Prediction | null>(null);
+  const [hasTrainedModel, setHasTrainedModel] = useState(false);
+  
+  // Modal State
+  const [selectedImage, setSelectedImage] = useState<{classId: string, image: MLImage} | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  
+  // Consent State
+  const [hasConsented, setHasConsented] = useState(false);
+  const [cameraConsent, setCameraConsent] = useState(false);
+  const [privacyChecked, setPrivacyChecked] = useState(false);
+  const [modelChecked, setModelChecked] = useState(false);
+  
+  // Refs
+  const requestRef = useRef<number>();
+  const predictVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Initialize ML Models
+  useEffect(() => {
+    if (!hasConsented) return;
+
+    async function initModels() {
+      try {
+        setLoadingText('Lade TensorFlow.js Backend...');
+        await tf.ready();
+        
+        setLoadingText('Erstelle KNN Klassifikator...');
+        const knn = knnClassifier.create();
+        setClassifier(knn);
+        
+        setLoadingText('Lade MobileNet (Feature Extractor)...');
+        const mn = await mobilenet.load({ version: 2, alpha: 1.0 });
+        setMobilenetModel(mn);
+        
+        setIsModelLoading(false);
+      } catch (err) {
+        console.error("Error loading models:", err);
+        setError("Fehler beim Laden der KI-Modelle. Bitte lade die Seite neu.");
+        setIsModelLoading(false);
+      }
+    }
+    
+    initModels();
+    
+    return () => {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+    };
+  }, [hasConsented]);
+
+  // Main Webcam Setup
+  const setupWebcam = useCallback(async () => {
+    if (!cameraConsent) return;
+    
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        // Stop existing stream
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        }
+        
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false,
+        });
+        streamRef.current = stream;
+        setStreamState(stream);
+      } catch (err) {
+        console.error("Error accessing webcam:", err);
+        setError("Kamerazugriff verweigert oder keine Kamera gefunden.");
+      }
+    }
+  }, [facingMode, cameraConsent]);
+
+  useEffect(() => {
+    setupWebcam();
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [setupWebcam]);
+
+  // Attach stream to prediction video
+  useEffect(() => {
+    if (predictVideoRef.current && streamState) {
+      predictVideoRef.current.srcObject = streamState;
+    }
+  }, [streamState, isModelLoading]);
+
+  const toggleCamera = () => {
+    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+  };
+
+  // Add Example Logic
+  const addExample = async (classId: string, videoElement: HTMLVideoElement) => {
+    if (!mobilenetModel || !videoElement) return;
+    
+    if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) return;
+
+    const img = tf.browser.fromPixels(videoElement);
+    const features = mobilenetModel.infer(img, true);
+    const featureArray = Array.from(features.dataSync()) as number[];
+    
+    const canvas = document.createElement('canvas');
+    // Increased resolution for better quality
+    canvas.width = 224;
+    canvas.height = 224;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const size = Math.min(videoElement.videoWidth, videoElement.videoHeight);
+      const startX = (videoElement.videoWidth - size) / 2;
+      const startY = (videoElement.videoHeight - size) / 2;
+      
+      if (facingMode === 'user') {
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+      }
+      
+      ctx.drawImage(videoElement, startX, startY, size, size, 0, 0, canvas.width, canvas.height);
+    }
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    
+    const newImage: MLImage = {
+      id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      dataUrl,
+      featureArray
+    };
+    
+    setClasses(prev => prev.map(c => 
+      c.id === classId ? { ...c, images: [...c.images, newImage] } : c
+    ));
+    
+    if (hasTrainedModel) {
+      setHasTrainedModel(false);
+      stopPredicting();
+    }
+    
+    img.dispose();
+    features.dispose();
+  };
+
+  const addImageExample = async (classId: string, imageElement: HTMLImageElement) => {
+    if (!mobilenetModel || !imageElement) return;
+    
+    if (imageElement.width === 0 || imageElement.height === 0) return;
+
+    const img = tf.browser.fromPixels(imageElement);
+    const features = mobilenetModel.infer(img, true);
+    const featureArray = Array.from(features.dataSync()) as number[];
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 224;
+    canvas.height = 224;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const size = Math.min(imageElement.width, imageElement.height);
+      const startX = (imageElement.width - size) / 2;
+      const startY = (imageElement.height - size) / 2;
+      
+      ctx.drawImage(imageElement, startX, startY, size, size, 0, 0, canvas.width, canvas.height);
+    }
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    
+    const newImage: MLImage = {
+      id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      dataUrl,
+      featureArray
+    };
+    
+    setClasses(prev => prev.map(c => 
+      c.id === classId ? { ...c, images: [...c.images, newImage] } : c
+    ));
+    
+    if (hasTrainedModel) {
+      setHasTrainedModel(false);
+      stopPredicting();
+    }
+    
+    img.dispose();
+    features.dispose();
+  };
+
+  // Prediction Loop
+  const predictLoop = async () => {
+    if (!classifier || !mobilenetModel || !predictVideoRef.current || classifier.getNumClasses() === 0) {
+      return;
+    }
+
+    if (
+      predictVideoRef.current.readyState >= 2 && 
+      predictVideoRef.current.videoWidth > 0 && 
+      predictVideoRef.current.videoHeight > 0
+    ) {
+      const img = tf.browser.fromPixels(predictVideoRef.current);
+      const features = mobilenetModel.infer(img, true);
+      
+      try {
+        const result = await classifier.predictClass(features);
+        setPrediction({
+          label: result.label,
+          confidences: result.confidences
+        });
+      } catch (err) {
+        console.error("Prediction error:", err);
+      }
+      
+      img.dispose();
+      features.dispose();
+    }
+
+    if (isPredicting) {
+      requestRef.current = requestAnimationFrame(predictLoop);
+    }
+  };
+
+  useEffect(() => {
+    if (isPredicting) {
+      requestRef.current = requestAnimationFrame(predictLoop);
+    } else {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+      setPrediction(null);
+    }
+    
+    return () => {
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
+  }, [isPredicting, classifier, mobilenetModel]);
+
+  const startPredicting = () => {
+    if (!hasTrainedModel) return;
+    setIsPredicting(true);
+  };
+
+  const stopPredicting = () => {
+    setIsPredicting(false);
+  };
+
+  // Class Management
+  const addClass = () => {
+    const newId = `class-${Date.now()}`;
+    setClasses([...classes, { 
+      id: newId, 
+      name: `Klasse ${classes.length + 1}`, 
+      images: [],
+      color: COLORS[classes.length % COLORS.length]
+    }]);
+    
+    if (hasTrainedModel) {
+      setHasTrainedModel(false);
+      stopPredicting();
+    }
+  };
+
+  const removeClass = (id: string) => {
+    setClasses(classes.filter(c => c.id !== id));
+    
+    if (hasTrainedModel) {
+      setHasTrainedModel(false);
+      stopPredicting();
+    }
+  };
+
+  const updateClassName = (id: string, newName: string) => {
+    setClasses(classes.map(c => c.id === id ? { ...c, name: newName } : c));
+  };
+
+  const removeImage = (classId: string, imageId: string) => {
+    setClasses(classes.map(c => 
+      c.id === classId ? { ...c, images: c.images.filter(img => img.id !== imageId) } : c
+    ));
+    
+    if (hasTrainedModel) {
+      setHasTrainedModel(false);
+      stopPredicting();
+    }
+    setSelectedImage(null);
+  };
+
+  const clearAll = () => {
+    setClasses([
+      { id: 'class-1', name: 'Klasse 1', images: [], color: COLORS[0] },
+      { id: 'class-2', name: 'Klasse 2', images: [], color: COLORS[1] },
+    ]);
+    setHasTrainedModel(false);
+    stopPredicting();
+    if (classifier) {
+      classifier.clearAllClasses();
+    }
+    setShowClearConfirm(false);
+  };
+
+  // Training Logic
+  const trainModel = async () => {
+    if (classes.length < 2 || !classes.every(c => c.images.length >= 10)) {
+      alert("Bitte sammle für alle Klassen mindestens 10 Bilder.");
+      return;
+    }
+    
+    const hasInvalidNames = classes.some(c => c.name.trim() === '');
+    const hasDuplicateNames = new Set(classes.map(c => c.name.trim())).size !== classes.length;
+    
+    if (hasInvalidNames) {
+      alert("Bitte gib allen Klassen einen Namen.");
+      return;
+    }
+    
+    if (hasDuplicateNames) {
+      alert("Bitte gib allen Klassen einen eindeutigen Namen.");
+      return;
+    }
+    
+    setIsTraining(true);
+    
+    if (classifier) {
+      classifier.dispose();
+    }
+    
+    const newClassifier = knnClassifier.create();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    try {
+      for (const cls of classes) {
+        for (const img of cls.images) {
+          const tensor = tf.tensor1d(img.featureArray);
+          newClassifier.addExample(tensor, cls.id);
+          tensor.dispose();
+        }
+      }
+      
+      setClassifier(newClassifier);
+      setHasTrainedModel(true);
+      setIsTraining(false);
+    } catch (err) {
+      console.error("Training error:", err);
+      setError("Fehler beim Training des Modells.");
+      setIsTraining(false);
+    }
+  };
+
+  const hasInvalidNames = classes.some(c => c.name.trim() === '');
+  const hasDuplicateNames = new Set(classes.map(c => c.name.trim())).size !== classes.length;
+  const canTrain = classes.length >= 2 && classes.every(c => c.images.length >= 10) && !hasInvalidNames && !hasDuplicateNames;
+
+  return (
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-20">
+      {/* Header */}
+      <header className="bg-white border-b border-zinc-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <button 
+            onClick={() => navigate('/')}
+            className="flex items-center text-zinc-500 hover:text-zinc-900 transition-colors font-medium text-sm"
+            aria-label="Zurück zur Startseite"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
+            <span className="hidden sm:inline">Zurück</span>
+          </button>
+          
+          <div className="flex items-center gap-3 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <img 
+              src="/ada-logo.png" 
+              alt="Ada Lovelace Projekt Logo" 
+              className="h-8 w-auto object-contain hidden sm:block"
+              referrerPolicy="no-referrer"
+            />
+            <h1 className="text-lg font-bold text-zinc-800">Modell trainieren</h1>
+          </div>
+
+          <button 
+            onClick={toggleCamera}
+            className="p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors"
+            title="Kamera wechseln"
+            aria-label="Kamera wechseln"
+          >
+            <SwitchCamera className="w-5 h-5" aria-hidden="true" />
+          </button>
+        </div>
+      </header>
+
+      {error && (
+        <div className="max-w-7xl mx-auto mt-6 px-4 sm:px-6 lg:px-8">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start text-sm">
+            <AlertCircle className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
+            <p>{error}</p>
+          </div>
+        </div>
+      )}
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Left Column: Classes */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-bold text-zinc-800">Klassen ({classes.length})</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowClearConfirm(true)}
+                className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-200 text-rose-600 hover:bg-rose-50 hover:border-rose-200 rounded-xl text-sm font-medium transition-colors shadow-sm"
+                title="Alles zurücksetzen"
+                aria-label="Alle Klassen und Bilder zurücksetzen"
+              >
+                <RotateCcw className="w-4 h-4 sm:mr-2" aria-hidden="true" /> <span className="hidden sm:inline">Zurücksetzen</span>
+              </button>
+              <button
+                onClick={addClass}
+                className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl text-sm font-medium transition-colors shadow-sm"
+                aria-label="Neue Klasse hinzufügen"
+              >
+                <Plus className="w-4 h-4 sm:mr-2" aria-hidden="true" /> <span className="hidden sm:inline">Hinzufügen</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {classes.length === 0 ? (
+              <div className="text-center p-12 bg-white rounded-2xl border border-zinc-200 border-dashed">
+                <p className="text-zinc-500 text-sm">Keine Klassen vorhanden. Füge Klassen hinzu, um zu starten.</p>
+              </div>
+            ) : (
+              classes.map((cls) => (
+                <ClassCard 
+                  key={cls.id}
+                  cls={cls}
+                  allClasses={classes}
+                  stream={streamState}
+                  facingMode={facingMode}
+                  onAddExample={(video) => addExample(cls.id, video)}
+                  onAddImageExample={(img) => addImageExample(cls.id, img)}
+                  onRemove={() => removeClass(cls.id)}
+                  onUpdateName={(name) => updateClassName(cls.id, name)}
+                  onImageClick={(img) => setSelectedImage({classId: cls.id, image: img})}
+                />
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Training & Prediction */}
+        <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-24">
+          
+          {/* Training Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col">
+            <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
+              <h2 className="text-base font-bold text-zinc-800 flex items-center">
+                <Brain className="w-4 h-4 mr-2 text-indigo-500" /> Training
+              </h2>
+              {hasTrainedModel && (
+                <span className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Bereit
+                </span>
+              )}
+            </div>
+            <div className="p-5">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-zinc-500">Klassen bereit:</span>
+                <span className={cn("font-semibold", canTrain ? "text-emerald-600" : "text-rose-500")}>
+                  {classes.filter(c => c.images.length >= 10).length} / {Math.max(2, classes.length)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm mb-5">
+                <span className="text-zinc-500">Gesammelte Bilder:</span>
+                <span className="font-semibold text-zinc-800">
+                  {classes.reduce((acc, c) => acc + c.images.length, 0)}
+                </span>
+              </div>
+
+              <button
+                onClick={trainModel}
+                disabled={isTraining || !canTrain}
+                className={cn(
+                  "w-full py-3 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center",
+                  isTraining || !canTrain
+                    ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                    : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5"
+                )}
+              >
+                {isTraining ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Trainiere...</>
+                ) : hasTrainedModel ? (
+                  "Modell neu trainieren"
+                ) : (
+                  "Modell trainieren"
+                )}
+              </button>
+              
+              <p className="text-xs text-zinc-400 mt-3 text-center" aria-live="polite">
+                {isTraining
+                  ? "Bitte warten, das Modell wird trainiert..."
+                  : hasInvalidNames
+                  ? "Bitte gib allen Klassen einen Namen."
+                  : hasDuplicateNames
+                  ? "Bitte gib allen Klassen einen eindeutigen Namen."
+                  : !canTrain
+                  ? "Sammle mind. 10 Bilder in ALLEN Klassen (mind. 2)."
+                  : hasTrainedModel
+                  ? "Modell ist bereit. Du kannst es jederzeit neu trainieren."
+                  : "Genug Bilder gesammelt! Du kannst das Modell jetzt trainieren."}
+              </p>
+            </div>
+          </div>
+
+          {/* Prediction Card */}
+          <div className={cn(
+            "bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col flex-1 transition-opacity duration-300",
+            !hasTrainedModel ? "opacity-50 pointer-events-none" : "opacity-100"
+          )}>
+            <div className="px-5 py-4 border-b border-zinc-100 flex justify-between items-center">
+              <h2 className="text-base font-bold text-zinc-800 flex items-center">
+                <Camera className="w-4 h-4 mr-2 text-indigo-500" /> Vorhersage
+              </h2>
+              {isPredicting && (
+                <span className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                  Live
+                </span>
+              )}
+            </div>
+            
+            <div className="p-5 flex flex-col flex-1">
+              <div className="relative aspect-[16/10.25] bg-zinc-900 rounded-xl overflow-hidden mb-5 flex-shrink-0">
+                <video 
+                  ref={predictVideoRef}
+                  autoPlay 
+                  playsInline 
+                  muted 
+                  className={cn(
+                    "w-full h-full object-cover rounded-xl",
+                    facingMode === 'user' ? "transform scale-x-[-1]" : ""
+                  )}
+                />
+                {!isPredicting && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-xl">
+                    <button
+                      onClick={startPredicting}
+                      className="px-5 py-2.5 bg-white text-zinc-900 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform flex items-center"
+                    >
+                      <Play className="w-4 h-4 mr-2 fill-current" aria-hidden="true" /> Starten
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Prediction Results */}
+              <div className="flex-1 flex flex-col justify-center" aria-live="polite" aria-atomic="true">
+                {isPredicting && prediction ? (
+                  <div className="space-y-4">
+                    <div className="text-center mb-2">
+                      <div className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold mb-1">Erkannt</div>
+                      <div className="text-2xl font-black text-zinc-800">
+                        {classes.find(c => c.id === prediction.label)?.name || 'Unbekannt'}
+                      </div>
+                    </div>
+                    <div className="space-y-2.5">
+                      {classes.map(c => {
+                        const conf = prediction.confidences[c.id] || 0;
+                        return (
+                          <div key={c.id} className="flex items-center text-xs">
+                            <span className="w-20 truncate font-semibold text-zinc-600">{c.name}</span>
+                            <div className="flex-1 h-2 bg-zinc-100 rounded-full overflow-hidden mx-3">
+                              <div 
+                                className="h-full rounded-full transition-all duration-200 ease-out"
+                                style={{ 
+                                  width: `${conf * 100}%`,
+                                  backgroundColor: c.color
+                                }}
+                              />
+                            </div>
+                            <span className="w-10 text-right font-mono font-medium text-zinc-500">{Math.round(conf * 100)}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={stopPredicting}
+                      className="w-full mt-4 py-2.5 px-4 bg-zinc-50 hover:bg-zinc-100 text-zinc-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center border border-zinc-200/50"
+                    >
+                      <Square className="w-4 h-4 mr-2 fill-current" aria-hidden="true" /> Stoppen
+                    </button>
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-zinc-400 text-sm text-center">
+                    Starte die Vorhersage, um Ergebnisse zu sehen.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </main>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="image-modal-title"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full">
+            <div className="p-4 border-b border-zinc-100 flex justify-between items-center">
+              <h3 id="image-modal-title" className="font-bold text-zinc-800 text-sm">Bild Vorschau</h3>
+              <button 
+                onClick={() => setSelectedImage(null)}
+                className="p-1.5 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-full transition-colors"
+                aria-label="Schließen"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6 flex flex-col items-center">
+              <img 
+                src={selectedImage.image.dataUrl} 
+                alt="Vergrößerte Bildvorschau" 
+                className="w-48 h-48 object-cover rounded-2xl shadow-sm border border-zinc-200 mb-6"
+              />
+              <button
+                onClick={() => removeImage(selectedImage.classId, selectedImage.image.id)}
+                className="w-full py-2.5 px-4 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center"
+              >
+                <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" /> Bild löschen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Confirm Modal */}
+      {showClearConfirm && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="clear-modal-title"
+          aria-describedby="clear-modal-desc"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full">
+            <div className="p-6">
+              <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4" aria-hidden="true">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <h3 id="clear-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Daten unwiderruflich löschen?</h3>
+              <p id="clear-modal-desc" className="text-zinc-600 mb-6">
+                Möchten Sie wirklich alle erfassten Klassen und Bilddaten löschen? Das aktuell trainierte Modell wird dabei unwiderruflich entfernt und der Vorgang kann nicht rückgängig gemacht werden.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowClearConfirm(false)}
+                  className="flex-1 py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-sm font-semibold transition-colors"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={clearAll}
+                  className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition-colors"
+                >
+                  Unwiderruflich löschen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Consent Modal */}
+      {!hasConsented && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="consent-modal-title"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-lg w-full p-8">
+            <h2 id="consent-modal-title" className="text-2xl font-bold text-zinc-900 mb-6">Einwilligung zur Datenverarbeitung</h2>
+            
+            <div className="space-y-5 mb-8">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={privacyChecked}
+                  onChange={(e) => setPrivacyChecked(e.target.checked)}
+                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-zinc-700 text-sm leading-relaxed">
+                  Ich habe die <a href="/datenschutz" target="_blank" className="text-indigo-600 hover:underline font-medium">Datenschutzerklärung</a> zur Kenntnis genommen und stimme der Verarbeitung meiner Daten gemäß den dort beschriebenen Bedingungen zu.
+                </span>
+              </label>
+              
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={modelChecked}
+                  onChange={(e) => setModelChecked(e.target.checked)}
+                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-zinc-700 text-sm leading-relaxed">
+                  Ich willige ein, dass für die Ausführung der Anwendung notwendige KI-Modelle (MobileNet) von Google-Servern geladen werden. Mir ist bewusst, dass hierbei meine IP-Adresse an Google übertragen wird (siehe <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-medium">Google Datenschutzerklärung</a>). Die Verarbeitung der aufgenommenen Bilddaten erfolgt dabei ausschließlich lokal auf meinem Endgerät; es findet kein Upload von Bildmaterial statt.
+                </span>
+              </label>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/')}
+                className="flex-1 py-3 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl font-bold transition-colors"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => setHasConsented(true)}
+                disabled={!privacyChecked || !modelChecked}
+                className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-zinc-300 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-colors"
+              >
+                Zustimmen & Fortfahren
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading Modal */}
+      {hasConsented && isModelLoading && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="loading-modal-title"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full p-8 flex flex-col items-center text-center">
+            <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mb-4" aria-hidden="true" />
+            <h2 id="loading-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Lade KI-Modelle...</h2>
+            <p className="text-zinc-500 text-sm" aria-live="polite">{loadingText}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Camera Consent Modal */}
+      {hasConsented && !isModelLoading && !cameraConsent && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="camera-modal-title"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-8 text-center">
+            <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6" aria-hidden="true">
+              <Camera className="w-8 h-8" />
+            </div>
+            <h2 id="camera-modal-title" className="text-2xl font-bold text-zinc-900 mb-4">Berechtigung zur Kameranutzung</h2>
+            <p className="text-zinc-600 mb-8 text-sm leading-relaxed">
+              Für die Erfassung von Trainingsdaten benötigt diese Anwendung Zugriff auf die Kamera Ihres Endgeräts. 
+              <strong> Die erfassten Bilddaten werden ausschließlich lokal im Browser verarbeitet und zu keinem Zeitpunkt an externe Server übermittelt oder dort gespeichert.</strong>
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/')}
+                className="flex-1 py-3 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl font-bold transition-colors"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => setCameraConsent(true)}
+                className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center"
+              >
+                <Camera className="w-5 h-5 mr-2" /> Erlauben
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface ClassCardProps {
+  cls: MLClass; 
+  allClasses: MLClass[];
+  stream: MediaStream | null;
+  facingMode: 'user' | 'environment';
+  onAddExample: (video: HTMLVideoElement) => void;
+  onAddImageExample: (img: HTMLImageElement) => void;
+  onRemove: () => void;
+  onUpdateName: (name: string) => void;
+  onImageClick: (img: MLImage) => void;
+}
+
+function ClassCard({ 
+  cls, 
+  allClasses,
+  stream,
+  facingMode,
+  onAddExample, 
+  onAddImageExample,
+  onRemove, 
+  onUpdateName,
+  onImageClick
+}: ClassCardProps) {
+  const [isRecording, setIsRecording] = useState(false);
+  const recordIntervalRef = useRef<number | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Attach stream to local video element
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
+  const startRecording = (e?: React.SyntheticEvent) => {
+    if (!videoRef.current) return;
+    if (isRecording) return; // Prevent double firing from touch + mouse events
+    
+    setIsRecording(true);
+    
+    if (recordIntervalRef.current) {
+      clearInterval(recordIntervalRef.current);
+    }
+    
+    onAddExample(videoRef.current);
+    
+    recordIntervalRef.current = window.setInterval(() => {
+      if (videoRef.current) {
+        onAddExample(videoRef.current);
+      }
+    }, 100);
+  };
+
+  const stopRecording = () => {
+    setIsRecording(false);
+    if (recordIntervalRef.current) {
+      clearInterval(recordIntervalRef.current);
+      recordIntervalRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (recordIntervalRef.current) {
+        clearInterval(recordIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          onAddImageExample(img);
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const nameTrimmed = cls.name.trim();
+  const isEmpty = nameTrimmed === '';
+  const isDuplicate = allClasses.filter(c => c.name.trim() === nameTrimmed).length > 1;
+  const errorMsg = isEmpty ? "Name darf nicht leer sein" : isDuplicate ? "Name muss eindeutig sein" : null;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col transition-all hover:shadow-md">
+      
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-zinc-100 flex justify-between items-start sm:items-center bg-zinc-50/50">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: cls.color }} aria-hidden="true" />
+            <input
+              type="text"
+              value={cls.name}
+              onChange={(e) => onUpdateName(e.target.value)}
+              className={cn(
+                "font-semibold bg-transparent border-b border-transparent focus:ring-0 p-0 w-[160px] focus:outline-none text-sm transition-colors",
+                errorMsg ? "border-red-500 text-red-600" : "text-zinc-800 focus:border-zinc-300"
+              )}
+              placeholder="Klassenname"
+              aria-label={`Name für Klasse ${cls.name || 'ohne Namen'}`}
+            />
+          </div>
+          {errorMsg && <span className="text-[10px] text-red-500 mt-1 ml-[22px]">{errorMsg}</span>}
+        </div>
+        <div className="flex items-center gap-3 mt-1 sm:mt-0">
+          <span className="text-xs font-mono text-zinc-400 bg-zinc-100 px-2 py-1 rounded-md">
+            {cls.images.length} Bilder
+          </span>
+          <button 
+            onClick={onRemove}
+            className="text-zinc-400 hover:text-rose-500 transition-colors"
+            title="Klasse löschen"
+            aria-label={`Klasse ${cls.name || 'ohne Namen'} löschen`}
+          >
+            <Trash2 className="w-4 h-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="p-4 flex flex-col sm:flex-row gap-4">
+        
+        {/* Left: Camera & Controls */}
+        <div className="w-full sm:w-56 flex flex-col gap-3 flex-shrink-0">
+          <div className="relative aspect-[4/3] bg-zinc-900 rounded-xl overflow-hidden shadow-inner">
+            <video 
+              ref={videoRef}
+              autoPlay 
+              playsInline 
+              muted 
+              className={cn(
+                "w-full h-full object-cover",
+                facingMode === 'user' ? "transform scale-x-[-1]" : ""
+              )}
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onMouseDown={startRecording}
+              onMouseUp={stopRecording}
+              onMouseLeave={stopRecording}
+              onTouchStart={startRecording}
+              onTouchEnd={stopRecording}
+              onTouchCancel={stopRecording}
+              onContextMenu={(e) => e.preventDefault()}
+              className={cn(
+                "flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center select-none touch-none",
+                isRecording 
+                  ? "scale-95 shadow-inner opacity-90" 
+                  : "shadow-sm hover:-translate-y-0.5 hover:shadow-md"
+              )}
+              style={{
+                backgroundColor: cls.color,
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none'
+              }}
+            >
+              <Camera className={cn("w-4 h-4 mr-2", isRecording && "animate-pulse")} />
+              {isRecording ? "Aufnahme..." : "Aufnehmen"}
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-xl transition-colors flex items-center justify-center shadow-sm"
+              title="Bilder hochladen"
+              aria-label="Bilder hochladen"
+            >
+              <Upload className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileUpload} 
+              accept="image/*" 
+              multiple 
+              className="hidden" 
+              aria-label="Bilder hochladen"
+            />
+          </div>
+        </div>
+
+        {/* Right: Thumbnails */}
+        <div className="flex-1 relative min-h-[160px] sm:min-h-0">
+          <div className="absolute inset-0 bg-zinc-50/50 rounded-xl border border-zinc-100 p-2 overflow-y-auto custom-scrollbar">
+            {cls.images.length > 0 ? (
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+                {cls.images.map((img) => (
+                  <div 
+                    key={img.id} 
+                    className="aspect-square rounded-lg overflow-hidden border border-zinc-200 cursor-pointer hover:border-indigo-400 hover:shadow-sm transition-all"
+                    onClick={() => onImageClick(img)}
+                  >
+                    <img src={img.dataUrl} alt="Training sample" className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center px-4 text-zinc-400">
+                <ImageIcon className="w-6 h-6 mb-2 opacity-20" />
+                <p className="text-xs">
+                  Halte "Aufnehmen" gedrückt, um Bilder zu sammeln.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
