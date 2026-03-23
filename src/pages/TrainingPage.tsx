@@ -1056,13 +1056,15 @@ function ClassCard({
   const errorMsg = isEmpty ? "Name darf nicht leer sein" : isDuplicate ? "Name muss eindeutig sein" : null;
 
   const toggleImageSelection = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
+    setSelectedIds(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(id)) {
+        newSelected.delete(id);
+      } else {
+        newSelected.add(id);
+      }
+      return newSelected;
+    });
   };
 
   const handleBulkDelete = () => {
