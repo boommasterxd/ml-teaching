@@ -338,6 +338,17 @@ export default function TrainingPage() {
     setSelectedImage(null);
   };
 
+  const removeImages = (classId: string, imageIds: string[]) => {
+    setClasses(classes.map(c => 
+      c.id === classId ? { ...c, images: c.images.filter(img => !imageIds.includes(img.id)) } : c
+    ));
+    
+    if (hasTrainedModel) {
+      setHasTrainedModel(false);
+      stopPredicting();
+    }
+  };
+
   const clearClass = (id: string) => {
     setClasses(classes.map(c => 
       c.id === id ? { ...c, images: [] } : c
@@ -500,6 +511,7 @@ export default function TrainingPage() {
                   onAddImageExample={(img) => addImageExample(cls.id, img)}
                   onRemove={() => removeClass(cls.id)}
                   onClear={() => clearClass(cls.id)}
+                  onRemoveImages={(ids) => removeImages(cls.id, ids)}
                   onUpdateName={(name) => updateClassName(cls.id, name)}
                   onImageClick={(img) => setSelectedImage({classId: cls.id, image: img})}
                 />
@@ -854,6 +866,7 @@ interface ClassCardProps {
   onAddImageExample: (img: HTMLImageElement) => void;
   onRemove: () => void;
   onClear: () => void;
+  onRemoveImages: (ids: string[]) => void;
   onUpdateName: (name: string) => void;
   onImageClick: (img: MLImage) => void;
 }
@@ -867,10 +880,13 @@ function ClassCard({
   onAddImageExample,
   onRemove, 
   onClear,
+  onRemoveImages,
   onUpdateName,
   onImageClick
 }: ClassCardProps) {
   const [isRecording, setIsRecording] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const recordIntervalRef = useRef<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -942,6 +958,23 @@ function ClassCard({
   const isEmpty = nameTrimmed === '';
   const isDuplicate = allClasses.filter(c => c.name.trim() === nameTrimmed).length > 1;
   const errorMsg = isEmpty ? "Name darf nicht leer sein" : isDuplicate ? "Name muss eindeutig sein" : null;
+
+  const toggleImageSelection = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    onRemoveImages(Array.from(selectedIds));
+    setSelectedIds(new Set());
+    setIsSelectionMode(false);
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col transition-all hover:shadow-md">
@@ -1050,17 +1083,70 @@ function ClassCard({
         </div>
 
         {/* Right: Thumbnails */}
-        <div className="flex-1 relative min-h-[160px] sm:min-h-0">
-          <div className="absolute inset-0 bg-zinc-50/50 rounded-xl border border-zinc-100 p-2 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 relative min-h-[160px] sm:min-h-0 flex flex-col">
+          <div className="flex justify-between items-center mb-2 px-1">
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+              {isSelectionMode ? `${selectedIds.size} ausgewählt` : 'Gesammelte Bilder'}
+            </span>
+            <div className="flex gap-2">
+              {isSelectionMode ? (
+                <>
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={selectedIds.size === 0}
+                    className="text-[10px] font-bold text-rose-600 hover:text-rose-700 disabled:text-zinc-300 transition-colors"
+                  >
+                    Löschen
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsSelectionMode(false);
+                      setSelectedIds(new Set());
+                    }}
+                    className="text-[10px] font-bold text-zinc-500 hover:text-zinc-700 transition-colors"
+                  >
+                    Abbrechen
+                  </button>
+                </>
+              ) : (
+                cls.images.length > 0 && (
+                  <button
+                    onClick={() => setIsSelectionMode(true)}
+                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+                  >
+                    Auswählen
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+          <div className="flex-1 relative min-h-[140px] bg-zinc-50/50 rounded-xl border border-zinc-100 p-2 overflow-y-auto custom-scrollbar">
             {cls.images.length > 0 ? (
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {cls.images.map((img) => (
                   <div 
                     key={img.id} 
-                    className="aspect-square rounded-lg overflow-hidden border border-zinc-200 cursor-pointer hover:border-indigo-400 hover:shadow-sm transition-all"
-                    onClick={() => onImageClick(img)}
+                    className={cn(
+                      "aspect-square rounded-lg overflow-hidden border cursor-pointer transition-all relative",
+                      isSelectionMode 
+                        ? selectedIds.has(img.id) 
+                          ? "border-indigo-500 ring-2 ring-indigo-500/20" 
+                          : "border-zinc-200 opacity-60 hover:opacity-100"
+                        : "border-zinc-200 hover:border-indigo-400 hover:shadow-sm"
+                    )}
+                    onClick={() => isSelectionMode ? toggleImageSelection(img.id) : onImageClick(img)}
                   >
                     <img src={img.dataUrl} alt="Training sample" className="w-full h-full object-cover" />
+                    {isSelectionMode && (
+                      <div className={cn(
+                        "absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center transition-colors",
+                        selectedIds.has(img.id) 
+                          ? "bg-indigo-500 border-indigo-500 text-white" 
+                          : "bg-white/80 border-zinc-300"
+                      )}>
+                        {selectedIds.has(img.id) && <CheckCircle2 className="w-3 h-3" />}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
