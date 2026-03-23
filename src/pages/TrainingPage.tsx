@@ -482,29 +482,29 @@ export default function TrainingPage() {
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-20">
       {/* Header */}
       <header className="bg-white border-b border-zinc-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
           <button 
             onClick={() => navigate('/')}
-            className="flex items-center text-zinc-500 hover:text-zinc-900 transition-colors font-medium text-sm"
+            className="flex items-center text-zinc-500 hover:text-zinc-900 transition-colors font-medium text-sm flex-shrink-0"
             aria-label="Zurück zur Startseite"
           >
             <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
             <span className="hidden sm:inline">Zurück</span>
           </button>
           
-          <div className="flex items-center gap-3 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="flex-1 flex items-center justify-center gap-3 px-2">
             <img 
               src="/ada-logo.png" 
               alt="Ada Lovelace Projekt Logo" 
-              className="h-8 w-auto object-contain hidden sm:block"
+              className="h-8 w-auto object-contain hidden lg:block"
               referrerPolicy="no-referrer"
             />
-            <h1 className="text-lg font-bold text-zinc-800">Modell trainieren</h1>
+            <h1 className="text-base sm:text-lg font-bold text-zinc-800 line-clamp-1">Modell trainieren</h1>
           </div>
 
           <button 
             onClick={toggleCamera}
-            className="p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors"
+            className="p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors flex-shrink-0"
             title="Kamera wechseln"
             aria-label="Kamera wechseln"
           >
@@ -900,24 +900,26 @@ export default function TrainingPage() {
             
             <div className="space-y-5 mb-8">
               <label className="flex items-start gap-3 cursor-pointer">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={privacyChecked}
                   onChange={(e) => setPrivacyChecked(e.target.checked)}
-                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus-visible:ring-indigo-500"
+                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-indigo-500"
                 />
+
                 <span className="text-zinc-700 text-sm leading-relaxed">
                   Ich habe die <a href="/datenschutz" target="_blank" className="text-indigo-600 hover:underline font-medium">Datenschutzerklärung</a> zur Kenntnis genommen und stimme der Verarbeitung meiner Daten gemäß den dort beschriebenen Bedingungen zu.
                 </span>
               </label>
               
               <label className="flex items-start gap-3 cursor-pointer">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={modelChecked}
                   onChange={(e) => setModelChecked(e.target.checked)}
-                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus-visible:ring-indigo-500"
+                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-indigo-500"
                 />
+
                 <span className="text-zinc-700 text-sm leading-relaxed">
                   Ich willige ein, dass für die Ausführung der Anwendung notwendige KI-Modelle (MobileNet) von Google-Servern geladen werden. Mir ist bewusst, dass hierbei meine IP-Adresse an Google übertragen wird (siehe <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-medium">Google Datenschutzerklärung</a>). Die Verarbeitung der aufgenommenen Bilddaten erfolgt dabei ausschließlich lokal auf meinem Endgerät; es findet kein Upload von Bildmaterial statt.
                 </span>

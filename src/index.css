@@ -6,11 +6,22 @@
 @import "tailwindcss";
 
 @layer base {
-  /* Only show focus outlines for keyboard navigation */
-  :focus:not(:focus-visible) {
-    outline: none !important;
-    box-shadow: none !important;
-  }
+  /* Default base styles */
+}
+
+/* 
+ * Only show focus outlines for keyboard navigation.
+ * We move this out of @layer base to ensure it applies broadly 
+ * and overrides browser defaults effectively.
+ */
+:focus:not(:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Prevent outline on the modal container itself when focused by useFocusTrap */
+div[role="dialog"]:focus {
+  outline: none;
 }
 
 @layer utilities {
