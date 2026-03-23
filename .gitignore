@@ -23,3 +23,4 @@ coverage/
 .vps-materialien/Update Docker Container N8N Workflow.json
 .vps-materialien/update-stack.sh
 .vps-materialien/VPS Security Masterplan.md
+dist-server/server.js
