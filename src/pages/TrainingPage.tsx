@@ -341,8 +341,9 @@ export default function TrainingPage() {
   };
 
   const removeImages = (classId: string, imageIds: string[]) => {
+    const idsToRemove = new Set(imageIds);
     setClasses(classes.map(c => 
-      c.id === classId ? { ...c, images: c.images.filter(img => !imageIds.includes(img.id)) } : c
+      c.id === classId ? { ...c, images: c.images.filter(img => !idsToRemove.has(img.id)) } : c
     ));
     
     if (hasTrainedModel) {
