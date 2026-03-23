@@ -1136,7 +1136,7 @@ function ClassCard({
               placeholder="Klassenname"
               aria-label={`Name für Klasse ${cls.name || 'ohne Namen'}`}
               aria-invalid={!!errorMsg}
-              aria-errormessage={`error-${cls.id}`}
+              aria-errormessage={errorMsg ? `error-${cls.id}` : undefined}
             />
           </div>
           {errorMsg && <span id={`error-${cls.id}`} className="text-[10px] text-red-500 mt-1 ml-[22px]">{errorMsg}</span>}
