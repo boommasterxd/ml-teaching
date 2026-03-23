@@ -301,13 +301,33 @@ export default function TrainingPage() {
 
   // Class Management
   const addClass = () => {
-    const newId = `class-${Date.now()}`;
-    setClasses(prev => [...prev, { 
-      id: newId, 
-      name: `Klasse ${prev.length + 1}`, 
-      images: [],
-      color: COLORS[prev.length % COLORS.length]
-    }]);
+    setClasses(prev => {
+      // Find the next available number for the default name
+      let nextNum = 1;
+      const existingNums = prev
+        .map(c => {
+          const match = c.name.match(/Klasse (\d+)/);
+          return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((n): n is number => n !== null);
+      
+      if (existingNums.length > 0) {
+        nextNum = Math.max(...existingNums) + 1;
+      } else if (prev.length > 0) {
+        nextNum = prev.length + 1;
+      }
+
+      const newId =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? `class-${crypto.randomUUID()}`
+          : `class-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+      return [...prev, { 
+        id: newId, 
+        name: `Klasse ${nextNum}`, 
+        images: [],
+        color: COLORS[(nextNum - 1) % COLORS.length]
+      }];
+    });
     
     if (hasTrainedModel) {
       setHasTrainedModel(false);
@@ -1226,7 +1246,7 @@ function ClassCard({
               )}
             </div>
           </div>
-          <div className="flex-1 relative min-h-[140px] bg-zinc-50/50 rounded-xl border border-zinc-100 p-2 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 relative h-[190px] max-h-[190px] bg-zinc-50/50 rounded-xl border border-zinc-100 p-2 overflow-y-auto custom-scrollbar">
             {cls.images.length > 0 ? (
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {cls.images.map((img) => (
