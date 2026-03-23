@@ -8,7 +8,9 @@ import LandingPage from './pages/LandingPage';
 import TrainingPage from './pages/TrainingPage';
 import ImprintPage from './pages/ImprintPage';
 import PrivacyPage from './pages/PrivacyPage';
+import NotFoundPage from './pages/NotFoundPage';
 import Footer from './components/Footer';
+import CookieBanner from './components/CookieBanner';
 
 export default function App() {
   return (
@@ -20,9 +22,11 @@ export default function App() {
             <Route path="/lernen" element={<TrainingPage />} />
             <Route path="/impressum" element={<ImprintPage />} />
             <Route path="/datenschutz" element={<PrivacyPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
         <Footer />
+        <CookieBanner />
       </div>
     </Router>
   );
