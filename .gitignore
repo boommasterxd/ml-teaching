@@ -15,3 +15,11 @@ coverage/
 .dsgvo-materialien/Checklisten/privacy-shield-checklist.pdf
 .dsgvo-materialien/Mustertexte/datenschutz-erklärung-muster.md
 .dsgvo-materialien/Mustertexte/impressum-muster.md
+.vps-materialien/create-cloud-backup.sh
+.vps-materialien/docker-compose.yml
+.vps-materialien/Dockerfile
+.vps-materialien/Hostinger VPS Master Guide.md
+.vps-materialien/Server Backup N8N Workflow.json
+.vps-materialien/Update Docker Container N8N Workflow.json
+.vps-materialien/update-stack.sh
+.vps-materialien/VPS Security Masterplan.md
