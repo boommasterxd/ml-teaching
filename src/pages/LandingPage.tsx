@@ -71,7 +71,7 @@ export default function LandingPage() {
       <section className="py-20 bg-zinc-900 text-white px-6 sm:px-12 lg:px-24">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-6">Wie lernt ein computer?</h2>
+            <h2 className="text-3xl font-bold mb-6">Wie lernt ein Computer?</h2>
             <p className="text-zinc-400 max-w-3xl mx-auto text-lg">
               Um zu verstehen, was er sieht, nutzt ein Computer ein sogenanntes künstliches neuronales Netz. 
               Das ist eine Technik, die sich an der Arbeitsweise unseres Gehirns orientiert. 
