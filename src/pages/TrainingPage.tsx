@@ -301,13 +301,30 @@ export default function TrainingPage() {
 
   // Class Management
   const addClass = () => {
-    const newId = `class-${Date.now()}`;
-    setClasses(prev => [...prev, { 
-      id: newId, 
-      name: `Klasse ${prev.length + 1}`, 
-      images: [],
-      color: COLORS[prev.length % COLORS.length]
-    }]);
+    setClasses(prev => {
+      // Find the next available number for the default name
+      let nextNum = 1;
+      const existingNums = prev
+        .map(c => {
+          const match = c.name.match(/Klasse (\d+)/);
+          return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((n): n is number => n !== null);
+      
+      if (existingNums.length > 0) {
+        nextNum = Math.max(...existingNums) + 1;
+      } else if (prev.length > 0) {
+        nextNum = prev.length + 1;
+      }
+
+      const newId = `class-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      return [...prev, { 
+        id: newId, 
+        name: `Klasse ${nextNum}`, 
+        images: [],
+        color: COLORS[(nextNum - 1) % COLORS.length]
+      }];
+    });
     
     if (hasTrainedModel) {
       setHasTrainedModel(false);
