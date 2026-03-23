@@ -6,9 +6,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 export default function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false);
+  const bannerRef = useFocusTrap(isVisible);
 
   useEffect(() => {
     const hasAcknowledged = localStorage.getItem('cookie_consent_acknowledged');
@@ -26,10 +28,12 @@ export default function CookieBanner() {
     <AnimatePresence>
       {isVisible && (
         <motion.div
+          ref={bannerRef}
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
-          role="region"
+          role="alertdialog"
+          aria-modal="true"
           aria-label="Cookie-Informationen"
           className="fixed bottom-6 left-6 right-6 md:left-1/2 md:-translate-x-1/2 md:max-w-4xl z-50 p-6 md:p-8 bg-[#121212] text-white shadow-2xl rounded-3xl border border-white/10"
         >
