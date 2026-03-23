@@ -4,7 +4,7 @@
  */
 import { useEffect, useRef } from 'react';
 
-export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = true) {
+export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false) {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -19,11 +19,12 @@ export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = true) 
     const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
     if (autoFocusFirst && firstElement) {
-      firstElement.focus();
+      firstElement.focus({ preventScroll: true });
     } else if (!autoFocusFirst) {
-      // Set focus to the container itself if no element should be automatically focused.
-      // This helps avoid outlines on buttons while maintaining accessibility.
-      root.focus();
+      // Set tabIndex to -1 so the div can be focused programmatically
+      root.tabIndex = -1;
+      // Focus the container itself to avoid outlines on buttons while maintaining accessibility.
+      root.focus({ preventScroll: true });
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
