@@ -936,7 +936,7 @@ export default function TrainingPage() {
                 disabled={!privacyChecked || !modelChecked}
                 className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-zinc-300 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-colors"
               >
-                Zustimmen & Fortfahren
+                Zustimmen<span className="hidden sm:inline"> & Fortfahren</span>
               </button>
             </div>
           </div>
