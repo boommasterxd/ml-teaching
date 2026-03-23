@@ -829,7 +829,9 @@ export default function TrainingPage() {
               </button>
               <button
                 onClick={() => {
-                  removeClass(classToRemove);
+                  const id = classToRemove;
+                  if (!id) return;
+                  removeClass(id);
                   setClassToRemove(null);
                 }}
                 className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition-colors"
