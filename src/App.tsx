@@ -12,10 +12,12 @@ import PrivacyPage from './pages/PrivacyPage';
 import NotFoundPage from './pages/NotFoundPage';
 import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
+import ScrollToTop from './components/ScrollToTop';
 
 export default function App() {
   return (
     <Router>
+      <ScrollToTop />
       <div className="min-h-screen flex flex-col">
         <a 
           href="#main-content" 
