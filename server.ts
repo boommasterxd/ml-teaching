@@ -35,19 +35,11 @@ app.use(helmet({
 }));
 
 /**
- * 3. Suchmaschinen-Schutz (X-Robots-Tag)
- */
-app.use((req, res, next) => {
-  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
-  next();
-});
-
-/**
- * 4. Rate Limiting
+ * 3. Rate Limiting
  */
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Zu viele Anfragen von dieser IP. Bitte versuchen Sie es später erneut.' }
@@ -57,7 +49,7 @@ app.use(limiter);
 async function setupServer() {
   if (process.env.NODE_ENV !== 'production') {
     /**
-     * 5a. Development-Modus: Vite Middleware (SPA-Mode)
+     * 4a. Development-Modus: Vite Middleware (SPA-Mode)
      */
     console.log('🛠️ Starte Vite Middleware für Entwicklung...');
     const { createServer: createViteServer } = await import('vite');
@@ -68,7 +60,7 @@ async function setupServer() {
     app.use(vite.middlewares);
   } else {
     /**
-     * 5b. Produktions-Modus: 1:1 wie Kickbox-Projekt
+     * 4b. Produktions-Modus: 1:1 wie Kickbox-Projekt
      */
     const distPath = path.resolve(rootDir, 'dist');
     console.log(`📦 Produktions-Modus aktiv. Diene aus: ${distPath}`);
