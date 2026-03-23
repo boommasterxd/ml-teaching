@@ -241,22 +241,9 @@ export default function LandingPage() {
           </a>
         </div>
       </section>
-      
-      {/* Footer */}
-      <footer className="bg-zinc-50 py-12 text-center text-zinc-500 border-t border-zinc-200">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col items-center">
-          <p className="mb-4">Alle Daten werden lokal in deinem Browser verarbeitet. Es werden keine Bilder auf Server hochgeladen.</p>
-          <div className="flex gap-6 text-sm mb-4">
-            <a href="/impressum" className="hover:text-zinc-800 transition-colors">Impressum</a>
-            <a href="/datenschutz" className="hover:text-zinc-800 transition-colors">Datenschutz</a>
-          </div>
-          <p className="text-sm">&copy; {new Date().getFullYear()} Yannick Schäfer</p>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
+      </div>
+      );
+      }
 function NeuralNetViz() {
   const [activeSignal, setActiveSignal] = useState<'dog' | 'cat' | null>(null);
   const [animStep, setAnimStep] = useState(-1);
