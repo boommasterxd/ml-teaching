@@ -9,10 +9,14 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false);
   const bannerRef = useFocusTrap(isVisible, false);
+  
+  // Lock scroll when visible
+  useScrollLock(isVisible);
 
   useEffect(() => {
     const hasAcknowledged = localStorage.getItem('cookie_consent_acknowledged');
