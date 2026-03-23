@@ -1,3 +1,6 @@
+/**
+ * 404 Not Found page shown when a user navigates to a non-existent route.
+ */
 import { useNavigate } from 'react-router-dom';
 import { Home, AlertTriangle } from 'lucide-react';
 

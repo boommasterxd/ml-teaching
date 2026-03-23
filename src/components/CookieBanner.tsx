@@ -1,4 +1,6 @@
 /**
+ * Cookie banner component to inform users about the use of technically necessary cookies
+ * and local storage, ensuring GDPR compliance.
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */

@@ -1,3 +1,6 @@
+/**
+ * Imprint page containing legal contact and ownership information.
+ */
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
