@@ -9,7 +9,7 @@ export default function Footer() {
           <Link to="/impressum" className="hover:text-zinc-800 transition-colors">Impressum</Link>
           <Link to="/datenschutz" className="hover:text-zinc-800 transition-colors">Datenschutz</Link>
         </div>
-        <p className="text-sm">&copy; {new Date().getFullYear()} Yannick Schäfer</p>
+        <p className="text-sm">&copy; {new Date().getFullYear()} Yannick Schäfer &amp; Mara Tesche</p>
       </div>
     </footer>
   );
