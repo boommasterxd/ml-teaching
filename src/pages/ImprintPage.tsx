@@ -34,28 +34,27 @@ export default function ImprintPage() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         <div className="bg-white p-8 sm:p-12 rounded-3xl border border-zinc-200 shadow-sm prose prose-zinc max-w-none">
-          <h2>Angaben gemäß § 5 TMG</h2>
           <p>
-            Max Mustermann<br />
-            Musterstraße 1<br />
-            12345 Musterstadt
+            Yannick Schäfer<br />
+            Am Mäuerchen 12<br />
+            67591 Mölsheim
           </p>
 
           <h2>Kontakt</h2>
           <p>
-            Telefon: +49 (0) 123 44 55 66<br />
-            E-Mail: info@musterdomain.de
+            Telefon: 01575 7934851<br />
+            E-Mail: yannickschaefer@boomapps.de
           </p>
 
-          <h2>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h2>
+          <h2>Redaktionell verantwortlich</h2>
           <p>
-            Max Mustermann<br />
-            Musterstraße 1<br />
-            12345 Musterstadt
+            Yannick Schäfer<br />
+            Am Mäuerchen 12<br />
+            67591 Mölsheim
           </p>
 
           <p className="text-sm text-zinc-500 mt-12">
-            Hinweis: Dies ist ein Platzhalter-Impressum für ein Schulprojekt/Prototyp. Bitte ersetze diese Daten durch deine echten Angaben, wenn du die Seite öffentlich betreibst.
+            Dieses Impressum wurde für das Projekt &quot;The Teachable Machine&quot; erstellt.
           </p>
         </div>
       </main>
