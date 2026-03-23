@@ -32,9 +32,9 @@ app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      "script-src": ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'"],
       "img-src": ["'self'", "data:", "https:"],
-      "connect-src": ["'self'", "https://*.google.com", "https://*.googleapis.com"]
+      "connect-src": ["'self'", "https://*.google.com", "https://*.googleapis.com", "https://tfhub.dev", "https://*.gstatic.com"]
     }
   } : false,
   crossOriginEmbedderPolicy: false,
