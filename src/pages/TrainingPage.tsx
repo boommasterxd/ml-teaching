@@ -485,7 +485,7 @@ export default function TrainingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
           <button 
             onClick={() => navigate('/')}
-            className="flex items-center text-zinc-500 hover:text-zinc-900 transition-colors font-medium text-sm flex-shrink-0"
+            className="flex items-center text-zinc-600 hover:text-zinc-900 transition-colors font-medium text-sm flex-shrink-0"
             aria-label="Zurück zur Startseite"
           >
             <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -550,7 +550,7 @@ export default function TrainingPage() {
           <div className="space-y-6">
             {classes.length === 0 ? (
               <div className="text-center p-12 bg-white rounded-2xl border border-zinc-200 border-dashed">
-                <p className="text-zinc-500 text-sm">Keine Klassen vorhanden. Füge Klassen hinzu, um zu starten.</p>
+                <p className="text-zinc-600 text-sm">Keine Klassen vorhanden. Füge Klassen hinzu, um zu starten.</p>
               </div>
             ) : (
               classes.map((cls) => (
@@ -590,13 +590,13 @@ export default function TrainingPage() {
             </div>
             <div className="p-5">
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-zinc-500">Klassen bereit:</span>
+                <span className="text-zinc-600">Klassen bereit:</span>
                 <span className={cn("font-semibold", canTrain ? "text-emerald-700" : "text-red-600")}>
                   {classes.filter(c => c.images.length >= 10).length} / {Math.max(2, classes.length)}
                 </span>
               </div>
               <div className="flex justify-between text-sm mb-5">
-                <span className="text-zinc-500">Gesammelte Bilder:</span>
+                <span className="text-zinc-600">Gesammelte Bilder:</span>
                 <span className="font-semibold text-zinc-800">
                   {classes.reduce((acc, c) => acc + c.images.length, 0)}
                 </span>
@@ -640,7 +640,7 @@ export default function TrainingPage() {
           {/* Prediction Card */}
           <div className={cn(
             "bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col flex-1 transition-opacity duration-300",
-            !hasTrainedModel ? "opacity-60 pointer-events-none" : "opacity-100"
+            !hasTrainedModel ? "opacity-80 pointer-events-none" : "opacity-100"
           )}>
             <div className="px-5 py-4 border-b border-zinc-100 flex justify-between items-center">
               <h2 className="text-base font-bold text-zinc-800 flex items-center">
@@ -703,7 +703,7 @@ export default function TrainingPage() {
                                 }}
                               />
                             </div>
-                            <span className="w-10 text-right font-mono font-medium text-zinc-500">{Math.round(conf * 100)}%</span>
+                            <span className="w-10 text-right font-mono font-medium text-zinc-600">{Math.round(conf * 100)}%</span>
                           </div>
                         );
                       })}
@@ -957,7 +957,7 @@ export default function TrainingPage() {
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-sm w-full p-8 flex flex-col items-center text-center">
             <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mb-4" aria-hidden="true" />
             <h2 id="loading-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Lade KI-Modelle...</h2>
-            <p className="text-zinc-500 text-sm" aria-live="polite">{loadingText}</p>
+            <p className="text-zinc-600 text-sm" aria-live="polite">{loadingText}</p>
           </div>
         </div>
       )}
@@ -1258,7 +1258,7 @@ function ClassCard({
                       setIsSelectionMode(false);
                       setSelectedIds(new Set());
                     }}
-                    className="text-[10px] font-bold text-zinc-500 hover:text-zinc-700 transition-colors"
+                    className="text-[10px] font-bold text-zinc-600 hover:text-zinc-700 transition-colors"
                   >
                     Abbrechen
                   </button>
