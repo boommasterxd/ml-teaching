@@ -62,6 +62,8 @@ export default function TrainingPage() {
   // Modal State
   const [selectedImage, setSelectedImage] = useState<{classId: string, image: MLImage} | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [classToClear, setClassToClear] = useState<string | null>(null);
+  const [classToRemove, setClassToRemove] = useState<string | null>(null);
   
   // Consent State
   const [hasConsented, setHasConsented] = useState(false);
@@ -509,8 +511,8 @@ export default function TrainingPage() {
                   facingMode={facingMode}
                   onAddExample={(video) => addExample(cls.id, video)}
                   onAddImageExample={(img) => addImageExample(cls.id, img)}
-                  onRemove={() => removeClass(cls.id)}
-                  onClear={() => clearClass(cls.id)}
+                  onRemove={() => setClassToRemove(cls.id)}
+                  onClear={() => setClassToClear(cls.id)}
                   onRemoveImages={(ids) => removeImages(cls.id, ids)}
                   onUpdateName={(name) => updateClassName(cls.id, name)}
                   onImageClick={(img) => setSelectedImage({classId: cls.id, image: img})}
@@ -742,6 +744,80 @@ export default function TrainingPage() {
                   Unwiderruflich löschen
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Class Clear Confirm Modal */}
+      {classToClear && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="class-clear-modal-title"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6">
+            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4">
+              <RotateCcw className="w-6 h-6" />
+            </div>
+            <h3 id="class-clear-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Bilder dieser Klasse löschen?</h3>
+            <p className="text-zinc-600 mb-6 text-sm">
+              Möchten Sie wirklich alle Bilder der Klasse <strong>"{classes.find(c => c.id === classToClear)?.name}"</strong> unwiderruflich löschen?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setClassToClear(null)}
+                className="flex-1 py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-sm font-semibold transition-colors"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => {
+                  clearClass(classToClear);
+                  setClassToClear(null);
+                }}
+                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition-colors"
+              >
+                Zurücksetzen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Class Remove Confirm Modal */}
+      {classToRemove && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="class-remove-modal-title"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6">
+            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 id="class-remove-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Klasse löschen?</h3>
+            <p className="text-zinc-600 mb-6 text-sm">
+              Möchten Sie die Klasse <strong>"{classes.find(c => c.id === classToRemove)?.name}"</strong> und alle zugehörigen Bilder wirklich entfernen?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setClassToRemove(null)}
+                className="flex-1 py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-sm font-semibold transition-colors"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => {
+                  removeClass(classToRemove);
+                  setClassToRemove(null);
+                }}
+                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition-colors"
+              >
+                Löschen
+              </button>
             </div>
           </div>
         </div>
