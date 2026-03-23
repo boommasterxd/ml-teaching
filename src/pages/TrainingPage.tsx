@@ -62,6 +62,8 @@ export default function TrainingPage() {
   // Modal State
   const [selectedImage, setSelectedImage] = useState<{classId: string, image: MLImage} | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [classToClear, setClassToClear] = useState<string | null>(null);
+  const [classToRemove, setClassToRemove] = useState<string | null>(null);
   
   // Consent State
   const [hasConsented, setHasConsented] = useState(false);
@@ -300,11 +302,11 @@ export default function TrainingPage() {
   // Class Management
   const addClass = () => {
     const newId = `class-${Date.now()}`;
-    setClasses([...classes, { 
+    setClasses(prev => [...prev, { 
       id: newId, 
-      name: `Klasse ${classes.length + 1}`, 
+      name: `Klasse ${prev.length + 1}`, 
       images: [],
-      color: COLORS[classes.length % COLORS.length]
+      color: COLORS[prev.length % COLORS.length]
     }]);
     
     if (hasTrainedModel) {
@@ -314,7 +316,7 @@ export default function TrainingPage() {
   };
 
   const removeClass = (id: string) => {
-    setClasses(classes.filter(c => c.id !== id));
+    setClasses(prev => prev.filter(c => c.id !== id));
     
     if (hasTrainedModel) {
       setHasTrainedModel(false);
@@ -323,11 +325,11 @@ export default function TrainingPage() {
   };
 
   const updateClassName = (id: string, newName: string) => {
-    setClasses(classes.map(c => c.id === id ? { ...c, name: newName } : c));
+    setClasses(prev => prev.map(c => c.id === id ? { ...c, name: newName } : c));
   };
 
   const removeImage = (classId: string, imageId: string) => {
-    setClasses(classes.map(c => 
+    setClasses(prev => prev.map(c => 
       c.id === classId ? { ...c, images: c.images.filter(img => img.id !== imageId) } : c
     ));
     
@@ -336,6 +338,39 @@ export default function TrainingPage() {
       stopPredicting();
     }
     setSelectedImage(null);
+  };
+
+  const removeImages = (classId: string, imageIds: string[]) => {
+    const idsToRemove = new Set(imageIds);
+    setClasses(prev => prev.map(c => 
+      c.id === classId ? { ...c, images: c.images.filter(img => !idsToRemove.has(img.id)) } : c
+    ));
+    
+    if (hasTrainedModel) {
+      setHasTrainedModel(false);
+      stopPredicting();
+    }
+
+    // Clear selected image if it was among the ones removed
+    if (selectedImage && selectedImage.classId === classId && idsToRemove.has(selectedImage.image.id)) {
+      setSelectedImage(null);
+    }
+  };
+
+  const clearClass = (id: string) => {
+    setClasses(prev => prev.map(c => 
+      c.id === id ? { ...c, images: [] } : c
+    ));
+    
+    if (hasTrainedModel) {
+      setHasTrainedModel(false);
+      stopPredicting();
+    }
+
+    // Clear selected image if it belonged to the cleared class
+    if (selectedImage && selectedImage.classId === id) {
+      setSelectedImage(null);
+    }
   };
 
   const clearAll = () => {
@@ -349,6 +384,7 @@ export default function TrainingPage() {
       classifier.clearAllClasses();
     }
     setShowClearConfirm(false);
+    setSelectedImage(null);
   };
 
   // Training Logic
@@ -487,7 +523,9 @@ export default function TrainingPage() {
                   facingMode={facingMode}
                   onAddExample={(video) => addExample(cls.id, video)}
                   onAddImageExample={(img) => addImageExample(cls.id, img)}
-                  onRemove={() => removeClass(cls.id)}
+                  onRemove={() => setClassToRemove(cls.id)}
+                  onClear={() => setClassToClear(cls.id)}
+                  onRemoveImages={(ids) => removeImages(cls.id, ids)}
                   onUpdateName={(name) => updateClassName(cls.id, name)}
                   onImageClick={(img) => setSelectedImage({classId: cls.id, image: img})}
                 />
@@ -723,6 +761,88 @@ export default function TrainingPage() {
         </div>
       )}
 
+      {/* Class Clear Confirm Modal */}
+      {classToClear && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="class-clear-modal-title"
+          aria-describedby="class-clear-modal-description"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6">
+            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4">
+              <RotateCcw className="w-6 h-6" />
+            </div>
+            <h3 id="class-clear-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Bilder dieser Klasse löschen?</h3>
+            <p id="class-clear-modal-description" className="text-zinc-600 mb-6 text-sm">
+              Möchten Sie wirklich alle Bilder der Klasse <strong>"{classes.find(c => c.id === classToClear)?.name}"</strong> unwiderruflich löschen?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setClassToClear(null)}
+                className="flex-1 py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-sm font-semibold transition-colors"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => {
+                  const id = classToClear;
+                  if (!id) {
+                    return;
+                  }
+                  clearClass(id);
+                  setClassToClear(null);
+                }}
+                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition-colors"
+              >
+                Zurücksetzen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Class Remove Confirm Modal */}
+      {classToRemove && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="class-remove-modal-title"
+          aria-describedby="class-remove-modal-description"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6">
+            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 id="class-remove-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Klasse löschen?</h3>
+            <p id="class-remove-modal-description" className="text-zinc-600 mb-6 text-sm">
+              Möchten Sie die Klasse <strong>"{classes.find(c => c.id === classToRemove)?.name}"</strong> und alle zugehörigen Bilder wirklich entfernen?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setClassToRemove(null)}
+                className="flex-1 py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-sm font-semibold transition-colors"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => {
+                  const id = classToRemove;
+                  if (!id) return;
+                  removeClass(id);
+                  setClassToRemove(null);
+                }}
+                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition-colors"
+              >
+                Löschen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Consent Modal */}
       {!hasConsented && (
         <div 
@@ -841,6 +961,8 @@ interface ClassCardProps {
   onAddExample: (video: HTMLVideoElement) => void;
   onAddImageExample: (img: HTMLImageElement) => void;
   onRemove: () => void;
+  onClear: () => void;
+  onRemoveImages: (ids: string[]) => void;
   onUpdateName: (name: string) => void;
   onImageClick: (img: MLImage) => void;
 }
@@ -853,10 +975,14 @@ function ClassCard({
   onAddExample, 
   onAddImageExample,
   onRemove, 
+  onClear,
+  onRemoveImages,
   onUpdateName,
   onImageClick
 }: ClassCardProps) {
   const [isRecording, setIsRecording] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const recordIntervalRef = useRef<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -929,6 +1055,31 @@ function ClassCard({
   const isDuplicate = allClasses.filter(c => c.name.trim() === nameTrimmed).length > 1;
   const errorMsg = isEmpty ? "Name darf nicht leer sein" : isDuplicate ? "Name muss eindeutig sein" : null;
 
+  const toggleImageSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(id)) {
+        newSelected.delete(id);
+      } else {
+        newSelected.add(id);
+      }
+      return newSelected;
+    });
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    onRemoveImages(Array.from(selectedIds));
+    setSelectedIds(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const handleClear = () => {
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+    onClear();
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col transition-all hover:shadow-md">
       
@@ -955,6 +1106,14 @@ function ClassCard({
           <span className="text-xs font-mono text-zinc-400 bg-zinc-100 px-2 py-1 rounded-md">
             {cls.images.length} Bilder
           </span>
+          <button 
+            onClick={handleClear}
+            className="text-zinc-400 hover:text-indigo-500 transition-colors"
+            title="Bilder dieser Klasse zurücksetzen"
+            aria-label={`Bilder der Klasse ${cls.name || 'ohne Namen'} zurücksetzen`}
+          >
+            <RotateCcw className="w-4 h-4" aria-hidden="true" />
+          </button>
           <button 
             onClick={onRemove}
             className="text-zinc-400 hover:text-rose-500 transition-colors"
@@ -1028,17 +1187,80 @@ function ClassCard({
         </div>
 
         {/* Right: Thumbnails */}
-        <div className="flex-1 relative min-h-[160px] sm:min-h-0">
-          <div className="absolute inset-0 bg-zinc-50/50 rounded-xl border border-zinc-100 p-2 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 relative min-h-[160px] sm:min-h-0 flex flex-col">
+          <div className="flex justify-between items-center mb-2 px-1">
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+              {isSelectionMode ? `${selectedIds.size} ausgewählt` : 'Gesammelte Bilder'}
+            </span>
+            <div className="flex gap-2">
+              {isSelectionMode ? (
+                <>
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={selectedIds.size === 0}
+                    className="text-[10px] font-bold transition-opacity hover:opacity-70 disabled:text-zinc-300 disabled:opacity-50"
+                    style={{ color: selectedIds.size > 0 ? cls.color : undefined }}
+                  >
+                    Löschen
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsSelectionMode(false);
+                      setSelectedIds(new Set());
+                    }}
+                    className="text-[10px] font-bold text-zinc-500 hover:text-zinc-700 transition-colors"
+                  >
+                    Abbrechen
+                  </button>
+                </>
+              ) : (
+                cls.images.length > 0 && (
+                  <button
+                    onClick={() => setIsSelectionMode(true)}
+                    className="text-[10px] font-bold transition-opacity hover:opacity-70"
+                    style={{ color: cls.color }}
+                  >
+                    Auswählen
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+          <div className="flex-1 relative min-h-[140px] bg-zinc-50/50 rounded-xl border border-zinc-100 p-2 overflow-y-auto custom-scrollbar">
             {cls.images.length > 0 ? (
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {cls.images.map((img) => (
                   <div 
                     key={img.id} 
-                    className="aspect-square rounded-lg overflow-hidden border border-zinc-200 cursor-pointer hover:border-indigo-400 hover:shadow-sm transition-all"
-                    onClick={() => onImageClick(img)}
+                    className={cn(
+                      "aspect-square rounded-lg overflow-hidden border cursor-pointer transition-all relative",
+                      isSelectionMode 
+                        ? selectedIds.has(img.id) 
+                          ? "ring-2" 
+                          : "border-zinc-200 opacity-60 hover:opacity-100"
+                        : "border-zinc-200 hover:shadow-sm"
+                    )}
+                    style={{ 
+                      borderColor: (isSelectionMode && selectedIds.has(img.id)) ? cls.color : undefined,
+                      boxShadow: (isSelectionMode && selectedIds.has(img.id)) ? `0 0 0 2px ${cls.color}33` : undefined 
+                    }}
+                    onClick={() => isSelectionMode ? toggleImageSelection(img.id) : onImageClick(img)}
                   >
                     <img src={img.dataUrl} alt="Training sample" className="w-full h-full object-cover" />
+                    {isSelectionMode && (
+                      <div 
+                        className={cn(
+                          "absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center transition-colors",
+                          selectedIds.has(img.id) ? "text-white" : "bg-white/80 border-zinc-300"
+                        )}
+                        style={{ 
+                          backgroundColor: selectedIds.has(img.id) ? cls.color : undefined,
+                          borderColor: selectedIds.has(img.id) ? cls.color : undefined
+                        }}
+                      >
+                        {selectedIds.has(img.id) && <CheckCircle2 className="w-3 h-3" />}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
