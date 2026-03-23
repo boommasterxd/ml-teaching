@@ -508,7 +508,7 @@ export default function TrainingPage() {
         {/* Left Column: Classes */}
         <div className="lg:col-span-7 space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-zinc-800">Klassen ({classes.length})</h2>
+            <h2 className="text-lg font-bold text-zinc-800">1. Klassen ({classes.length})</h2>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowClearConfirm(true)}
@@ -561,7 +561,7 @@ export default function TrainingPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col">
             <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
               <h2 className="text-base font-bold text-zinc-800 flex items-center">
-                <Brain className="w-4 h-4 mr-2 text-indigo-500" /> Training
+                <Brain className="w-4 h-4 mr-2 text-indigo-500" /> 2. Training
               </h2>
               {hasTrainedModel && (
                 <span className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
@@ -625,7 +625,7 @@ export default function TrainingPage() {
           )}>
             <div className="px-5 py-4 border-b border-zinc-100 flex justify-between items-center">
               <h2 className="text-base font-bold text-zinc-800 flex items-center">
-                <Camera className="w-4 h-4 mr-2 text-indigo-500" /> Vorhersage
+                <Camera className="w-4 h-4 mr-2 text-indigo-500" /> 3. Vorhersage
               </h2>
               {isPredicting && (
                 <span className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
