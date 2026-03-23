@@ -34,7 +34,7 @@ app.use(helmet({
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "script-src": ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'"],
       "img-src": ["'self'", "data:", "https:"],
-      "connect-src": ["'self'", "https://*.google.com", "https://*.googleapis.com", "https://tfhub.dev", "https://*.gstatic.com"]
+      "connect-src": ["'self'", "https://*.google.com", "https://*.googleapis.com", "https://tfhub.dev", "https://*.gstatic.com", "https://www.kaggle.com"]
     }
   } : false,
   crossOriginEmbedderPolicy: false,
