@@ -249,7 +249,7 @@ export default function LandingPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="group flex flex-col items-center gap-4 hover:opacity-90 transition-opacity"
-            aria-label="Zur Webseite des Ada Lovelace Projekts"
+            aria-label="Ada-Lovelace-Projekt - Zur Webseite des Projekts"
           >
             <img
               src="/ada-logo.png"
