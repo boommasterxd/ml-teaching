@@ -302,11 +302,11 @@ export default function TrainingPage() {
   // Class Management
   const addClass = () => {
     const newId = `class-${Date.now()}`;
-    setClasses([...classes, { 
+    setClasses(prev => [...prev, { 
       id: newId, 
-      name: `Klasse ${classes.length + 1}`, 
+      name: `Klasse ${prev.length + 1}`, 
       images: [],
-      color: COLORS[classes.length % COLORS.length]
+      color: COLORS[prev.length % COLORS.length]
     }]);
     
     if (hasTrainedModel) {
@@ -316,7 +316,7 @@ export default function TrainingPage() {
   };
 
   const removeClass = (id: string) => {
-    setClasses(classes.filter(c => c.id !== id));
+    setClasses(prev => prev.filter(c => c.id !== id));
     
     if (hasTrainedModel) {
       setHasTrainedModel(false);
@@ -325,11 +325,11 @@ export default function TrainingPage() {
   };
 
   const updateClassName = (id: string, newName: string) => {
-    setClasses(classes.map(c => c.id === id ? { ...c, name: newName } : c));
+    setClasses(prev => prev.map(c => c.id === id ? { ...c, name: newName } : c));
   };
 
   const removeImage = (classId: string, imageId: string) => {
-    setClasses(classes.map(c => 
+    setClasses(prev => prev.map(c => 
       c.id === classId ? { ...c, images: c.images.filter(img => img.id !== imageId) } : c
     ));
     
@@ -342,7 +342,7 @@ export default function TrainingPage() {
 
   const removeImages = (classId: string, imageIds: string[]) => {
     const idsToRemove = new Set(imageIds);
-    setClasses(classes.map(c => 
+    setClasses(prev => prev.map(c => 
       c.id === classId ? { ...c, images: c.images.filter(img => !idsToRemove.has(img.id)) } : c
     ));
     
@@ -350,16 +350,26 @@ export default function TrainingPage() {
       setHasTrainedModel(false);
       stopPredicting();
     }
+
+    // Clear selected image if it was among the ones removed
+    if (selectedImage && selectedImage.classId === classId && idsToRemove.has(selectedImage.image.id)) {
+      setSelectedImage(null);
+    }
   };
 
   const clearClass = (id: string) => {
-    setClasses(classes.map(c => 
+    setClasses(prev => prev.map(c => 
       c.id === id ? { ...c, images: [] } : c
     ));
     
     if (hasTrainedModel) {
       setHasTrainedModel(false);
       stopPredicting();
+    }
+
+    // Clear selected image if it belonged to the cleared class
+    if (selectedImage && selectedImage.classId === id) {
+      setSelectedImage(null);
     }
   };
 
@@ -374,6 +384,7 @@ export default function TrainingPage() {
       classifier.clearAllClasses();
     }
     setShowClearConfirm(false);
+    setSelectedImage(null);
   };
 
   // Training Logic
@@ -1053,6 +1064,12 @@ function ClassCard({
     setIsSelectionMode(false);
   };
 
+  const handleClear = () => {
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+    onClear();
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col transition-all hover:shadow-md">
       
@@ -1080,7 +1097,7 @@ function ClassCard({
             {cls.images.length} Bilder
           </span>
           <button 
-            onClick={onClear}
+            onClick={handleClear}
             className="text-zinc-400 hover:text-indigo-500 transition-colors"
             title="Bilder dieser Klasse zurücksetzen"
             aria-label={`Bilder der Klasse ${cls.name || 'ohne Namen'} zurücksetzen`}
