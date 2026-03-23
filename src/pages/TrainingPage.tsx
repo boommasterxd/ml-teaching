@@ -70,7 +70,7 @@ export default function TrainingPage() {
   const [modelChecked, setModelChecked] = useState(false);
   
   // Refs
-  const requestRef = useRef<number>();
+  const requestRef = useRef<number>(undefined);
   const predictVideoRef = useRef<HTMLVideoElement>(null);
 
   // Initialize ML Models
