@@ -14,22 +14,22 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@google/genai": "^1.29.0",
-    "@tailwindcss/vite": "^4.1.14",
+    "@google/genai": "^1.46.0",
+    "@tailwindcss/vite": "^4.2.2",
     "@tensorflow-models/knn-classifier": "^1.2.6",
     "@tensorflow-models/mobilenet": "^2.1.1",
     "@tensorflow/tfjs": "^4.22.0",
     "@vitejs/plugin-react": "6.0.1",
     "clsx": "^2.1.1",
-    "dotenv": "^17.2.3",
+    "dotenv": "^17.3.1",
     "express": "5.2.1",
     "express-rate-limit": "^8.3.1",
     "helmet": "^8.1.0",
-    "lucide-react": "0.577.0",
-    "motion": "^12.23.24",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-router-dom": "^7.13.1",
+    "lucide-react": "1.0.1",
+    "motion": "^12.38.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.13.2",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
@@ -37,11 +37,11 @@
     "@types/node": "25.5.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "autoprefixer": "^10.4.21",
-    "esbuild": "^0.25.0",
-    "tailwindcss": "^4.1.14",
+    "autoprefixer": "^10.4.27",
+    "esbuild": "^0.27.4",
+    "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
-    "typescript": "5.9.3",
-    "vite": "8.0.1"
+    "typescript": "6.0.2",
+    "vite": "8.0.2"
   }
 }
