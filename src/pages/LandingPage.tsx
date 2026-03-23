@@ -244,21 +244,23 @@ export default function LandingPage() {
           <p className="text-zinc-600 mb-6 font-medium">
             Entwickelt in Zusammenarbeit mit dem
           </p>
-          <a 
-            href="https://ada-lovelace.de/" 
-            target="_blank" 
+          <a
+            href="https://ada-lovelace.de/"
+            target="_blank"
             rel="noopener noreferrer"
-            className="hover:opacity-80 transition-opacity"
+            className="group flex flex-col items-center gap-4 hover:opacity-90 transition-opacity"
             aria-label="Zur Webseite des Ada Lovelace Projekts"
           >
-            <img 
-              src="/ada-logo.png" 
-              alt="Ada Lovelace Projekt Logo" 
+            <img
+              src="/ada-logo.png"
+              alt="Ada Lovelace Projekt Logo"
               className="h-24 w-auto object-contain"
               referrerPolicy="no-referrer"
             />
-          </a>
-        </div>
+            <span className="text-zinc-600 font-bold border-b border-transparent group-hover:border-zinc-300 transition-all">
+              Ada-Lovelace-Projekt
+            </span>
+          </a>        </div>
       </section>
       </div>
       );
