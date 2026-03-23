@@ -338,6 +338,17 @@ export default function TrainingPage() {
     setSelectedImage(null);
   };
 
+  const clearClass = (id: string) => {
+    setClasses(classes.map(c => 
+      c.id === id ? { ...c, images: [] } : c
+    ));
+    
+    if (hasTrainedModel) {
+      setHasTrainedModel(false);
+      stopPredicting();
+    }
+  };
+
   const clearAll = () => {
     setClasses([
       { id: 'class-1', name: 'Klasse 1', images: [], color: COLORS[0] },
@@ -488,6 +499,7 @@ export default function TrainingPage() {
                   onAddExample={(video) => addExample(cls.id, video)}
                   onAddImageExample={(img) => addImageExample(cls.id, img)}
                   onRemove={() => removeClass(cls.id)}
+                  onClear={() => clearClass(cls.id)}
                   onUpdateName={(name) => updateClassName(cls.id, name)}
                   onImageClick={(img) => setSelectedImage({classId: cls.id, image: img})}
                 />
@@ -841,6 +853,7 @@ interface ClassCardProps {
   onAddExample: (video: HTMLVideoElement) => void;
   onAddImageExample: (img: HTMLImageElement) => void;
   onRemove: () => void;
+  onClear: () => void;
   onUpdateName: (name: string) => void;
   onImageClick: (img: MLImage) => void;
 }
@@ -853,6 +866,7 @@ function ClassCard({
   onAddExample, 
   onAddImageExample,
   onRemove, 
+  onClear,
   onUpdateName,
   onImageClick
 }: ClassCardProps) {
@@ -955,6 +969,14 @@ function ClassCard({
           <span className="text-xs font-mono text-zinc-400 bg-zinc-100 px-2 py-1 rounded-md">
             {cls.images.length} Bilder
           </span>
+          <button 
+            onClick={onClear}
+            className="text-zinc-400 hover:text-indigo-500 transition-colors"
+            title="Bilder dieser Klasse zurücksetzen"
+            aria-label={`Bilder der Klasse ${cls.name || 'ohne Namen'} zurücksetzen`}
+          >
+            <RotateCcw className="w-4 h-4" aria-hidden="true" />
+          </button>
           <button 
             onClick={onRemove}
             className="text-zinc-400 hover:text-rose-500 transition-colors"
