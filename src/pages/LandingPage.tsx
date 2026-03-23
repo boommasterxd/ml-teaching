@@ -219,6 +219,23 @@ export default function LandingPage() {
         </div>
       </section>
       
+      {/* Final Call to Action */}
+      <section className="py-24 bg-zinc-900 text-white px-6 sm:px-12 lg:px-24 text-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} aria-hidden="true"></div>
+        <div className="max-w-3xl mx-auto relative z-10">
+          <h2 className="text-3xl md:text-5xl font-bold mb-6">Bereit für dein eigenes Experiment?</h2>
+          <p className="text-xl text-zinc-400 mb-10">
+            Du hast gelernt, wie KI sieht und entscheidet. Jetzt ist es Zeit, dein eigenes Modell zu trainieren und auszuprobieren!
+          </p>
+          <button
+            onClick={() => navigate('/lernen')}
+            className="inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-all hover:scale-105 shadow-xl shadow-red-900/20"
+          >
+            Jetzt ausprobieren <ArrowRight className="ml-2 w-6 h-6" aria-hidden="true" />
+          </button>
+        </div>
+      </section>
+
       {/* Collaboration Section */}
       <section className="bg-white py-16 border-t border-zinc-200">
         <div className="max-w-7xl mx-auto px-6 flex flex-col items-center text-center">
