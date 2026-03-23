@@ -15,92 +15,80 @@ const port = Number(process.env.PORT) || 3000;
 
 /**
  * 1. Proxy-Trust (Essentiell für Traefik)
- * Traefik reicht die echte Besucher-IP im 'X-Forwarded-For' Header weiter.
- * Mit 'trust proxy' kann express-rate-limit die echte IP des Nutzers statt 
- * der internen Docker-IP von Traefik sehen.
  */
 app.set('trust proxy', 1);
 
 /**
  * 2. Security Header mit Helmet
- * Setzt wichtige Header wie XSS-Protection, HSTS und CSP.
+ * CSP ist in Produktion aktiv (mit TF.js Regeln), in Dev inaktiv.
  */
 app.use(helmet({
-  contentSecurityPolicy: {
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // TF.js benötigt oft eval
+      "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       "img-src": ["'self'", "data:", "https:"],
       "connect-src": ["'self'", "https://*.google.com", "https://*.googleapis.com"]
     }
-  }
+  } : false,
+  crossOriginEmbedderPolicy: false,
 }));
 
 /**
- * 3. Rate Limiting (IP-basierter Brute-Force Schutz)
+ * 3. Suchmaschinen-Schutz (X-Robots-Tag)
+ */
+app.use((req, res, next) => {
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  next();
+});
+
+/**
+ * 4. Rate Limiting
  */
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 Minuten
-  max: 100, // Max 100 Anfragen pro Fenster
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  message: 'Zu viele Anfragen von dieser IP. Bitte versuchen Sie es später erneut.'
+  message: { error: 'Zu viele Anfragen von dieser IP. Bitte versuchen Sie es später erneut.' }
 });
 app.use(limiter);
 
-const isProd = process.env.NODE_ENV === 'production';
-
 async function setupServer() {
-  if (!isProd) {
+  if (process.env.NODE_ENV !== 'production') {
     /**
-     * 4a. Development-Modus: Vite als Middleware
+     * 5a. Development-Modus: Vite Middleware (SPA-Mode)
      */
     console.log('🛠️ Starte Vite Middleware für Entwicklung...');
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: 'custom',
+      appType: 'spa',
     });
     app.use(vite.middlewares);
-
-    app.use('*', async (req, res, next) => {
-      const url = req.originalUrl;
-      try {
-        let template = await vite.transformIndexHtml(url, 'index.html');
-        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
-      } catch (e) {
-        vite.ssrFixStacktrace(e as Error);
-        next(e);
-      }
-    });
   } else {
     /**
-     * 4b. Produktions-Modus: Statische Dateien & SPA-Fallback
+     * 5b. Produktions-Modus: 1:1 wie Kickbox-Projekt
      */
     const distPath = path.resolve(rootDir, 'dist');
     console.log(`📦 Produktions-Modus aktiv. Diene aus: ${distPath}`);
 
-    // Aggressives Caching für versionierte Assets (Vite Hashes)
-    app.use('/assets', express.static(path.resolve(distPath, 'assets'), {
+    // Statische Dateien mit aggressivem Caching (Vite Assets)
+    app.use(express.static(distPath, {
       maxAge: '1y',
+      index: false,
       immutable: true
     }));
 
-    // Statische Dateien ohne Standard-Index-Handling (für SPA-Routing)
-    app.use(express.static(distPath, { index: false }));
-
-    // SPA-Fallback: Alle unbekannten Routen liefern die index.html
-    app.get('*', (req, res) => {
-      res.sendFile(path.resolve(distPath, 'index.html'), {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
-        }
-      });
+    // SPA-Fallback mit exakt den gleichen Cache-Headern wie Kickbox
+    app.get('*path', (req, res) => {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
   app.listen(port, '0.0.0.0', () => {
-    console.log(`🚀 Server läuft auf http://0.0.0.0:${port} (${isProd ? 'Production' : 'Development'})`);
+    console.log(`🚀 Server läuft auf http://0.0.0.0:${port} (${process.env.NODE_ENV || 'development'})`);
   });
 }
 

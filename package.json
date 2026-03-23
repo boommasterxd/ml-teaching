@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "npm run build:frontend && npm run build:server",
-    "build:frontend": "vite build",
-    "build:server": "esbuild server.ts --bundle --platform=node --target=node20 --outfile=dist-server/server.js --format=esm --external:vite --external:express --external:helmet --external:express-rate-limit --external:dotenv",
-    "start": "NODE_ENV=production node dist-server/server.js",
+    "start": "node dist-server/server.js",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build",
+    "build:server": "tsc -p tsconfig.server.json",
     "preview": "vite preview",
     "clean": "rm -rf dist dist-server",
     "lint": "tsc --noEmit"
