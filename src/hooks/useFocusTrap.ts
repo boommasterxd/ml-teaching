@@ -1,3 +1,7 @@
+/**
+ * Custom hook to trap focus within a specific element, useful for modals and overlays.
+ * Ensures accessibility by preventing focus from leaving the active component.
+ */
 import { useEffect, useRef } from 'react';
 
 export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = true) {
@@ -17,8 +21,8 @@ export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = true) 
     if (autoFocusFirst && firstElement) {
       firstElement.focus();
     } else if (!autoFocusFirst) {
-      // Fokus auf den Container selbst setzen, falls kein Element automatisch fokussiert werden soll
-      // Das hilft, die Outline auf Buttons zu vermeiden, während die Accessibility erhalten bleibt
+      // Set focus to the container itself if no element should be automatically focused.
+      // This helps avoid outlines on buttons while maintaining accessibility.
       root.focus();
     }
 

@@ -1,4 +1,5 @@
 /**
+ * Main application component. Sets up routing and high-level layout.
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */

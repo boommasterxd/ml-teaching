@@ -1,7 +1,12 @@
+/*
+ * Global CSS styles for the Teachable Machine application.
+ * Includes Tailwind imports, base styles, and custom utilities.
+ */
+
 @import "tailwindcss";
 
 @layer base {
-  /* Fokus-Outlines nur bei Tastaturnavigation anzeigen */
+  /* Only show focus outlines for keyboard navigation */
   :focus:not(:focus-visible) {
     outline: none !important;
     box-shadow: none !important;

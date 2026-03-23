@@ -1,3 +1,7 @@
+/**
+ * Footer component that displays the application footer with links to legal pages
+ * and information about local data processing.
+ */
 import { Link } from 'react-router-dom';
 
 export default function Footer() {
