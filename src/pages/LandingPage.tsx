@@ -24,11 +24,11 @@ export default function LandingPage() {
       {/* Hero Section */}
       <header className="bg-white border-b border-zinc-200 py-16 px-6 sm:px-12 lg:px-24">
         <div className="max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center p-3 bg-red-100 text-red-600 rounded-2xl mb-6">
+          <div className="inline-flex items-center justify-center p-3 bg-red-50 text-red-600 rounded-2xl mb-6">
             <Brain className="w-10 h-10" aria-hidden="true" />
           </div>
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-zinc-900 mb-6">
-            Entdecke <span className="text-red-600">Künstliche Intelligenz</span>
+            Entdecke <span className="text-red-600 font-bold">Künstliche Intelligenz</span>
           </h1>
           <p className="text-lg md:text-xl text-zinc-600 max-w-2xl mx-auto mb-10">
             Lerne spielerisch, wie Computer sehen können. Trainiere dein eigenes Bilderkennungsmodell direkt im Browser. Keine Programmierkenntnisse erforderlich!
@@ -53,13 +53,13 @@ export default function LandingPage() {
             <p className="text-zinc-600">Nutze deine Kamera, um Bilder für verschiedene Kategorien aufzunehmen. Zeige der KI, was sie lernen soll.</p>
           </div>
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-zinc-100 text-center relative">
-            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold" aria-hidden="true">2</div>
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold" aria-hidden="true">2</div>
             <Brain className="w-10 h-10 mx-auto text-zinc-400 mb-4" aria-hidden="true" />
             <h3 className="text-xl font-semibold mb-3">Modell trainieren</h3>
             <p className="text-zinc-600">Die App analysiert deine Bilder und trainiert ein neuronales Netz, um die Muster zu erkennen.</p>
           </div>
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-zinc-100 text-center relative">
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold" aria-hidden="true">3</div>
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold" aria-hidden="true">3</div>
             <Zap className="w-10 h-10 mx-auto text-zinc-400 mb-4" aria-hidden="true" />
             <h3 className="text-xl font-semibold mb-3">Ausprobieren</h3>
             <p className="text-zinc-600">Teste dein Modell in Echtzeit! Halte Objekte in die Kamera und sieh, wie die KI sie klassifiziert.</p>
@@ -463,7 +463,7 @@ function NeuralNetViz() {
         ) : animating ? (
           <div className="text-zinc-400 animate-pulse">Verarbeite Signal...</div>
         ) : (
-          <div className="text-zinc-500">Klicke auf ein Icon, um den Prozess zu starten</div>
+          <div className="text-zinc-400">Klicke auf ein Icon, um den Prozess zu starten</div>
         )}
       </div>
     </div>
