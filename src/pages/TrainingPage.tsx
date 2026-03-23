@@ -768,13 +768,14 @@ export default function TrainingPage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="class-clear-modal-title"
+          aria-describedby="class-clear-modal-description"
         >
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6">
             <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4">
               <RotateCcw className="w-6 h-6" />
             </div>
             <h3 id="class-clear-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Bilder dieser Klasse löschen?</h3>
-            <p className="text-zinc-600 mb-6 text-sm">
+            <p id="class-clear-modal-description" className="text-zinc-600 mb-6 text-sm">
               Möchten Sie wirklich alle Bilder der Klasse <strong>"{classes.find(c => c.id === classToClear)?.name}"</strong> unwiderruflich löschen?
             </p>
             <div className="flex gap-3">
