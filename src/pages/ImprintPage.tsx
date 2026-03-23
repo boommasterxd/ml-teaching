@@ -34,28 +34,32 @@ export default function ImprintPage() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         <div className="bg-white p-8 sm:p-12 rounded-3xl border border-zinc-200 shadow-sm prose prose-zinc max-w-none">
-          <p>
-            Yannick Schäfer<br />
-            Am Mäuerchen 12<br />
-            67591 Mölsheim
-          </p>
+          <h1 className="text-3xl font-extrabold text-zinc-900 mb-8 border-b border-zinc-100 pb-4">Impressum</h1>
+          
+          <div className="space-y-1 text-zinc-600 mb-8">
+            <p className="font-semibold text-zinc-900 text-lg">Yannick Schäfer</p>
+            <p>Am Mäuerchen 12</p>
+            <p>67591 Mölsheim</p>
+          </div>
 
-          <h2>Kontakt</h2>
-          <p>
-            Telefon: 01575 7934851<br />
-            E-Mail: yannickschaefer@boomapps.de
-          </p>
+          <h2 className="text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Kontakt</h2>
+          <div className="space-y-2 text-zinc-600 mb-8">
+            <p className="flex items-center gap-2">
+              <span className="font-semibold text-zinc-900 w-20">Telefon:</span>
+              <span>01575 7934851</span>
+            </p>
+            <p className="flex items-center gap-2">
+              <span className="font-semibold text-zinc-900 w-20">E-Mail:</span>
+              <a href="mailto:yannickschaefer@boomapps.de" className="text-zinc-600 hover:text-zinc-900 underline transition-colors">yannickschaefer@boomapps.de</a>
+            </p>
+          </div>
 
-          <h2>Redaktionell verantwortlich</h2>
-          <p>
-            Yannick Schäfer<br />
-            Am Mäuerchen 12<br />
-            67591 Mölsheim
-          </p>
-
-          <p className="text-sm text-zinc-500 mt-12">
-            Dieses Impressum wurde für das Projekt &quot;The Teachable Machine&quot; erstellt.
-          </p>
+          <h2 className="text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Redaktionell verantwortlich</h2>
+          <div className="space-y-1 text-zinc-600">
+            <p className="font-semibold text-zinc-900 text-lg">Yannick Schäfer</p>
+            <p>Am Mäuerchen 12</p>
+            <p>67591 Mölsheim</p>
+          </div>
         </div>
       </main>
     </div>
