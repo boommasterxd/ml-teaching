@@ -1094,7 +1094,8 @@ function ClassCard({
                   <button
                     onClick={handleBulkDelete}
                     disabled={selectedIds.size === 0}
-                    className="text-[10px] font-bold text-rose-600 hover:text-rose-700 disabled:text-zinc-300 transition-colors"
+                    className="text-[10px] font-bold transition-opacity hover:opacity-70 disabled:text-zinc-300 disabled:opacity-50"
+                    style={{ color: selectedIds.size > 0 ? cls.color : undefined }}
                   >
                     Löschen
                   </button>
@@ -1112,7 +1113,8 @@ function ClassCard({
                 cls.images.length > 0 && (
                   <button
                     onClick={() => setIsSelectionMode(true)}
-                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+                    className="text-[10px] font-bold transition-opacity hover:opacity-70"
+                    style={{ color: cls.color }}
                   >
                     Auswählen
                   </button>
@@ -1130,20 +1132,28 @@ function ClassCard({
                       "aspect-square rounded-lg overflow-hidden border cursor-pointer transition-all relative",
                       isSelectionMode 
                         ? selectedIds.has(img.id) 
-                          ? "border-indigo-500 ring-2 ring-indigo-500/20" 
+                          ? "ring-2" 
                           : "border-zinc-200 opacity-60 hover:opacity-100"
-                        : "border-zinc-200 hover:border-indigo-400 hover:shadow-sm"
+                        : "border-zinc-200 hover:shadow-sm"
                     )}
+                    style={{ 
+                      borderColor: (isSelectionMode && selectedIds.has(img.id)) ? cls.color : undefined,
+                      boxShadow: (isSelectionMode && selectedIds.has(img.id)) ? `0 0 0 2px ${cls.color}33` : undefined 
+                    }}
                     onClick={() => isSelectionMode ? toggleImageSelection(img.id) : onImageClick(img)}
                   >
                     <img src={img.dataUrl} alt="Training sample" className="w-full h-full object-cover" />
                     {isSelectionMode && (
-                      <div className={cn(
-                        "absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center transition-colors",
-                        selectedIds.has(img.id) 
-                          ? "bg-indigo-500 border-indigo-500 text-white" 
-                          : "bg-white/80 border-zinc-300"
-                      )}>
+                      <div 
+                        className={cn(
+                          "absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center transition-colors",
+                          selectedIds.has(img.id) ? "text-white" : "bg-white/80 border-zinc-300"
+                        )}
+                        style={{ 
+                          backgroundColor: selectedIds.has(img.id) ? cls.color : undefined,
+                          borderColor: selectedIds.has(img.id) ? cls.color : undefined
+                        }}
+                      >
                         {selectedIds.has(img.id) && <CheckCircle2 className="w-3 h-3" />}
                       </div>
                     )}
