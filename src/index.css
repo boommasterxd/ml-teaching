@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@layer base {
+  /* Fokus-Outlines nur bei Tastaturnavigation anzeigen */
+  :focus:not(:focus-visible) {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+}
+
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
