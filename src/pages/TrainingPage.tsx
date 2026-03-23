@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import useScrollLock from '../hooks/useScrollLock';
 
 // Types
 interface MLImage {
@@ -88,6 +89,10 @@ export default function TrainingPage() {
   const hasConsentedRef = useFocusTrap(!hasConsented);
   const isModelLoadingRef = useFocusTrap(hasConsented && isModelLoading);
   const cameraConsentRef = useFocusTrap(hasConsented && !isModelLoading && !cameraConsent);
+
+  // Scroll Lock
+  const isAnyModalOpen = !!selectedImage || showClearConfirm || !!classToClear || !!classToRemove || !hasConsented || isModelLoading || !cameraConsent;
+  useScrollLock(isAnyModalOpen);
 
   // Initialize ML Models
   useEffect(() => {
@@ -726,12 +731,12 @@ export default function TrainingPage() {
       {selectedImage && (
         <div 
           ref={selectedImageRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="image-modal-title"
         >
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-sm w-full">
             <div className="p-4 border-b border-zinc-100 flex justify-between items-center">
               <h3 id="image-modal-title" className="font-bold text-zinc-800 text-sm">Bild Vorschau</h3>
               <button 
@@ -763,13 +768,13 @@ export default function TrainingPage() {
       {showClearConfirm && (
         <div 
           ref={showClearConfirmRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="clear-modal-title"
           aria-describedby="clear-modal-desc"
         >
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-md w-full">
             <div className="p-6">
               <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4" aria-hidden="true">
                 <AlertCircle className="w-6 h-6" />
@@ -801,13 +806,13 @@ export default function TrainingPage() {
       {classToClear && (
         <div 
           ref={classToClearRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="class-clear-modal-title"
           aria-describedby="class-clear-modal-description"
         >
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-md w-full p-6">
             <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
               <RotateCcw className="w-6 h-6" />
             </div>
@@ -844,13 +849,13 @@ export default function TrainingPage() {
       {classToRemove && (
         <div 
           ref={classToRemoveRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="class-remove-modal-title"
           aria-describedby="class-remove-modal-description"
         >
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-6">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-md w-full p-6">
             <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
               <Trash2 className="w-6 h-6" />
             </div>
@@ -885,12 +890,12 @@ export default function TrainingPage() {
       {!hasConsented && (
         <div 
           ref={hasConsentedRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="consent-modal-title"
         >
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-lg w-full p-8">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-lg w-full p-8">
             <h2 id="consent-modal-title" className="text-2xl font-bold text-zinc-900 mb-6">Einwilligung zur Datenverarbeitung</h2>
             
             <div className="space-y-5 mb-8">
@@ -942,12 +947,12 @@ export default function TrainingPage() {
       {hasConsented && isModelLoading && (
         <div 
           ref={isModelLoadingRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="loading-modal-title"
         >
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full p-8 flex flex-col items-center text-center">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-sm w-full p-8 flex flex-col items-center text-center">
             <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mb-4" aria-hidden="true" />
             <h2 id="loading-modal-title" className="text-xl font-bold text-zinc-900 mb-2">Lade KI-Modelle...</h2>
             <p className="text-zinc-500 text-sm" aria-live="polite">{loadingText}</p>
@@ -959,12 +964,12 @@ export default function TrainingPage() {
       {hasConsented && !isModelLoading && !cameraConsent && (
         <div 
           ref={cameraConsentRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="camera-modal-title"
         >
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-8 text-center">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-md w-full p-8 text-center">
             <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6" aria-hidden="true">
               <Camera className="w-8 h-8" />
             </div>
