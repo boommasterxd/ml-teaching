@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-12" role="main" aria-label="Datenschutzerklärung">
         <div className="bg-white p-8 sm:p-12 rounded-3xl border border-zinc-200 shadow-sm prose prose-zinc max-w-none">
           <h1 className="text-3xl font-bold mb-8 text-zinc-900">Datenschutzerklärung</h1>
 
