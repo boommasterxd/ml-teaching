@@ -73,7 +73,9 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-6">Wie lernt ein Computer?</h2>
             <p className="text-zinc-400 max-w-3xl mx-auto text-lg">
-              Ein künstliches neuronales Netz besteht aus Schichten (Layers) von "Neuronen". 
+              Um zu verstehen, was er sieht, nutzt ein Computer ein sogenanntes künstliches neuronales Netz. 
+              Das ist eine Technik, die sich an der Arbeitsweise unseres Gehirns orientiert. 
+              Ein solches Netz besteht aus Schichten (Layers) von "Neuronen". 
               Bilder werden an die <strong>Input Layer</strong> übergeben. Die <strong>Hidden Layers</strong> erkennen Muster (wie Kanten, Formen, Ohren). 
               Die <strong>Output Layer</strong> liefert das finale Ergebnis. Probier es aus!
             </p>
