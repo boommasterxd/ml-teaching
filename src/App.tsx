@@ -19,13 +19,7 @@ export default function App() {
     <Router>
       <ScrollToTop />
       <div className="min-h-screen flex flex-col">
-        <a 
-          href="#main-content" 
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-6 focus:py-3 focus:bg-white focus:text-red-600 focus:border-2 focus:border-red-600 focus:rounded-full focus:font-bold focus:shadow-xl transition-all"
-        >
-          Zum Inhalt springen
-        </a>
-        <main id="main-content" className="flex-grow">
+        <main className="flex-grow">
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/lernen" element={<TrainingPage />} />
