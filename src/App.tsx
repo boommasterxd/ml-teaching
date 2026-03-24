@@ -16,13 +16,19 @@ import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import ScrollToTop from './components/ScrollToTop';
 
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+    <div className="animate-spin rounded-full h-10 w-10 border-2 border-zinc-200 border-t-red-600"></div>
+  </div>
+);
+
 export default function App() {
   return (
     <Router>
       <ScrollToTop />
       <div className="min-h-screen flex flex-col">
         <main className="flex-grow">
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/lernen" element={<TrainingPage />} />
