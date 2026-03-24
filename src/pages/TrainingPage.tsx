@@ -323,15 +323,18 @@ export default function TrainingPage() {
     setClasses(prev => {
       // Find the next available number for the default name
       let nextNum = 1;
-      const existingNums = prev
-        .map(c => {
-          const match = c.name.match(/Klasse (\d+)/);
-          return match ? parseInt(match[1], 10) : null;
-        })
-        .filter((n): n is number => n !== null);
-      
-      if (existingNums.length > 0) {
-        nextNum = Math.max(...existingNums) + 1;
+      const classRegex = /Klasse (\d+)/;
+      const maxNum = prev.reduce((max, c) => {
+        const match = c.name.match(classRegex);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          return num > max ? num : max;
+        }
+        return max;
+      }, -1);
+
+      if (maxNum !== -1) {
+        nextNum = maxNum + 1;
       } else if (prev.length > 0) {
         nextNum = prev.length + 1;
       }
