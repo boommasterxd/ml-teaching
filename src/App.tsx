@@ -5,11 +5,13 @@
  */
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import LandingPage from './pages/LandingPage';
-import TrainingPage from './pages/TrainingPage';
-import ImprintPage from './pages/ImprintPage';
-import PrivacyPage from './pages/PrivacyPage';
-import NotFoundPage from './pages/NotFoundPage';
+import { lazy, Suspense } from 'react';
+
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const TrainingPage = lazy(() => import('./pages/TrainingPage'));
+const ImprintPage = lazy(() => import('./pages/ImprintPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import ScrollToTop from './components/ScrollToTop';
@@ -20,13 +22,15 @@ export default function App() {
       <ScrollToTop />
       <div className="min-h-screen flex flex-col">
         <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/lernen" element={<TrainingPage />} />
-            <Route path="/impressum" element={<ImprintPage />} />
-            <Route path="/datenschutz" element={<PrivacyPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
+          <Suspense fallback={<div>Loading...</div>}>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/lernen" element={<TrainingPage />} />
+              <Route path="/impressum" element={<ImprintPage />} />
+              <Route path="/datenschutz" element={<PrivacyPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
         </main>
         <Footer />
         <CookieBanner />

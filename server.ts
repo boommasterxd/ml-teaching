@@ -10,6 +10,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
+import compression from 'compression';
 
 // ESM-compatible path resolution
 const __filename = fileURLToPath(import.meta.url);
@@ -18,6 +19,8 @@ const rootDir = process.cwd();
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
+
+app.use(compression());
 
 /**
  * 1. Proxy Trust (Essential for Traefik)
@@ -72,11 +75,18 @@ async function setupServer() {
     const distPath = path.resolve(rootDir, 'dist');
     console.log(`📦 Production mode active. Serving from: ${distPath}`);
 
+    const expressStaticGzip = (await import('express-static-gzip')).default;
+
+    // @ts-ignore
     // Static files with aggressive caching (Vite Assets)
-    app.use(express.static(distPath, {
-      maxAge: '1y',
-      index: false,
-      immutable: true
+    app.use(expressStaticGzip(distPath, {
+      enableBrotli: true,
+      orderPreference: ['br', 'gz'],
+      serveStatic: {
+        maxAge: '1y',
+        index: false,
+        immutable: true
+      }
     }));
 
     // SPA Fallback with cache-control headers
