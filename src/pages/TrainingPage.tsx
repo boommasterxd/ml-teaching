@@ -1288,7 +1288,7 @@ function ClassCard({
               )}
             </div>
           </div>
-          <div className="flex-1 relative h-[190px] max-h-[190px] bg-zinc-50/50 rounded-xl border border-zinc-100 p-2 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 relative h-[190px] max-h-[190px] bg-zinc-50/50 rounded-xl border border-zinc-100 p-2 overflow-y-auto">
             {cls.images.length > 0 ? (
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {cls.images.map((img) => (
