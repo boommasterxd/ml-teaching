@@ -14,7 +14,6 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@google/genai": "^1.46.0",
     "@tailwindcss/vite": "^4.2.2",
     "@tensorflow-models/knn-classifier": "^1.2.6",
     "@tensorflow-models/mobilenet": "^2.1.1",
