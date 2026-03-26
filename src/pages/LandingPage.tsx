@@ -2,7 +2,7 @@
  * Landing page that provides an overview of the AI Image Recognition application,
  * featuring interactive visualizations and educational content.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Brain, Camera, Zap, ArrowRight, Dog, Cat, Users, ImagePlus, Lightbulb, Car, Smartphone, Stethoscope } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -278,9 +278,9 @@ function NeuralNetViz() {
   const [animStep, setAnimStep] = useState(-1);
   const [animating, setAnimating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  const timeoutIdsRef = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+  const timeoutIdsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => { timeoutIdsRef.current.forEach(clearTimeout); };
   }, []);
 
