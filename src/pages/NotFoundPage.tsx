@@ -2,10 +2,15 @@
  * 404 Not Found page shown when a user navigates to a non-existent route.
  */
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Home, AlertTriangle } from 'lucide-react';
 
 export default function NotFoundPage() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = 'Seite nicht gefunden – KI Bilderkennung für Schüler';
+  }, []);
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 text-center">
@@ -21,7 +26,7 @@ export default function NotFoundPage() {
       
       <button
         onClick={() => navigate('/')}
-        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-indigo-200 active:scale-95"
+        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-indigo-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
       >
         <Home className="w-5 h-5" />
         Zurück zur Startseite

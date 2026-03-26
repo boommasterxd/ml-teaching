@@ -1,12 +1,16 @@
 /**
  * Imprint page containing legal contact and ownership information.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function ImprintPage() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = 'Impressum – KI Bilderkennung für Schüler';
+  }, []);
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-20 hyphens-auto break-words">
@@ -28,7 +32,7 @@ export default function ImprintPage() {
               className="h-8 w-auto object-contain hidden lg:block"
               referrerPolicy="no-referrer"
             />
-            <h1 className="text-base sm:text-lg font-bold text-zinc-800 line-clamp-1">Impressum</h1>
+            <p className="text-base sm:text-lg font-bold text-zinc-800 line-clamp-1">Impressum</p>
           </div>
           
           <div className="w-10 sm:w-20"></div> {/* Spacer for centering balance */}
