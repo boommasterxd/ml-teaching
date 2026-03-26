@@ -1,9 +1,10 @@
 /**
- * Custom hook to trap focus within a specific element, useful for modals and overlays.
- * Ensures accessibility by preventing focus from leaving the active component.
+ * Hook that traps keyboard focus inside a container element (e.g. a modal).
+ * Restores focus to the previously active element on deactivation.
  */
 import { useEffect, useRef } from 'react';
 
+/** Traps Tab/Shift-Tab focus within a ref'd container and handles Escape. */
 export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false, onEscape?: () => void) {
   const rootRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);

@@ -1,6 +1,6 @@
 /**
- * Landing page that provides an overview of the AI Image Recognition application,
- * featuring interactive visualizations and educational content.
+ * Landing page with hero section, educational content about neural networks and
+ * transfer learning, an interactive neural-net visualization, and calls to action.
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import { Brain, Camera, Zap, ArrowRight, Dog, Cat, Users, ImagePlus, Lightbulb, 
 import { cn } from '../lib/utils';
 import Button from '../components/Button';
 
+/** Renders the full landing page with multiple content sections. */
 export default function LandingPage() {
   const navigate = useNavigate();
 
@@ -17,7 +18,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
-      {/* Top Navigation */}
+      {/* Top navigation */}
       <nav aria-label="Hauptnavigation" className="bg-white border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <img 
@@ -30,7 +31,7 @@ export default function LandingPage() {
         </a>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero section */}
       <header className="bg-white border-b border-zinc-200 py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center">
           <div className="inline-flex items-center justify-center p-3 bg-red-50 text-red-600 rounded-2xl mb-6">
@@ -48,7 +49,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* 3 Steps Section */}
+      {/* Three-step overview */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <h2 className="text-3xl font-bold text-center mb-16">In 3 Schritten zur eigenen KI</h2>
         <div className="grid md:grid-cols-3 gap-10">
@@ -73,7 +74,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Interactive Neural Net Visualization */}
+      {/* Interactive neural network visualization */}
       <section className="py-20 bg-zinc-900 text-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
@@ -91,7 +92,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Explanation Section for Students */}
+      {/* Explanation section for students */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -102,7 +103,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-12 items-stretch">
-            {/* NN Explanation */}
+            {/* Neural network explanation */}
             <div className="bg-zinc-50 p-8 rounded-3xl border border-zinc-100 relative overflow-hidden group hover:shadow-md transition-all">
               <div className="absolute top-0 right-0 w-32 h-32 bg-red-100 rounded-bl-full -mr-8 -mt-8 opacity-50 transition-transform group-hover:scale-110" aria-hidden="true" />
               <Brain className="w-12 h-12 text-red-500 mb-6 relative z-10" aria-hidden="true" />
@@ -114,7 +115,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* KNN Explanation */}
+            {/* KNN explanation */}
             <div className="bg-zinc-50 p-8 rounded-3xl border border-zinc-100 relative overflow-hidden group hover:shadow-md transition-all">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-bl-full -mr-8 -mt-8 opacity-50 transition-transform group-hover:scale-110" aria-hidden="true" />
               <Users className="w-12 h-12 text-blue-500 mb-6 relative z-10" aria-hidden="true" />
@@ -127,7 +128,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Transfer Learning Explanation */}
+          {/* Transfer learning explanation */}
           <div className="mt-12 bg-gradient-to-br from-zinc-800 to-zinc-900 p-8 sm:p-12 rounded-3xl text-white text-center relative overflow-hidden shadow-xl">
             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} aria-hidden="true"></div>
             <Zap className="w-12 h-12 text-yellow-400 mx-auto mb-6 relative z-10" aria-hidden="true" />
@@ -139,7 +140,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Tips for a Smart Model */}
+      {/* Tips for a smart model */}
       <section className="py-20 bg-zinc-50 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -183,7 +184,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Real World Examples */}
+      {/* Real-world examples */}
       <section className="py-20 bg-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -227,7 +228,7 @@ export default function LandingPage() {
         </div>
       </section>
       
-      {/* Final Call to Action */}
+      {/* Final call to action */}
       <section className="py-24 bg-zinc-900 text-white px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} aria-hidden="true"></div>
         <div className="max-w-3xl mx-auto relative z-10">
@@ -244,7 +245,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Collaboration Section */}
+      {/* Collaboration section */}
       <section className="bg-white py-16 border-t border-zinc-200">
         <div className="max-w-7xl mx-auto px-6 flex flex-col items-center text-center">
           <p className="text-zinc-600 mb-6 font-medium">
@@ -271,6 +272,7 @@ export default function LandingPage() {
       </div>
       );
       }
+/** Interactive neural network animation that visualizes forward propagation for dog/cat inputs. */
 function NeuralNetViz() {
   const [activeSignal, setActiveSignal] = useState<'dog' | 'cat' | null>(null);
   const [animStep, setAnimStep] = useState(-1);
@@ -282,6 +284,7 @@ function NeuralNetViz() {
     return () => { timeoutIdsRef.current.forEach(clearTimeout); };
   }, []);
 
+  /** Starts a multi-step forward-propagation animation for the given input type. */
   const triggerAnimation = (type: 'dog' | 'cat') => {
     if (animating) return;
     timeoutIdsRef.current.forEach(clearTimeout);
@@ -308,7 +311,6 @@ function NeuralNetViz() {
     ];
   };
 
-  // Node configuration
   const layers = [
     { id: 'input', nodes: 4, label: 'Input' },
     { id: 'hidden1', nodes: 6, label: 'Hidden 1' },
@@ -316,6 +318,7 @@ function NeuralNetViz() {
     { id: 'output', nodes: 2, label: 'Output' },
   ];
 
+  /** Calculates the vertical center position of a node within the SVG canvas. */
   const getNodeY = (totalNodes: number, index: number) => {
     const nodeHeight = 24;
     const gap = 16;
@@ -354,10 +357,10 @@ function NeuralNetViz() {
       </div>
 
       <div className="relative h-80 max-w-4xl mx-auto">
-        {/* SVG Connections */}
+        {/* SVG connection lines between layers */}
         <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
            <svg width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">
-             {/* Input to Hidden 1 */}
+             {/* Input → Hidden 1 */}
              {Array.from({length: 4}).map((_, i) => 
                Array.from({length: 6}).map((_, j) => {
                  const isActive = animStep >= 1;
@@ -375,7 +378,7 @@ function NeuralNetViz() {
                  );
                })
              )}
-             {/* Hidden 1 to Hidden 2 */}
+             {/* Hidden 1 → Hidden 2 */}
              {Array.from({length: 6}).map((_, i) => 
                Array.from({length: 6}).map((_, j) => {
                  const isActive = animStep >= 3;
@@ -393,7 +396,7 @@ function NeuralNetViz() {
                  );
                })
              )}
-             {/* Hidden 2 to Output */}
+             {/* Hidden 2 → Output */}
              {Array.from({length: 6}).map((_, i) => 
                Array.from({length: 2}).map((_, j) => {
                  const isTargetNode = (activeSignal === 'dog' && j === 0) || (activeSignal === 'cat' && j === 1);
@@ -415,7 +418,7 @@ function NeuralNetViz() {
            </svg>
         </div>
 
-        {/* Nodes */}
+        {/* Layer nodes */}
         {layers.map((layer, layerIdx) => (
           <div 
             key={layer.id} 
@@ -451,7 +454,7 @@ function NeuralNetViz() {
                         : "bg-zinc-700 border-2 border-zinc-600 opacity-30"
                     )}
                   />
-                  {/* Output Labels */}
+                  {/* Output labels */}
                   {isOutput && (
                     <span className={cn(
                       "absolute left-full ml-4 top-1/2 -translate-y-1/2 whitespace-nowrap font-medium transition-all duration-500",

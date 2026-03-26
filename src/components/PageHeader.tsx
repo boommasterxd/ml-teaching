@@ -1,13 +1,17 @@
+/**
+ * Sticky page header with a back button, centered title, and an optional right slot.
+ */
 import type { ReactNode } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface PageHeaderProps {
   title: string;
-  /** Optionaler Slot für die rechte Seite des Headers (z. B. Aktions-Buttons). */
+  /** Optional slot rendered on the right side of the header (e.g. action buttons). */
   rightSlot?: ReactNode;
 }
 
+/** Renders a sticky header bar with navigation, logo, page title, and optional actions. */
 export default function PageHeader({ title, rightSlot }: PageHeaderProps) {
   const navigate = useNavigate();
 

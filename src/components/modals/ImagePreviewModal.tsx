@@ -1,3 +1,6 @@
+/**
+ * Modal that displays an enlarged preview of a training image with a delete option.
+ */
 import { Trash2, X } from 'lucide-react';
 import Dialog from '../Dialog';
 import type { MLImage } from '../../types/ml';
@@ -9,6 +12,7 @@ interface ImagePreviewModalProps {
   onDelete: () => void;
 }
 
+/** Shows a larger version of a training image and allows the user to delete it. */
 export default function ImagePreviewModal({ isOpen, onClose, image, onDelete }: ImagePreviewModalProps) {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} labelledBy="image-modal-title">

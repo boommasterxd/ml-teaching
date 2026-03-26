@@ -1,7 +1,7 @@
 /**
- * Generische Dialog-Basiskomponente.
- * Kapselt Overlay, Focus-Trap und Scroll-Lock für alle Modal-Dialoge.
- * Stellt WCAG-konforme ARIA-Attribute bereit.
+ * Generic base dialog component.
+ * Wraps overlay, focus trap, and scroll lock for all modal dialogs.
+ * Provides WCAG-compliant ARIA attributes.
  */
 import type React from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
@@ -9,15 +9,16 @@ import useScrollLock from '../hooks/useScrollLock';
 
 interface DialogProps {
   isOpen: boolean;
-  /** onClose ist optional – bei Dialogen ohne Escape-Handler (z. B. Ladescreen) weglassen */
+  /** Optional — omit for dialogs that cannot be dismissed (e.g. loading screen). */
   onClose?: () => void;
-  /** ID des Elements, das den Dialog-Titel enthält (aria-labelledby) */
+  /** ID of the element that contains the dialog title (aria-labelledby). */
   labelledBy: string;
-  /** ID des Elements, das den Dialog beschreibt (aria-describedby) – optional */
+  /** ID of the element that describes the dialog (aria-describedby) — optional. */
   describedBy?: string;
   children: React.ReactNode;
 }
 
+/** Renders a modal overlay with focus trapping, scroll lock, and ARIA roles. */
 export default function Dialog({
   isOpen,
   onClose,

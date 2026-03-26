@@ -10,6 +10,7 @@ import {defineConfig} from 'vite';
 import { compression } from 'vite-plugin-compression2';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 
+/** Vite build configuration with chunk splitting, image optimization, and compression. */
 export default defineConfig(() => {
   return {
     plugins: [
@@ -49,7 +50,7 @@ export default defineConfig(() => {
               if (id.includes('motion')) {
                 return 'motion';
               }
-              return 'vendor'; // all other package goes here
+              return 'vendor';
             }
           }
         }

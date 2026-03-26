@@ -1,12 +1,13 @@
 /**
- * Privacy policy page that outlines how user data is handled,
- * emphasizing local processing and transparency regarding external KI models.
+ * Privacy policy page covering data handling, hosting, cookies, and the
+ * two-click consent flow for loading external AI models.
  */
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import PageContent from '../components/PageContent';
 import { usePageTitle } from '../hooks/usePageTitle';
 
+/** Renders the full GDPR-compliant privacy policy. */
 export default function PrivacyPage() {
   usePageTitle('Datenschutzerklärung');
 
