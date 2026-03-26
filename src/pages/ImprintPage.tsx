@@ -32,13 +32,6 @@ export default function ImprintPage() {
               <a href="mailto:yannickschaefer@boomapps.de" className="text-zinc-600 hover:text-zinc-900 underline transition-colors break-all sm:break-normal">yannickschaefer@boomapps.de</a>
             </p>
           </div>
-
-          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Redaktionell verantwortlich</h2>
-          <div className="space-y-1 text-zinc-600">
-            <p className="font-semibold text-zinc-900 text-lg">Yannick Schäfer</p>
-            <p>Am Mäuerchen 12</p>
-            <p>67591 Mölsheim</p>
-          </div>
       </PageContent>
     </PageLayout>
   );
