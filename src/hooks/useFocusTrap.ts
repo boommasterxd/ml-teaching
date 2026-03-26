@@ -11,15 +11,17 @@ export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false)
     if (!isActive || !rootRef.current) return;
 
     const root = rootRef.current;
-    const focusableElements = root.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    
-    const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
-    if (autoFocusFirst && firstElement) {
-      firstElement.focus({ preventScroll: true });
+    const getFocusableElements = () => Array.from(
+      root.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    );
+
+    const firstFocusable = getFocusableElements()[0];
+
+    if (autoFocusFirst && firstFocusable) {
+      firstFocusable.focus({ preventScroll: true });
     } else if (!autoFocusFirst) {
       // Set tabIndex to -1 so the div can be focused programmatically
       root.tabIndex = -1;
@@ -30,14 +32,18 @@ export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false)
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;
 
+      const focusable = getFocusableElements();
+      const firstElement = focusable[0];
+      const lastElement = focusable[focusable.length - 1];
+
       if (e.shiftKey) {
         if (document.activeElement === firstElement) {
-          lastElement.focus();
+          lastElement?.focus();
           e.preventDefault();
         }
       } else {
         if (document.activeElement === lastElement) {
-          firstElement.focus();
+          firstElement?.focus();
           e.preventDefault();
         }
       }

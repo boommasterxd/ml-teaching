@@ -2,13 +2,17 @@
  * Landing page that provides an overview of the AI Image Recognition application,
  * featuring interactive visualizations and educational content.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Brain, Camera, Zap, ArrowRight, Dog, Cat, Users, ImagePlus, Lightbulb, Car, Smartphone, Stethoscope } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = 'KI Bilderkennung für Schüler';
+  }, []);
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
@@ -80,8 +84,8 @@ export default function LandingPage() {
               Um zu verstehen, was er sieht, nutzt ein Computer ein sogenanntes künstliches neuronales Netz. 
               Das ist eine Technik, die sich an der Arbeitsweise unseres Gehirns orientiert. 
               Ein solches Netz besteht aus Schichten (Layers) von "Neuronen". 
-              Bilder werden an die <strong>Input Layer</strong> übergeben. Die <strong>Hidden Layers</strong> erkennen Muster (wie Kanten, Formen, Ohren). 
-              Die <strong>Output Layer</strong> liefert das finale Ergebnis. Probier es aus!
+              Bilder werden an die <strong><span lang="en">Input Layer</span></strong> übergeben. Die <strong><span lang="en">Hidden Layers</span></strong> erkennen Muster (wie Kanten, Formen, Ohren).
+              Die <strong><span lang="en">Output Layer</span></strong> liefert das finale Ergebnis. Probier es aus!
             </p>
           </div>
 
@@ -104,7 +108,7 @@ export default function LandingPage() {
             <div className="bg-zinc-50 p-8 rounded-3xl border border-zinc-100 relative overflow-hidden group hover:shadow-md transition-all">
               <div className="absolute top-0 right-0 w-32 h-32 bg-red-100 rounded-bl-full -mr-8 -mt-8 opacity-50 transition-transform group-hover:scale-110" aria-hidden="true" />
               <Brain className="w-12 h-12 text-red-500 mb-6 relative z-10" aria-hidden="true" />
-              <h3 className="text-2xl font-bold mb-4 text-zinc-800 relative z-10">1. Das "Auge" <br/><span className="text-red-600 text-lg">Neuronales Netz (MobileNet)</span></h3>
+              <h3 className="text-2xl font-bold mb-4 text-zinc-800 relative z-10">1. Das "Auge" <br/><span className="text-red-600 text-lg">Neuronales Netz (<span lang="en">MobileNet</span>)</span></h3>
               <p className="text-zinc-600 leading-relaxed relative z-10">
                 Stell dir vor, du hast ein riesiges digitales Gehirn, das schon Millionen von Bildern gesehen hat. In unserer App nutzen wir ein vorgefertigtes <strong>Neuronales Netz</strong>. Es ist wie ein Auge, das bereits gelernt hat, grundlegende Dinge wie Kanten, Farben und Formen zu erkennen. 
                 <br/><br/>
@@ -116,9 +120,9 @@ export default function LandingPage() {
             <div className="bg-zinc-50 p-8 rounded-3xl border border-zinc-100 relative overflow-hidden group hover:shadow-md transition-all">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-bl-full -mr-8 -mt-8 opacity-50 transition-transform group-hover:scale-110" aria-hidden="true" />
               <Users className="w-12 h-12 text-blue-500 mb-6 relative z-10" aria-hidden="true" />
-              <h3 className="text-2xl font-bold mb-4 text-zinc-800 relative z-10">2. Der "Entscheider" <br/><span className="text-blue-600 text-lg">K-Nearest Neighbors (KNN)</span></h3>
+              <h3 className="text-2xl font-bold mb-4 text-zinc-800 relative z-10">2. Der "Entscheider" <br/><span className="text-blue-600 text-lg"><span lang="en">K-Nearest Neighbors (KNN)</span></span></h3>
               <p className="text-zinc-600 leading-relaxed relative z-10">
-                KNN steht für <strong>K-Nearest Neighbors</strong> (auf Deutsch: die K-nächsten Nachbarn). Stell dir vor, du bist neu in einer Schule und suchst Freunde. Du schaust, wer ähnliche Hobbys hat wie du. Genau das macht KNN! 
+                <span lang="en">KNN</span> steht für <strong><span lang="en">K-Nearest Neighbors</span></strong> (auf Deutsch: die K-nächsten Nachbarn). Stell dir vor, du bist neu in einer Schule und suchst Freunde. Du schaust, wer ähnliche Hobbys hat wie du. Genau das macht KNN! 
                 <br/><br/>
                 Wenn die Kamera ein neues Bild sieht, vergleicht KNN den Fingerabdruck dieses Bildes mit allen Bildern, die du vorher beim Training aufgenommen hast. Es sucht die Bilder, die am ähnlichsten sind (die "Nachbarn"). Wenn die meisten dieser Nachbarn zur Klasse "Hund" gehören, sagt der Computer: "Das ist ein Hund!"
               </p>
@@ -129,9 +133,9 @@ export default function LandingPage() {
           <div className="mt-12 bg-gradient-to-br from-zinc-800 to-zinc-900 p-8 sm:p-12 rounded-3xl text-white text-center relative overflow-hidden shadow-xl">
             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} aria-hidden="true"></div>
             <Zap className="w-12 h-12 text-yellow-400 mx-auto mb-6 relative z-10" aria-hidden="true" />
-            <h3 className="text-2xl font-bold mb-4 relative z-10">Warum geht das so schnell? (Transfer Learning)</h3>
+            <h3 className="text-2xl font-bold mb-4 relative z-10">Warum geht das so schnell? (<span lang="en">Transfer Learning</span>)</h3>
             <p className="text-zinc-300 leading-relaxed max-w-3xl mx-auto relative z-10 text-lg">
-              Normalerweise braucht eine KI Tausende von Bildern und tagelanges Training. Wir nutzen einen Trick namens <strong>Transfer Learning</strong>. Das Neuronale Netz (das Auge) bringt schon sein ganzes Vorwissen mit. Der KNN-Algorithmus (der Entscheider) merkt sich einfach nur noch deine paar neuen Bilder und vergleicht sie blitzschnell. So lernt dein Modell in Sekunden direkt hier in deinem Browser!
+              Normalerweise braucht eine KI Tausende von Bildern und tagelanges Training. Wir nutzen einen Trick namens <strong><span lang="en">Transfer Learning</span></strong>. Das Neuronale Netz (das Auge) bringt schon sein ganzes Vorwissen mit. Der KNN-Algorithmus (der Entscheider) merkt sich einfach nur noch deine paar neuen Bilder und vergleicht sie blitzschnell. So lernt dein Modell in Sekunden direkt hier in deinem Browser!
             </p>
           </div>
         </div>
@@ -235,7 +239,7 @@ export default function LandingPage() {
           </p>
           <button
             onClick={() => navigate('/lernen')}
-            className="inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-all hover:scale-105 shadow-xl shadow-red-900/20"
+            className="inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-all hover:scale-105 shadow-xl shadow-red-900/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-600/30"
           >
             Jetzt ausprobieren <ArrowRight className="ml-2 w-6 h-6" aria-hidden="true" />
           </button>

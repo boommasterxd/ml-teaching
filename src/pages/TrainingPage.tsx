@@ -38,7 +38,11 @@ const COLORS = ['#dc2626', '#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777'
 
 export default function TrainingPage() {
   const navigate = useNavigate();
-  
+
+  useEffect(() => {
+    document.title = 'Modell trainieren – KI Bilderkennung für Schüler';
+  }, []);
+
   // App State
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [loadingText, setLoadingText] = useState('Initialisiere TensorFlow.js...');
@@ -606,7 +610,7 @@ export default function TrainingPage() {
                 onClick={trainModel}
                 disabled={isTraining || !canTrain}
                 className={cn(
-                  "w-full py-3 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center",
+                  "w-full py-3 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
                   isTraining || !canTrain
                     ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
                     : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5"
@@ -670,7 +674,7 @@ export default function TrainingPage() {
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-xl">
                     <button
                       onClick={startPredicting}
-                      className="px-5 py-2.5 bg-white text-zinc-900 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform flex items-center"
+                      className="px-5 py-2.5 bg-white text-zinc-900 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
                     >
                       <Play className="w-4 h-4 mr-2 fill-current" aria-hidden="true" /> Starten
                     </button>
@@ -710,7 +714,7 @@ export default function TrainingPage() {
                     </div>
                     <button
                       onClick={stopPredicting}
-                      className="w-full mt-4 py-2.5 px-4 bg-zinc-50 hover:bg-zinc-100 text-zinc-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center border border-zinc-200/50"
+                      className="w-full mt-4 py-2.5 px-4 bg-zinc-50 hover:bg-zinc-100 text-zinc-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center border border-zinc-200/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2"
                     >
                       <Square className="w-4 h-4 mr-2 fill-current" aria-hidden="true" /> Stoppen
                     </button>
@@ -1236,14 +1240,15 @@ function ClassCard({
             >
               <Upload className="w-4 h-4" aria-hidden="true" />
             </button>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileUpload} 
-              accept="image/*" 
-              multiple 
-              className="hidden" 
-              aria-label="Bilder hochladen"
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="image/*"
+              multiple
+              className="hidden"
+              aria-hidden="true"
+              tabIndex={-1}
             />
           </div>
         </div>
