@@ -422,7 +422,7 @@ function NeuralNetViz() {
             className="absolute top-0 bottom-0 flex flex-col items-center z-10"
             style={{ left: `${5 + layerIdx * 20}%`, width: '20%' }}
           >
-            <div className="text-[10px] sm:text-xs font-mono text-zinc-400 mt-2 uppercase tracking-wider absolute -top-8 whitespace-nowrap">{layer.label}</div>
+            <div className="text-[10px] sm:text-xs font-mono text-zinc-300 mt-2 uppercase tracking-wider absolute -top-8 whitespace-nowrap">{layer.label}</div>
             
             {Array.from({ length: layer.nodes }).map((_, nodeIdx) => {
               const isOutput = layer.id === 'output';
