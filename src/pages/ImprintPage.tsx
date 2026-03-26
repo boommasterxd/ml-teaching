@@ -1,46 +1,18 @@
 /**
  * Imprint page containing legal contact and ownership information.
  */
-import { useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import PageLayout from '../components/PageLayout';
+import PageHeader from '../components/PageHeader';
+import PageContent from '../components/PageContent';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function ImprintPage() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    document.title = 'Impressum – KI Bilderkennung für Schüler';
-  }, []);
+  usePageTitle('Impressum');
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-20 hyphens-auto break-words">
-      <header className="bg-white border-b border-zinc-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
-          <button 
-            onClick={() => navigate('/')}
-            className="flex items-center text-zinc-600 hover:text-zinc-900 transition-colors font-medium text-sm flex-shrink-0"
-            aria-label="Zurück zur Startseite"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
-            <span className="hidden sm:inline">Zurück</span>
-          </button>
-          
-          <div className="flex-1 flex items-center justify-center gap-3 pr-8 sm:pr-0">
-            <img 
-              src="/ada-logo.png" 
-              alt="Ada Lovelace Projekt Logo" 
-              className="h-8 w-auto object-contain hidden lg:block"
-              referrerPolicy="no-referrer"
-            />
-            <p className="text-base sm:text-lg font-bold text-zinc-800 line-clamp-1">Impressum</p>
-          </div>
-          
-          <div className="w-10 sm:w-20"></div> {/* Spacer for centering balance */}
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12" role="main" aria-labelledby="imprint-title">
-        <div className="bg-white p-6 sm:p-12 rounded-3xl border border-zinc-200 shadow-sm prose prose-zinc max-w-none">
+    <PageLayout>
+      <PageHeader title="Impressum" />
+      <PageContent labelledBy="imprint-title">
           <h1 id="imprint-title" className="text-2xl sm:text-3xl font-extrabold text-zinc-900 mb-8 border-b border-zinc-100 pb-4">Impressum</h1>
           
           <div className="space-y-1 text-zinc-600 mb-8">
@@ -67,8 +39,7 @@ export default function ImprintPage() {
             <p>Am Mäuerchen 12</p>
             <p>67591 Mölsheim</p>
           </div>
-        </div>
-      </main>
-    </div>
+      </PageContent>
+    </PageLayout>
   );
 }
