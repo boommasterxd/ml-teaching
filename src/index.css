@@ -24,20 +24,24 @@
   }
 }
 
-/*
- * Only show focus outlines for keyboard navigation.
- * We move this out of @layer base to ensure it applies broadly
- * and overrides browser defaults effectively.
- */
-:focus:not(:focus-visible) {
-  outline: none !important;
-  box-shadow: none !important;
-}
+@layer base {
+  /* Only show focus outlines for keyboard navigation. */
+  :focus:not(:focus-visible) {
+    outline: none !important;
+    box-shadow: none !important;
+  }
 
-/* Global fallback focus indicator for keyboard navigation (WCAG 2.4.7) */
-:focus-visible {
-  outline: 3px solid #2563eb;
-  outline-offset: 2px;
+  /* Global fallback focus indicator for keyboard navigation (WCAG 2.4.7) */
+  :focus-visible {
+    outline: 3px solid #2563eb;
+    outline-offset: 2px;
+  }
+
+  /* Suppress outline for inputs focused via pointer (mouse/touch) */
+  input[data-mouse-focused]:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
 }
 
 /* Prevent outline on the modal container itself when focused by useFocusTrap */
