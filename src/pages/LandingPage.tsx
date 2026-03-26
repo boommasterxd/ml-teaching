@@ -80,7 +80,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-6">Wie lernt ein Computer?</h2>
-            <p className="text-zinc-400 max-w-3xl mx-auto text-lg">
+            <p className="text-zinc-300 max-w-3xl mx-auto text-lg">
               Um zu verstehen, was er sieht, nutzt ein Computer ein sogenanntes künstliches neuronales Netz. 
               Das ist eine Technik, die sich an der Arbeitsweise unseres Gehirns orientiert. 
               Ein solches Netz besteht aus Schichten (Layers) von "Neuronen". 
@@ -471,7 +471,7 @@ function NeuralNetViz() {
             {result}
           </div>
         ) : animating ? (
-          <div className="text-zinc-400 animate-pulse">Verarbeite Signal...</div>
+          <div className="text-zinc-300 animate-pulse">Verarbeite Signal...</div>
         ) : (
           <div className="text-zinc-400">Klicke auf ein Icon, um den Prozess zu starten</div>
         )}
