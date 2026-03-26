@@ -84,8 +84,12 @@ export default function AccessibilityPage() {
             Wenn Sie nach Kontaktaufnahme mit uns keine zufriedenstellende Antwort erhalten haben, können Sie sich an die zuständige Durchsetzungsstelle wenden:
           </p>
           <address className="not-italic text-zinc-600 leading-relaxed mb-4 pl-4 border-l-2 border-zinc-100">
-            <p className="font-semibold text-zinc-800">Marktüberwachungsbehörde gemäß BFSG</p>
-            <p>Für weitere Informationen wenden Sie sich an die zuständige Behörde in Ihrem Bundesland.</p>
+            <p className="font-semibold text-zinc-800">Aufsichts- und Dienstleistungsdirektion (ADD) Rheinland-Pfalz</p>
+            <p>Willy-Brandt-Platz 3</p>
+            <p>54290 Trier</p>
+            <p>Telefon: <a href="tel:+4965194940" className="text-indigo-600 underline">0651 9494-0</a></p>
+            <p>E-Mail: <a href="mailto:poststelle@add.rlp.de" className="text-indigo-600 underline">poststelle@add.rlp.de</a></p>
+            <p>Website: <a href="https://add.rlp.de" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">add.rlp.de</a></p>
           </address>
 
           <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Datum der Erklärung</h2>

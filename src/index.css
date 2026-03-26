@@ -8,19 +8,16 @@
 @layer base {
   /* Default base styles */
 
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  *::-webkit-scrollbar,
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar {
-    display: none !important;
+  /* Hauptseiten-Scrollbar dezent ausblenden (transparent, aber funktional) */
+  html, body {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
   }
-
-  /* Hide scrollbar for IE, Edge and Firefox */
-  *,
-  html,
-  body {
-    -ms-overflow-style: none !important;  /* IE and Edge */
-    scrollbar-width: none !important;  /* Firefox */
+  html::-webkit-scrollbar {
+    width: 6px;
+  }
+  html::-webkit-scrollbar-thumb {
+    background-color: transparent;
   }
 }
 
