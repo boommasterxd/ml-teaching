@@ -1,0 +1,21 @@
+import type { ReactNode } from 'react';
+
+interface PageContentProps {
+  id?: string;
+  labelledBy?: string;
+  children: ReactNode;
+}
+
+export default function PageContent({ id, labelledBy, children }: PageContentProps) {
+  return (
+    <section
+      id={id}
+      className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12"
+      aria-labelledby={labelledBy}
+    >
+      <div className="bg-white p-6 sm:p-12 rounded-3xl border border-zinc-200 shadow-sm prose prose-zinc max-w-none">
+        {children}
+      </div>
+    </section>
+  );
+}

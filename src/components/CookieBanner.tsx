@@ -6,13 +6,14 @@
  */
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import useScrollLock from '../hooks/useScrollLock';
 
 export default function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   const handleAcknowledge = () => {
     try {
@@ -48,12 +49,13 @@ export default function CookieBanner() {
         <motion.div
           ref={bannerRef}
           tabIndex={-1}
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
+          initial={prefersReducedMotion ? { opacity: 0 } : { y: 100, opacity: 0 }}
+          animate={prefersReducedMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
+          exit={prefersReducedMotion ? { opacity: 0 } : { y: 100, opacity: 0 }}
           role="alertdialog"
           aria-modal="true"
           aria-label="Cookie-Informationen"
+          aria-describedby="cookie-banner-desc"
           className="fixed bottom-6 left-6 right-6 md:left-1/2 md:-translate-x-1/2 md:max-w-4xl z-50 p-6 md:p-8 bg-[#121212] text-white shadow-2xl rounded-3xl border border-white/10 focus:outline-none overscroll-contain"
         >
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12">
@@ -63,7 +65,7 @@ export default function CookieBanner() {
             >
               Verstanden
             </button>
-            <div className="text-sm md:text-base text-gray-300 leading-relaxed order-1 md:order-1">
+            <div id="cookie-banner-desc" className="text-sm md:text-base text-gray-300 leading-relaxed order-1 md:order-1">
               <p>
                 Wir verwenden nur technisch notwendige Cookies und lokale Speichertechnologien, um die Funktionalität dieser Website zu gewährleisten. 
                 Es werden keine Tracking-Cookies verwendet. Weitere Informationen finden Sie in unserer{' '}

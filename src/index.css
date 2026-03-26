@@ -8,16 +8,12 @@
 @layer base {
   /* Default base styles */
 
-  /* Hauptseiten-Scrollbar dezent ausblenden (transparent, aber funktional) */
+  /* Hauptseiten-Scrollbar ausblenden (kein Layout-Shift, kein weißer Streifen) */
   html, body {
-    scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
+    scrollbar-width: none;
   }
   html::-webkit-scrollbar {
-    width: 6px;
-  }
-  html::-webkit-scrollbar-thumb {
-    background-color: transparent;
+    display: none;
   }
 }
 
@@ -66,5 +62,11 @@ div[role="dialog"]:focus-visible {
   100% {
     transform: scale(1);
     opacity: 0.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-node-glow {
+    animation: none;
   }
 }
