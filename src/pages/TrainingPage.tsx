@@ -86,13 +86,13 @@ export default function TrainingPage() {
   const predictVideoRef = useRef<HTMLVideoElement>(null);
 
   // Focus Traps for Modals
-  const selectedImageRef = useFocusTrap(!!selectedImage);
-  const showClearConfirmRef = useFocusTrap(showClearConfirm);
-  const classToClearRef = useFocusTrap(!!classToClear);
-  const classToRemoveRef = useFocusTrap(!!classToRemove);
-  const hasConsentedRef = useFocusTrap(!hasConsented);
+  const selectedImageRef = useFocusTrap(!!selectedImage, false, () => setSelectedImage(null));
+  const showClearConfirmRef = useFocusTrap(showClearConfirm, false, () => setShowClearConfirm(false));
+  const classToClearRef = useFocusTrap(!!classToClear, false, () => setClassToClear(null));
+  const classToRemoveRef = useFocusTrap(!!classToRemove, false, () => setClassToRemove(null));
+  const hasConsentedRef = useFocusTrap(!hasConsented, false, () => navigate('/'));
   const isModelLoadingRef = useFocusTrap(hasConsented && isModelLoading);
-  const cameraConsentRef = useFocusTrap(hasConsented && !isModelLoading && !cameraConsent);
+  const cameraConsentRef = useFocusTrap(hasConsented && !isModelLoading && !cameraConsent, false, () => navigate('/'));
 
   // Scroll Lock
   const isAnyModalOpen = !!selectedImage || showClearConfirm || !!classToClear || !!classToRemove || !hasConsented || isModelLoading || !cameraConsent;
@@ -914,7 +914,7 @@ export default function TrainingPage() {
                   type="checkbox"
                   checked={privacyChecked}
                   onChange={(e) => setPrivacyChecked(e.target.checked)}
-                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-indigo-500"
+                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                 />
 
                 <span className="text-zinc-700 text-sm leading-relaxed">
@@ -927,7 +927,7 @@ export default function TrainingPage() {
                   type="checkbox"
                   checked={modelChecked}
                   onChange={(e) => setModelChecked(e.target.checked)}
-                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-indigo-500"
+                  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                 />
 
                 <span className="text-zinc-700 text-sm leading-relaxed">
@@ -1169,17 +1169,17 @@ function ClassCard({
           <span className="text-xs font-mono text-zinc-600 bg-zinc-100 px-2 py-1 rounded-md whitespace-nowrap flex-shrink-0">
             {cls.images.length} Bilder
           </span>
-          <button 
+          <button
             onClick={handleClear}
-            className="text-zinc-400 hover:text-indigo-500 transition-colors"
+            className="p-1.5 rounded-md text-zinc-400 hover:text-indigo-500 transition-colors"
             title="Bilder dieser Klasse zurücksetzen"
             aria-label={`Bilder der Klasse ${cls.name || 'ohne Namen'} zurücksetzen`}
           >
             <RotateCcw className="w-4 h-4" aria-hidden="true" />
           </button>
-          <button 
+          <button
             onClick={onRemove}
-            className="text-zinc-400 hover:text-red-500 transition-colors"
+            className="p-1.5 rounded-md text-zinc-400 hover:text-red-500 transition-colors"
             title="Klasse löschen"
             aria-label={`Klasse ${cls.name || 'ohne Namen'} löschen`}
           >
@@ -1305,7 +1305,7 @@ function ClassCard({
           <div className="flex-1 relative h-[190px] max-h-[190px] bg-zinc-50/50 rounded-xl border border-zinc-200 p-2 overflow-y-auto">
             {cls.images.length > 0 ? (
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-                {cls.images.map((img) => (
+                {cls.images.map((img, imgIndex) => (
                   <button 
                     key={img.id} 
                     type="button"
@@ -1324,7 +1324,7 @@ function ClassCard({
                     }}
                     onClick={() => isSelectionMode ? toggleImageSelection(img.id) : onImageClick(img)}
                   >
-                    <img src={img.dataUrl} alt="Training sample" className="w-full h-full object-cover" />
+                    <img src={img.dataUrl} alt={`Trainingsbeispiel ${imgIndex + 1}`} className="w-full h-full object-cover" />
                     {isSelectionMode && (
                       <div 
                         className={cn(

@@ -13,8 +13,14 @@ import useScrollLock from '../hooks/useScrollLock';
 
 export default function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false);
-  const bannerRef = useFocusTrap(isVisible, false);
-  
+
+  const handleAcknowledge = () => {
+    localStorage.setItem('cookie_consent_acknowledged', new Date().toISOString());
+    setIsVisible(false);
+  };
+
+  const bannerRef = useFocusTrap(isVisible, false, handleAcknowledge);
+
   // Lock scroll when visible
   useScrollLock(isVisible);
 
@@ -25,11 +31,6 @@ export default function CookieBanner() {
       setIsVisible(true);
     }
   }, []);
-
-  const handleAcknowledge = () => {
-    localStorage.setItem('cookie_consent_acknowledged', new Date().toISOString());
-    setIsVisible(false);
-  };
 
   return (
     <AnimatePresence>

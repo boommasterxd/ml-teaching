@@ -348,8 +348,8 @@ function NeuralNetViz() {
 
       <div className="relative h-80 max-w-4xl mx-auto">
         {/* SVG Connections */}
-        <div className="absolute inset-0 pointer-events-none z-0">
-           <svg width="100%" height="100%" preserveAspectRatio="none">
+        <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
+           <svg width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">
              {/* Input to Hidden 1 */}
              {Array.from({length: 4}).map((_, i) => 
                Array.from({length: 6}).map((_, j) => {
