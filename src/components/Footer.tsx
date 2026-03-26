@@ -12,6 +12,7 @@ export default function Footer() {
         <div className="flex gap-6 text-sm mb-4">
           <Link to="/impressum" className="hover:text-zinc-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 rounded-sm">Impressum</Link>
           <Link to="/datenschutz" className="hover:text-zinc-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 rounded-sm">Datenschutz</Link>
+          <Link to="/barrierefreiheit" className="hover:text-zinc-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 rounded-sm">Barrierefreiheit</Link>
         </div>
         <p className="text-sm">&copy; {new Date().getFullYear()} Yannick Schäfer &amp; Mara Tesche</p>
       </div>
