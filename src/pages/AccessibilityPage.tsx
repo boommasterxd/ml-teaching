@@ -1,11 +1,12 @@
 /**
- * Accessibility statement page according to BFSG §14 + Anlage 3.
+ * Accessibility statement page (BFSG §14 + Annex 3 / WCAG 2.1 AA compliance).
  */
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import PageContent from '../components/PageContent';
 import { usePageTitle } from '../hooks/usePageTitle';
 
+/** Renders the accessibility declaration with conformance status and contact info. */
 export default function AccessibilityPage() {
   usePageTitle('Barrierefreiheit');
 
