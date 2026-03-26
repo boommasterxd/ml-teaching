@@ -4,13 +4,16 @@
  */
 import { useEffect, useRef } from 'react';
 
-export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false) {
+export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false, onEscape?: () => void) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!isActive || !rootRef.current) return;
 
     const root = rootRef.current;
+
+    previousFocusRef.current = document.activeElement as HTMLElement;
 
     const getFocusableElements = () => Array.from(
       root.querySelectorAll<HTMLElement>(
@@ -30,6 +33,12 @@ export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false)
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onEscape) {
+        e.preventDefault();
+        onEscape();
+        return;
+      }
+
       if (e.key !== 'Tab') return;
 
       const focusable = getFocusableElements();
@@ -52,8 +61,10 @@ export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false)
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      previousFocusRef.current?.focus({ preventScroll: true });
+      previousFocusRef.current = null;
     };
-  }, [isActive]);
+  }, [isActive, onEscape]);
 
   return rootRef;
 }
