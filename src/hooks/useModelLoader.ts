@@ -1,8 +1,12 @@
+/**
+ * Hook that loads TensorFlow.js, MobileNet, and the KNN classifier once the user consents.
+ */
 import { useState, useEffect } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import * as mobilenet from '@tensorflow-models/mobilenet';
 import * as knnClassifier from '@tensorflow-models/knn-classifier';
 
+/** Initializes the ML backend, creates a KNN classifier, and loads MobileNet v2. */
 export function useModelLoader(
   hasConsented: boolean,
   onError: (msg: string) => void

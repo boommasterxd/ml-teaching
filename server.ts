@@ -18,15 +18,10 @@ const port = Number(process.env.PORT) || 3000;
 
 app.use(compression());
 
-/**
- * 1. Proxy Trust (Essential for Traefik)
- */
+// Trust the first proxy (required for Traefik / reverse proxy setups)
 app.set('trust proxy', 1);
 
-/**
- * 2. Security Headers with Helmet
- * CSP is active in production (with TF.js rules), inactive in dev.
- */
+// Security headers — CSP enabled in production (with TF.js rules), disabled in dev
 app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
@@ -44,9 +39,7 @@ app.use(helmet({
   },
 }));
 
-/**
- * 3. Rate Limiting
- */
+// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 1000,
@@ -56,11 +49,10 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+/** Configures either Vite dev middleware or static file serving and starts listening. */
 async function setupServer() {
   if (process.env.NODE_ENV !== 'production') {
-    /**
-     * 4a. Development Mode: Vite Middleware (SPA Mode)
-     */
+    // Development: Vite middleware (SPA mode)
     console.log('🛠️ Starting Vite Middleware for development...');
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
@@ -69,16 +61,13 @@ async function setupServer() {
     });
     app.use(vite.middlewares);
   } else {
-    /**
-     * 4b. Production Mode: Serving the build output
-     */
+    // Production: serve pre-built static files
     const distPath = path.resolve(rootDir, 'dist');
     console.log(`📦 Production mode active. Serving from: ${distPath}`);
 
     const expressStaticGzip = (await import('express-static-gzip')).default;
 
-    // @ts-ignore
-    // Static files with aggressive caching (Vite Assets)
+    // @ts-ignore — types incomplete for express-static-gzip
     app.use(expressStaticGzip(distPath, {
       enableBrotli: true,
       orderPreference: ['br', 'gz'],
@@ -89,7 +78,7 @@ async function setupServer() {
       }
     }));
 
-    // SPA Fallback with cache-control headers
+    // SPA fallback with no-cache headers for index.html
     app.get('*path', (req, res) => {
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
       res.sendFile(path.join(distPath, 'index.html'));

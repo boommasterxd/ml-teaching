@@ -1,6 +1,10 @@
+/**
+ * Hook that manages the camera MediaStream lifecycle (setup, teardown, facing mode toggle).
+ */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type React from 'react';
 
+/** Requests camera access once consent is given and attaches the stream to a video element. */
 export function useCameraStream(
   cameraConsent: boolean,
   isModelLoading: boolean,
@@ -11,6 +15,7 @@ export function useCameraStream(
   const [stream, setStream] = useState<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  /** Initializes or restarts the webcam stream with the current facing mode. */
   const setupWebcam = useCallback(async () => {
     if (!cameraConsent) return;
 
@@ -42,14 +47,15 @@ export function useCameraStream(
     };
   }, [setupWebcam]);
 
-  // Kamera-Stream an Vorhersage-Video anhängen, wenn Stream oder Ladestatus sich ändert.
-  // isModelLoading als Dep ist nötig, weil das Video-Element erst nach dem Laden im DOM erscheint.
+  // Attach stream to prediction video element. isModelLoading is a dependency
+  // because the video element only appears in the DOM after loading completes.
   useEffect(() => {
     if (predictVideoRef.current && stream) {
       predictVideoRef.current.srcObject = stream;
     }
   }, [stream, isModelLoading, predictVideoRef]);
 
+  /** Toggles between front and rear camera. */
   const toggleCamera = useCallback(() => {
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
   }, []);
