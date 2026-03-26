@@ -1,8 +1,13 @@
+/**
+ * Hook that validates training prerequisites and trains the KNN classifier
+ * from the collected image feature vectors.
+ */
 import { useState, useCallback, useMemo } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import * as knnClassifier from '@tensorflow-models/knn-classifier';
 import type { MLClass } from '../types/ml';
 
+/** Manages training state, validation checks, and the KNN training procedure. */
 export function useModelTraining(
   classes: MLClass[],
   classifier: knnClassifier.KNNClassifier | null,
@@ -31,6 +36,7 @@ export function useModelTraining(
     [classes, hasInvalidNames, hasDuplicateNames]
   );
 
+  /** Validates all prerequisites and trains a new KNN classifier from collected features. */
   const trainModel = useCallback(async () => {
     if (classes.length < 2) {
       onError('Du brauchst mindestens 2 Klassen, um ein Modell zu trainieren.');

@@ -27,32 +27,29 @@ import ConsentModal from '../components/modals/ConsentModal';
 import CameraConsentModal from '../components/modals/CameraConsentModal';
 import LoadingModal from '../components/modals/LoadingModal';
 
+/** Main training page: consent → model loading → data collection → training → live prediction. */
 export default function TrainingPage() {
   const navigate = useNavigate();
   usePageTitle('Modell trainieren');
 
-  // Fehler-State (wird von mehreren Hooks genutzt)
+  // Error state shared across multiple hooks
   const [error, setError] = useState<string | null>(null);
 
-  // Consent-States — steuern die Lade-Reihenfolge:
-  // 1. hasConsented → Model-Loading startet
-  // 2. cameraConsent → Kamera-Zugriff startet
+  // Consent flow: 1. hasConsented → model loading starts, 2. cameraConsent → camera access starts
   const [hasConsented, setHasConsented] = useState(false);
   const [cameraConsent, setCameraConsent] = useState(false);
 
-  // Modal-States
+  // Modal states
   const [selectedImage, setSelectedImage] = useState<{ classId: string; image: MLImage } | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [classToClear, setClassToClear] = useState<string | null>(null);
   const [classToRemove, setClassToRemove] = useState<string | null>(null);
 
-  // Trainiertes-Modell-Status (wird von mehreren Stellen gelesen/geschrieben)
+  // Whether a trained model currently exists (read/written from multiple places)
   const [hasTrainedModel, setHasTrainedModel] = useState(false);
 
-  // Shared Video-Ref: wird von useCameraStream (Stream-Attach) und usePredictionLoop (Inferenz) genutzt
+  // Shared video ref used by useCameraStream (stream attach) and usePredictionLoop (inference)
   const predictVideoRef = useRef<HTMLVideoElement>(null);
-
-  // --- Custom Hooks ---
 
   const { classifier, setClassifier, mobilenetModel, isModelLoading, loadingText } =
     useModelLoader(hasConsented, setError);
@@ -63,7 +60,7 @@ export default function TrainingPage() {
   const { prediction, isPredicting, startPredicting: activatePredicting, stopPredicting } =
     usePredictionLoop(classifier, mobilenetModel, predictVideoRef);
 
-  // invalidateModel wird vor useClassManagement definiert, da der Hook es als Callback benötigt
+  /** Resets the trained model flag and stops prediction when training data changes. */
   const invalidateModel = useCallback(() => {
     if (hasTrainedModel) {
       setHasTrainedModel(false);
@@ -86,13 +83,12 @@ export default function TrainingPage() {
   const { isTraining, trainModel, canTrain, hasInvalidNames, hasDuplicateNames } =
     useModelTraining(classes, classifier, setClassifier, setHasTrainedModel, setError);
 
-  // --- Abgeleitete Aktionen ---
-
+  /** Starts prediction only if a trained model exists. */
   const startPredicting = useCallback(() => {
     if (hasTrainedModel) activatePredicting();
   }, [hasTrainedModel, activatePredicting]);
 
-  // ML Feature-Extraktion: Bild aufnehmen, Features extrahieren, zur Klasse hinzufügen
+  /** Captures a frame from the source, extracts MobileNet features, and adds it to a class. */
   const addImageToClass = useCallback(async (
     classId: string,
     source: HTMLVideoElement | HTMLImageElement,
@@ -145,7 +141,7 @@ export default function TrainingPage() {
     addImageToClass(classId, imageElement, false);
   }, [addImageToClass]);
 
-  // Alles zurücksetzen
+  /** Resets all classes, the trained model, and prediction state. */
   const clearAll = useCallback(() => {
     resetClasses();
     setHasTrainedModel(false);
@@ -155,7 +151,7 @@ export default function TrainingPage() {
     setSelectedImage(null);
   }, [classifier, stopPredicting, resetClasses]);
 
-  // Bild-Entfernung mit Modal-Cleanup
+  /** Removes a single image and closes the preview modal if it was showing that image. */
   const handleRemoveImage = useCallback((classId: string, imageId: string) => {
     removeImage(classId, imageId);
     setSelectedImage(null);
@@ -200,7 +196,7 @@ export default function TrainingPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid lg:grid-cols-12 gap-6 items-start">
 
-        {/* Linke Spalte: Klassen */}
+        {/* Left column: classes */}
         <div className="lg:col-span-7 space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold text-zinc-800">1. Klassen ({classes.length})</h2>
@@ -251,10 +247,10 @@ export default function TrainingPage() {
           </div>
         </div>
 
-        {/* Rechte Spalte: Training & Vorhersage */}
+        {/* Right column: training & prediction */}
         <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-24">
 
-          {/* Training Card */}
+          {/* Training card */}
           <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col">
             <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
               <h2 className="text-base font-bold text-zinc-800 flex items-center">
@@ -316,7 +312,7 @@ export default function TrainingPage() {
             </div>
           </div>
 
-          {/* Vorhersage Card */}
+          {/* Prediction card */}
           <div className={cn(
             'bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col flex-1 transition-opacity duration-300',
             !hasTrainedModel ? 'opacity-80 pointer-events-none' : 'opacity-100'
@@ -358,7 +354,7 @@ export default function TrainingPage() {
                 )}
               </div>
 
-              {/* Vorhersage-Ergebnisse */}
+              {/* Prediction results */}
               <div className="flex-1 flex flex-col justify-center" aria-live="polite" aria-atomic="true">
                 {isPredicting && prediction ? (
                   <div className="space-y-4">
@@ -405,7 +401,7 @@ export default function TrainingPage() {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Modal dialogs */}
       <ImagePreviewModal
         isOpen={!!selectedImage}
         onClose={() => setSelectedImage(null)}

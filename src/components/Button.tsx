@@ -1,6 +1,6 @@
 /**
- * Generische Button-Komponente mit Varianten und Größen.
- * Deckt alle Primär-, Sekundär-, Destruktiv- und CTA-Anwendungsfälle ab.
+ * Reusable button component with variant and size props.
+ * Covers primary, secondary, destructive, and call-to-action use cases.
  */
 import type React from 'react';
 import { cn } from '../lib/utils';
@@ -8,6 +8,7 @@ import { cn } from '../lib/utils';
 type Variant = 'primary' | 'secondary' | 'destructive' | 'cta';
 type Size = 'sm' | 'md' | 'lg';
 
+/** Tailwind class sets for each visual button variant. */
 const variantClasses: Record<Variant, string> = {
   primary:
     'bg-indigo-600 hover:bg-indigo-700 disabled:bg-zinc-300 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
@@ -19,6 +20,7 @@ const variantClasses: Record<Variant, string> = {
     'bg-red-600 hover:bg-red-700 text-white rounded-full font-semibold shadow-lg shadow-red-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-600',
 };
 
+/** Tailwind class sets for each button size. */
 const sizeClasses: Record<Size, string> = {
   sm: 'py-2 px-3 text-sm',
   md: 'py-3 px-4 text-sm',
@@ -30,6 +32,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: Size;
 }
 
+/** Renders a styled button element with configurable variant and size. */
 export default function Button({
   variant = 'primary',
   size = 'md',

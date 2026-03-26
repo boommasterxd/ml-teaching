@@ -1,3 +1,7 @@
+/**
+ * GDPR consent modal that requires the user to accept the privacy policy
+ * and acknowledge external model loading before the app can proceed.
+ */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Dialog from '../Dialog';
@@ -9,6 +13,7 @@ interface ConsentModalProps {
   onConfirm: () => void;
 }
 
+/** Two-checkbox consent dialog; confirm is only enabled when both boxes are checked. */
 export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentModalProps) {
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [modelChecked, setModelChecked] = useState(false);
