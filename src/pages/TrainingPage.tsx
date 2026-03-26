@@ -1007,7 +1007,7 @@ function ClassCard({
     }
   }, [stream]);
 
-  const startRecording = (e?: React.SyntheticEvent) => {
+  const startRecording = () => {
     if (!videoRef.current) return;
     if (isRecording) return; // Prevent double firing from touch + mouse events
     
@@ -1049,11 +1049,13 @@ function ClassCard({
     Array.from(files).forEach(file => {
       const reader = new FileReader();
       reader.onload = (event) => {
+        const result = event.target?.result;
+        if (typeof result !== 'string') return;
         const img = new Image();
         img.onload = () => {
           onAddImageExample(img);
         };
-        img.src = event.target?.result as string;
+        img.src = result;
       };
       reader.readAsDataURL(file);
     });
