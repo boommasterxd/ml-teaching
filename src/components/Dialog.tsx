@@ -25,7 +25,7 @@ export default function Dialog({
   describedBy,
   children,
 }: DialogProps) {
-  const dialogRef = useFocusTrap(isOpen, false, onClose);
+  const dialogRef = useFocusTrap(isOpen, true, onClose);
   useScrollLock(isOpen);
 
   if (!isOpen) return null;
