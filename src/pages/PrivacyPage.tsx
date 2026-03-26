@@ -2,7 +2,7 @@
  * Privacy policy page that outlines how user data is handled, 
  * emphasizing local processing and transparency regarding external KI models.
  */
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

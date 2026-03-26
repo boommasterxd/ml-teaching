@@ -15,7 +15,11 @@ export default function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false);
 
   const handleAcknowledge = () => {
-    localStorage.setItem('cookie_consent_acknowledged', new Date().toISOString());
+    try {
+      localStorage.setItem('cookie_consent_acknowledged', new Date().toISOString());
+    } catch {
+      // localStorage nicht verfügbar (z. B. Incognito-Modus mit blockiertem Storage)
+    }
     setIsVisible(false);
   };
 
@@ -25,9 +29,15 @@ export default function CookieBanner() {
   useScrollLock(isVisible);
 
   useEffect(() => {
-    const stored = localStorage.getItem('cookie_consent_acknowledged');
-    const isValid = stored && (Date.now() - new Date(stored).getTime()) < 365 * 24 * 60 * 60 * 1000;
-    if (!isValid) {
+    try {
+      const stored = localStorage.getItem('cookie_consent_acknowledged');
+      const timestamp = stored ? new Date(stored).getTime() : NaN;
+      const isValid = !isNaN(timestamp) && (Date.now() - timestamp) < 365 * 24 * 60 * 60 * 1000;
+      if (!isValid) {
+        setIsVisible(true);
+      }
+    } catch {
+      // localStorage nicht verfügbar – Banner anzeigen
       setIsVisible(true);
     }
   }, []);

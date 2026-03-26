@@ -13,7 +13,7 @@ export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false,
 
     const root = rootRef.current;
 
-    previousFocusRef.current = document.activeElement as HTMLElement;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
 
     const getFocusableElements = () => Array.from(
       root.querySelectorAll<HTMLElement>(
