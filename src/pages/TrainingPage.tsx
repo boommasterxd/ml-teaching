@@ -432,8 +432,14 @@ export default function TrainingPage() {
 
   // Training Logic
   const trainModel = async () => {
-    if (classes.length < 2 || !classes.every(c => c.images.length >= 10)) {
-      setError("Bitte sammle für alle Klassen mindestens 10 Bilder.");
+    if (classes.length < 2) {
+      setError("Du brauchst mindestens 2 Klassen, um ein Modell zu trainieren.");
+      return;
+    }
+    const classesWithFewImages = classes.filter(c => c.images.length < 10);
+    if (classesWithFewImages.length > 0) {
+      const names = classesWithFewImages.map(c => `"${c.name || 'Ohne Namen'}" (${c.images.length} Bilder)`).join(", ");
+      setError(`Zu wenig Bilder: ${names}. Jede Klasse braucht mindestens 10 Bilder.`);
       return;
     }
     
@@ -508,7 +514,7 @@ export default function TrainingPage() {
 
           <button 
             onClick={toggleCamera}
-            className="p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors flex-shrink-0"
+            className="p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
             title="Kamera wechseln"
             aria-label="Kamera wechseln"
           >
@@ -587,7 +593,7 @@ export default function TrainingPage() {
                 <Brain className="w-4 h-4 mr-2 text-indigo-500" /> 2. Training
               </h2>
               {hasTrainedModel && (
-                <span className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+                <span role="status" className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
                   <CheckCircle2 className="w-3 h-3 mr-1" /> Bereit
                 </span>
               )}
@@ -1142,6 +1148,7 @@ function ClassCard({
             <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: cls.color }} aria-hidden="true" />
             <input
               type="text"
+              autoComplete="off"
               value={cls.name}
               onChange={(e) => onUpdateName(e.target.value)}
               className={cn(
@@ -1295,7 +1302,7 @@ function ClassCard({
               )}
             </div>
           </div>
-          <div className="flex-1 relative h-[190px] max-h-[190px] bg-zinc-50/50 rounded-xl border border-zinc-100 p-2 overflow-y-auto">
+          <div className="flex-1 relative h-[190px] max-h-[190px] bg-zinc-50/50 rounded-xl border border-zinc-200 p-2 overflow-y-auto">
             {cls.images.length > 0 ? (
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {cls.images.map((img) => (
