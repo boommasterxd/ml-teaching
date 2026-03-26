@@ -278,9 +278,15 @@ function NeuralNetViz() {
   const [animStep, setAnimStep] = useState(-1);
   const [animating, setAnimating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const timeoutIdsRef = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  React.useEffect(() => {
+    return () => { timeoutIdsRef.current.forEach(clearTimeout); };
+  }, []);
 
   const triggerAnimation = (type: 'dog' | 'cat') => {
     if (animating) return;
+    timeoutIdsRef.current.forEach(clearTimeout);
     setAnimating(true);
     setActiveSignal(type);
     setResult(null);
@@ -288,17 +294,20 @@ function NeuralNetViz() {
 
     const stepDuration = 400; // ms
 
-    setTimeout(() => setAnimStep(1), stepDuration * 1);
-    setTimeout(() => setAnimStep(2), stepDuration * 2);
-    setTimeout(() => setAnimStep(3), stepDuration * 3);
-    setTimeout(() => setAnimStep(4), stepDuration * 4);
-    setTimeout(() => setAnimStep(5), stepDuration * 5);
-    setTimeout(() => setAnimStep(6), stepDuration * 6);
-    setTimeout(() => {
-      setAnimStep(7);
-      setResult(type === 'dog' ? 'Hund erkannt (98%)' : 'Katze erkannt (95%)');
-      setAnimating(false);
-    }, stepDuration * 7);
+    timeoutIdsRef.current = [
+      setTimeout(() => setAnimStep(1), stepDuration * 1),
+      setTimeout(() => setAnimStep(2), stepDuration * 2),
+      setTimeout(() => setAnimStep(3), stepDuration * 3),
+      setTimeout(() => setAnimStep(4), stepDuration * 4),
+      setTimeout(() => setAnimStep(5), stepDuration * 5),
+      setTimeout(() => setAnimStep(6), stepDuration * 6),
+      setTimeout(() => {
+        setAnimStep(7);
+        setResult(type === 'dog' ? 'Hund erkannt (98%)' : 'Katze erkannt (95%)');
+        setAnimating(false);
+        timeoutIdsRef.current = [];
+      }, stepDuration * 7),
+    ];
   };
 
   // Node configuration

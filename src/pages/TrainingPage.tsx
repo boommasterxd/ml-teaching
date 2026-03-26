@@ -3,7 +3,7 @@
  * train a custom KNN classifier on top of MobileNet, and test the model in real-time.
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import * as tf from '@tensorflow/tfjs';
 import * as mobilenet from '@tensorflow-models/mobilenet';
 import * as knnClassifier from '@tensorflow-models/knn-classifier';
@@ -83,6 +83,7 @@ export default function TrainingPage() {
   
   // Refs
   const requestRef = useRef<number>(undefined);
+  const shouldPredictRef = useRef(false);
   const predictVideoRef = useRef<HTMLVideoElement>(null);
 
   // Focus Traps for Modals
@@ -177,92 +178,62 @@ export default function TrainingPage() {
   };
 
   // Add Example Logic
-  const addExample = async (classId: string, videoElement: HTMLVideoElement) => {
-    if (!mobilenetModel || !videoElement) return;
-    
-    if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) return;
+  const addImageToClass = async (
+    classId: string,
+    source: HTMLVideoElement | HTMLImageElement,
+    mirror: boolean
+  ) => {
+    if (!mobilenetModel) return;
 
-    const img = tf.browser.fromPixels(videoElement);
+    const sourceWidth = source instanceof HTMLVideoElement ? source.videoWidth : source.width;
+    const sourceHeight = source instanceof HTMLVideoElement ? source.videoHeight : source.height;
+    if (sourceWidth === 0 || sourceHeight === 0) return;
+
+    const img = tf.browser.fromPixels(source);
     const features = mobilenetModel.infer(img, true);
     const featureArray = Array.from(features.dataSync()) as number[];
-    
+
     const canvas = document.createElement('canvas');
-    // Increased resolution for better quality
     canvas.width = 224;
     canvas.height = 224;
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      const size = Math.min(videoElement.videoWidth, videoElement.videoHeight);
-      const startX = (videoElement.videoWidth - size) / 2;
-      const startY = (videoElement.videoHeight - size) / 2;
-      
-      if (facingMode === 'user') {
+      const size = Math.min(sourceWidth, sourceHeight);
+      const startX = (sourceWidth - size) / 2;
+      const startY = (sourceHeight - size) / 2;
+      if (mirror) {
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
       }
-      
-      ctx.drawImage(videoElement, startX, startY, size, size, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(source, startX, startY, size, size, 0, 0, canvas.width, canvas.height);
     }
     const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    
+
     const newImage: MLImage = {
       id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       dataUrl,
       featureArray
     };
-    
-    setClasses(prev => prev.map(c => 
+
+    setClasses(prev => prev.map(c =>
       c.id === classId ? { ...c, images: [...c.images, newImage] } : c
     ));
-    
+
     if (hasTrainedModel) {
       setHasTrainedModel(false);
       stopPredicting();
     }
-    
+
     img.dispose();
     features.dispose();
   };
 
-  const addImageExample = async (classId: string, imageElement: HTMLImageElement) => {
-    if (!mobilenetModel || !imageElement) return;
-    
-    if (imageElement.width === 0 || imageElement.height === 0) return;
+  const addExample = (classId: string, videoElement: HTMLVideoElement) => {
+    addImageToClass(classId, videoElement, facingMode === 'user');
+  };
 
-    const img = tf.browser.fromPixels(imageElement);
-    const features = mobilenetModel.infer(img, true);
-    const featureArray = Array.from(features.dataSync()) as number[];
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = 224;
-    canvas.height = 224;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      const size = Math.min(imageElement.width, imageElement.height);
-      const startX = (imageElement.width - size) / 2;
-      const startY = (imageElement.height - size) / 2;
-      
-      ctx.drawImage(imageElement, startX, startY, size, size, 0, 0, canvas.width, canvas.height);
-    }
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    
-    const newImage: MLImage = {
-      id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      dataUrl,
-      featureArray
-    };
-    
-    setClasses(prev => prev.map(c => 
-      c.id === classId ? { ...c, images: [...c.images, newImage] } : c
-    ));
-    
-    if (hasTrainedModel) {
-      setHasTrainedModel(false);
-      stopPredicting();
-    }
-    
-    img.dispose();
-    features.dispose();
+  const addImageExample = (classId: string, imageElement: HTMLImageElement) => {
+    addImageToClass(classId, imageElement, false);
   };
 
   // Prediction Loop
@@ -287,18 +258,19 @@ export default function TrainingPage() {
         });
       } catch (err) {
         console.error("Prediction error:", err);
+      } finally {
+        img.dispose();
+        features.dispose();
       }
-      
-      img.dispose();
-      features.dispose();
     }
 
-    if (isPredicting) {
+    if (shouldPredictRef.current) {
       requestRef.current = requestAnimationFrame(predictLoop);
     }
   };
 
   useEffect(() => {
+    shouldPredictRef.current = isPredicting;
     if (isPredicting) {
       requestRef.current = requestAnimationFrame(predictLoop);
     } else {
@@ -307,8 +279,9 @@ export default function TrainingPage() {
       }
       setPrediction(null);
     }
-    
+
     return () => {
+      shouldPredictRef.current = false;
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
   }, [isPredicting, classifier, mobilenetModel]);
@@ -320,6 +293,13 @@ export default function TrainingPage() {
 
   const stopPredicting = () => {
     setIsPredicting(false);
+  };
+
+  const invalidateModel = () => {
+    if (hasTrainedModel) {
+      setHasTrainedModel(false);
+      stopPredicting();
+    }
   };
 
   // Class Management
@@ -351,20 +331,12 @@ export default function TrainingPage() {
         color: COLORS[(nextNum - 1) % COLORS.length]
       }];
     });
-    
-    if (hasTrainedModel) {
-      setHasTrainedModel(false);
-      stopPredicting();
-    }
+    invalidateModel();
   };
 
   const removeClass = (id: string) => {
     setClasses(prev => prev.filter(c => c.id !== id));
-    
-    if (hasTrainedModel) {
-      setHasTrainedModel(false);
-      stopPredicting();
-    }
+    invalidateModel();
   };
 
   const updateClassName = (id: string, newName: string) => {
@@ -372,27 +344,19 @@ export default function TrainingPage() {
   };
 
   const removeImage = (classId: string, imageId: string) => {
-    setClasses(prev => prev.map(c => 
+    setClasses(prev => prev.map(c =>
       c.id === classId ? { ...c, images: c.images.filter(img => img.id !== imageId) } : c
     ));
-    
-    if (hasTrainedModel) {
-      setHasTrainedModel(false);
-      stopPredicting();
-    }
+    invalidateModel();
     setSelectedImage(null);
   };
 
   const removeImages = (classId: string, imageIds: string[]) => {
     const idsToRemove = new Set(imageIds);
-    setClasses(prev => prev.map(c => 
+    setClasses(prev => prev.map(c =>
       c.id === classId ? { ...c, images: c.images.filter(img => !idsToRemove.has(img.id)) } : c
     ));
-    
-    if (hasTrainedModel) {
-      setHasTrainedModel(false);
-      stopPredicting();
-    }
+    invalidateModel();
 
     // Clear selected image if it was among the ones removed
     if (selectedImage && selectedImage.classId === classId && idsToRemove.has(selectedImage.image.id)) {
@@ -401,14 +365,10 @@ export default function TrainingPage() {
   };
 
   const clearClass = (id: string) => {
-    setClasses(prev => prev.map(c => 
+    setClasses(prev => prev.map(c =>
       c.id === id ? { ...c, images: [] } : c
     ));
-    
-    if (hasTrainedModel) {
-      setHasTrainedModel(false);
-      stopPredicting();
-    }
+    invalidateModel();
 
     // Clear selected image if it belonged to the cleared class
     if (selectedImage && selectedImage.classId === id) {
@@ -840,11 +800,7 @@ export default function TrainingPage() {
               </button>
               <button
                 onClick={() => {
-                  const id = classToClear;
-                  if (!id) {
-                    return;
-                  }
-                  clearClass(id);
+                  clearClass(classToClear!);
                   setClassToClear(null);
                 }}
                 className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors"
@@ -883,9 +839,7 @@ export default function TrainingPage() {
               </button>
               <button
                 onClick={() => {
-                  const id = classToRemove;
-                  if (!id) return;
-                  removeClass(id);
+                  removeClass(classToRemove!);
                   setClassToRemove(null);
                 }}
                 className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors"
@@ -919,7 +873,7 @@ export default function TrainingPage() {
                 />
 
                 <span className="text-zinc-700 text-sm leading-relaxed">
-                  Ich habe die <a href="/datenschutz" target="_blank" className="text-indigo-600 hover:underline font-medium">Datenschutzerklärung</a> zur Kenntnis genommen und stimme der Verarbeitung meiner Daten gemäß den dort beschriebenen Bedingungen zu.
+                  Ich habe die <Link to="/datenschutz" className="text-indigo-600 hover:underline font-medium">Datenschutzerklärung</Link> zur Kenntnis genommen und stimme der Verarbeitung meiner Daten gemäß den dort beschriebenen Bedingungen zu.
                 </span>
               </label>
               
