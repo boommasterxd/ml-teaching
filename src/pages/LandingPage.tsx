@@ -43,7 +43,7 @@ export default function LandingPage() {
           </p>
           <button
             onClick={() => navigate('/lernen')}
-            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors shadow-lg shadow-red-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-600/30"
+            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors shadow-lg shadow-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-600"
           >
             Jetzt ausprobieren <ArrowRight className="ml-2 w-5 h-5" aria-hidden="true" />
           </button>
@@ -239,7 +239,7 @@ export default function LandingPage() {
           </p>
           <button
             onClick={() => navigate('/lernen')}
-            className="inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-all hover:scale-105 shadow-xl shadow-red-900/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-600/30"
+            className="inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-all hover:scale-105 shadow-xl shadow-red-900/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-600"
           >
             Jetzt ausprobieren <ArrowRight className="ml-2 w-6 h-6" aria-hidden="true" />
           </button>
