@@ -166,7 +166,7 @@ export default function PrivacyPage() {
 
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Beschwerderecht bei der zuständigen Aufsichtsbehörde</h3>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Im Falle von Verstößen gegen die DSGVO steht den Betroffenen ein Beschwerderecht bei einer Aufsichtsbehörde, insbesondere in dem Mitgliedstaat ihres gewöhnlichen Aufenthalts, ihres Arbeitsplatzes oder des Orts des mutmaßlichen Verstoßes zu. Das Beschwerderecht besteht unbeschadet anderweitiger verwaltungsrechtlicher oder gerichtlicher Rechtsbehelfe.
+            Im Falle von Verstößen gegen die DSGVO steht den Betroffenen ein Beschwerderecht bei einer Aufsichtsbehörde, insbesondere in dem Mitgliedstaat ihres gewöhnlichen Aufenthalts, ihres Arbeitsplatzes oder des Orts des mutmaßlichen Verstoßes zu. Das Beschwerderecht besteht unbeschadet anderweitiger verwaltungsrechtlicher oder gerichtlicher Rechtsbehelfe. Die für uns zuständige Aufsichtsbehörde ist der Landesbeauftragte für den Datenschutz und die Informationsfreiheit Rheinland-Pfalz (LfDI RLP), Hintere Bleiche 34, 55116 Mainz, <a href="https://www.datenschutz.rlp.de" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">www.datenschutz.rlp.de</a>.
           </p>
 
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Recht auf Datenübertragbarkeit</h3>
@@ -235,7 +235,7 @@ export default function PrivacyPage() {
             Eine Zusammenführung dieser Daten mit anderen Datenquellen wird nicht vorgenommen.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Die Erfassung dieser Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Der Websitebetreiber hat ein berechtigtes Interesse an der technisch fehlerfreien Darstellung und der Optimierung seiner Website – hierzu müssen die Server-Log-Files erfasst werden.
+            Die Erfassung dieser Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Der Websitebetreiber hat ein berechtigtes Interesse an der technisch fehlerfreien Darstellung und der Optimierung seiner Website – hierzu müssen die Server-Log-Files erfasst werden. Die Server-Log-Dateien werden nach spätestens 7 Tagen automatisch gelöscht.
           </p>
 
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Anfrage per E-Mail, Telefon oder Telefax</h3>
@@ -260,13 +260,13 @@ export default function PrivacyPage() {
             Erst wenn Sie die KI-Funktionen aktiv starten und der damit verbundenen Datenübertragung zustimmen, wird eine Verbindung zu den Servern von Google hergestellt und Ihre IP-Adresse an Google übertragen. Die eigentliche Verarbeitung der Bilddaten erfolgt jedoch auch nach dem Laden der Modelle ausschließlich lokal in Ihrem Browser; es findet zu keinem Zeitpunkt ein Upload von privatem Bildmaterial auf externe Server statt.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Die Nutzung dieser KI-gestützten Funktionen erfolgt auf Grundlage Ihrer Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG. Sie können Ihre Einwilligung jederzeit für die Zukunft widerrufen.
+            Die Nutzung dieser KI-gestützten Funktionen erfolgt auf Grundlage Ihrer Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG. Sie können Ihre Einwilligung jederzeit für die Zukunft widerrufen. Da die Einwilligung nur für die aktuelle Sitzung gilt, genügt ein Neuladen der Seite als Widerruf.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Das Unternehmen verfügt über eine Zertifizierung nach dem „EU-US Data Privacy Framework“ (DPF). Der DPF ist ein Übereinkommen zwischen der Europäischen Union und den USA, der die Einhaltung europäischer Datenschutzstandards bei Datenverarbeitungen in den USA gewährleisten soll. Jedes nach dem DPF zertifizierte Unternehmen verpflichtet sich, diese Datenschutzstandards einzuhalten. Weitere Informationen hierzu erhalten Sie vom Anbieter unter folgendem Link: <a href="https://www.dataprivacyframework.gov/participant/5780" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">https://www.dataprivacyframework.gov/participant/5780</a>.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Wenn Sie auf unserer Website mit Elementen interagieren, in denen künstliche Intelligenz zum Einsatz kommt, werden Ihre Eingaben inklusive Metadaten verarbeitet, um die gewünschte Analyse oder Reaktion lokal zu generieren. Wir haben ein berechtigtes Interesse daran (Art. 6 Abs. 1 lit. f DSGVO), moderne und datenschutzfreundliche Technologien einzusetzen, die eine lokale Verarbeitung ermöglichen.
+            Wenn Sie auf unserer Website mit Elementen interagieren, in denen künstliche Intelligenz zum Einsatz kommt, werden Ihre Eingaben inklusive Metadaten verarbeitet, um die gewünschte Analyse oder Reaktion lokal zu generieren.
           </p>
         </div>
       </main>
