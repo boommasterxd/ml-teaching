@@ -666,11 +666,12 @@ export default function TrainingPage() {
             
             <div className="p-5 flex flex-col flex-1">
               <div className="relative aspect-[16/10.25] bg-zinc-900 rounded-xl overflow-hidden mb-5 flex-shrink-0">
-                <video 
+                <video
                   ref={predictVideoRef}
-                  autoPlay 
-                  playsInline 
-                  muted 
+                  autoPlay
+                  playsInline
+                  muted
+                  aria-label="Kameravorschau für Vorhersage"
                   className={cn(
                     "w-full h-full object-cover rounded-xl",
                     facingMode === 'user' ? "transform scale-x-[-1]" : ""
@@ -1194,11 +1195,12 @@ function ClassCard({
         {/* Left: Camera & Controls */}
         <div className="w-full sm:w-56 flex flex-col gap-3 flex-shrink-0">
           <div className="relative aspect-[4/3] bg-zinc-900 rounded-xl overflow-hidden shadow-inner">
-            <video 
+            <video
               ref={videoRef}
-              autoPlay 
-              playsInline 
-              muted 
+              autoPlay
+              playsInline
+              muted
+              aria-label="Kameravorschau für Trainingsaufnahme"
               className={cn(
                 "w-full h-full object-cover",
                 facingMode === 'user' ? "transform scale-x-[-1]" : ""

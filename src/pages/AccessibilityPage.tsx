@@ -51,7 +51,7 @@ export default function AccessibilityPage() {
 
           <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Konformitätsstatus</h2>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Diese Website ist <strong>voll konform</strong> mit den Anforderungen der <abbr title="Web Content Accessibility Guidelines">WCAG</abbr> 2.1 Level AA, WCAG 2.2 Level AA sowie den einschlägigen Anforderungen der EN 301 549 und des BFSG.
+            Diese Website ist nach unserem Kenntnisstand <strong>konform</strong> mit den Anforderungen der <abbr title="Web Content Accessibility Guidelines">WCAG</abbr> 2.1 Level AA, WCAG 2.2 Level AA sowie den einschlägigen Anforderungen der EN 301 549 und des BFSG.
           </p>
 
           <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Bekannte nicht barrierefreie Inhalte</h2>
