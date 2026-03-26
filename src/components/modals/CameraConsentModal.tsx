@@ -1,3 +1,6 @@
+/**
+ * Modal that asks the user for camera access permission before activating the webcam.
+ */
 import { Camera } from 'lucide-react';
 import Dialog from '../Dialog';
 import Button from '../Button';
@@ -8,6 +11,7 @@ interface CameraConsentModalProps {
   onConfirm: () => void;
 }
 
+/** Displays a camera permission prompt with cancel/allow actions. */
 export default function CameraConsentModal({ isOpen, onDecline, onConfirm }: CameraConsentModalProps) {
   return (
     <Dialog isOpen={isOpen} onClose={onDecline} labelledBy="camera-modal-title">

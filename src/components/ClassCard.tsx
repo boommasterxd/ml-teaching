@@ -1,3 +1,7 @@
+/**
+ * Card component representing a single ML class.
+ * Handles camera recording, image upload, thumbnail gallery, and selection/deletion.
+ */
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Camera, Trash2, RotateCcw, Upload, Image as ImageIcon, CheckCircle2,
@@ -19,6 +23,7 @@ export interface ClassCardProps {
   onImageClick: (img: MLImage) => void;
 }
 
+/** Displays a class with its camera preview, recording controls, and image gallery. */
 export default function ClassCard({
   cls,
   allClasses,
@@ -40,16 +45,17 @@ export default function ClassCard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const keyboardRecordingRef = useRef(false);
 
-  // Kamera-Stream an lokales Video-Element anhängen
+  // Attach camera stream to the local video element
   useEffect(() => {
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
 
+  /** Begins continuous frame capture at 100 ms intervals. */
   const startRecording = () => {
     if (!videoRef.current) return;
-    if (isRecording) return; // Verhindert Doppel-Auslösung bei Touch + Mouse
+    if (isRecording) return; // Prevent double-trigger from touch + mouse
 
     setIsRecording(true);
 
@@ -66,6 +72,7 @@ export default function ClassCard({
     }, 100);
   };
 
+  /** Stops continuous frame capture. */
   const stopRecording = () => {
     setIsRecording(false);
     if (recordIntervalRef.current) {
@@ -82,6 +89,7 @@ export default function ClassCard({
     };
   }, []);
 
+  /** Reads uploaded image files and passes each to the feature extractor. */
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -110,6 +118,7 @@ export default function ClassCard({
   const isDuplicate = allClasses.filter(c => c.name.trim() === nameTrimmed).length > 1;
   const errorMsg = isEmpty ? 'Name darf nicht leer sein' : isDuplicate ? 'Name muss eindeutig sein' : null;
 
+  /** Toggles selection state of a single thumbnail image. */
   const toggleImageSelection = (id: string) => {
     setSelectedIds(prev => {
       const newSelected = new Set(prev);
@@ -122,6 +131,7 @@ export default function ClassCard({
     });
   };
 
+  /** Deletes all currently selected images and exits selection mode. */
   const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
     onRemoveImages(Array.from(selectedIds));
@@ -129,6 +139,7 @@ export default function ClassCard({
     setIsSelectionMode(false);
   };
 
+  /** Clears all images from the class and resets selection state. */
   const handleClear = () => {
     setIsSelectionMode(false);
     setSelectedIds(new Set());
@@ -138,7 +149,7 @@ export default function ClassCard({
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col transition-all hover:shadow-md">
 
-      {/* Header */}
+      {/* Card header: class name, image count, clear & delete buttons */}
       <div className="px-4 py-3 border-b border-zinc-100 flex justify-between items-start sm:items-center bg-zinc-50/50">
         <div className="flex flex-col">
           <div className="flex items-center gap-3">
@@ -189,10 +200,10 @@ export default function ClassCard({
         </div>
       </div>
 
-      {/* Body */}
+      {/* Card body */}
       <div className="p-4 flex flex-col sm:flex-row gap-4">
 
-        {/* Links: Kamera & Steuerung */}
+        {/* Left: camera preview & controls */}
         <div className="w-full sm:w-56 flex flex-col gap-3 flex-shrink-0">
           <div className="relative aspect-[4/3] bg-zinc-900 rounded-xl overflow-hidden shadow-inner">
             <video
@@ -237,7 +248,7 @@ export default function ClassCard({
               onKeyUp={(e) => {
                 if (e.key === ' ' || e.key === 'Enter') {
                   e.preventDefault();
-                  // Tastatur nutzt Toggle-Modus via onKeyDown — kein stopRecording hier
+                  // Keyboard uses toggle mode via onKeyDown — no stopRecording here
                 }
               }}
               className={cn(
@@ -276,7 +287,7 @@ export default function ClassCard({
           </div>
         </div>
 
-        {/* Rechts: Thumbnails */}
+        {/* Right: thumbnail gallery */}
         <div className="flex-1 relative min-h-[160px] sm:min-h-0 flex flex-col">
           <div className="flex justify-between items-center mb-2 px-1">
             <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">

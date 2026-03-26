@@ -6,6 +6,7 @@ import { Home, AlertTriangle } from 'lucide-react';
 import { usePageTitle } from '../hooks/usePageTitle';
 import Button from '../components/Button';
 
+/** Displays a 404 message with a button to navigate back to the home page. */
 export default function NotFoundPage() {
   const navigate = useNavigate();
   usePageTitle('Seite nicht gefunden');

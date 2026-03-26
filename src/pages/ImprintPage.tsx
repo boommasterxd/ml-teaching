@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader';
 import PageContent from '../components/PageContent';
 import { usePageTitle } from '../hooks/usePageTitle';
 
+/** Renders the legal imprint with owner contact details. */
 export default function ImprintPage() {
   usePageTitle('Impressum');
 

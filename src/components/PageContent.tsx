@@ -1,3 +1,6 @@
+/**
+ * Centered content card used by legal / informational pages (privacy, imprint, etc.).
+ */
 import type { ReactNode } from 'react';
 
 interface PageContentProps {
@@ -6,6 +9,7 @@ interface PageContentProps {
   children: ReactNode;
 }
 
+/** Renders a white card section with constrained width and prose typography. */
 export default function PageContent({ id, labelledBy, children }: PageContentProps) {
   return (
     <section

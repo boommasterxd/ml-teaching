@@ -1,3 +1,6 @@
+/**
+ * Generic confirmation dialog with customizable title, description, icon, and action labels.
+ */
 import type React from 'react';
 import Dialog from '../Dialog';
 import Button from '../Button';
@@ -15,6 +18,7 @@ interface ConfirmDialogProps {
   icon?: React.ReactNode;
 }
 
+/** Renders a destructive-action confirmation dialog with cancel and confirm buttons. */
 export default function ConfirmDialog({
   isOpen,
   onClose,

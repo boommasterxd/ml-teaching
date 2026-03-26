@@ -6,9 +6,7 @@
 @import "tailwindcss";
 
 @layer base {
-  /* Default base styles */
-
-  /* Hauptseiten-Scrollbar ausblenden (kein Layout-Shift, kein weißer Streifen) */
+  /* Hide the main page scrollbar (no layout shift, no white strip) */
   html, body {
     scrollbar-width: none;
   }
