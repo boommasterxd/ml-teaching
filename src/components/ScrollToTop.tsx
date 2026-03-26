@@ -1,10 +1,10 @@
+/**
+ * Utility component that scrolls the window to the top on every route change.
+ */
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-/**
- * ScrollToTop component that resets the scroll position to the top of the page
- * whenever the route changes.
- */
+/** Resets scroll position to the top whenever the pathname changes. */
 export default function ScrollToTop() {
   const { pathname } = useLocation();
 

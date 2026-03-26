@@ -1,9 +1,9 @@
 /**
- * Footer component that displays the application footer with links to legal pages
- * and information about local data processing.
+ * Site-wide footer with links to legal pages and a note about local data processing.
  */
 import { Link } from 'react-router-dom';
 
+/** Renders the application footer with imprint, privacy, and accessibility links. */
 export default function Footer() {
   return (
     <footer className="bg-zinc-50 py-12 text-center text-zinc-600 border-t border-zinc-200 mt-auto">

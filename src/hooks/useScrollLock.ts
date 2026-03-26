@@ -1,13 +1,12 @@
+/**
+ * Hook that prevents body scrolling while a modal or overlay is visible.
+ * Uses a global reference counter so nested modals do not unlock prematurely.
+ */
 import { useEffect } from 'react';
 
-// Use a global counter to track how many components are requesting a scroll lock.
-// This prevents one component from unlocking the scroll while another still needs it.
 let lockCount = 0;
 
-/**
- * Custom hook to lock the body scroll when a modal or overlay is open.
- * @param lock - Boolean indicating whether to lock the scroll.
- */
+/** Locks body scroll when `lock` is true; unlocks when all consumers release. */
 export default function useScrollLock(lock: boolean) {
   useEffect(() => {
     if (lock) {
