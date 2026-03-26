@@ -14,7 +14,6 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AccessibilityPage = lazy(() => import('./pages/AccessibilityPage'));
 import Footer from './components/Footer';
-import CookieBanner from './components/CookieBanner';
 import ScrollToTop from './components/ScrollToTop';
 
 const LoadingFallback = () => (
@@ -47,7 +46,6 @@ export default function App() {
           </Suspense>
         </main>
         <Footer />
-        <CookieBanner />
       </div>
     </Router>
   );
