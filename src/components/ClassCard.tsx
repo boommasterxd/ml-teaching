@@ -150,7 +150,7 @@ export default function ClassCard({
               onChange={(e) => onUpdateName(e.target.value)}
               className={cn(
                 'font-semibold bg-transparent border-b border-transparent focus:ring-0 focus:ring-offset-0 p-0 w-[120px] sm:w-[160px] text-sm transition-colors',
-                errorMsg ? 'border-red-500 text-red-600' : 'text-zinc-800 focus:border-zinc-400'
+                errorMsg ? 'border-red-500 text-red-600' : 'text-zinc-800 focus:border-zinc-500'
               )}
               onPointerDown={(e) => { e.currentTarget.dataset.mouseFocused = '1'; }}
               onBlur={(e) => { delete e.currentTarget.dataset.mouseFocused; }}
@@ -172,7 +172,7 @@ export default function ClassCard({
           </span>
           <button
             onClick={handleClear}
-            className="p-1.5 rounded-md text-zinc-400 hover:text-indigo-500 transition-colors"
+            className="p-1.5 rounded-md text-zinc-500 hover:text-indigo-500 transition-colors"
             title="Bilder dieser Klasse zurücksetzen"
             aria-label={`Bilder der Klasse ${cls.name || 'ohne Namen'} zurücksetzen`}
           >
@@ -180,7 +180,7 @@ export default function ClassCard({
           </button>
           <button
             onClick={onRemove}
-            className="p-1.5 rounded-md text-zinc-400 hover:text-red-500 transition-colors"
+            className="p-1.5 rounded-md text-zinc-500 hover:text-red-500 transition-colors"
             title="Klasse löschen"
             aria-label={`Klasse ${cls.name || 'ohne Namen'} löschen`}
           >
@@ -288,7 +288,7 @@ export default function ClassCard({
                   <button
                     onClick={handleBulkDelete}
                     disabled={selectedIds.size === 0}
-                    className="text-[10px] font-bold transition-opacity hover:opacity-70 disabled:text-zinc-300 disabled:opacity-50"
+                    className="text-[10px] font-bold py-1 px-2 min-h-[24px] transition-opacity hover:opacity-70 disabled:text-zinc-300 disabled:opacity-50"
                     style={{ color: selectedIds.size > 0 ? cls.color : undefined }}
                   >
                     Löschen
@@ -298,7 +298,7 @@ export default function ClassCard({
                       setIsSelectionMode(false);
                       setSelectedIds(new Set());
                     }}
-                    className="text-[10px] font-bold text-zinc-600 hover:text-zinc-700 transition-colors"
+                    className="text-[10px] font-bold py-1 px-2 min-h-[24px] text-zinc-600 hover:text-zinc-700 transition-colors"
                   >
                     Abbrechen
                   </button>
@@ -307,7 +307,7 @@ export default function ClassCard({
                 cls.images.length > 0 && (
                   <button
                     onClick={() => setIsSelectionMode(true)}
-                    className="text-[10px] font-bold transition-opacity hover:opacity-70"
+                    className="text-[10px] font-bold py-1 px-2 min-h-[24px] transition-opacity hover:opacity-70"
                     style={{ color: cls.color }}
                   >
                     Auswählen
@@ -354,7 +354,7 @@ export default function ClassCard({
                           borderColor: selectedIds.has(img.id) ? cls.color : undefined,
                         }}
                       >
-                        {selectedIds.has(img.id) && <CheckCircle2 className="w-3 h-3" />}
+                        {selectedIds.has(img.id) && <CheckCircle2 className="w-3 h-3" aria-hidden="true" />}
                       </div>
                     )}
                   </button>

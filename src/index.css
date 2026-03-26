@@ -37,11 +37,6 @@
   }
 }
 
-/* Prevent outline on the modal container itself when focused by useFocusTrap */
-div[role="dialog"]:focus,
-div[role="dialog"]:focus-visible {
-  outline: none;
-}
 
 @layer utilities {
   .animate-node-glow {
@@ -66,7 +61,11 @@ div[role="dialog"]:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-node-glow {
+  .animate-node-glow,
+  .animate-spin,
+  .animate-pulse,
+  .animate-bounce,
+  .animate-ping {
     animation: none;
   }
 }
