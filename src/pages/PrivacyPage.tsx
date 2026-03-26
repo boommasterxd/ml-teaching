@@ -190,20 +190,6 @@ export default function PrivacyPage() {
           <p className="text-zinc-600 leading-relaxed mb-4">
             Sie können Ihren Browser so einstellen, dass Sie über das Setzen von Cookies informiert werden und Cookies nur im Einzelfall erlauben, die Annahme von Cookies für bestimmte Fälle oder generell ausschließen sowie das automatische Löschen der Cookies beim Schließen des Browsers aktivieren. Bei der Deaktivierung von Cookies kann die Funktionalität dieser Website eingeschränkt sein.
           </p>
-          <p className="text-zinc-600 leading-relaxed mb-4">
-            Konkret setzen wir auf dieser Website folgende Speichereinträge:
-          </p>
-          <ul className="list-disc pl-5 space-y-2 mb-4 text-zinc-600">
-            <li>
-              <span className="font-mono text-sm">cookie_consent_acknowledged</span> (LocalStorage, First-Party) –
-              Speichert den Zeitstempel der Cookie-Einwilligung, damit der Hinweisbanner nicht bei jedem Besuch erneut angezeigt wird.
-              Speicherdauer: 365 Tage. Rechtsgrundlage: § 25 Abs. 2 Nr. 2 TDDDG (technisch notwendig).
-            </li>
-          </ul>
-          <p className="text-zinc-600 leading-relaxed mb-4">
-            Nach Ihrer ausdrücklichen Zustimmung zur KI-Nutzung (2-Klick-Lösung) können zusätzlich Cookies durch Google gesetzt werden. Weitere Informationen dazu finden Sie im Abschnitt „Einsatz von KI auf der Website (2-Klick-Lösung)".
-          </p>
-
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Server-Log-Dateien</h3>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Der Provider der Seiten erhebt und speichert automatisch Informationen in so genannten Server-Log-Dateien, die Ihr Browser automatisch an uns übermittelt. Dies sind:
