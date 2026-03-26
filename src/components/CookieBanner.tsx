@@ -19,14 +19,15 @@ export default function CookieBanner() {
   useScrollLock(isVisible);
 
   useEffect(() => {
-    const hasAcknowledged = localStorage.getItem('cookie_consent_acknowledged');
-    if (!hasAcknowledged) {
+    const stored = localStorage.getItem('cookie_consent_acknowledged');
+    const isValid = stored && (Date.now() - new Date(stored).getTime()) < 365 * 24 * 60 * 60 * 1000;
+    if (!isValid) {
       setIsVisible(true);
     }
   }, []);
 
   const handleAcknowledge = () => {
-    localStorage.setItem('cookie_consent_acknowledged', 'true');
+    localStorage.setItem('cookie_consent_acknowledged', new Date().toISOString());
     setIsVisible(false);
   };
 
