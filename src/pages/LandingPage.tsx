@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Brain, Camera, Zap, ArrowRight, Dog, Cat, Users, ImagePlus, Lightbulb, Car, Smartphone, Stethoscope } from 'lucide-react';
 import { cn } from '../lib/utils';
+import Button from '../components/Button';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
       {/* Top Navigation */}
-      <nav className="bg-white border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <nav aria-label="Hauptnavigation" className="bg-white border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <img 
             src="/ada-logo.png" 
@@ -41,12 +42,9 @@ export default function LandingPage() {
           <p className="text-lg md:text-xl text-zinc-600 max-w-2xl mx-auto mb-10">
             Lerne spielerisch, wie Computer sehen können. Trainiere dein eigenes Bilderkennungsmodell direkt im Browser. Keine Programmierkenntnisse erforderlich!
           </p>
-          <button
-            onClick={() => navigate('/lernen')}
-            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors shadow-lg shadow-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-600"
-          >
+          <Button variant="cta" size="lg" onClick={() => navigate('/lernen')}>
             Jetzt ausprobieren <ArrowRight className="ml-2 w-5 h-5" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -266,7 +264,7 @@ export default function LandingPage() {
               referrerPolicy="no-referrer"
             />
             <span className="text-zinc-600 font-bold border-b border-transparent group-hover:border-zinc-300 transition-all">
-              Ada-Lovelace-Projekt
+              Ada-Lovelace-Projekt<span className="sr-only"> (öffnet in neuem Tab)</span>
             </span>
           </a>        </div>
       </section>

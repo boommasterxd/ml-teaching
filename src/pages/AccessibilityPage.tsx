@@ -1,46 +1,18 @@
 /**
  * Accessibility statement page according to BFSG §14 + Anlage 3.
  */
-import { useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import PageLayout from '../components/PageLayout';
+import PageHeader from '../components/PageHeader';
+import PageContent from '../components/PageContent';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function AccessibilityPage() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    document.title = 'Barrierefreiheit – KI Bilderkennung für Schüler';
-  }, []);
+  usePageTitle('Barrierefreiheit');
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-20 hyphens-auto break-words">
-      <header className="bg-white border-b border-zinc-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center text-zinc-600 hover:text-zinc-900 transition-colors font-medium text-sm flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
-            aria-label="Zurück zur Startseite"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
-            <span className="hidden sm:inline">Zurück</span>
-          </button>
-
-          <div className="flex-1 flex items-center justify-center gap-3 pr-8 sm:pr-0">
-            <img
-              src="/ada-logo.png"
-              alt="Ada Lovelace Projekt Logo"
-              className="h-8 w-auto object-contain hidden lg:block"
-              referrerPolicy="no-referrer"
-            />
-            <p className="text-base sm:text-lg font-bold text-zinc-800 line-clamp-1">Barrierefreiheitserklärung</p>
-          </div>
-
-          <div className="w-10 sm:w-20"></div>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12" aria-labelledby="accessibility-title">
-        <div className="bg-white p-6 sm:p-12 rounded-3xl border border-zinc-200 shadow-sm prose prose-zinc max-w-none">
+    <PageLayout>
+      <PageHeader title="Barrierefreiheitserklärung" />
+      <PageContent labelledBy="accessibility-title">
           <h1 id="accessibility-title" className="text-2xl sm:text-3xl font-extrabold text-zinc-900 mb-8 border-b border-zinc-100 pb-4">
             Barrierefreiheitserklärung
           </h1>
@@ -69,9 +41,9 @@ export default function AccessibilityPage() {
               <a
                 href="mailto:yannickschaefer@boomapps.de"
                 className="text-zinc-600 hover:text-zinc-900 underline transition-colors break-all sm:break-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
-                aria-label="E-Mail für Barrierefreiheits-Feedback an Yannick Schäfer schreiben"
               >
                 yannickschaefer@boomapps.de
+                <span className="sr-only"> (Barrierefreiheits-Feedback schreiben)</span>
               </a>
             </p>
           </div>
@@ -89,15 +61,14 @@ export default function AccessibilityPage() {
             <p>54290 Trier</p>
             <p>Telefon: <a href="tel:+4965194940" className="text-indigo-600 underline">0651 9494-0</a></p>
             <p>E-Mail: <a href="mailto:poststelle@add.rlp.de" className="text-indigo-600 underline">poststelle@add.rlp.de</a></p>
-            <p>Website: <a href="https://add.rlp.de" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">add.rlp.de</a></p>
+            <p>Website: <a href="https://add.rlp.de" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">add.rlp.de<span className="sr-only"> (öffnet in neuem Tab)</span></a></p>
           </address>
 
           <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Datum der Erklärung</h2>
           <p className="text-zinc-600 leading-relaxed">
             Diese Erklärung wurde am <time dateTime="2026-03-26">26. März 2026</time> erstellt und zuletzt überprüft.
           </p>
-        </div>
-      </main>
-    </div>
+      </PageContent>
+    </PageLayout>
   );
 }

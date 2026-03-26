@@ -1,48 +1,20 @@
 /**
- * Privacy policy page that outlines how user data is handled, 
+ * Privacy policy page that outlines how user data is handled,
  * emphasizing local processing and transparency regarding external KI models.
  */
-import { useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import PageLayout from '../components/PageLayout';
+import PageHeader from '../components/PageHeader';
+import PageContent from '../components/PageContent';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function PrivacyPage() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    document.title = 'Datenschutzerklärung – KI Bilderkennung für Schüler';
-  }, []);
+  usePageTitle('Datenschutzerklärung');
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-20 hyphens-auto break-words">
-      <header className="bg-white border-b border-zinc-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
-          <button 
-            onClick={() => navigate('/')}
-            className="flex items-center text-zinc-600 hover:text-zinc-900 transition-colors font-medium text-sm flex-shrink-0"
-            aria-label="Zurück zur Startseite"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
-            <span className="hidden sm:inline">Zurück</span>
-          </button>
-          
-          <div className="flex-1 flex items-center justify-center gap-3 pr-8 sm:pr-0">
-            <img 
-              src="/ada-logo.png" 
-              alt="Ada Lovelace Projekt Logo" 
-              className="h-8 w-auto object-contain hidden lg:block"
-              referrerPolicy="no-referrer"
-            />
-            <p className="text-base sm:text-lg font-bold text-zinc-800 line-clamp-1">Datenschutzerklärung</p>
-          </div>
-          
-          <div className="w-10 sm:w-20"></div> {/* Spacer for centering balance */}
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12" role="main" aria-label="Datenschutzerklärung">
-        <div className="bg-white p-6 sm:p-12 rounded-3xl border border-zinc-200 shadow-sm prose prose-zinc max-w-none">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-8 text-zinc-900">Datenschutzerklärung</h1>
+    <PageLayout>
+      <PageHeader title="Datenschutzerklärung" />
+      <PageContent labelledBy="privacy-title">
+          <h1 id="privacy-title" className="text-2xl sm:text-3xl font-extrabold text-zinc-900 mb-8 border-b border-zinc-100 pb-4">Datenschutzerklärung</h1>
 
           <h2 className="text-xl sm:text-2xl font-bold mt-12 mb-6 text-zinc-800 border-b border-zinc-100 pb-2">1. Datenschutz auf einen Blick</h2>
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Allgemeine Hinweise</h3>
@@ -218,6 +190,19 @@ export default function PrivacyPage() {
           <p className="text-zinc-600 leading-relaxed mb-4">
             Sie können Ihren Browser so einstellen, dass Sie über das Setzen von Cookies informiert werden und Cookies nur im Einzelfall erlauben, die Annahme von Cookies für bestimmte Fälle oder generell ausschließen sowie das automatische Löschen der Cookies beim Schließen des Browsers aktivieren. Bei der Deaktivierung von Cookies kann die Funktionalität dieser Website eingeschränkt sein.
           </p>
+          <p className="text-zinc-600 leading-relaxed mb-4">
+            Konkret setzen wir auf dieser Website folgende Speichereinträge:
+          </p>
+          <ul className="list-disc pl-5 space-y-2 mb-4 text-zinc-600">
+            <li>
+              <span className="font-mono text-sm">cookie_consent_acknowledged</span> (LocalStorage, First-Party) –
+              Speichert den Zeitstempel der Cookie-Einwilligung, damit der Hinweisbanner nicht bei jedem Besuch erneut angezeigt wird.
+              Speicherdauer: 365 Tage. Rechtsgrundlage: § 25 Abs. 2 Nr. 2 TDDDG (technisch notwendig).
+            </li>
+          </ul>
+          <p className="text-zinc-600 leading-relaxed mb-4">
+            Nach Ihrer ausdrücklichen Zustimmung zur KI-Nutzung (2-Klick-Lösung) können zusätzlich Cookies durch Google gesetzt werden. Weitere Informationen dazu finden Sie im Abschnitt „Einsatz von KI auf der Website (2-Klick-Lösung)".
+          </p>
 
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Server-Log-Dateien</h3>
           <p className="text-zinc-600 leading-relaxed mb-4">
@@ -268,8 +253,7 @@ export default function PrivacyPage() {
           <p className="text-zinc-600 leading-relaxed mb-4">
             Wenn Sie auf unserer Website mit Elementen interagieren, in denen künstliche Intelligenz zum Einsatz kommt, werden Ihre Eingaben inklusive Metadaten verarbeitet, um die gewünschte Analyse oder Reaktion lokal zu generieren.
           </p>
-        </div>
-      </main>
-    </div>
+      </PageContent>
+    </PageLayout>
   );
 }
