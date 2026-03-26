@@ -433,7 +433,7 @@ export default function TrainingPage() {
   // Training Logic
   const trainModel = async () => {
     if (classes.length < 2 || !classes.every(c => c.images.length >= 10)) {
-      alert("Bitte sammle für alle Klassen mindestens 10 Bilder.");
+      setError("Bitte sammle für alle Klassen mindestens 10 Bilder.");
       return;
     }
     
@@ -441,12 +441,12 @@ export default function TrainingPage() {
     const hasDuplicateNames = new Set(classes.map(c => c.name.trim())).size !== classes.length;
     
     if (hasInvalidNames) {
-      alert("Bitte gib allen Klassen einen Namen.");
+      setError("Bitte gib allen Klassen einen Namen.");
       return;
     }
     
     if (hasDuplicateNames) {
-      alert("Bitte gib allen Klassen einen eindeutigen Namen.");
+      setError("Bitte gib allen Klassen einen eindeutigen Namen.");
       return;
     }
     
@@ -519,7 +519,7 @@ export default function TrainingPage() {
 
       {error && (
         <div className="max-w-7xl mx-auto mt-6 px-4 sm:px-6 lg:px-8">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start text-sm">
+          <div role="alert" aria-live="assertive" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start text-sm">
             <AlertCircle className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
             <p>{error}</p>
           </div>
@@ -1145,9 +1145,11 @@ function ClassCard({
               value={cls.name}
               onChange={(e) => onUpdateName(e.target.value)}
               className={cn(
-                "font-semibold bg-transparent border-b border-transparent focus:ring-0 p-0 w-[120px] sm:w-[160px] focus:outline-none text-sm transition-colors",
-                errorMsg ? "border-red-500 text-red-600" : "text-zinc-800 focus-visible:border-zinc-300"
+                "font-semibold bg-transparent border-b border-transparent focus:ring-0 focus:ring-offset-0 p-0 w-[120px] sm:w-[160px] text-sm transition-colors",
+                errorMsg ? "border-red-500 text-red-600" : "text-zinc-800 focus:border-zinc-400"
               )}
+              onPointerDown={(e) => { e.currentTarget.dataset.mouseFocused = '1'; }}
+              onBlur={(e) => { delete e.currentTarget.dataset.mouseFocused; }}
               placeholder="Klassenname"
               aria-label={`Name für Klasse ${cls.name || 'ohne Namen'}`}
               aria-invalid={!!errorMsg}

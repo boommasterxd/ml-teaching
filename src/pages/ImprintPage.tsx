@@ -57,7 +57,7 @@ export default function ImprintPage() {
             </p>
             <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
               <span className="font-semibold text-zinc-900 sm:w-20">E-Mail:</span>
-              <a href="mailto:yannickschaefer@boomapps.de" className="text-zinc-600 hover:text-zinc-900 underline transition-colors break-all sm:break-normal" aria-label="E-Mail an Yannick Schäfer schreiben">yannickschaefer@boomapps.de</a>
+              <a href="mailto:yannickschaefer@boomapps.de" className="text-zinc-600 hover:text-zinc-900 underline transition-colors break-all sm:break-normal">yannickschaefer@boomapps.de</a>
             </p>
           </div>
 
