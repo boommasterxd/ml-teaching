@@ -107,7 +107,7 @@ export default function NeuralNetViz() {
                      x2="35%" y2={getNodeY(6, j)}
                      stroke={color} strokeWidth="2"
                      opacity={opacity}
-                     style={{ transition: 'all 0.4s ease' }}
+                     style={{ transition: 'opacity 0.4s ease' }}
                    />
                  );
                })
@@ -125,7 +125,7 @@ export default function NeuralNetViz() {
                      x2="55%" y2={getNodeY(6, j)}
                      stroke={color} strokeWidth="2"
                      opacity={opacity}
-                     style={{ transition: 'all 0.4s ease' }}
+                     style={{ transition: 'opacity 0.4s ease' }}
                    />
                  );
                })
@@ -144,7 +144,7 @@ export default function NeuralNetViz() {
                      x2="75%" y2={getNodeY(2, j)}
                      stroke={color} strokeWidth="2"
                      opacity={opacity}
-                     style={{ transition: 'all 0.4s ease' }}
+                     style={{ transition: 'opacity 0.4s ease' }}
                    />
                  );
                })
@@ -182,7 +182,7 @@ export default function NeuralNetViz() {
                 >
                   <div
                     className={cn(
-                      "w-full h-full rounded-full transition-all duration-500",
+                      "w-full h-full rounded-full transition-[opacity,transform] duration-500",
                       isNodeActive
                         ? glowColor + " shadow-[0_0_15px_rgba(0,0,0,0.5)] border-transparent scale-110 opacity-100"
                         : "bg-zinc-700 border-2 border-zinc-600 opacity-30"
