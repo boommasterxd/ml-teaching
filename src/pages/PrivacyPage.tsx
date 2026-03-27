@@ -126,7 +126,7 @@ export default function PrivacyPage() {
 
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Widerruf Ihrer Einwilligung zur Datenverarbeitung</h3>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Viele Datenverarbeitungsvorgänge sind nur mit Ihrer ausdrücklichen Einwilligung möglich. Sie können eine bereits erteilte Einwilligung jederzeit widerrufen. Die Rechtmäßigkeit der bis zum Widerruf erfolgten Datenverarbeitung bleibt vom Widerruf unberührt.
+            Viele Datenverarbeitungsvorgänge sind nur mit Ihrer ausdrücklichen Einwilligung möglich. Sie können eine bereits erteilte Einwilligung jederzeit widerrufen. Die Rechtmäßigkeit der bis zum Widerruf erfolgten Datenverarbeitung bleibt vom Widerruf unberührt. Da die auf dieser Website erteilten Einwilligungen (KI-Modell-Download, Kameranutzung) nur für die aktuelle Sitzung gelten, genügt ein Neuladen der Seite als Widerruf.
           </p>
 
           <h3 className="text-xl font-bold mt-8 mb-4 text-zinc-800 uppercase">Widerspruchsrecht gegen die Datenerhebung in besonderen Fällen sowie gegen Direktwerbung (Art. 21 DSGVO)</h3>
@@ -239,6 +239,17 @@ export default function PrivacyPage() {
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Wenn Sie auf unserer Website mit Elementen interagieren, in denen künstliche Intelligenz zum Einsatz kommt, werden Ihre Eingaben inklusive Metadaten verarbeitet, um die gewünschte Analyse oder Reaktion lokal zu generieren.
+          </p>
+
+          <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Kameranutzung (lokales ML-Training)</h3>
+          <p className="text-zinc-600 leading-relaxed mb-4">
+            Für die Trainingsfunktion dieser Website kann auf die Kamera Ihres Endgeräts zugegriffen werden. Die Kamera wird ausschließlich nach Ihrer ausdrücklichen Einwilligung aktiviert. Die erfassten Videobilder werden vollständig lokal in Ihrem Browser verarbeitet und zu keinem Zeitpunkt an externe Server übertragen oder dauerhaft gespeichert.
+          </p>
+          <p className="text-zinc-600 leading-relaxed mb-4">
+            <strong>Zweck:</strong> Lokales Training eines Machine-Learning-Modells zur Bilderkennung direkt in Ihrem Browser.<br />
+            <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung).<br />
+            <strong>Speicherdauer:</strong> Die Kameraaufnahmen werden ausschließlich für die Dauer der aktuellen Sitzung im Arbeitsspeicher Ihres Browsers gehalten. Es erfolgt kein Upload und keine persistente Speicherung.<br />
+            <strong>Widerruf:</strong> Sie können Ihre Einwilligung jederzeit widerrufen. Ein Neuladen der Seite beendet die Kameranutzung und löscht alle zwischengespeicherten Bilddaten.
           </p>
       </PageContent>
     </PageLayout>
