@@ -34,6 +34,7 @@ export default defineConfig(() => {
     ],
     build: {
       chunkSizeWarningLimit: 1500,
+      modulePreload: { polyfill: true },
       rollupOptions: {
         output: {
           manualChunks(id): string | undefined {
