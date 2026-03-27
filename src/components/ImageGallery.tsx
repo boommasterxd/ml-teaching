@@ -145,7 +145,7 @@ export default function ImageGallery({
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center px-4 text-zinc-600">
-            <ImageIcon className="w-6 h-6 mb-2 opacity-20" />
+            <ImageIcon className="w-6 h-6 mb-2 opacity-20" aria-hidden="true" />
             <p className="text-xs">Halte "Aufnehmen" gedrückt, um Bilder zu sammeln.</p>
           </div>
         )}
