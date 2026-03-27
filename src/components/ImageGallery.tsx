@@ -47,11 +47,6 @@ export default function ImageGallery({
     });
   }, [images]);
 
-  useEffect(() => {
-    if (isSelectionMode && selectedIds.size === 0) {
-      setIsSelectionMode(false);
-    }
-  }, [isSelectionMode, selectedIds]);
   const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
     onRemoveImages(Array.from(selectedIds));
