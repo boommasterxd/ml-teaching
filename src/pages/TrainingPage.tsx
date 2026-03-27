@@ -103,8 +103,8 @@ export default function TrainingPage() {
     if (sourceWidth === 0 || sourceHeight === 0) return;
 
     const img = tf.browser.fromPixels(source);
-    const features = mobilenetModel.infer(img, true);
-    const featureArray = Array.from(features.dataSync()) as number[];
+    const features = mobilenetModel.infer(img, true) as tf.Tensor;
+    const featureArray = Array.from(await features.data()) as number[];
 
     const canvas = document.createElement('canvas');
     canvas.width = ML.FEATURE_CANVAS_SIZE;
