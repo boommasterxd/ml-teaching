@@ -34,9 +34,10 @@ export default defineConfig(() => {
     ],
     build: {
       chunkSizeWarningLimit: 1500,
+      modulePreload: { polyfill: true },
       rollupOptions: {
         output: {
-          manualChunks(id) {
+          manualChunks(id): string | undefined {
             if (id.includes('node_modules')) {
               if (id.includes('lucide-react')) {
                 return 'lucide';
@@ -52,6 +53,7 @@ export default defineConfig(() => {
               }
               return 'vendor';
             }
+            return undefined;
           }
         }
       }

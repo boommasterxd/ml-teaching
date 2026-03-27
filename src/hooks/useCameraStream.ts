@@ -3,6 +3,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type React from 'react';
+import { CAMERA } from '../constants';
 
 /** Requests camera access once consent is given and attaches the stream to a video element. */
 export function useCameraStream(
@@ -26,7 +27,7 @@ export function useCameraStream(
         }
 
         const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+          video: { facingMode, width: { ideal: CAMERA.IDEAL_WIDTH }, height: { ideal: CAMERA.IDEAL_HEIGHT } },
           audio: false,
         });
         streamRef.current = mediaStream;

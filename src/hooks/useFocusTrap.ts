@@ -24,12 +24,12 @@ export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false,
 
     const firstFocusable = getFocusableElements()[0];
 
-    if (autoFocusFirst && firstFocusable) {
+    if (autoFocusFirst && firstFocusable && document.documentElement.hasAttribute('data-keyboard-nav')) {
       firstFocusable.focus({ preventScroll: true });
-    } else if (!autoFocusFirst) {
-      // Set tabIndex to -1 so the div can be focused programmatically
+    } else {
+      // Focus the container silently so Tab navigation works correctly
+      // without showing a visible ring (tabindex=-1 elements are not tabbable).
       root.tabIndex = -1;
-      // Focus the container itself to avoid outlines on buttons while maintaining accessibility.
       root.focus({ preventScroll: true });
     }
 

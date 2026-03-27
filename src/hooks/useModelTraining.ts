@@ -6,6 +6,7 @@ import { useState, useCallback, useMemo } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import * as knnClassifier from '@tensorflow-models/knn-classifier';
 import type { MLClass } from '../types/ml';
+import { ML } from '../constants';
 
 /** Manages training state, validation checks, and the KNN training procedure. */
 export function useModelTraining(
@@ -29,8 +30,8 @@ export function useModelTraining(
 
   const canTrain = useMemo(
     () =>
-      classes.length >= 2 &&
-      classes.every(c => c.images.length >= 10) &&
+      classes.length >= ML.MIN_CLASSES &&
+      classes.every(c => c.images.length >= ML.MIN_IMAGES_PER_CLASS) &&
       !hasInvalidNames &&
       !hasDuplicateNames,
     [classes, hasInvalidNames, hasDuplicateNames]
@@ -38,16 +39,16 @@ export function useModelTraining(
 
   /** Validates all prerequisites and trains a new KNN classifier from collected features. */
   const trainModel = useCallback(async () => {
-    if (classes.length < 2) {
-      onError('Du brauchst mindestens 2 Klassen, um ein Modell zu trainieren.');
+    if (classes.length < ML.MIN_CLASSES) {
+      onError(`Du brauchst mindestens ${ML.MIN_CLASSES} Klassen, um ein Modell zu trainieren.`);
       return;
     }
-    const classesWithFewImages = classes.filter(c => c.images.length < 10);
+    const classesWithFewImages = classes.filter(c => c.images.length < ML.MIN_IMAGES_PER_CLASS);
     if (classesWithFewImages.length > 0) {
       const names = classesWithFewImages
         .map(c => `"${c.name || 'Ohne Namen'}" (${c.images.length} Bilder)`)
         .join(', ');
-      onError(`Zu wenig Bilder: ${names}. Jede Klasse braucht mindestens 10 Bilder.`);
+      onError(`Zu wenig Bilder: ${names}. Jede Klasse braucht mindestens ${ML.MIN_IMAGES_PER_CLASS} Bilder.`);
       return;
     }
 
