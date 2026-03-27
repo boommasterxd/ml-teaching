@@ -1,7 +1,7 @@
 /**
  * Thumbnail gallery for collected training images with selection and bulk deletion.
  */
-import { useState, useEffect } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { MLImage } from '../types/ml';
@@ -13,7 +13,7 @@ export interface ImageGalleryProps {
   onRemoveImages: (ids: string[]) => void;
 }
 
-export default function ImageGallery({
+const ImageGallery = memo(function ImageGallery({
   images,
   color,
   onImageClick,
@@ -40,10 +40,11 @@ export default function ImageGallery({
       setSelectedIds(new Set());
       return;
     }
-    const existingIds = new Set(images.map(img => img.id));
     setSelectedIds(prev => {
+      if (prev.size === 0) return prev;
+      const existingIds = new Set(images.map(img => img.id));
       const filtered = new Set([...prev].filter(id => existingIds.has(id)));
-      return filtered;
+      return filtered.size === prev.size ? prev : filtered;
     });
   }, [images]);
 
@@ -147,4 +148,6 @@ export default function ImageGallery({
       </div>
     </div>
   );
-}
+});
+
+export default ImageGallery;

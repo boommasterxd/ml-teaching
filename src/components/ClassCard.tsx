@@ -3,7 +3,7 @@
  * Orchestrates camera recording, image upload, and thumbnail gallery via subcomponents.
  */
 import type React from 'react';
-import { useState, useRef, useEffect } from 'react';
+import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { Trash2, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { CAMERA } from '../constants';
@@ -13,22 +13,22 @@ import ImageGallery from './ImageGallery';
 
 export interface ClassCardProps {
   cls: MLClass;
-  allClasses: MLClass[];
+  isDuplicate: boolean;
   stream: MediaStream | null;
   facingMode: 'user' | 'environment';
-  onAddExample: (video: HTMLVideoElement) => void;
-  onAddImageExample: (img: HTMLImageElement) => void;
-  onRemove: () => void;
-  onClear: () => void;
-  onRemoveImages: (ids: string[]) => void;
-  onUpdateName: (name: string) => void;
-  onImageClick: (img: MLImage) => void;
+  onAddExample: (classId: string, video: HTMLVideoElement) => void;
+  onAddImageExample: (classId: string, img: HTMLImageElement) => void;
+  onRemove: (classId: string) => void;
+  onClear: (classId: string) => void;
+  onRemoveImages: (classId: string, ids: string[]) => void;
+  onUpdateName: (classId: string, name: string) => void;
+  onImageClick: (classId: string, img: MLImage) => void;
 }
 
 /** Displays a class with its camera preview, recording controls, and image gallery. */
-export default function ClassCard({
+const ClassCard = memo(function ClassCard({
   cls,
-  allClasses,
+  isDuplicate,
   stream,
   facingMode,
   onAddExample,
@@ -52,11 +52,11 @@ export default function ClassCard({
       clearInterval(recordIntervalRef.current);
     }
 
-    onAddExample(videoRef.current);
+    onAddExample(cls.id, videoRef.current);
 
     recordIntervalRef.current = window.setInterval(() => {
       if (videoRef.current) {
-        onAddExample(videoRef.current);
+        onAddExample(cls.id, videoRef.current);
       }
     }, CAMERA.CAPTURE_INTERVAL_MS);
   };
@@ -90,7 +90,7 @@ export default function ClassCard({
         if (typeof result !== 'string') return;
         const img = new Image();
         img.onload = () => {
-          onAddImageExample(img);
+          onAddImageExample(cls.id, img);
         };
         img.src = result;
       };
@@ -102,9 +102,15 @@ export default function ClassCard({
     }
   };
 
-  const nameTrimmed = cls.name.trim();
-  const isEmpty = nameTrimmed === '';
-  const isDuplicate = allClasses.filter(c => c.name.trim() === nameTrimmed).length > 1;
+  const handleImageClick = useCallback((img: MLImage) => {
+    onImageClick(cls.id, img);
+  }, [onImageClick, cls.id]);
+
+  const handleRemoveImages = useCallback((ids: string[]) => {
+    onRemoveImages(cls.id, ids);
+  }, [onRemoveImages, cls.id]);
+
+  const isEmpty = cls.name.trim() === '';
   const errorMsg = isEmpty ? 'Name darf nicht leer sein' : isDuplicate ? 'Name muss eindeutig sein' : null;
 
   return (
@@ -119,7 +125,7 @@ export default function ClassCard({
               type="text"
               autoComplete="off"
               value={cls.name}
-              onChange={(e) => onUpdateName(e.target.value)}
+              onChange={(e) => onUpdateName(cls.id, e.target.value)}
               className={cn(
                 'font-semibold bg-transparent border-b border-transparent focus:ring-0 focus:ring-offset-0 p-0 w-[120px] sm:w-[160px] text-sm transition-colors',
                 errorMsg ? 'border-red-500 text-red-600' : 'text-zinc-800 focus:border-zinc-500'
@@ -143,7 +149,7 @@ export default function ClassCard({
             {cls.images.length} Bilder
           </span>
           <button
-            onClick={onClear}
+            onClick={() => onClear(cls.id)}
             className="p-2 rounded-md text-zinc-500 hover:text-indigo-500 transition-colors"
             title="Bilder dieser Klasse zurücksetzen"
             aria-label={`Bilder der Klasse ${cls.name || 'ohne Namen'} zurücksetzen`}
@@ -151,7 +157,7 @@ export default function ClassCard({
             <RotateCcw className="w-4 h-4" aria-hidden="true" />
           </button>
           <button
-            onClick={onRemove}
+            onClick={() => onRemove(cls.id)}
             className="p-2 rounded-md text-zinc-500 hover:text-red-500 transition-colors"
             title="Klasse löschen"
             aria-label={`Klasse ${cls.name || 'ohne Namen'} löschen`}
@@ -177,10 +183,12 @@ export default function ClassCard({
         <ImageGallery
           images={cls.images}
           color={cls.color}
-          onImageClick={onImageClick}
-          onRemoveImages={onRemoveImages}
+          onImageClick={handleImageClick}
+          onRemoveImages={handleRemoveImages}
         />
       </div>
     </div>
   );
-}
+});
+
+export default ClassCard;
