@@ -111,7 +111,10 @@ export default function CameraPreview({
             WebkitTouchCallout: 'none',
           }}
         >
-          <Camera className={cn('w-4 h-4 mr-2', isRecording && 'animate-pulse')} />
+          <Camera
+            className={cn('w-4 h-4 mr-2', isRecording && 'animate-pulse')}
+            aria-hidden="true"
+          />
           {isRecording ? 'Aufnahme...' : 'Aufnehmen'}
         </button>
         <button
