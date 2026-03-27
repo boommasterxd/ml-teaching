@@ -36,7 +36,7 @@ export default function App() {
           >
             Zum Hauptinhalt springen
           </a>
-          <main id="main-content" className="flex-grow">
+          <main id="main-content" className="flex-grow bg-zinc-50">
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
                 <Route path="/" element={<LandingPage />} />

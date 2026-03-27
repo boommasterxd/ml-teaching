@@ -179,7 +179,7 @@ export default function TrainingPage() {
   }, [cameraConsent, hasConsented, isModelLoading]);
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-20">
+    <div className="bg-zinc-50 text-zinc-900 font-sans pb-20">
       <PageHeader
         title="Modell trainieren"
         rightSlot={
@@ -367,7 +367,7 @@ export default function TrainingPage() {
               </div>
 
               {/* Prediction results */}
-              <div className="flex-1 flex flex-col justify-center" aria-live="polite" aria-atomic="true">
+              <div className="flex-1 flex flex-col justify-center min-h-[2.25rem]" aria-live="polite" aria-atomic="true">
                 {isPredicting && prediction ? (
                   <div className="space-y-4">
                     <div className="text-center mb-2">
