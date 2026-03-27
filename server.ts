@@ -70,7 +70,11 @@ async function setupServer() {
     const distPath = path.resolve(rootDir, 'dist');
     console.log(`📦 Production mode active. Serving from: ${distPath}`);
 
-    const expressStaticGzip = (await import('express-static-gzip')).default;
+    const expressStaticGzip = (
+      await import('express-static-gzip') as unknown as {
+        default: (root: string, options: unknown) => express.RequestHandler;
+      }
+    ).default;
 
     app.use(expressStaticGzip(distPath, {
       enableBrotli: true,
