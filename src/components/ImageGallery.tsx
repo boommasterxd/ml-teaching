@@ -1,7 +1,7 @@
 /**
  * Thumbnail gallery for collected training images with selection and bulk deletion.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { MLImage } from '../types/ml';
@@ -33,6 +33,20 @@ export default function ImageGallery({
       return next;
     });
   };
+
+  useEffect(() => {
+    if (images.length === 0) {
+      setIsSelectionMode(false);
+      setSelectedIds(new Set());
+      return;
+    }
+    const existingIds = new Set(images.map(img => img.id));
+    setSelectedIds(prev => {
+      const filtered = new Set([...prev].filter(id => existingIds.has(id)));
+      if (filtered.size === 0 && prev.size > 0) setIsSelectionMode(false);
+      return filtered;
+    });
+  }, [images]);
 
   const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;

@@ -3,7 +3,7 @@
  * Orchestrates camera recording, image upload, and thumbnail gallery via subcomponents.
  */
 import type React from 'react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Trash2, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { CAMERA } from '../constants';
@@ -69,6 +69,14 @@ export default function ClassCard({
       recordIntervalRef.current = null;
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (recordIntervalRef.current) {
+        clearInterval(recordIntervalRef.current);
+      }
+    };
+  }, []);
 
   /** Reads uploaded image files and passes each to the feature extractor. */
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
