@@ -21,10 +21,13 @@ export default function LandingPage() {
       {/* Top navigation */}
       <nav aria-label="Hauptnavigation" className="bg-white border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <img 
-            src="/ada-logo.png" 
-            alt="Ada Lovelace Projekt Logo" 
+          <img
+            src="/ada-logo.png"
+            alt="Ada Lovelace Projekt Logo"
             className="h-10 w-auto object-contain"
+            width="40"
+            height="40"
+            fetchPriority="high"
             referrerPolicy="no-referrer"
           />
           <span className="font-bold text-lg text-zinc-800 hidden sm:block">KI Bilderkennung</span>
@@ -262,6 +265,8 @@ export default function LandingPage() {
               alt=""
               aria-hidden="true"
               className="h-24 w-auto object-contain"
+              width="96"
+              height="96"
               referrerPolicy="no-referrer"
             />
             <span className="text-zinc-600 font-bold border-b border-transparent group-hover:border-zinc-300 transition-all">
