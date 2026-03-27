@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 /**
  * Entry point for the React application. Renders the App component into the root element.
  */
@@ -12,6 +13,15 @@ const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
 };
 
 window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab') {
+    document.documentElement.setAttribute('data-keyboard-nav', '');
+  }
+});
+document.addEventListener('pointerdown', () => {
+  document.documentElement.removeAttribute('data-keyboard-nav');
+});
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
