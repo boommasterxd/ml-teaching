@@ -43,11 +43,15 @@ export default function ImageGallery({
     const existingIds = new Set(images.map(img => img.id));
     setSelectedIds(prev => {
       const filtered = new Set([...prev].filter(id => existingIds.has(id)));
-      if (filtered.size === 0 && prev.size > 0) setIsSelectionMode(false);
       return filtered;
     });
   }, [images]);
 
+  useEffect(() => {
+    if (isSelectionMode && selectedIds.size === 0) {
+      setIsSelectionMode(false);
+    }
+  }, [isSelectionMode, selectedIds]);
   const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
     onRemoveImages(Array.from(selectedIds));
