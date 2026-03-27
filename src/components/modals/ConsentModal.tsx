@@ -33,7 +33,7 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
               type="checkbox"
               checked={privacyChecked}
               onChange={(e) => setPrivacyChecked(e.target.checked)}
-              className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-500 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
             />
             <span className="text-zinc-700 text-sm leading-relaxed">
               Ich habe die{' '}
@@ -49,7 +49,7 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
               type="checkbox"
               checked={modelChecked}
               onChange={(e) => setModelChecked(e.target.checked)}
-              className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-300 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-500 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
             />
             <span className="text-zinc-700 text-sm leading-relaxed">
               Ich willige ein, dass für die Ausführung der Anwendung notwendige KI-Modelle (MobileNet) von Google-Servern
