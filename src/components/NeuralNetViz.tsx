@@ -217,7 +217,7 @@ export default function NeuralNetViz() {
         ) : animating ? (
           <div className="text-zinc-300 animate-pulse">Verarbeite Signal...</div>
         ) : (
-          <div className="text-zinc-400">Klicke auf ein Icon, um den Prozess zu starten</div>
+          <div className="text-zinc-300">Klicke auf ein Icon, um den Prozess zu starten</div>
         )}
       </div>
     </div>

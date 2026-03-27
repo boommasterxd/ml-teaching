@@ -144,7 +144,7 @@ export default function ClassCard({
           </span>
           <button
             onClick={onClear}
-            className="p-1.5 rounded-md text-zinc-500 hover:text-indigo-500 transition-colors"
+            className="p-2 rounded-md text-zinc-500 hover:text-indigo-500 transition-colors"
             title="Bilder dieser Klasse zurücksetzen"
             aria-label={`Bilder der Klasse ${cls.name || 'ohne Namen'} zurücksetzen`}
           >
@@ -152,7 +152,7 @@ export default function ClassCard({
           </button>
           <button
             onClick={onRemove}
-            className="p-1.5 rounded-md text-zinc-500 hover:text-red-500 transition-colors"
+            className="p-2 rounded-md text-zinc-500 hover:text-red-500 transition-colors"
             title="Klasse löschen"
             aria-label={`Klasse ${cls.name || 'ohne Namen'} löschen`}
           >
