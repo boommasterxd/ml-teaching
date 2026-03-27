@@ -19,13 +19,23 @@ export function usePredictionLoop(
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const requestRef = useRef<number>(undefined);
   const shouldPredictRef = useRef(false);
+  const lastPredictTimeRef = useRef(0);
+  const PREDICTION_INTERVAL_MS = 1000 / 15;
 
   // Local prediction function — captures current values via closure.
   // Recreated in the effect when classifier or mobilenetModel changes.
-  const predictLoop = async () => {
+  const predictLoop = async (timestamp: number) => {
     if (!classifier || !mobilenetModel || !videoRef.current || classifier.getNumClasses() === 0) {
       return;
     }
+
+    if (timestamp - lastPredictTimeRef.current < PREDICTION_INTERVAL_MS) {
+      if (shouldPredictRef.current) {
+        requestRef.current = requestAnimationFrame(predictLoop);
+      }
+      return;
+    }
+    lastPredictTimeRef.current = timestamp;
 
     if (
       videoRef.current.readyState >= 2 &&
@@ -57,6 +67,7 @@ export function usePredictionLoop(
   useEffect(() => {
     shouldPredictRef.current = isPredicting;
     if (isPredicting) {
+      lastPredictTimeRef.current = 0;
       requestRef.current = requestAnimationFrame(predictLoop);
     } else {
       if (requestRef.current) {

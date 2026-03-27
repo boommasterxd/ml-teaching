@@ -10,6 +10,7 @@ import path from 'path';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import compression from 'compression';
+import { SERVER } from './server.constants.js';
 
 const rootDir = process.cwd();
 
@@ -26,23 +27,27 @@ app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      // unsafe-inline + wasm-unsafe-eval required for TensorFlow.js
       "script-src": ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'"],
       "img-src": ["'self'", "data:", "https:"],
-      // Allow connections to Google for AI models (MobileNet) and assets
-      "connect-src": ["'self'", "https://*.google.com", "https://*.googleapis.com", "https://tfhub.dev", "https://*.gstatic.com", "https://www.kaggle.com"]
+      // Scoped to specific Google services needed for MobileNet model downloads
+      "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
+      "frame-ancestors": ["'none'"],
     }
   } : false,
   crossOriginEmbedderPolicy: false,
+  xFrameOptions: { action: 'deny' },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   hsts: {
-    maxAge: 31536000,
+    maxAge: SERVER.HSTS_MAX_AGE,
     includeSubDomains: true,
   },
 }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 1000,
+  windowMs: SERVER.RATE_LIMIT_WINDOW_MS,
+  max: SERVER.RATE_LIMIT_MAX_REQUESTS,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests from this IP. Please try again later.' }
@@ -65,9 +70,12 @@ async function setupServer() {
     const distPath = path.resolve(rootDir, 'dist');
     console.log(`📦 Production mode active. Serving from: ${distPath}`);
 
-    const expressStaticGzip = (await import('express-static-gzip')).default;
+    const expressStaticGzip = (
+      await import('express-static-gzip') as unknown as {
+        default: (root: string, options: unknown) => express.RequestHandler;
+      }
+    ).default;
 
-    // @ts-ignore — types incomplete for express-static-gzip
     app.use(expressStaticGzip(distPath, {
       enableBrotli: true,
       orderPreference: ['br', 'gz'],
