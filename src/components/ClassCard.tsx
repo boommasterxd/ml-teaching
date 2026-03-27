@@ -1,13 +1,15 @@
 /**
  * Card component representing a single ML class.
- * Handles camera recording, image upload, thumbnail gallery, and selection/deletion.
+ * Orchestrates camera recording, image upload, and thumbnail gallery via subcomponents.
  */
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  Camera, Trash2, RotateCcw, Upload, Image as ImageIcon, CheckCircle2,
-} from 'lucide-react';
+import type React from 'react';
+import { useState, useRef } from 'react';
+import { Trash2, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { CAMERA } from '../constants';
 import type { MLClass, MLImage } from '../types/ml';
+import CameraPreview from './CameraPreview';
+import ImageGallery from './ImageGallery';
 
 export interface ClassCardProps {
   cls: MLClass;
@@ -38,25 +40,12 @@ export default function ClassCard({
   onImageClick,
 }: ClassCardProps) {
   const [isRecording, setIsRecording] = useState(false);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const recordIntervalRef = useRef<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const keyboardRecordingRef = useRef(false);
 
-  // Attach camera stream to the local video element
-  useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
-    }
-  }, [stream]);
-
-  /** Begins continuous frame capture at 100 ms intervals. */
+  /** Begins continuous frame capture at a fixed interval. */
   const startRecording = () => {
-    if (!videoRef.current) return;
-    if (isRecording) return; // Prevent double-trigger from touch + mouse
-
+    if (!videoRef.current || isRecording) return;
     setIsRecording(true);
 
     if (recordIntervalRef.current) {
@@ -69,7 +58,7 @@ export default function ClassCard({
       if (videoRef.current) {
         onAddExample(videoRef.current);
       }
-    }, 100);
+    }, CAMERA.CAPTURE_INTERVAL_MS);
   };
 
   /** Stops continuous frame capture. */
@@ -80,14 +69,6 @@ export default function ClassCard({
       recordIntervalRef.current = null;
     }
   };
-
-  useEffect(() => {
-    return () => {
-      if (recordIntervalRef.current) {
-        clearInterval(recordIntervalRef.current);
-      }
-    };
-  }, []);
 
   /** Reads uploaded image files and passes each to the feature extractor. */
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,8 +89,8 @@ export default function ClassCard({
       reader.readAsDataURL(file);
     });
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (e.target) {
+      e.target.value = '';
     }
   };
 
@@ -117,34 +98,6 @@ export default function ClassCard({
   const isEmpty = nameTrimmed === '';
   const isDuplicate = allClasses.filter(c => c.name.trim() === nameTrimmed).length > 1;
   const errorMsg = isEmpty ? 'Name darf nicht leer sein' : isDuplicate ? 'Name muss eindeutig sein' : null;
-
-  /** Toggles selection state of a single thumbnail image. */
-  const toggleImageSelection = (id: string) => {
-    setSelectedIds(prev => {
-      const newSelected = new Set(prev);
-      if (newSelected.has(id)) {
-        newSelected.delete(id);
-      } else {
-        newSelected.add(id);
-      }
-      return newSelected;
-    });
-  };
-
-  /** Deletes all currently selected images and exits selection mode. */
-  const handleBulkDelete = () => {
-    if (selectedIds.size === 0) return;
-    onRemoveImages(Array.from(selectedIds));
-    setSelectedIds(new Set());
-    setIsSelectionMode(false);
-  };
-
-  /** Clears all images from the class and resets selection state. */
-  const handleClear = () => {
-    setIsSelectionMode(false);
-    setSelectedIds(new Set());
-    onClear();
-  };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col transition-all hover:shadow-md">
@@ -182,7 +135,7 @@ export default function ClassCard({
             {cls.images.length} Bilder
           </span>
           <button
-            onClick={handleClear}
+            onClick={onClear}
             className="p-1.5 rounded-md text-zinc-500 hover:text-indigo-500 transition-colors"
             title="Bilder dieser Klasse zurücksetzen"
             aria-label={`Bilder der Klasse ${cls.name || 'ohne Namen'} zurücksetzen`}
@@ -202,183 +155,23 @@ export default function ClassCard({
 
       {/* Card body */}
       <div className="p-4 flex flex-col sm:flex-row gap-4">
+        <CameraPreview
+          stream={stream}
+          facingMode={facingMode}
+          color={cls.color}
+          isRecording={isRecording}
+          onStartRecording={startRecording}
+          onStopRecording={stopRecording}
+          onFileUpload={handleFileUpload}
+          videoRef={videoRef}
+        />
 
-        {/* Left: camera preview & controls */}
-        <div className="w-full sm:w-56 flex flex-col gap-3 flex-shrink-0">
-          <div className="relative aspect-[4/3] bg-zinc-900 rounded-xl overflow-hidden shadow-inner">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              aria-label="Kameravorschau für Trainingsaufnahme"
-              className={cn(
-                'w-full h-full object-cover',
-                facingMode === 'user' ? 'transform scale-x-[-1]' : ''
-              )}
-            />
-          </div>
-          <div className="flex gap-2">
-            <button
-              onMouseDown={() => {
-                keyboardRecordingRef.current = false;
-                startRecording();
-              }}
-              onMouseUp={stopRecording}
-              onMouseLeave={stopRecording}
-              onTouchStart={() => {
-                keyboardRecordingRef.current = false;
-                startRecording();
-              }}
-              onTouchEnd={stopRecording}
-              onTouchCancel={stopRecording}
-              onContextMenu={(e) => e.preventDefault()}
-              onKeyDown={(e) => {
-                if (e.key === ' ' || e.key === 'Enter') {
-                  e.preventDefault();
-                  if (!isRecording) {
-                    keyboardRecordingRef.current = true;
-                    startRecording();
-                  } else if (keyboardRecordingRef.current) {
-                    keyboardRecordingRef.current = false;
-                    stopRecording();
-                  }
-                }
-              }}
-              onKeyUp={(e) => {
-                if (e.key === ' ' || e.key === 'Enter') {
-                  e.preventDefault();
-                  // Keyboard uses toggle mode via onKeyDown — no stopRecording here
-                }
-              }}
-              className={cn(
-                'flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center select-none touch-none',
-                isRecording
-                  ? 'scale-95 shadow-inner opacity-90'
-                  : 'shadow-sm hover:-translate-y-0.5 hover:shadow-md'
-              )}
-              style={{
-                backgroundColor: cls.color,
-                WebkitUserSelect: 'none',
-                WebkitTouchCallout: 'none',
-              }}
-            >
-              <Camera className={cn('w-4 h-4 mr-2', isRecording && 'animate-pulse')} />
-              {isRecording ? 'Aufnahme...' : 'Aufnehmen'}
-            </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="px-3 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-xl transition-colors flex items-center justify-center shadow-sm"
-              title="Bilder hochladen"
-              aria-label="Bilder hochladen"
-            >
-              <Upload className="w-4 h-4" aria-hidden="true" />
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept="image/*"
-              multiple
-              className="hidden"
-              aria-hidden="true"
-              tabIndex={-1}
-            />
-          </div>
-        </div>
-
-        {/* Right: thumbnail gallery */}
-        <div className="flex-1 relative min-h-[160px] sm:min-h-0 flex flex-col">
-          <div className="flex justify-between items-center mb-2 px-1">
-            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
-              {isSelectionMode ? `${selectedIds.size} ausgewählt` : 'Gesammelte Bilder'}
-            </span>
-            <div className="flex gap-2">
-              {isSelectionMode ? (
-                <>
-                  <button
-                    onClick={handleBulkDelete}
-                    disabled={selectedIds.size === 0}
-                    className="text-[10px] font-bold py-1 px-2 min-h-[24px] transition-opacity hover:opacity-70 disabled:text-zinc-300 disabled:opacity-50"
-                    style={{ color: selectedIds.size > 0 ? cls.color : undefined }}
-                  >
-                    Löschen
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsSelectionMode(false);
-                      setSelectedIds(new Set());
-                    }}
-                    className="text-[10px] font-bold py-1 px-2 min-h-[24px] text-zinc-600 hover:text-zinc-700 transition-colors"
-                  >
-                    Abbrechen
-                  </button>
-                </>
-              ) : (
-                cls.images.length > 0 && (
-                  <button
-                    onClick={() => setIsSelectionMode(true)}
-                    className="text-[10px] font-bold py-1 px-2 min-h-[24px] transition-opacity hover:opacity-70"
-                    style={{ color: cls.color }}
-                  >
-                    Auswählen
-                  </button>
-                )
-              )}
-            </div>
-          </div>
-          <div className="flex-1 relative h-[190px] max-h-[190px] bg-zinc-50/50 rounded-xl border border-zinc-200 p-2 overflow-y-auto">
-            {cls.images.length > 0 ? (
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-                {cls.images.map((img, imgIndex) => (
-                  <button
-                    key={img.id}
-                    type="button"
-                    aria-label={
-                      isSelectionMode
-                        ? selectedIds.has(img.id) ? 'Bild abwählen' : 'Bild auswählen'
-                        : 'Bild vergrößern'
-                    }
-                    className={cn(
-                      'aspect-square rounded-lg overflow-hidden border cursor-pointer transition-all relative block w-full h-full p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500',
-                      isSelectionMode
-                        ? selectedIds.has(img.id)
-                          ? 'ring-2'
-                          : 'border-zinc-200 opacity-60 hover:opacity-100'
-                        : 'border-zinc-200 hover:shadow-sm'
-                    )}
-                    style={{
-                      borderColor: (isSelectionMode && selectedIds.has(img.id)) ? cls.color : undefined,
-                      boxShadow: (isSelectionMode && selectedIds.has(img.id)) ? `0 0 0 2px ${cls.color}33` : undefined,
-                    }}
-                    onClick={() => isSelectionMode ? toggleImageSelection(img.id) : onImageClick(img)}
-                  >
-                    <img src={img.dataUrl} alt={`Trainingsbeispiel ${imgIndex + 1}`} className="w-full h-full object-cover" />
-                    {isSelectionMode && (
-                      <div
-                        className={cn(
-                          'absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center transition-colors',
-                          selectedIds.has(img.id) ? 'text-white' : 'bg-white/80 border-zinc-300'
-                        )}
-                        style={{
-                          backgroundColor: selectedIds.has(img.id) ? cls.color : undefined,
-                          borderColor: selectedIds.has(img.id) ? cls.color : undefined,
-                        }}
-                      >
-                        {selectedIds.has(img.id) && <CheckCircle2 className="w-3 h-3" aria-hidden="true" />}
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center px-4 text-zinc-600">
-                <ImageIcon className="w-6 h-6 mb-2 opacity-20" />
-                <p className="text-xs">Halte "Aufnehmen" gedrückt, um Bilder zu sammeln.</p>
-              </div>
-            )}
-          </div>
-        </div>
+        <ImageGallery
+          images={cls.images}
+          color={cls.color}
+          onImageClick={onImageClick}
+          onRemoveImages={onRemoveImages}
+        />
       </div>
     </div>
   );
