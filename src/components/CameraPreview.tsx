@@ -31,9 +31,25 @@ export default function CameraPreview({
   const keyboardRecordingRef = useRef(false);
 
   useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
+    const videoElement = videoRef.current;
+
+    if (!videoElement) {
+      return;
     }
+
+    if (stream) {
+      videoElement.srcObject = stream;
+    } else {
+      // Clear any previous stream when no stream is provided
+      videoElement.srcObject = null;
+    }
+
+    return () => {
+      // On cleanup, clear the srcObject if it still points to this stream
+      if (videoElement.srcObject === stream) {
+        videoElement.srcObject = null;
+      }
+    };
   }, [stream, videoRef]);
 
   return (
