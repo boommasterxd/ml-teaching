@@ -100,7 +100,7 @@ export default function CameraPreview({
             }
           }}
           className={cn(
-            'flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center select-none touch-none',
+            'flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center select-none touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2',
             isRecording
               ? 'scale-95 shadow-inner opacity-90'
               : 'shadow-sm hover:-translate-y-0.5 hover:shadow-md'

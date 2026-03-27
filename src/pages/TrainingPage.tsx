@@ -2,7 +2,7 @@
  * Training page where users can collect image data for different classes,
  * train a custom KNN classifier on top of MobileNet, and test the model in real-time.
  */
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '../hooks/usePageTitle';
 import * as tf from '@tensorflow/tfjs';
@@ -51,6 +51,7 @@ export default function TrainingPage() {
 
   // Shared video ref used by useCameraStream (stream attach) and usePredictionLoop (inference)
   const predictVideoRef = useRef<HTMLVideoElement>(null);
+  const mainHeadingRef = useRef<HTMLHeadingElement>(null);
 
   const { classifier, setClassifier, mobilenetModel, isModelLoading, loadingText } =
     useModelLoader(hasConsented, setError);
@@ -170,6 +171,13 @@ export default function TrainingPage() {
     setSelectedImage(prev => prev?.classId === id ? null : prev);
   }, [clearClass]);
 
+  // After all consent modals are done, focus the main content heading
+  useEffect(() => {
+    if (cameraConsent && hasConsented && !isModelLoading) {
+      mainHeadingRef.current?.focus({ preventScroll: false });
+    }
+  }, [cameraConsent, hasConsented, isModelLoading]);
+
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-20">
       <PageHeader
@@ -200,7 +208,7 @@ export default function TrainingPage() {
         {/* Left column: classes */}
         <div className="lg:col-span-7 space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-zinc-800">1. Klassen ({classes.length})</h2>
+            <h2 ref={mainHeadingRef} tabIndex={-1} className="text-lg font-bold text-zinc-800 focus:outline-none">1. Klassen ({classes.length})</h2>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowClearConfirm(true)}
@@ -258,7 +266,7 @@ export default function TrainingPage() {
                 <Brain className="w-4 h-4 mr-2 text-indigo-500" aria-hidden="true" /> 2. Training
               </h2>
               {hasTrainedModel && (
-                <span role="status" className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+                <span role="status" className="flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
                   <CheckCircle2 className="w-3 h-3 mr-1" aria-hidden="true" /> Bereit
                 </span>
               )}
@@ -314,16 +322,19 @@ export default function TrainingPage() {
           </div>
 
           {/* Prediction card */}
-          <div className={cn(
-            'bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col flex-1 transition-opacity duration-300',
-            !hasTrainedModel ? 'opacity-80 pointer-events-none' : 'opacity-100'
-          )}>
+          <div
+            className={cn(
+              'bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col flex-1 transition-opacity duration-300',
+              !hasTrainedModel ? 'opacity-80 pointer-events-none' : 'opacity-100'
+            )}
+            inert={!hasTrainedModel}
+          >
             <div className="px-5 py-4 border-b border-zinc-100 flex justify-between items-center">
               <h2 className="text-base font-bold text-zinc-800 flex items-center">
                 <Camera className="w-4 h-4 mr-2 text-indigo-500" aria-hidden="true" /> 3. Vorhersage
               </h2>
               {isPredicting && (
-                <span className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+                <span className="flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" aria-hidden="true"></span>
                   Live
                 </span>
