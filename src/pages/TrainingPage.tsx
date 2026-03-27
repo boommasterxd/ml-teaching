@@ -13,6 +13,7 @@ import {
 import { cn } from '../lib/utils';
 
 import type { MLImage, MLClass } from '../types/ml';
+import { ML } from '../constants';
 import { useModelLoader } from '../hooks/useModelLoader';
 import { useCameraStream } from '../hooks/useCameraStream';
 import { usePredictionLoop } from '../hooks/usePredictionLoop';
@@ -105,8 +106,8 @@ export default function TrainingPage() {
     const featureArray = Array.from(features.dataSync()) as number[];
 
     const canvas = document.createElement('canvas');
-    canvas.width = 224;
-    canvas.height = 224;
+    canvas.width = ML.FEATURE_CANVAS_SIZE;
+    canvas.height = ML.FEATURE_CANVAS_SIZE;
     const ctx = canvas.getContext('2d');
     if (ctx) {
       const size = Math.min(sourceWidth, sourceHeight);
@@ -118,7 +119,7 @@ export default function TrainingPage() {
       }
       ctx.drawImage(source, startX, startY, size, size, 0, 0, canvas.width, canvas.height);
     }
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    const dataUrl = canvas.toDataURL('image/jpeg', ML.THUMBNAIL_QUALITY);
 
     const newImage: MLImage = {
       id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -266,7 +267,7 @@ export default function TrainingPage() {
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-zinc-600">Klassen bereit:</span>
                 <span className={cn('font-semibold', canTrain ? 'text-emerald-700' : 'text-red-600')}>
-                  {classes.filter(c => c.images.length >= 10).length} / {Math.max(2, classes.length)}
+                  {classes.filter(c => c.images.length >= ML.MIN_IMAGES_PER_CLASS).length} / {Math.max(ML.MIN_CLASSES, classes.length)}
                 </span>
               </div>
               <div className="flex justify-between text-sm mb-5">
@@ -304,7 +305,7 @@ export default function TrainingPage() {
                   : hasDuplicateNames
                   ? 'Bitte gib allen Klassen einen eindeutigen Namen.'
                   : !canTrain
-                  ? 'Sammle mind. 10 Bilder in ALLEN Klassen (mind. 2).'
+                  ? `Sammle mind. ${ML.MIN_IMAGES_PER_CLASS} Bilder in ALLEN Klassen (mind. ${ML.MIN_CLASSES}).`
                   : hasTrainedModel
                   ? 'Modell ist bereit. Du kannst es jederzeit neu trainieren.'
                   : 'Genug Bilder gesammelt! Du kannst das Modell jetzt trainieren.'}
