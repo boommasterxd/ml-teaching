@@ -171,6 +171,30 @@ export default function TrainingPage() {
     setSelectedImage(prev => prev?.classId === id ? null : prev);
   }, [clearClass]);
 
+  const handleAddExample = useCallback((classId: string, video: HTMLVideoElement) => {
+    addExample(classId, video);
+  }, [addExample]);
+
+  const handleAddImageExample = useCallback((classId: string, img: HTMLImageElement) => {
+    addImageExample(classId, img);
+  }, [addImageExample]);
+
+  const handleRequestRemove = useCallback((classId: string) => {
+    setClassToRemove(classId);
+  }, []);
+
+  const handleRequestClear = useCallback((classId: string) => {
+    setClassToClear(classId);
+  }, []);
+
+  const handleUpdateClassName = useCallback((classId: string, name: string) => {
+    updateClassName(classId, name);
+  }, [updateClassName]);
+
+  const handleImageClick = useCallback((classId: string, img: MLImage) => {
+    setSelectedImage({ classId, image: img });
+  }, []);
+
   // After all consent modals are done, focus the main content heading
   useEffect(() => {
     if (cameraConsent && hasConsented && !isModelLoading) {
@@ -240,16 +264,16 @@ export default function TrainingPage() {
                 <ClassCard
                   key={cls.id}
                   cls={cls}
-                  allClasses={classes}
+                  isDuplicate={classes.filter(c => c.name.trim() === cls.name.trim()).length > 1}
                   stream={stream}
                   facingMode={facingMode}
-                  onAddExample={(video) => addExample(cls.id, video)}
-                  onAddImageExample={(img) => addImageExample(cls.id, img)}
-                  onRemove={() => setClassToRemove(cls.id)}
-                  onClear={() => setClassToClear(cls.id)}
-                  onRemoveImages={(ids) => handleRemoveImages(cls.id, ids)}
-                  onUpdateName={(name) => updateClassName(cls.id, name)}
-                  onImageClick={(img) => setSelectedImage({ classId: cls.id, image: img })}
+                  onAddExample={handleAddExample}
+                  onAddImageExample={handleAddImageExample}
+                  onRemove={handleRequestRemove}
+                  onClear={handleRequestClear}
+                  onRemoveImages={handleRemoveImages}
+                  onUpdateName={handleUpdateClassName}
+                  onImageClick={handleImageClick}
                 />
               ))
             )}
