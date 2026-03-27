@@ -36,7 +36,7 @@ app.use(helmet({
     }
   } : false,
   crossOriginEmbedderPolicy: false,
-  frameguard: { action: 'deny' },
+  xFrameOptions: { action: 'deny' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   hsts: {
     maxAge: SERVER.HSTS_MAX_AGE,
