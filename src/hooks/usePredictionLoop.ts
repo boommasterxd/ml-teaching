@@ -8,6 +8,7 @@ import * as tf from '@tensorflow/tfjs';
 import type * as mobilenet from '@tensorflow-models/mobilenet';
 import type * as knnClassifier from '@tensorflow-models/knn-classifier';
 import type { Prediction } from '../types/ml';
+import { PREDICTION } from '../constants';
 
 /** Continuously classifies video frames and exposes start/stop controls. */
 export function usePredictionLoop(
@@ -20,7 +21,6 @@ export function usePredictionLoop(
   const requestRef = useRef<number>(undefined);
   const shouldPredictRef = useRef(false);
   const lastPredictTimeRef = useRef(0);
-  const PREDICTION_INTERVAL_MS = 1000 / 15;
 
   // Local prediction function — captures current values via closure.
   // Recreated in the effect when classifier or mobilenetModel changes.
@@ -29,7 +29,7 @@ export function usePredictionLoop(
       return;
     }
 
-    if (timestamp - lastPredictTimeRef.current < PREDICTION_INTERVAL_MS) {
+    if (timestamp - lastPredictTimeRef.current < PREDICTION.INTERVAL_MS) {
       if (shouldPredictRef.current) {
         requestRef.current = requestAnimationFrame(predictLoop);
       }
