@@ -226,7 +226,7 @@ export default function PrivacyPage() {
             Diese Website nutzt clientseitige KI-Modelle zur Bilderkennung (MobileNet). Um Ihre Privatsphäre zu schützen, werden diese Modelle nicht automatisch beim Laden der Website, sondern erst nach Ihrer ausdrücklichen Zustimmung (2-Klick-Lösung) von Servern des Anbieters Google geladen.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Anbieter der KI-Modelle ist die Google Ireland Limited („Google“), Gordon House, Barrow Street, Dublin 4, Irland.
+            Anbieter der KI-Modelle ist die Google LLC („Google”), 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA. Google LLC ist unter dem EU-US-Datenschutzrahmen (Data Privacy Framework) zertifiziert.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Erst wenn Sie die KI-Funktionen aktiv starten und der damit verbundenen Datenübertragung zustimmen, wird eine Verbindung zu den Servern von Google hergestellt und Ihre IP-Adresse an Google übertragen. Die eigentliche Verarbeitung der Bilddaten erfolgt jedoch auch nach dem Laden der Modelle ausschließlich lokal in Ihrem Browser; es findet zu keinem Zeitpunkt ein Upload von privatem Bildmaterial auf externe Server statt.
