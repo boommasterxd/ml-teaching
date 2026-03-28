@@ -22,6 +22,7 @@ const ImageGallery = memo(function ImageGallery({
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  /** Adds or removes an image ID from the current selection set. */
   const toggleImageSelection = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -48,6 +49,7 @@ const ImageGallery = memo(function ImageGallery({
     });
   }, [images]);
 
+  /** Deletes all currently selected images and exits selection mode. */
   const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
     onRemoveImages(Array.from(selectedIds));

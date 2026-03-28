@@ -23,6 +23,7 @@ function getNodeY(totalNodes: number, index: number): number {
   return startY + index * (nodeHeight + gap) + nodeHeight / 2;
 }
 
+/** Renders an interactive neural-network animation with dog/cat input buttons. */
 export default function NeuralNetViz() {
   const [activeSignal, setActiveSignal] = useState<'dog' | 'cat' | null>(null);
   const [animStep, setAnimStep] = useState(-1);

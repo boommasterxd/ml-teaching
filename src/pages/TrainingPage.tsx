@@ -283,7 +283,6 @@ export default function TrainingPage() {
         {/* Right column: training & prediction */}
         <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-24">
 
-          {/* Training card */}
           <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col">
             <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
               <h2 className="text-base font-bold text-zinc-800 flex items-center">
@@ -345,7 +344,6 @@ export default function TrainingPage() {
             </div>
           </div>
 
-          {/* Prediction card */}
           <div
             className={cn(
               'bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col flex-1 transition-opacity duration-300',
