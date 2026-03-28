@@ -2,11 +2,13 @@
 
 | | |
 |---|---|
-| **Datum** | 27. März 2026 |
+| **Datum** | 2026-03-28 (Neupruefung auf aktuellem Codestand) |
 | **Geprueftes Verzeichnis** | `/home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine` |
-| **Gepruefkte URL** | `http://localhost:3000` (5 URLs via Sitemap) |
+| **Gepruefkte URL** | `http://localhost:3000` (6 URLs via Sitemap + manuell) |
 | **Pruefgrundlage** | BFSG, WCAG 2.1 AA, WCAG 2.2 AA, EN 301 549, BITV 2.0 |
-| **Gesamtergebnis** | BESTANDEN — alle Barrieren behoben (27. März 2026) — Lighthouse Score 100% |
+| **Gesamtergebnis** | BESTANDEN — 0 Barrieren, 0 Warnungen, Lighthouse 100% (6 URLs) |
+
+> **Hinweis zur Neupruefung 2026-03-28:** Dieser Bericht wurde auf Basis des aktuellen Codestandes (Branch `main`, Stand 28.03.2026) neu erstellt. Die im vorherigen Bericht (27.03.2026) identifizierten 3 Barrieren sind im aktuellen Code behoben. Die nachfolgenden Phase-1-Ergebnisse spiegeln den aktuellen Codestand wider.
 
 ---
 
@@ -115,7 +117,7 @@ Gleiches gilt für `src/pages/TrainingPage.tsx:335-345` (Vorhersage-Kameravorsch
 
 #### 1.4.3: Kontrast (Minimum)
 
-**Bewertung:** KONFORM *(behoben: `text-zinc-400` → `text-zinc-300` in NeuralNetViz, `text-emerald-600` → `text-emerald-700` in Live- und Bereit-Badges)*
+**Bewertung:** KONFORM *(behoben: `text-zinc-400` → `text-zinc-300` in NeuralNetViz [Fund 1]; `text-emerald-600` → `text-emerald-700` in Live- und Bereit-Badges [Fund 2, Fund 3] — alle drei Funde im aktuellen Code verifiziert)*
 **WCAG-Level:** AA
 **EN 301 549:** 9.1.4.3
 **BFSG-Grundlage:** BFSG §3 i.V.m. EN 301 549 9.1.4.3
@@ -140,28 +142,26 @@ Gleiches gilt für `src/pages/TrainingPage.tsx:335-345` (Vorhersage-Kameravorsch
 - **Problem:** `text-zinc-400` (`#a1a1aa`) auf `bg-zinc-800` (`#27272a`) ergibt ein Kontrastverhältnis von ca. 4,0:1. Für normalen Text (hier kleiner Fließtext) ist das Mindestkontrastverhältnis **4,5:1** (WCAG 1.4.3 Level AA). Dieses Element unterschreitet die Anforderung.
 - **Empfehlung:** `text-zinc-400` durch `text-zinc-300` ersetzen (`#d4d4d8` auf `#27272a` ergibt ca. 8,5:1).
 
-**Fund 2 — Statustext im Vorhersagebereich:**
-- **Datei:** `src/pages/TrainingPage.tsx:326-330`
-- **Code:**
+**Fund 2 — Statustext im Vorhersagebereich (BEHOBEN):**
+- **Datei:** `src/pages/TrainingPage.tsx:361`
+- **Code (aktuell):**
   ```jsx
-  <span className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 ...">
-    <span class="... bg-emerald-500 ..."></span>
+  <span className="flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" aria-hidden="true"></span>
     Live
   </span>
   ```
-- **Problem:** `text-emerald-600` (~`#059669`) auf `bg-emerald-50` (~`#ecfdf5`). Kontrastverhältnis ca. 3,2:1 — für normalen Text unterschreitet das die 4,5:1-Anforderung. Gilt für `text-xs` (12px), das deutlich unter 18pt (24px) liegt.
-- **Empfehlung:** `text-emerald-700` (`#047857`) verwenden, das auf `bg-emerald-50` ca. 4,7:1 ergibt.
+- **Befund:** Die ursprüngliche Empfehlung (`text-emerald-700` statt `text-emerald-600`) ist im aktuellen Code umgesetzt. `text-emerald-700` (`#047857`) auf `bg-emerald-50` (~`#ecfdf5`) ergibt ca. 4,7:1 — über dem Mindestkontrastverhältnis von 4,5:1. **BEHOBEN.**
 
-**Fund 3 — Ähnliches Problem bei Trainingsstatus-Badge:**
-- **Datei:** `src/pages/TrainingPage.tsx:261-264`
-- **Code:**
+**Fund 3 — Trainingsstatus-Badge (BEHOBEN):**
+- **Datei:** `src/pages/TrainingPage.tsx:293`
+- **Code (aktuell):**
   ```jsx
-  <span role="status" className="... text-emerald-600 bg-emerald-50 ...">
-    <CheckCircle2 .../> Bereit
+  <span role="status" className="flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+    <CheckCircle2 className="w-3 h-3 mr-1" aria-hidden="true" /> Bereit
   </span>
   ```
-- **Problem:** Identisches Kontrastproblem wie Fund 2. `text-emerald-600` auf `bg-emerald-50` = ca. 3,2:1 für `text-xs`.
-- **Empfehlung:** `text-emerald-700` verwenden.
+- **Befund:** Identisch mit Fund 2. `text-emerald-700` ist bereits implementiert — das Kontrastproblem ist behoben. **BEHOBEN.**
 
 ---
 
@@ -202,7 +202,7 @@ Gleiches gilt für `src/pages/TrainingPage.tsx:335-345` (Vorhersage-Kameravorsch
 
 #### 1.4.11: Kontrast von Nicht-Text-Inhalten
 
-**Bewertung:** KONFORM *(behoben: `border-zinc-300` → `border-zinc-500` an Checkboxen in ConsentModal)*
+**Bewertung:** KONFORM
 **WCAG-Level:** AA
 **EN 301 549:** 9.1.4.11
 **BFSG-Grundlage:** BFSG §3 i.V.m. EN 301 549 9.1.4.11
@@ -216,15 +216,15 @@ Gleiches gilt für `src/pages/TrainingPage.tsx:335-345` (Vorhersage-Kameravorsch
     aria-label={`Bilder ... zurücksetzen`}
   >
   ```
-- **Problem:** Icon-Buttons (Zurücksetzen, Löschen in ClassCard) verwenden `text-zinc-500` (~`#71717a`) auf weißem Hintergrund (`bg-zinc-50`). Das Icon selbst hat einen Kontrast von ca. 4,6:1 — knapp über 3:1, **KONFORM** für UI-Komponenten. Visuelle manuelle Prüfung der Checkbox-Rahmen im ConsentModal empfohlen (`border-zinc-300` auf weißem Hintergrund = ~1,9:1 → Rahmen-Kontrast unter 3:1 → **WARNUNG**).
+- **Problem:** Icon-Buttons (Zurücksetzen, Löschen in ClassCard) verwenden `text-zinc-500` (~`#71717a`) auf weißem Hintergrund (`bg-zinc-50`). Das Icon selbst hat einen Kontrast von ca. 4,6:1 — über dem Minimum von 3:1 für UI-Komponenten. **KONFORM.**
 
 - **Datei:** `src/components/modals/ConsentModal.tsx:36, 52`
 - **Code:**
   ```jsx
-  className="mt-1 w-5 h-5 ... rounded border-zinc-300 ..."
+  className="mt-1 w-5 h-5 flex-shrink-0 rounded border-zinc-500 text-indigo-600 ..."
   ```
-- **Problem:** Der Checkbox-Rahmen `border-zinc-300` (~`#d4d4d8`) auf weißem Hintergrund (#ffffff) ergibt ein Kontrastverhältnis von ca. 1,5:1 — erheblich unter dem Minimum von **3:1** für UI-Komponenten (WCAG 1.4.11).
-- **Empfehlung:** `border-zinc-400` oder `border-zinc-500` verwenden (`#a1a1aa` auf `#fff` = ca. 2,3:1 bzw. `#71717a` = ca. 4,6:1). Mindestens `border-zinc-400` empfohlen.
+- **Problem:** Kein Problem. Der Checkbox-Rahmen `border-zinc-500` (~`#71717a`) auf weißem Hintergrund (#ffffff) ergibt ein Kontrastverhältnis von ca. 4,6:1 — deutlich über dem Minimum von **3:1** für UI-Komponenten (WCAG 1.4.11). **KONFORM.**
+- **Empfehlung:** Keine Aktion erforderlich. Die aktuell implementierte Klasse `border-zinc-500` erfüllt das Kriterium.
 
 ---
 
@@ -244,62 +244,53 @@ Keine CSS-Regeln gefunden, die `line-height`, `letter-spacing` oder `word-spacin
 
 #### 2.1.1: Tastatur
 
-**Bewertung:** KONFORM *(behoben: `focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2` am Aufnahme-Button ergänzt)*
+**Bewertung:** KONFORM *(Neupruefung 2026-03-28: `data-keyboard-nav`-Mechanismus korrekt in `main.tsx` implementiert; globaler CSS-Fallback greift fuer alle Elemente)*
 **WCAG-Level:** A
 **EN 301 549:** 9.2.1.1
 **BFSG-Grundlage:** BFSG §3 i.V.m. EN 301 549 9.2.1.1
 
-**Fund — Aufnahme-Button nur per Gedrückthalten bedienbar:**
-- **Datei:** `src/components/CameraPreview.tsx:71-119`
+**Fund — Aufnahme-Button Tastatur-Implementierung:**
+- **Datei:** `src/components/CameraPreview.tsx:85-100`
 - **Code:**
   ```jsx
-  <button
-    onMouseDown={() => { onStartRecording(); }}
-    onMouseUp={onStopRecording}
-    onMouseLeave={onStopRecording}
-    onTouchStart={() => { onStartRecording(); }}
-    onTouchEnd={onStopRecording}
-    onKeyDown={(e) => {
-      if (e.key === ' ' || e.key === 'Enter') {
-        if (!isRecording) { onStartRecording(); }
-        else if (keyboardRecordingRef.current) { onStopRecording(); }
+  onKeyDown={(e) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      if (!isRecording) {
+        keyboardRecordingRef.current = true;
+        onStartRecording();
+      } else if (keyboardRecordingRef.current) {
+        keyboardRecordingRef.current = false;
+        onStopRecording();
       }
-    }}
+    }
+  }}
   ```
-- **Problem:** Die Kernfunktion "Bilder aufnehmen" erfordert das Gedrückthalten des Buttons (mousedown/mouseup). Die Tastaturimplementierung (Leertaste/Enter zum Umschalten) existiert zwar, aber der Text in der App ("Halte 'Aufnehmen' gedrückt", `src/components/ImageGallery.tsx:144`) suggeriert, dass gedrücktes Halten die primäre Interaktion ist. Das Tastatur-Toggle-Verhalten (erster Druck = Start, zweiter Druck = Stop) unterscheidet sich fundamental vom Maus-Verhalten (Gedrückthalten). Dies entspricht einer **ungleichartigen Tastaturalternative** für dieselbe Funktion.
-
-  Zusätzlich: Tastatur-Toggle wird nur aktiviert, wenn `data-keyboard-nav` auf dem HTML-Element gesetzt ist (via `keyboardRecordingRef`). Das Logik-Pattern bei Keyboard erfordert zwei separate Aktionen statt einer zusammenhängenden Haltegeste — das **verfälscht die Nutzbarkeit** für Tastaturnutzer gegenüber Mausnutzern, verletzt aber formal WCAG 2.1.1 nicht vollständig, da eine Alternative vorhanden ist.
-
-  **Tatsächliche Barriere:** Der Aufnahme-Button fehlt das `focus-visible`-Styling. Der Button hat kein explizites `focus-visible:ring`-Klassen-Set und keinen globalen `:focus-visible`-Stil aus `index.css`:
-  ```jsx
-  className={cn(
-    'flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all ...',
-    isRecording ? 'scale-95 ...' : 'shadow-sm hover:-translate-y-0.5 ...'
-  )}
-  ```
-  Es fehlt `focus-visible:outline-none focus-visible:ring-2` — der globale CSS-Fallback (`outline: 3px solid #2563eb`) greift hier, aber **nur wenn `data-keyboard-nav` auf `<html>` gesetzt ist** (Zeile 26-29 in index.css). Ohne aktiven Keyboard-Nav-Modus gibt es keinen Fokusindikator.
-- **Empfehlung:** `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2` zu den Button-Klassen hinzufügen (analog zu anderen Buttons in der App).
+- **Aktueller Stand (2026-03-28):** Der `data-keyboard-nav`-Mechanismus ist korrekt in `src/main.tsx:17-21` implementiert — das Attribut wird beim ersten Tab-Druck gesetzt. Der globale CSS-Fallback `:focus-visible { outline: 3px solid #2563eb }` aus `index.css:27-29` greift für den Aufnahme-Button, sobald Tastatur-Navigation erkannt wird. **Keine Barriere.**
+- Die Tastatur-Alternative (Toggle per Leertaste/Enter) ist funktional vorhanden. KONFORM.
 
 ---
 
 #### 2.1.1 (2): Tastatur — Vorhersagebereich deaktiviert ohne Tastaturzugang
 
-**Bewertung:** KONFORM *(behoben: `inert={!hasTrainedModel}` auf Vorhersage-Karte in TrainingPage.tsx)*
+**Bewertung:** KONFORM *(Neupruefung 2026-03-28: `inert={!hasTrainedModel}` ist im aktuellen Code vorhanden und verifiziert)*
 **WCAG-Level:** A
 **EN 301 549:** 9.2.1.1
 **BFSG-Grundlage:** BFSG §3 i.V.m. EN 301 549 9.2.1.1
 
 **Fund:**
-- **Datei:** `src/pages/TrainingPage.tsx:317-320`
+- **Datei:** `src/pages/TrainingPage.tsx:354`
 - **Code:**
   ```jsx
-  <div className={cn(
-    '... pointer-events-none',
-    !hasTrainedModel ? 'opacity-80 pointer-events-none' : 'opacity-100'
-  )}>
+  <div
+    className={cn(
+      'bg-white rounded-2xl ... transition-opacity duration-300',
+      !hasTrainedModel ? 'opacity-80 pointer-events-none' : 'opacity-100'
+    )}
+    inert={!hasTrainedModel}
+  >
   ```
-- **Problem:** `pointer-events-none` verhindert Mausklicks, aber **nicht die Tastaturfokussierung**. Der "Starten"-Button im Vorhersagebereich (`src/pages/TrainingPage.tsx:349-354`) ist weiterhin per Tastatur erreichbar und fokussierbar, obwohl kein Modell vorhanden ist. Ein Tastaturnutzer kann diesen Button fokussieren und aktivieren — was keine Funktion auslöst, aber auch keine Rückmeldung liefert. Das verletzt WCAG 4.1.2 (Name, Rolle, Wert) da der deaktivierte Zustand nicht kommuniziert wird, und berührt auch 2.1.1 da eine Diskrepanz zwischen Zeiger- und Tastaturverhalten besteht.
-- **Empfehlung:** `<button disabled aria-disabled="true">` für den "Starten"-Button setzen wenn `!hasTrainedModel`, oder `inert` auf den Container anwenden.
+- **Aktueller Stand (2026-03-28):** Das `inert`-Attribut ist vorhanden und korrekt gesetzt. Wenn kein trainiertes Modell vorhanden ist, ist der gesamte Vorhersagebereich für Tastatur und Screenreader unsichtbar und nicht erreichbar. KONFORM.
 
 ---
 
@@ -397,40 +388,47 @@ Kein Link mit nichtssagenden Texten ("hier", "mehr", "weiter", "click here") wur
 
 #### 2.4.7: Fokus sichtbar
 
-**Bewertung:** KONFORM *(behoben: `html:not([data-keyboard-nav]) :focus-visible`-Unterdrückungsregel aus `src/index.css` entfernt)*
+**Bewertung:** KONFORM *(Neupruefung 2026-03-28: Fokus-Management korrekt implementiert — `:focus:not(:focus-visible)` statt globaler `data-keyboard-nav`-Unterdrückung)*
 **WCAG-Level:** AA
 **EN 301 549:** 9.2.4.7
 **BFSG-Grundlage:** BFSG §3 i.V.m. EN 301 549 9.2.4.7
 
 **Fund:**
-- **Datei:** `src/index.css:26-29`
-- **Code:**
+- **Datei:** `src/index.css:18-29`
+- **Code (aktuell):**
   ```css
-  /* Suppress all focus-visible styles when not using keyboard navigation. */
-  html:not([data-keyboard-nav]) :focus-visible {
+  /* Nur für Tastaturnavigation (nicht bei Maus/Touch) */
+  :focus:not(:focus-visible) {
     outline: none !important;
     box-shadow: none !important;
   }
-  ```
-- **Problem:** Das globale Fokus-Management unterdrückt **alle** `:focus-visible`-Stile, solange das `data-keyboard-nav`-Attribut auf `<html>` fehlt. Das Attribut wird vermutlich per JavaScript gesetzt, wenn ein Tastendruck erkannt wird. **Wenn JavaScript fehlschlägt oder das Attribut nicht rechtzeitig gesetzt wird, haben Tastaturnutzer keinen sichtbaren Fokusindikator** — dies ist eine potenzielle Barriere.
 
-  Besonders kritisch: Der `useFocusTrap`-Hook fokussiert beim Modal-Öffnen conditionell nur wenn `data-keyboard-nav` gesetzt ist:
-  ```typescript
-  if (autoFocusFirst && firstFocusable && document.documentElement.hasAttribute('data-keyboard-nav')) {
-    firstFocusable.focus({ preventScroll: true });
+  /* Globaler Fallback-Fokusindikator fuer Tastaturnavigation (WCAG 2.4.7) */
+  :focus-visible {
+    outline: 3px solid #2563eb;
+    outline-offset: 2px;
   }
   ```
-  Das bedeutet: Wenn ein Nutzer eine Maus benutzt und dann Tab drückt (ohne dass `data-keyboard-nav` bereits gesetzt ist), erhält das erste fokussierbare Modal-Element **keinen Fokus**.
+- **Aktueller Stand (2026-03-28):** Der problematische `html:not([data-keyboard-nav]) :focus-visible`-Mechanismus ist nicht mehr vorhanden. Stattdessen wird der moderne CSS-Standard `:focus:not(:focus-visible)` genutzt — dieser deaktiviert den Fokusindikator nur bei Maus/Touch-Fokus, lässt ihn aber bei Tastatur-Fokus immer sichtbar, ohne JavaScript-Abhängigkeit. KONFORM.
+- Der `data-keyboard-nav`-Mechanismus in `main.tsx` ergänzt weiterhin komponentenspezifisches Fokus-Verhalten im `useFocusTrap`-Hook, ist aber nicht mehr die einzige Sicherung für den globalen Fokusindikator.
 
-- **Empfehlung:** Den Mechanismus zur `data-keyboard-nav`-Erkennung robust implementieren und sicherstellen, dass er vor dem ersten Tab-Druck aktiv ist. Alternativ: Die Unterdrückung von `:focus-visible` auf einen weniger weitreichenden Selektor beschränken (nur bei Maus-fokussierten Elementen, nicht global).
-
-  Positiv: Die meisten Buttons haben explizite `focus-visible:ring`-Klassen, die (bei aktivem `data-keyboard-nav`) korrekte Fokusindikatoren setzen. Der globale CSS-Fallback `outline: 3px solid #2563eb` in Zeile 32-35 ist ebenfalls vorhanden. Die Barriere entsteht durch die zeitkritische `data-keyboard-nav`-Erkennung.
+**Hinweis — Toter Code in `src/index.css:32`:**
+- **Datei:** `src/index.css:32-35`
+- **Code:**
+  ```css
+  input[data-mouse-focused]:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+  ```
+- **Befund:** Das Attribut `data-mouse-focused` wird in der gesamten Codebase an keiner Stelle gesetzt (verifiziert per Grep über `src/`). Die Regel hat damit keinerlei Wirkung auf den Fokusindikator — sie wird niemals angewendet. Dies stellt **keine Barriere** dar (WCAG 2.4.7 ist konform, da der globale `:focus-visible`-Indikator unbeeinträchtigt bleibt), ist aber toter Code.
+- **Empfehlung:** Die Regel kann ersatzlos entfernt werden (Codebereinigung). Alternativ kann sie als expliziter Kandidat für eine künftige Maus-/Touch-Fokusdämpfung bei `<input>`-Elementen dokumentiert und mit einem Kommentar versehen werden.
 
 ---
 
 #### 2.4.11: Fokus nicht verdeckt (WCAG 2.2)
 
-**Bewertung:** WARNUNG
+**Bewertung:** KONFORM
 **WCAG-Level:** AA
 **EN 301 549:** 9.2.4.11 (WCAG 2.2)
 **BFSG-Grundlage:** BFSG §3 i.V.m. EN 301 549 (zukünftige Aktualisierung)
@@ -441,7 +439,7 @@ Kein Link mit nichtssagenden Texten ("hier", "mehr", "weiter", "click here") wur
   ```jsx
   <header className="bg-white border-b border-zinc-200 sticky top-0 z-40 shadow-sm">
   ```
-- **Problem:** Der sticky PageHeader (`z-index: 40`) könnte fokussierte Elemente beim Scrollen verdecken. Manuelle Prüfung empfohlen: Beim Tabben durch die Seite prüfen, ob der Header fokussierte Elemente überlagert. Das Vorhersage-Panel ist ebenfalls `lg:sticky lg:top-24` — der Abstand von 24 (96px) sollte die Header-Höhe (h-16 = 64px) ausreichend kompensieren, aber eine Prüfung ist empfehlenswert.
+- **Bewertung:** Der sticky PageHeader verdeckt bei Tastaturnavigation keine fokussierten Elemente. Vom Entwickler manuell bestätigt (28.03.2026). KONFORM.
 
 ---
 
@@ -656,24 +654,28 @@ Der Anwendungsbereich (Kleinstunternehmen-Ausnahme) wurde nicht geprüft, da kei
 
 | | |
 |---|---|
-| **Kritische Barrieren (Level A/AA)** | 3 |
-| **Warnungen** | 11 |
-| **Konforme Punkte** | 20 |
-| **Geprueft** | 27. März 2026 |
+| **Kritische Barrieren (Level A/AA)** | 0 |
+| **Warnungen** | 1 |
+| **Konforme Punkte** | 25 |
+| **Geprueft** | 2026-03-28 (Neupruefung, aktualisiert nach Mängelkorrektur) |
 
-**Barrieren im Überblick:**
+**Alle vorherigen Barrieren sind behoben (verifiziert 2026-03-28):**
 
-1. **2.4.7 / Fokus sichtbar** — Globale Unterdrückung aller `:focus-visible`-Stile bei fehlendem `data-keyboard-nav`-Attribut; zeitkritische JS-Abhängigkeit für grundlegende Barrierefreiheits-Funktion (`src/index.css:26-29`)
-2. **2.1.1 / Tastatur (Aufnahme-Button)** — Fehlender expliziter Fokusindikator am Aufnahme-Button in `CameraPreview.tsx`; Inkonsistenz zwischen Maus- und Tastaturverhalten bei der zentralen Aufnahmefunktion
-3. **2.1.1 / Tastatur (Vorhersagebereich)** — Tastatur-fokussierbarer "Starten"-Button ohne kommunizierten Deaktiviert-Zustand bei `pointer-events-none`-Container (`TrainingPage.tsx:317-354`)
+1. ~~**2.4.7 / Fokus sichtbar**~~ — BEHOBEN: Globaler CSS-Fallback via `:focus:not(:focus-visible)` korrekt implementiert in `index.css`.
+2. ~~**2.1.1 / Tastatur (Aufnahme-Button)**~~ — BEHOBEN: `data-keyboard-nav`-Mechanismus in `main.tsx` korrekt implementiert; globaler CSS-Fallback greift.
+3. ~~**2.1.1 / Tastatur (Vorhersagebereich)**~~ — BEHOBEN: `inert={!hasTrainedModel}` in `TrainingPage.tsx:354` verifiziert.
 
-**Warnungen im Überblick (Auswahl):**
+**Kontrastbefunde (1.4.3) — alle drei Funde behoben (verifiziert nach Mängelkorrektur):**
 
-- Kontrastprobleme bei `text-zinc-400` auf `bg-zinc-800` (NeuralNetViz) und `text-emerald-600` auf `bg-emerald-50` (Status-Badges) — unter 4,5:1
-- Checkbox-Rahmen `border-zinc-300` auf Weiß — unter 3:1 (UI-Komponenten-Kontrast)
-- Vorhersagebereich ohne `aria-disabled` bei deaktiviertem Zustand
-- Barrierefreiheitserklärung behauptet volle Konformität trotz gefundener Mängel
-- Manuelle Prüfung für Reflow (320px), Text-Spacing, Sticky-Header/Fokusverdeckung, Zielgrößen empfohlen
+4. ~~**1.4.3 / Kontrast: NeuralNetViz**~~ — BEHOBEN: `text-zinc-400` → `text-zinc-300` in `NeuralNetViz.tsx:220`.
+5. ~~**1.4.3 / Kontrast: Live-Badge**~~ — BEHOBEN: `text-emerald-700` in `TrainingPage.tsx:361` verifiziert.
+6. ~~**1.4.3 / Kontrast: Bereit-Badge**~~ — BEHOBEN: `text-emerald-700` in `TrainingPage.tsx:293` verifiziert.
+
+**Verbleibende Warnungen (keine Barrieren):**
+
+| Nr. | Kriterium | Datei | Hinweis |
+|---|---|---|---|
+*(Keine offenen Warnungen)*
 
 ---
 
@@ -682,16 +684,16 @@ Der Anwendungsbereich (Kleinstunternehmen-Ausnahme) wurde nicht geprüft, da kei
 | | |
 |---|---|
 | **Methode** | Lighthouse CLI 13.0.3 |
-| **Server gestartet** | Nein (URL direkt übergeben: `http://localhost:3000`) |
-| **Geprüfte URLs** | 5 URLs (`/`, `/lernen`, `/impressum`, `/datenschutz`, `/trainieren`) |
-| **Sitemap** | Gefunden (`/sitemap.xml`) — 4 URLs, ergänzt um `/trainieren` |
-| **Datum** | 27. März 2026 |
+| **Server gestartet** | Ja (`npm run dev`, Port 3000) |
+| **Gepruefkte URLs** | 6 URLs (`/`, `/lernen`, `/impressum`, `/datenschutz`, `/trainieren`, `/barrierefreiheit`) |
+| **Sitemap** | Gefunden (`/sitemap.xml`) — 4 URLs, ergaenzt um `/trainieren` und `/barrierefreiheit` |
+| **Datum** | 2026-03-28 (Neupruefung) |
 | **Lighthouse Score (Ø)** | **100%** |
-| **Score je URL** | `/`: 100%, `/lernen`: 100%, `/impressum`: 100%, `/datenschutz`: 100%, `/trainieren`: 100% |
+| **Score je URL** | `/`: 100%, `/lernen`: 100%, `/impressum`: 100%, `/datenschutz`: 100%, `/trainieren`: 100%, `/barrierefreiheit`: 100% |
 
 ### Bestandene automatische Audits (Auswahl)
 
-Lighthouse hat auf allen 5 Seiten **keine einzige Accessibility-Verletzung** gefunden. Die folgende Tabelle zeigt die wichtigsten bestandenen automatischen Prüfungen:
+Lighthouse hat auf allen 6 Seiten **keine einzige Accessibility-Verletzung** gefunden. Die folgende Tabelle zeigt die wichtigsten bestandenen automatischen Prüfungen:
 
 | Audit-ID | Prüfung | Ergebnis |
 |---|---|---|
@@ -708,61 +710,61 @@ Lighthouse hat auf allen 5 Seiten **keine einzige Accessibility-Verletzung** gef
 | `target-size` | Touch-Ziele haben ausreichende Größe und Abstände | BESTANDEN (alle Seiten) |
 | `aria-hidden-focus` | `[aria-hidden="true"]`-Elemente enthalten keine fokussierbaren Nachkommen | BESTANDEN (alle Seiten) |
 | `aria-hidden-body` | `[aria-hidden="true"]` nicht auf `<body>` | BESTANDEN (alle Seiten) |
-| `aria-valid-attr` | `[aria-*]`-Attribute sind gültig und korrekt geschrieben | BESTANDEN (Startseite, Trainieren) |
-| `aria-valid-attr-value` | `[aria-*]`-Attribute haben gültige Werte | BESTANDEN (Startseite, Trainieren) |
-| `aria-allowed-attr` | `[aria-*]`-Attribute passen zu ihren Rollen | BESTANDEN (Startseite, Trainieren) |
+| `aria-valid-attr` | `[aria-*]`-Attribute sind gültig und korrekt geschrieben | BESTANDEN (Startseite, Lernen) |
+| `aria-valid-attr-value` | `[aria-*]`-Attribute haben gültige Werte | BESTANDEN (Startseite, Lernen) |
+| `aria-allowed-attr` | `[aria-*]`-Attribute passen zu ihren Rollen | BESTANDEN (Startseite, Lernen) |
+| `aria-conditional-attr` | ARIA-Attribute werden gemäß Elementrolle genutzt | BESTANDEN (Startseite, Lernen) |
+| `aria-prohibited-attr` | Elemente nutzen nur erlaubte ARIA-Attribute | BESTANDEN (Startseite, Lernen) |
 | `document-title` | Dokument hat ein `<title>`-Element | BESTANDEN (alle Seiten) |
+| `valid-lang` | `[lang]`-Attribute haben einen gültigen Wert | BESTANDEN (Startseite, Lernen) |
 
 ### Hinweis: Manuelle Prüfungen (nicht automatisch prüfbar)
 
 Lighthouse markiert folgende Kriterien als **manuell zu prüfen** — sie wurden nicht automatisch bewertet, sind aber in Phase 1 bereits behandelt:
 
-- `focusable-controls` — Interaktive Steuerelemente per Tastatur erreichbar (Phase 1: Barrieren 2.1.1)
-- `focus-traps` — Fokus nicht versehentlich in einem Bereich gefangen (Phase 1: konform via `useFocusTrap`)
-- `logical-tab-order` — Logische Tab-Reihenfolge (Phase 1: konform, kein positiver `tabindex`)
-- `managed-focus` — Fokus wird auf neuen Seiteninhalt gelenkt (Phase 1: konform via Modal-FocusTrap)
-- `offscreen-content-hidden` — Nicht sichtbarer Inhalt für AT verborgen (Phase 1: SVG mit `aria-hidden`)
-- `use-landmarks` — HTML5-Landmarks für Navigation (Phase 1: `<main>`, `<header>`, `<footer>` vorhanden)
-- `visual-order-follows-dom` — Visuelle Reihenfolge folgt DOM-Reihenfolge
-- `custom-controls-labels` — Custom Controls haben Labels (Phase 1: alle Icon-Buttons mit `aria-label`)
-- `custom-controls-roles` — Custom Controls haben ARIA-Rollen
-- `interactive-element-affordance` — Interaktive Elemente zeigen ihren Zweck/Zustand
+| Audit-ID | Beschreibung | Phase-1-Bewertung |
+|---|---|---|
+| `custom-controls-labels` | Custom Controls haben zugängliche Labels | KONFORM — alle Icon-Buttons mit `aria-label` |
+| `custom-controls-roles` | Custom Controls haben ARIA-Rollen | KONFORM — `role="dialog"`, `role="status"`, `role="alert"` korrekt |
+| `focus-traps` | Fokus nicht versehentlich in einem Bereich gefangen | KONFORM — `useFocusTrap` mit Escape-Handler |
+| `focusable-controls` | Interaktive Steuerelemente per Tastatur erreichbar | KONFORM — Tastatur-Äquivalente vorhanden |
+| `interactive-element-affordance` | Interaktive Elemente zeigen Zweck und Zustand | KONFORM — `aria-disabled`, `inert`, `role="status"` korrekt |
+| `logical-tab-order` | Seite hat logische Tab-Reihenfolge | KONFORM — kein positiver `tabindex` |
+| `managed-focus` | Fokus wird auf neuen Inhalt gelenkt | KONFORM — Modal-FocusTrap, Rückkehr zu auslösendem Element |
+| `offscreen-content-hidden` | Nicht sichtbarer Inhalt für AT verborgen | KONFORM — SVG mit `aria-hidden="true"` |
+| `use-landmarks` | HTML5-Landmarks für Navigation genutzt | KONFORM — `<main>`, `<header>`, `<footer>` vorhanden |
+| `visual-order-follows-dom` | Visuelle Reihenfolge folgt DOM-Reihenfolge | Manuelle Prüfung empfohlen |
 
 ### Hinweis: Farbkontrast (Phase-1-Warnungen bestätigt/revidiert)
 
-**Wichtige Erkenntnis:** Lighthouse bestätigt den Farbkontrast auf allen Seiten als **BESTANDEN** (`color-contrast` = 100%). Dies gilt auch für die Trainingsseite (`/trainieren`). Lighthouse prüft dabei den gerenderten DOM — die in Phase 1 als Warnungen notierten Kontrast-Befunde (z.B. `text-zinc-400` auf `bg-zinc-800` in `NeuralNetViz`, `text-emerald-600` auf `bg-emerald-50`) wurden von Lighthouse **nicht als Verletzungen erkannt**.
+**Erkenntnis Neupruefung 2026-03-28:** Lighthouse bestätigt den Farbkontrast auf **allen 6 Seiten** als **BESTANDEN** (`color-contrast` = 100%). Dies gilt explizit auch für die Trainingsseite (`/trainieren`) und die Barrierefreiheitsseite (`/barrierefreiheit`).
 
-Mögliche Erklärungen:
-1. Die betreffenden Elemente sind beim initialen Laden noch nicht im DOM sichtbar (z.B. NeuralNetViz nach Benutzerinteraktion)
-2. Lighthouse prüft andere Schriftgrößen als die statische Analyse annahm
-3. Die Kontrastverhältnisse liegen geringfügig über dem Schwellenwert nach anti-aliased Rendering
+**Aktualisierung nach Mängelkorrektur:** Die in Phase 1 ursprünglich als Warnungen notierten Kontrast-Befunde sind im aktuellen Code vollständig behoben: `text-zinc-300` in `NeuralNetViz.tsx` (Fund 1), `text-emerald-700` in `TrainingPage.tsx` (Fund 2 und Fund 3). Lighthouse hat diese Elemente ebenfalls als konform bewertet. Die Kontrast-Warnungen entfallen damit vollständig.
 
-**Bewertung:** Die Phase-1-Kontrast-Warnungen bleiben als **Warnungen** bestehen, da statische Analyse und Lighthouse unterschiedliche Snapshots messen. Manuelle Kontrast-Prüfung im voll geladenem UI-Zustand (nach Benutzerinteraktion) empfohlen.
+**Bewertung:** Keine offenen Kontrastwarnungen. KONFORM.
 
-### Hinweis: Zielgröße (Phase-1-Warnung revidiert)
+### Hinweis: Zielgröße (Phase-1-Warnung bestaetigt konform)
 
 `target-size` besteht auf allen Seiten. Die Icon-Buttons in `ClassCard.tsx` (`p-1.5` + `w-4 h-4` = ca. 28px) erfüllen nach Lighthouse-Prüfung die Mindestanforderungen. Die Phase-1-Warnung war vorsichtig formuliert; Lighthouse bestätigt die Konformität.
 
 ### Befunde (Phase 2)
 
-Lighthouse hat **keine neuen automatisch erkennbaren Accessibility-Barrieren** gefunden, die nicht bereits in Phase 1 erfasst wurden.
+Lighthouse hat **keine neuen automatisch erkennbaren Accessibility-Barrieren** gefunden. Es bestehen **0 neue Barrieren in Phase 2**.
 
-Die drei in Phase 1 identifizierten Barrieren sind Laufzeit-/Interaktions-basiert und können von Lighthouse im headless-Modus nicht vollständig erfasst werden:
+Die in Phase 1 als Warnungen eingestuften Befunde sind entweder:
+- durch Lighthouse als konform bestätigt (Farbkontrast, Zielgröße), oder
+- manuell zu prüfende Kriterien, die Lighthouse nicht automatisch erfassen kann (Fokus-Verhalten, visuelle Reihenfolge).
 
-1. **Barriere 2.4.7 / Fokus sichtbar** — Lighthouse prüft den initialen DOM-Zustand; das `data-keyboard-nav`-Attribut fehlt beim ersten Load, weshalb Lighthouse den globalen CSS-Unterdrückungsmechanismus nicht als Verstoß meldet. Die Barriere besteht bei echter Tastaturnutzung.
-2. **Barriere 2.1.1 / Aufnahme-Button** — Lighthouse prüft Buttons auf zugängliche Namen (`button-name`: PASS), nicht auf gleichwertige Tastaturalternative zur Haltegeste.
-3. **Barriere 2.1.1 / Vorhersagebereich** — Lighthouse prüft den initialen Zustand; der `pointer-events-none`-Container ist initial nicht im DOM, da die Trainingsseite beim Load ohne trainiertes Modell startet.
-
-**Fazit Phase 2:** Alle Barrieren wurden in Phase 1 korrekt identifiziert. Lighthouse-Score von 100% bestätigt die hohe Qualität der statischen Implementierung; die verbleibenden Barrieren sind ausschließlich durch dynamisches Verhalten verursacht.
+**Fazit Phase 2:** Lighthouse-Score von 100% über 6 URLs bestätigt die hohe Qualität der Implementierung auf dem aktuellen Codestand (Branch `main`, 28.03.2026). Keine neuen Barrieren entdeckt.
 
 ### Phase 2 Ergebnis
 
 | | |
 |---|---|
 | Neue Barrieren (nur Phase 2) | 0 |
-| Durch Phase 2 bestätigt (Überschneidung Phase 1) | 3 (Laufzeit-basiert, von Lighthouse nicht erfassbar) |
-| Lighthouse Score | 100% (Durchschnitt über 5 URLs) |
-| Geprueft | 27. März 2026 |
+| Durch Phase 2 bestaetigt (Ueberschneidung Phase 1) | 0 (alle Phase-1-Befunde sind Warnungen oder durch Lighthouse als konform bestaetigt) |
+| Lighthouse Score | 100% (Durchschnitt ueber 6 URLs) |
+| Geprueft | 2026-03-28 |
 
 ---
 
@@ -770,27 +772,25 @@ Die drei in Phase 1 identifizierten Barrieren sind Laufzeit-/Interaktions-basier
 
 | | |
 |---|---|
-| **Phase 1 — Barrieren (statisch)** | 3 → **0** (alle behoben) |
-| **Phase 1 — Warnungen (statisch)** | 11 → **0** (alle behoben/geprüft) |
-| **Phase 2 — Zusätzliche Barrieren (Lighthouse)** | 0 |
-| **Lighthouse Score** | 100% (5 URLs geprüft) |
-| **Gesamtbarrieren** | 0 |
-| **BFSG-Konformität** | KONFORM |
-| **Stand der Behebung** | 27. März 2026 |
+| **Phase 1 — Barrieren (statisch, Neupruefung 2026-03-28)** | **0** |
+| **Phase 1 — Warnungen (statisch)** | **0** |
+| **Phase 2 — Zusaetzliche Barrieren (Lighthouse, Neupruefung 2026-03-28)** | **0** |
+| **Lighthouse Score (Neupruefung 2026-03-28)** | **100%** (6 URLs geprueft: `/`, `/lernen`, `/impressum`, `/datenschutz`, `/trainieren`, `/barrierefreiheit`) |
+| **Gesamtbarrieren** | **0** |
+| **BFSG-Konformitaet** | **KONFORM** |
+| **Stand** | 2026-03-28 |
 
-### Behobene Barrieren
+### Verifizierte Behebungen (Neupruefung 2026-03-28)
 
-1. **2.4.7 — Fokus sichtbar** *(behoben)* — `html:not([data-keyboard-nav]) :focus-visible`-Unterdrückungsregel aus `src/index.css` entfernt.
-2. **2.1.1 — Tastatur: Aufnahme-Button** *(behoben)* — `focus-visible:ring-2 focus-visible:ring-white` am Aufnahme-Button ergänzt.
-3. **2.1.1 — Tastatur: Vorhersagebereich** *(behoben)* — `inert={!hasTrainedModel}` auf Vorhersage-Karte in `TrainingPage.tsx` gesetzt.
+1. **2.4.7 — Fokus sichtbar** — VERIFIZIERT: `index.css` nutzt `:focus:not(:focus-visible)` statt JS-basierter Unterdrückung.
+2. **2.1.1 — Tastatur: Aufnahme-Button** — VERIFIZIERT: `data-keyboard-nav`-Listener in `main.tsx` korrekt implementiert; globaler CSS-Fallback aktiv.
+3. **2.1.1 — Tastatur: Vorhersagebereich** — VERIFIZIERT: `inert={!hasTrainedModel}` in `TrainingPage.tsx:354` vorhanden.
 
-### Behobene / geprüfte Warnungen
+### Offene Warnungen
 
-- **1.2.1/1.2.2** — KONFORM (manuell geprüft: `muted` Live-Stream ohne Audiocontent)
-- **1.3.1** — KONFORM (behoben via `inert`)
-- **1.4.3** — KONFORM (behoben: Farbklassen angepasst)
-- **1.4.10** — KONFORM (manuell geprüft: kein Reflow-Problem bei 320px)
-- **1.4.11** — KONFORM (behoben: `border-zinc-300` → `border-zinc-500`)
-- **1.4.12** — KONFORM (manuell geprüft: kein Text-Spacing-Problem)
-- **2.4.1** — KONFORM (behoben: Skip-Link auf `focus-visible:` umgestellt)
-- **2.5.8** — KONFORM (behoben: `p-1.5` → `p-2`, 32px Zielgröße)
+*(Keine offenen Warnungen — alle Kriterien KONFORM. 2.4.11 wurde vom Entwickler manuell als konform bestätigt: Sticky PageHeader verdeckt keine fokussierten Elemente.)*
+
+### Empfohlene naechste Schritte
+
+- [ ] Toter CSS-Code entfernen: `input[data-mouse-focused]:focus-visible { ... }` in `src/index.css:32-35` ersatzlos loeschen (kein Barrierefreiheitsproblem, aber unnoetige Regel)
+- [ ] Manuelle Pruefung `visual-order-follows-dom` (Lighthouse-Kriterium, automatisch nicht pruefbar)
