@@ -12,7 +12,6 @@ export default function useScrollLock(lock: boolean) {
     if (lock) {
       lockCount++;
       
-      // If this is the first lock, apply the style
       if (lockCount === 1) {
         document.body.style.overflow = 'hidden';
         document.documentElement.style.overflow = 'hidden';
@@ -21,7 +20,6 @@ export default function useScrollLock(lock: boolean) {
       
       return () => {
         lockCount--;
-        // Only restore scroll if no other components are locking it
         if (lockCount === 0) {
           document.body.style.overflow = '';
           document.documentElement.style.overflow = '';

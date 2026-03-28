@@ -239,12 +239,9 @@ export default function LandingPage() {
           <p className="text-xl text-zinc-400 mb-10">
             Du hast gelernt, wie KI sieht und entscheidet. Jetzt ist es Zeit, dein eigenes Modell zu trainieren und auszuprobieren!
           </p>
-          <button
-            onClick={() => navigate('/lernen')}
-            className="inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-all hover:scale-105 shadow-xl shadow-red-900/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-600"
-          >
+          <Button variant="cta" size="lg" onClick={() => navigate('/lernen')} className="hover:scale-105 shadow-xl shadow-red-900/20 font-bold px-10 py-5 text-xl">
             Jetzt ausprobieren <ArrowRight className="ml-2 w-6 h-6" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
       </section>
 
