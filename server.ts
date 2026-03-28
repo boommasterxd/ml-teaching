@@ -12,12 +12,21 @@ import { rateLimit } from 'express-rate-limit';
 import compression from 'compression';
 import { SERVER } from './server.constants.js';
 
+const REQUIRED_ENV = ['NODE_ENV'] as const;
+const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missingEnv.length > 0) {
+  console.error('FEHLER: Folgende Umgebungsvariablen fehlen:');
+  missingEnv.forEach((key) => console.error(`  - ${key}`));
+  process.exit(1);
+}
+
 const rootDir = process.cwd();
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
 
 app.use(compression());
+app.use(express.json({ limit: '500kb' }));
 
 // Trust the first proxy (required for Traefik / reverse proxy setups)
 app.set('trust proxy', 1);
@@ -44,15 +53,21 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: SERVER.RATE_LIMIT_WINDOW_MS,
-  max: SERVER.RATE_LIMIT_MAX_REQUESTS,
+// Rate limiting — nur auf /api/-Pfade angewendet
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: { error: 'Zu viele Anfragen von dieser IP, bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests from this IP. Please try again later.' }
+  validate: { trustProxy: false, xForwardedForHeader: false },
 });
-app.use(limiter);
+app.use('/api/', globalLimiter);
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+  process.exit(1);
+});
 
 /** Configures either Vite dev middleware or static file serving and starts listening. */
 async function setupServer() {

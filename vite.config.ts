@@ -16,7 +16,8 @@ export default defineConfig(() => {
     plugins: [
       react(),
       tailwindcss(),
-      compression(),
+      compression({ algorithm: 'gzip', exclude: [/\.(br)$/, /\.(gz)$/] } as any),
+      compression({ algorithm: 'brotliCompress', exclude: [/\.(br)$/, /\.(gz)$/] } as any),
       ViteImageOptimizer({
         png: {
           quality: 80,
@@ -27,9 +28,8 @@ export default defineConfig(() => {
         jpg: {
           quality: 80,
         },
-        webp: {
-          lossless: true,
-        },
+        webp: { lossless: false, quality: 80 },
+        avif: { lossless: false, quality: 70 },
       }),
     ],
     build: {
