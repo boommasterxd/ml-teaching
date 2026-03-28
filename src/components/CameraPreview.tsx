@@ -17,6 +17,7 @@ export interface CameraPreviewProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
 }
 
+/** Renders a camera feed with hold-to-record and file-upload controls for a single class. */
 export default function CameraPreview({
   stream,
   facingMode,
