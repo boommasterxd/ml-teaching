@@ -13,6 +13,7 @@ export interface ImageGalleryProps {
   onRemoveImages: (ids: string[]) => void;
 }
 
+/** Scrollable thumbnail grid for training images with selectable bulk-delete mode. */
 const ImageGallery = memo(function ImageGallery({
   images,
   color,
