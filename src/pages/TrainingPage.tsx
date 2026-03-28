@@ -2,7 +2,7 @@
  * Training page where users can collect image data for different classes,
  * train a custom KNN classifier on top of MobileNet, and test the model in real-time.
  */
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '../hooks/usePageTitle';
 import * as tf from '@tensorflow/tfjs';
@@ -52,6 +52,8 @@ export default function TrainingPage() {
   // Shared video ref used by useCameraStream (stream attach) and usePredictionLoop (inference)
   const predictVideoRef = useRef<HTMLVideoElement>(null);
   const mainHeadingRef = useRef<HTMLHeadingElement>(null);
+  // Reused across addImageToClass calls to avoid GC pressure at 10 frames/sec
+  const thumbnailCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const { classifier, setClassifier, mobilenetModel, isModelLoading, loadingText } =
     useModelLoader(hasConsented, setError);
@@ -106,11 +108,15 @@ export default function TrainingPage() {
     const features = mobilenetModel.infer(img, true) as tf.Tensor;
     const featureArray = Array.from(await features.data()) as number[];
 
-    const canvas = document.createElement('canvas');
-    canvas.width = ML.FEATURE_CANVAS_SIZE;
-    canvas.height = ML.FEATURE_CANVAS_SIZE;
+    if (!thumbnailCanvasRef.current) {
+      thumbnailCanvasRef.current = document.createElement('canvas');
+      thumbnailCanvasRef.current.width = ML.FEATURE_CANVAS_SIZE;
+      thumbnailCanvasRef.current.height = ML.FEATURE_CANVAS_SIZE;
+    }
+    const canvas = thumbnailCanvasRef.current;
     const ctx = canvas.getContext('2d');
     if (ctx) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       const size = Math.min(sourceWidth, sourceHeight);
       const startX = (sourceWidth - size) / 2;
       const startY = (sourceHeight - size) / 2;
@@ -123,7 +129,7 @@ export default function TrainingPage() {
     const dataUrl = canvas.toDataURL('image/jpeg', ML.THUMBNAIL_QUALITY);
 
     const newImage: MLImage = {
-      id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       dataUrl,
       featureArray,
     };
@@ -142,6 +148,16 @@ export default function TrainingPage() {
   const addImageExample = useCallback((classId: string, imageElement: HTMLImageElement) => {
     addImageToClass(classId, imageElement, false);
   }, [addImageToClass]);
+
+  /** Pre-computed set of class names that appear more than once (O(n) vs O(n²) per render). */
+  const duplicateClassNames = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of classes) {
+      const name = c.name.trim();
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+    return new Set([...counts.entries()].filter(([, n]) => n > 1).map(([name]) => name));
+  }, [classes]);
 
   /** Resets all classes, the trained model, and prediction state. */
   const clearAll = useCallback(() => {
@@ -173,16 +189,6 @@ export default function TrainingPage() {
     setSelectedImage(prev => prev?.classId === id ? null : prev);
   }, [clearClass]);
 
-  /** Captures a video frame and adds it as a training example for the given class. */
-  const handleAddExample = useCallback((classId: string, video: HTMLVideoElement) => {
-    addExample(classId, video);
-  }, [addExample]);
-
-  /** Adds an uploaded image as a training example for the given class. */
-  const handleAddImageExample = useCallback((classId: string, img: HTMLImageElement) => {
-    addImageExample(classId, img);
-  }, [addImageExample]);
-
   /** Opens the delete-class confirmation dialog for the given class. */
   const handleRequestRemove = useCallback((classId: string) => {
     setClassToRemove(classId);
@@ -192,11 +198,6 @@ export default function TrainingPage() {
   const handleRequestClear = useCallback((classId: string) => {
     setClassToClear(classId);
   }, []);
-
-  /** Updates the display name of a class. */
-  const handleUpdateClassName = useCallback((classId: string, name: string) => {
-    updateClassName(classId, name);
-  }, [updateClassName]);
 
   /** Opens the image preview modal for the selected training image. */
   const handleImageClick = useCallback((classId: string, img: MLImage) => {
@@ -272,15 +273,15 @@ export default function TrainingPage() {
                 <ClassCard
                   key={cls.id}
                   cls={cls}
-                  isDuplicate={classes.filter(c => c.name.trim() === cls.name.trim()).length > 1}
+                  isDuplicate={duplicateClassNames.has(cls.name.trim())}
                   stream={stream}
                   facingMode={facingMode}
-                  onAddExample={handleAddExample}
-                  onAddImageExample={handleAddImageExample}
+                  onAddExample={addExample}
+                  onAddImageExample={addImageExample}
                   onRemove={handleRequestRemove}
                   onClear={handleRequestClear}
                   onRemoveImages={handleRemoveImages}
-                  onUpdateName={handleUpdateClassName}
+                  onUpdateName={updateClassName}
                   onImageClick={handleImageClick}
                 />
               ))

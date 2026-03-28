@@ -26,3 +26,7 @@ export const MODEL_LOAD_RETRY = {
   MAX_ATTEMPTS: 3,
   BASE_DELAY_MS: 1000,
 } as const;
+
+export const PREDICTION = {
+  INTERVAL_MS: 1000 / 15,
+} as const;

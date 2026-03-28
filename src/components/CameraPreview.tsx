@@ -41,12 +41,10 @@ export default function CameraPreview({
     if (stream) {
       videoElement.srcObject = stream;
     } else {
-      // Clear any previous stream when no stream is provided
       videoElement.srcObject = null;
     }
 
     return () => {
-      // On cleanup, clear the srcObject if it still points to this stream
       if (videoElement.srcObject === stream) {
         videoElement.srcObject = null;
       }
