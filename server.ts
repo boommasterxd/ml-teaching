@@ -53,7 +53,7 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting — nur auf /api/-Pfade angewendet
+// Rate limiting — applied to /api/ routes only
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
