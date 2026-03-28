@@ -1,5 +1,5 @@
 /**
- * Accessibility statement page (BFSG §14 + Annex 3 / WCAG 2.1 AA compliance).
+ * Accessibility statement page (freiwillige BFSG-Erklärung gemäß Muster-Template).
  */
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
@@ -14,61 +14,84 @@ export default function AccessibilityPage() {
     <PageLayout>
       <PageHeader title="Barrierefreiheitserklärung" />
       <PageContent labelledBy="accessibility-title">
-          <h1 id="accessibility-title" className="text-2xl sm:text-3xl font-extrabold text-zinc-900 mb-8 border-b border-zinc-100 pb-4">
-            Barrierefreiheitserklärung
-          </h1>
+        <h1 id="accessibility-title" className="text-2xl sm:text-3xl font-extrabold text-zinc-900 mb-8 border-b border-zinc-100 pb-4">
+          Erklärung zur Barrierefreiheit
+        </h1>
 
-          <p className="text-zinc-600 leading-relaxed mb-6">
-            Diese Barrierefreiheitserklärung gilt für die Website <strong>KI Bilderkennung für Schüler</strong> (the-teachable-machine) und wurde gemäß § 14 des Barrierefreiheitsstärkungsgesetzes (BFSG) in Verbindung mit Anlage 3 erstellt.
-          </p>
+        <p className="text-zinc-600 leading-relaxed mb-6">
+          Diese Erklärung zur Barrierefreiheit ist eine freiwillige Erklärung. Das Barrierefreiheitsstärkungsgesetz (BFSG) gilt primär für Wirtschaftsakteure im elektronischen Geschäftsverkehr, Bankwesen und Personenverkehr. Ob diese Website in den Anwendungsbereich des BFSG fällt, ist nicht abschließend geklärt.
+        </p>
 
-          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Konformitätsstatus</h2>
-          <p className="text-zinc-600 leading-relaxed mb-4">
-            Diese Website ist nach unserem Kenntnisstand <strong>konform</strong> mit den Anforderungen der <abbr title="Web Content Accessibility Guidelines">WCAG</abbr> 2.1 Level AA, WCAG 2.2 Level AA sowie den einschlägigen Anforderungen der EN 301 549 und des BFSG.
-          </p>
+        <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Konformitätsstatus</h2>
+        <p className="text-zinc-600 leading-relaxed mb-4">
+          Diese Website ist mit den Anforderungen der Web Content Accessibility Guidelines (<abbr title="Web Content Accessibility Guidelines">WCAG</abbr>) 2.1 und 2.2 auf Stufe AA sowie dem Barrierefreiheitsstärkungsgesetz (BFSG), nach unserem Wissen, konform. Alle bekannten Barrieren wurden behoben (Stand: März 2026).
+        </p>
 
-          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Bekannte nicht barrierefreie Inhalte</h2>
-          <p className="text-zinc-600 leading-relaxed mb-4">
-            Zum Zeitpunkt der letzten Prüfung sind keine nicht barrierefreien Inhalte bekannt.
-          </p>
+        <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Technische Informationen</h2>
+        <p className="text-zinc-600 leading-relaxed mb-4">
+          Die Barrierefreiheit dieser Website wurde anhand der folgenden Technologien sichergestellt:
+        </p>
+        <ul className="list-disc list-inside text-zinc-600 leading-relaxed mb-4 space-y-1 pl-2">
+          <li>HTML5 mit semantischen Elementen</li>
+          <li><abbr title="Accessible Rich Internet Applications">ARIA</abbr> (Accessible Rich Internet Applications)</li>
+          <li>CSS3 / Tailwind CSS 4</li>
+          <li>JavaScript / TypeScript / React</li>
+          <li>TensorFlow.js (WebAssembly)</li>
+        </ul>
+        <p className="text-zinc-600 leading-relaxed mb-4">
+          Die Prüfung erfolgte durch statische Code-Analyse sowie einen Lighthouse Accessibility Audit (Score: 100&nbsp;%) auf allen Unterseiten.
+        </p>
 
-          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Feedback und Kontakt</h2>
-          <p className="text-zinc-600 leading-relaxed mb-4">
-            Sind Ihnen Barrieren auf dieser Website aufgefallen? Haben Sie Schwierigkeiten beim Zugriff auf bestimmte Inhalte oder Funktionen? Wir freuen uns über Ihr Feedback und helfen Ihnen gerne weiter.
+        <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Feedback und Kontakt</h2>
+        <p className="text-zinc-600 leading-relaxed mb-4">
+          Haben Sie Schwierigkeiten beim Zugriff auf Inhalte dieser Website oder bemerken Sie eine Barriere, die wir übersehen haben? Bitte melden Sie Barrierefreiheitsprobleme an:
+        </p>
+        <div className="space-y-2 text-zinc-600 mb-6">
+          <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+            <span className="font-semibold text-zinc-900 sm:w-20">E-Mail:</span>
+            <a
+              href="mailto:yannickschaefer@boomapps.de"
+              className="text-zinc-600 hover:text-zinc-900 underline transition-colors break-all sm:break-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
+            >
+              yannickschaefer@boomapps.de
+              <span className="sr-only"> (Barrierefreiheits-Feedback schreiben)</span>
+            </a>
           </p>
-          <div className="space-y-2 text-zinc-600 mb-6">
-            <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-              <span className="font-semibold text-zinc-900 sm:w-20">E-Mail:</span>
-              <a
-                href="mailto:yannickschaefer@boomapps.de"
-                className="text-zinc-600 hover:text-zinc-900 underline transition-colors break-all sm:break-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
-              >
-                yannickschaefer@boomapps.de
-                <span className="sr-only"> (Barrierefreiheits-Feedback schreiben)</span>
-              </a>
-            </p>
-          </div>
-          <p className="text-zinc-600 leading-relaxed mb-4">
-            Wir bemühen uns, Ihr Anliegen innerhalb von 30 Tagen zu beantworten.
-          </p>
+        </div>
+        <p className="text-zinc-600 leading-relaxed mb-4">
+          Wir bemühen uns, Rückmeldungen zu Barrierefreiheitsproblemen innerhalb von 2 Wochen zu beantworten und festgestellte Mängel zeitnah zu beheben.
+        </p>
 
-          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Durchsetzungsverfahren</h2>
-          <p className="text-zinc-600 leading-relaxed mb-4">
-            Wenn Sie nach Kontaktaufnahme mit uns keine zufriedenstellende Antwort erhalten haben, können Sie sich an die zuständige Durchsetzungsstelle wenden:
-          </p>
-          <address className="not-italic text-zinc-600 leading-relaxed mb-4 pl-4 border-l-2 border-zinc-100">
-            <p className="font-semibold text-zinc-800">Aufsichts- und Dienstleistungsdirektion (ADD) Rheinland-Pfalz</p>
-            <p>Willy-Brandt-Platz 3</p>
-            <p>54290 Trier</p>
-            <p>Telefon: <a href="tel:+4965194940" className="text-indigo-600 underline">0651 9494-0</a></p>
-            <p>E-Mail: <a href="mailto:poststelle@add.rlp.de" className="text-indigo-600 underline">poststelle@add.rlp.de</a></p>
-            <p>Website: <a href="https://add.rlp.de" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">add.rlp.de<span className="sr-only"> (öffnet in neuem Tab)</span></a></p>
-          </address>
+        <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Schlichtungsverfahren</h2>
+        <p className="text-zinc-600 leading-relaxed mb-4">
+          Sie können sich an die zuständige Schlichtungsstelle wenden, die im Rahmen des jeweiligen Landes-Behindertengleichstellungsgesetzes eingerichtet wurde. Ziel dieses Verfahrens ist es, eine einvernehmliche Lösung zwischen Ihnen und dem Betreiber der Internetseite oder mobilen Anwendung zu erreichen. Die Schlichtung ist kostenlos und erfordert keinen Rechtsbeistand.
+        </p>
+        <address className="not-italic text-zinc-600 leading-relaxed mb-4 pl-4 border-l-2 border-zinc-100">
+          <p className="font-semibold text-zinc-800">Landesbeauftragte für die Belange von Menschen mit Behinderung</p>
+          <p>Ellen Kubica</p>
+          <p>Bauhofstraße 9</p>
+          <p>55116 Mainz</p>
+          <p>Telefon: <a href="tel:+4961311650342" className="text-indigo-600 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">06131 16-5342</a></p>
+          <p>E-Mail: <a href="mailto:durchsetzungsstelle@mastd.rlp.de" className="text-indigo-600 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">durchsetzungsstelle@mastd.rlp.de</a></p>
+        </address>
 
-          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Datum der Erklärung</h2>
-          <p className="text-zinc-600 leading-relaxed">
-            Diese Erklärung wurde am <time dateTime="2026-03-26">26. März 2026</time> erstellt und zuletzt überprüft.
-          </p>
+        <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Beschwerde bei der Marktüberwachungsbehörde gemäß dem Barrierefreiheitsstärkungsgesetz (BFSG)</h2>
+        <p className="text-zinc-600 leading-relaxed mb-4">
+          Falls Sie der Meinung sind, dass die Anforderungen der Barrierefreiheit gemäß dem BFSG nicht eingehalten werden, können Sie eine Beschwerde bei der zuständigen Marktüberwachungsbehörde einreichen. Diese Behörde prüft den Sachverhalt und kann gegebenenfalls Maßnahmen zur Herstellung der Barrierefreiheit anordnen.
+        </p>
+        <address className="not-italic text-zinc-600 leading-relaxed mb-4 pl-4 border-l-2 border-zinc-100">
+          <p className="font-semibold text-zinc-800">Marktüberwachungsstelle der Länder für die Barrierefreiheit von Produkten und Dienstleistungen (MLBF)</p>
+          <p>c/o Ministerium für Arbeit, Soziales, Gesundheit und Gleichstellung Sachsen-Anhalt</p>
+          <p>Postfach 39 11 55</p>
+          <p>39135 Magdeburg</p>
+          <p>Telefon: <a href="tel:+493915676970" className="text-indigo-600 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">0391 567 6970</a></p>
+          <p>E-Mail: <a href="mailto:mlbf@ms.sachsen-anhalt.de" className="text-indigo-600 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">mlbf@ms.sachsen-anhalt.de</a></p>
+        </address>
+
+        <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Datum dieser Erklärung</h2>
+        <p className="text-zinc-600 leading-relaxed">
+          Diese Erklärung zur Barrierefreiheit wurde am <time dateTime="2026-03-27">27. März 2026</time> erstellt.
+        </p>
       </PageContent>
     </PageLayout>
   );
