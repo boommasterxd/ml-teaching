@@ -26,7 +26,9 @@
       "Bash(curl:*)",
       "Bash(lighthouse \"http://localhost:3000/trainieren\" --output json --output-path \"/tmp/bfsg-lighthouse-results/localhost3000_trainieren.json\" --only-categories=accessibility --chrome-flags=\"--headless --no-sandbox --disable-gpu\" --quiet)",
       "Read(//tmp/bfsg-lighthouse-results/**)",
-      "Bash(grep -r \"googleapis\\\\|gstatic\\\\|tfhub\\\\|unpkg\\\\|cdnjs\\\\|jsdelivr\\\\|fontawesome\\\\|@import\" '/home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src' --include=*.css --include=*.tsx --include=*.ts -n)"
+      "Bash(grep -r \"googleapis\\\\|gstatic\\\\|tfhub\\\\|unpkg\\\\|cdnjs\\\\|jsdelivr\\\\|fontawesome\\\\|@import\" '/home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src' --include=*.css --include=*.tsx --include=*.ts -n)",
+      "Bash(grep -r \"dangerouslySetInnerHTML\\\\|innerHTML\\\\|eval\\\\|Function\\(\" /home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"password\\\\|secret\\\\|API\\\\|key\\\\|token\\\\|auth\" /home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src --include=*.ts --include=*.tsx)"
     ]
   }
 }
