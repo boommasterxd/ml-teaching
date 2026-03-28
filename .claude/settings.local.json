@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lighthouse --version)",
+      "Bash(lighthouse \"http://localhost:3000\" --output json --output-path /tmp/bfsg-lighthouse-report.json --only-categories=accessibility --chrome-flags=\"--headless --no-sandbox --disable-gpu\" --quiet)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(npx tsc:*)",
+      "Bash(find ~/.claude -path */bfsg-ueberpruefer*/materialien -type d)",
+      "Bash(lighthouse \"http://localhost:3000/\" --output json --output-path /tmp/bfsg-lighthouse-report.json --only-categories=accessibility --chrome-flags=\"--headless --no-sandbox --disable-gpu\" --quiet)",
+      "Bash(python3:*)",
+      "Bash(lighthouse \"http://localhost:3000/datenschutz\" --output json --output-path \"/tmp/bfsg-lighthouse-results/localhost3000_datenschutz.json\" --only-categories=accessibility --chrome-flags=\"--headless --no-sandbox --disable-gpu\" --quiet)",
+      "Bash(mkdir -p \"/home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src/types\")",
+      "Bash(mkdir -p \"/home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src/components/modals\")",
+      "Bash(\"/home/ysmelsem/Projekte/BoomApps Projekte/Externe:*)",
+      "Read(//home/ysmelsem/Projekte/Persönliche Projekte/ai-extensions/claude-extensions/dsgvo-ueberpruefer/materialien/Checklisten/**)",
+      "Bash(mkdir -p /tmp/lh-perf)",
+      "Bash(lighthouse \"http://localhost:3000/\" --output json --output-path /tmp/lh-perf/landing-desktop.json --only-categories=performance --preset=desktop --chrome-flags=\"--headless --no-sandbox --disable-gpu\" --quiet)",
+      "Bash(echo \"Landing Desktop: $?\")",
+      "Bash(lighthouse \"http://localhost:3000/\" --output json --output-path /tmp/lh-perf/landing-mobile.json --only-categories=performance --chrome-flags=\"--headless --no-sandbox --disable-gpu\" --quiet)",
+      "Bash(echo \"Landing Mobile: $?\")",
+      "Bash(lighthouse \"http://localhost:3000/training\" --output json --output-path /tmp/lh-perf/training-desktop.json --only-categories=performance --preset=desktop --chrome-flags=\"--headless --no-sandbox --disable-gpu\" --quiet)",
+      "Bash(echo \"Training Desktop: $?\")",
+      "Bash(lighthouse \"http://localhost:3000/training\" --output json --output-path /tmp/lh-perf/training-mobile.json --only-categories=performance --chrome-flags=\"--headless --no-sandbox --disable-gpu\" --quiet)",
+      "Bash(echo \"Training Mobile: $?\")",
+      "Bash(find /home/ysmelsem/.claude -name bfsg* -o -name wcag* -o -name aria-best*)",
+      "Bash(curl:*)",
+      "Bash(lighthouse \"http://localhost:3000/trainieren\" --output json --output-path \"/tmp/bfsg-lighthouse-results/localhost3000_trainieren.json\" --only-categories=accessibility --chrome-flags=\"--headless --no-sandbox --disable-gpu\" --quiet)",
+      "Read(//tmp/bfsg-lighthouse-results/**)",
+      "Bash(grep -r \"googleapis\\\\|gstatic\\\\|tfhub\\\\|unpkg\\\\|cdnjs\\\\|jsdelivr\\\\|fontawesome\\\\|@import\" '/home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src' --include=*.css --include=*.tsx --include=*.ts -n)"
+    ]
+  }
+}
