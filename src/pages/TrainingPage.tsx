@@ -178,7 +178,7 @@ export default function TrainingPage() {
     addExample(classId, video);
   }, [addExample]);
 
-  /** Adds an uploaded image file as a training example for the given class. */
+  /** Adds an uploaded image as a training example for the given class. */
   const handleAddImageExample = useCallback((classId: string, img: HTMLImageElement) => {
     addImageExample(classId, img);
   }, [addImageExample]);
