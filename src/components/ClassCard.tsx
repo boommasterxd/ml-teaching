@@ -116,7 +116,6 @@ const ClassCard = memo(function ClassCard({
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col transition-all hover:shadow-md">
 
-      {/* Card header: class name, image count, clear & delete buttons */}
       <div className="px-4 py-3 border-b border-zinc-100 flex justify-between items-start sm:items-center bg-zinc-50/50">
         <div className="flex flex-col">
           <div className="flex items-center gap-3">
@@ -167,7 +166,6 @@ const ClassCard = memo(function ClassCard({
         </div>
       </div>
 
-      {/* Card body */}
       <div className="p-4 flex flex-col sm:flex-row gap-4">
         <CameraPreview
           stream={stream}
