@@ -159,6 +159,7 @@ export default function TrainingPage() {
     setSelectedImage(null);
   }, [removeImage]);
 
+  /** Removes multiple images from a class and closes the preview if one of them was open. */
   const handleRemoveImages = useCallback((classId: string, imageIds: string[]) => {
     removeImages(classId, imageIds);
     setSelectedImage(prev =>
@@ -166,31 +167,38 @@ export default function TrainingPage() {
     );
   }, [removeImages]);
 
+  /** Clears all images from a class and closes the preview if it belonged to that class. */
   const handleClearClass = useCallback((id: string) => {
     clearClass(id);
     setSelectedImage(prev => prev?.classId === id ? null : prev);
   }, [clearClass]);
 
+  /** Captures a video frame and adds it as a training example for the given class. */
   const handleAddExample = useCallback((classId: string, video: HTMLVideoElement) => {
     addExample(classId, video);
   }, [addExample]);
 
+  /** Adds an uploaded image file as a training example for the given class. */
   const handleAddImageExample = useCallback((classId: string, img: HTMLImageElement) => {
     addImageExample(classId, img);
   }, [addImageExample]);
 
+  /** Opens the delete-class confirmation dialog for the given class. */
   const handleRequestRemove = useCallback((classId: string) => {
     setClassToRemove(classId);
   }, []);
 
+  /** Opens the clear-class confirmation dialog for the given class. */
   const handleRequestClear = useCallback((classId: string) => {
     setClassToClear(classId);
   }, []);
 
+  /** Updates the display name of a class. */
   const handleUpdateClassName = useCallback((classId: string, name: string) => {
     updateClassName(classId, name);
   }, [updateClassName]);
 
+  /** Opens the image preview modal for the selected training image. */
   const handleImageClick = useCallback((classId: string, img: MLImage) => {
     setSelectedImage({ classId, image: img });
   }, []);

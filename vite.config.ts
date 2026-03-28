@@ -37,6 +37,7 @@ export default defineConfig(() => {
       modulePreload: { polyfill: true },
       rollupOptions: {
         output: {
+          /** Splits large dependencies into named chunks to improve caching and load times. */
           manualChunks(id): string | undefined {
             if (id.includes('node_modules')) {
               if (id.includes('lucide-react')) {

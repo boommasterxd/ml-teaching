@@ -102,10 +102,12 @@ const ClassCard = memo(function ClassCard({
     }
   };
 
+  /** Forwards an image click to the parent with the current class ID. */
   const handleImageClick = useCallback((img: MLImage) => {
     onImageClick(cls.id, img);
   }, [onImageClick, cls.id]);
 
+  /** Forwards a bulk image removal request to the parent with the current class ID. */
   const handleRemoveImages = useCallback((ids: string[]) => {
     onRemoveImages(cls.id, ids);
   }, [onRemoveImages, cls.id]);
