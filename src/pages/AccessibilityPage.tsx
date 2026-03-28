@@ -41,6 +41,9 @@ export default function AccessibilityPage() {
         <p className="text-zinc-600 leading-relaxed mb-4">
           Die Prüfung erfolgte durch statische Code-Analyse sowie einen Lighthouse Accessibility Audit (Score: 100&nbsp;%) auf allen Unterseiten.
         </p>
+        <p className="text-zinc-600 leading-relaxed mb-4">
+          Zusätzlich wurde ein externer Barrierefreiheits-Scan aller Unterseiten mit dem Tool <a href="https://accessibilitycheck.friendlycaptcha.com/" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline hover:text-indigo-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">accessibilitycheck.friendlycaptcha.com</a> durchgeführt. Das Ergebnis: Barrierefreiheitsbewertung 100/100 (konform), WCAG A ✓, WCAG AA ✓, WCAG AAA ✓, EN 301 549 ✓.
+        </p>
 
         <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mt-10 mb-4 border-l-4 border-zinc-200 pl-4">Feedback und Kontakt</h2>
         <p className="text-zinc-600 leading-relaxed mb-4">
@@ -51,7 +54,7 @@ export default function AccessibilityPage() {
             <span className="font-semibold text-zinc-900 sm:w-20">E-Mail:</span>
             <a
               href="mailto:yannickschaefer@boomapps.de"
-              className="text-zinc-600 hover:text-zinc-900 underline transition-colors break-all sm:break-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
+              className="text-indigo-600 hover:text-indigo-800 underline transition-colors break-all sm:break-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
             >
               yannickschaefer@boomapps.de
               <span className="sr-only"> (Barrierefreiheits-Feedback schreiben)</span>

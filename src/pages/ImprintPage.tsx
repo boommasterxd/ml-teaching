@@ -26,11 +26,11 @@ export default function ImprintPage() {
           <div className="space-y-3 sm:space-y-2 text-zinc-600 mb-8">
             <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
               <span className="font-semibold text-zinc-900 sm:w-20">Telefon:</span>
-              <span>01575 7934851</span>
+              <a href="tel:+4915757934851" className="text-indigo-600 hover:text-indigo-800 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">01575 7934851</a>
             </p>
             <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
               <span className="font-semibold text-zinc-900 sm:w-20">E-Mail:</span>
-              <a href="mailto:yannickschaefer@boomapps.de" className="text-zinc-600 hover:text-zinc-900 underline transition-colors break-all sm:break-normal">yannickschaefer@boomapps.de</a>
+              <a href="mailto:yannickschaefer@boomapps.de" className="text-indigo-600 hover:text-indigo-800 underline transition-colors break-all sm:break-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">yannickschaefer@boomapps.de</a>
             </p>
           </div>
       </PageContent>

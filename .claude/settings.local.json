@@ -28,7 +28,8 @@
       "Read(//tmp/bfsg-lighthouse-results/**)",
       "Bash(grep -r \"googleapis\\\\|gstatic\\\\|tfhub\\\\|unpkg\\\\|cdnjs\\\\|jsdelivr\\\\|fontawesome\\\\|@import\" '/home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src' --include=*.css --include=*.tsx --include=*.ts -n)",
       "Bash(grep -r \"dangerouslySetInnerHTML\\\\|innerHTML\\\\|eval\\\\|Function\\(\" /home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src --include=*.ts --include=*.tsx)",
-      "Bash(grep -r \"password\\\\|secret\\\\|API\\\\|key\\\\|token\\\\|auth\" /home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src --include=*.ts --include=*.tsx)"
+      "Bash(grep -r \"password\\\\|secret\\\\|API\\\\|key\\\\|token\\\\|auth\" /home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src --include=*.ts --include=*.tsx)",
+      "Bash(find \"/home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine/src/pages\" -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) -exec wc -l {} +)"
     ]
   }
 }
