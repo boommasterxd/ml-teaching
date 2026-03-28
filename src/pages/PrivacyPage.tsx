@@ -71,8 +71,8 @@ export default function PrivacyPage() {
           <p className="text-zinc-600 leading-relaxed mb-4">
             HOSTINGER operations, UAB<br />
             Švitrigailos str. 34, Vilnius 03230 Litauen<br />
-            Phone: +37064503378<br />
-            Email: domains@hostinger.com
+            Phone: <a href="tel:+37064503378" className="text-indigo-600 hover:text-indigo-800 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">+37064503378</a><br />
+            Email: <a href="mailto:domains@hostinger.com" className="text-indigo-600 hover:text-indigo-800 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">domains@hostinger.com</a>
           </p>
 
           <h4 className="text-lg font-bold mt-6 mb-3 text-zinc-800">Auftragsverarbeitung</h4>
@@ -102,8 +102,8 @@ export default function PrivacyPage() {
             67591 Mölsheim
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Telefon: 01575 7934851<br />
-            E-Mail: yannickschaefer@boomapps.de
+            Telefon: <a href="tel:+4915757934851" className="text-indigo-600 hover:text-indigo-800 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">01575 7934851</a><br />
+            E-Mail: <a href="mailto:yannickschaefer@boomapps.de" className="text-indigo-600 hover:text-indigo-800 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">yannickschaefer@boomapps.de</a>
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Verantwortliche Stelle ist die natürliche oder juristische Person, die allein oder gemeinsam mit anderen über die Zwecke und Mittel der Verarbeitung von personenbezogenen Daten (z.&nbsp;B. Namen, E-Mail-Adressen o. Ä.) entscheidet.
