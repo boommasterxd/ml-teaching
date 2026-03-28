@@ -17,14 +17,17 @@ interface State {
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
+  /** Switches to error state when a descendant throws during rendering. */
   static getDerivedStateFromError(): State {
     return { hasError: true };
   }
 
+  /** Logs the error and component stack for debugging purposes. */
   componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error('ErrorBoundary caught an error:', error, info.componentStack);
   }
 
+  /** Renders the fallback UI when an error has been caught, otherwise renders children. */
   render() {
     if (this.state.hasError) {
       return (
