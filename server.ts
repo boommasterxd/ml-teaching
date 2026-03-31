@@ -56,11 +56,11 @@ app.use(helmet({
 // Rate limiting — applied to /api/ routes only
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 600,
   message: { error: 'Zu viele Anfragen von dieser IP, bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { trustProxy: false, xForwardedForHeader: false },
+  validate: { trustProxy: true, xForwardedForHeader: true },
 });
 app.use('/api/', globalLimiter);
 
