@@ -56,7 +56,7 @@ app.use(helmet({
 // Rate limiting — applied to /api/ routes only
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 600,
+  max: 1500,
   message: { error: 'Zu viele Anfragen von dieser IP, bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false,
