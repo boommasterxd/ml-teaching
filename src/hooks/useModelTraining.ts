@@ -1,6 +1,9 @@
 /**
- * Hook that validates training prerequisites and trains the KNN classifier
- * from the collected image feature vectors.
+ * useModelTraining.ts
+ *
+ * React hook that validates training prerequisites and trains a KNN classifier
+ * from collected image feature vectors. Exposes training state and derived
+ * validation flags so the UI can reflect readiness and progress.
  */
 import { useState, useCallback, useMemo } from 'react';
 import * as tf from '@tensorflow/tfjs';
@@ -9,7 +12,16 @@ import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import type { ErrorCategory } from '../types/errors';
 
-/** Manages training state, validation checks, and the KNN training procedure. */
+/**
+ * Manages training state, input validation, and the KNN training procedure.
+ *
+ * @param classes - The list of ML classes, each carrying its captured images and feature vectors.
+ * @param classifier - The current KNN classifier instance, or null if none exists yet.
+ * @param setClassifier - Callback to replace the active classifier after a successful training run.
+ * @param setHasTrainedModel - Callback invoked with `true` once training completes successfully.
+ * @param onError - Callback for reporting validation or training errors by category.
+ * @returns An object with the training state flag, the train function, and derived validation flags.
+ */
 export function useModelTraining(
   classes: MLClass[],
   classifier: knnClassifier.KNNClassifier | null,
@@ -19,16 +31,22 @@ export function useModelTraining(
 ) {
   const [isTraining, setIsTraining] = useState(false);
 
+  /** True when at least one class has an empty or whitespace-only name. */
   const hasInvalidNames = useMemo(
     () => classes.some(c => c.name.trim() === ''),
     [classes]
   );
 
+  /** True when two or more classes share the same trimmed name. */
   const hasDuplicateNames = useMemo(
     () => new Set(classes.map(c => c.name.trim())).size !== classes.length,
     [classes]
   );
 
+  /**
+   * True when all training prerequisites are met: minimum class count,
+   * minimum images per class, no invalid names, and no duplicate names.
+   */
   const canTrain = useMemo(
     () =>
       classes.length >= ML.MIN_CLASSES &&
@@ -38,7 +56,12 @@ export function useModelTraining(
     [classes, hasInvalidNames, hasDuplicateNames]
   );
 
-  /** Validates all prerequisites and trains a new KNN classifier from collected features. */
+  /**
+   * Validates all prerequisites and trains a new KNN classifier from the
+   * stored feature vectors. Disposes the previous classifier before creating
+   * a new one. Reports validation or training errors via `onError` and
+   * updates `isTraining` throughout the async operation.
+   */
   const trainModel = useCallback(async () => {
     if (classes.length < ML.MIN_CLASSES) {
       onError('validation', `Du brauchst mindestens ${ML.MIN_CLASSES} Klassen, um ein Modell zu trainieren.`);

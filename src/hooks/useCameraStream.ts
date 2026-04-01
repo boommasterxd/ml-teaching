@@ -1,12 +1,24 @@
 /**
- * Hook that manages the camera MediaStream lifecycle (setup, teardown, facing mode toggle).
+ * useCameraStream.ts
+ *
+ * Hook that manages the camera MediaStream lifecycle: setup, teardown, and
+ * facing mode toggle between front and rear camera.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type React from 'react';
 import { CAMERA } from '../constants';
 import type { ErrorCategory } from '../types/errors';
 
-/** Requests camera access once consent is given and attaches the stream to a video element. */
+/**
+ * Manages the WebRTC camera stream, attaches it to a video element, and
+ * exposes controls for toggling between front and rear cameras.
+ *
+ * @param cameraConsent - Whether the user has granted camera permission. No stream is started until this is `true`.
+ * @param isModelLoading - Whether the ML model is still loading. Used as a dependency to re-attach the stream once the video element appears in the DOM.
+ * @param predictVideoRef - Ref to the `<video>` element that receives the camera stream as its `srcObject`.
+ * @param onError - Callback invoked with category `'camera'` and a human-readable message when camera access fails.
+ * @returns An object containing `facingMode`, the active `stream`, a `streamRef` for imperative access, and `toggleCamera`.
+ */
 export function useCameraStream(
   cameraConsent: boolean,
   isModelLoading: boolean,
@@ -17,7 +29,11 @@ export function useCameraStream(
   const [stream, setStream] = useState<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  /** Initializes or restarts the webcam stream with the current facing mode. */
+  /**
+   * Requests a new camera stream with the current `facingMode`, stops any
+   * previously active tracks first to avoid resource leaks, and stores the
+   * result in both state and the ref.
+   */
   const setupWebcam = useCallback(async () => {
     if (!cameraConsent) return;
 

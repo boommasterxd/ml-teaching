@@ -1,10 +1,24 @@
 /**
- * Hook that traps keyboard focus inside a container element (e.g. a modal).
- * Restores focus to the previously active element on deactivation.
+ * useFocusTrap.ts
+ *
+ * React hook that traps keyboard focus inside a container element (e.g. a modal or dialog).
+ * Restores focus to the previously active element when the trap is deactivated.
  */
 import { useEffect, useRef } from 'react';
 
-/** Traps Tab/Shift-Tab focus within a ref'd container and handles Escape. */
+/**
+ * Traps Tab/Shift-Tab focus within a ref'd container and intercepts the Escape key.
+ *
+ * When activated, the hook saves the currently focused element and moves focus into
+ * the container. On cleanup, focus is returned to the previously active element.
+ *
+ * @param isActive - Whether the focus trap is currently active.
+ * @param autoFocusFirst - When `true`, moves focus to the first focusable element
+ *   inside the container, but only if keyboard navigation mode is detected
+ *   (`data-keyboard-nav` attribute on `<html>`). Defaults to `false`.
+ * @param onEscape - Optional callback invoked when the user presses Escape.
+ * @returns A ref to attach to the container element that should receive the focus trap.
+ */
 export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false, onEscape?: () => void) {
   const rootRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -16,6 +30,7 @@ export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false,
 
     previousFocusRef.current = document.activeElement as HTMLElement | null;
 
+    /** Returns all currently focusable elements within the trap container. */
     const getFocusableElements = () => Array.from(
       root.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -33,6 +48,10 @@ export function useFocusTrap(isActive: boolean, autoFocusFirst: boolean = false,
       root.focus({ preventScroll: true });
     }
 
+    /**
+     * Handles keydown events to implement circular Tab navigation and Escape dismissal.
+     * Wraps focus from the last element back to the first (and vice versa via Shift-Tab).
+     */
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && onEscape) {
         e.preventDefault();

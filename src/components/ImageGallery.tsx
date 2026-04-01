@@ -1,19 +1,35 @@
 /**
- * Thumbnail gallery for collected training images with selection and bulk deletion.
+ * ImageGallery.tsx
+ *
+ * Scrollable thumbnail gallery for collected ML training images. Supports a
+ * selection mode that lets users mark and bulk-delete multiple images at once.
  */
 import { memo, useState, useEffect } from 'react';
 import { Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { MLImage } from '../types/ml';
 
+/**
+ * Props for the ImageGallery component.
+ */
 export interface ImageGalleryProps {
+  /** The list of training images to display. */
   images: MLImage[];
+  /** Accent color used for selection highlights and action buttons. */
   color: string;
+  /** Called when the user clicks an image thumbnail outside of selection mode. */
   onImageClick: (img: MLImage) => void;
+  /** Called with the IDs of images to remove after a bulk-delete action. */
   onRemoveImages: (ids: string[]) => void;
 }
 
-/** Scrollable thumbnail grid for training images with selectable bulk-delete mode. */
+/**
+ * Scrollable thumbnail grid for training images with selectable bulk-delete mode.
+ *
+ * In normal mode each thumbnail opens the image preview via `onImageClick`.
+ * Activating selection mode lets the user mark individual thumbnails and delete
+ * them all at once through `onRemoveImages`.
+ */
 const ImageGallery = memo(function ImageGallery({
   images,
   color,
@@ -36,6 +52,9 @@ const ImageGallery = memo(function ImageGallery({
     });
   };
 
+  // Keep the selection state consistent whenever the image list changes.
+  // If all images are removed, exit selection mode. Otherwise, drop any
+  // selected IDs that no longer exist in the current image list.
   useEffect(() => {
     if (images.length === 0) {
       setIsSelectionMode(false);

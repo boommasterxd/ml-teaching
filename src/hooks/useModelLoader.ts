@@ -10,7 +10,18 @@ import * as knnClassifier from '@tensorflow-models/knn-classifier';
 import { ML, MODEL_LOAD_RETRY } from '../constants';
 import type { ErrorCategory } from '../types/errors';
 
-/** Retries an async operation with exponential backoff. Aborts cleanly via signal. */
+/**
+ * Retries an async operation with exponential backoff until it succeeds or the
+ * maximum number of attempts is reached. Aborts cleanly when the provided
+ * AbortSignal fires, rejecting the delay promise immediately.
+ *
+ * @param fn - Async factory that performs the operation to retry.
+ * @param maxAttempts - Maximum number of attempts before re-throwing the last error.
+ * @param baseDelayMs - Base delay in milliseconds; doubled on each successive attempt.
+ * @param signal - AbortSignal used to cancel any pending retry delay.
+ * @returns The resolved value of `fn` on the first successful attempt.
+ * @throws The last error thrown by `fn`, or the abort reason if the signal fires.
+ */
 async function loadWithRetry<T>(
   fn: () => Promise<T>,
   maxAttempts: number,
@@ -36,7 +47,22 @@ async function loadWithRetry<T>(
   throw new Error('Unreachable');
 }
 
-/** Initializes the ML backend, creates a KNN classifier, and loads MobileNet v2. */
+/**
+ * Loads and initializes the TensorFlow.js WebGL backend, a KNN classifier, and
+ * the MobileNet v2 feature extractor once the user has given consent. Exposes
+ * loading state and the ready model instances to the caller.
+ *
+ * @param hasConsented - When `true`, triggers the model loading sequence.
+ *   Setting this back to `false` aborts any in-progress load.
+ * @param onError - Called with category `'model'` and a human-readable message
+ *   if any step of the loading sequence fails permanently.
+ * @returns An object containing:
+ *   - `classifier` — the KNN classifier instance, or `null` while loading.
+ *   - `setClassifier` — state setter to reset or replace the classifier externally.
+ *   - `mobilenetModel` — the loaded MobileNet instance, or `null` while loading.
+ *   - `isModelLoading` — `true` until all models are ready or an error occurred.
+ *   - `loadingText` — human-readable status string describing the current loading step.
+ */
 export function useModelLoader(
   hasConsented: boolean,
   onError: (category: Extract<ErrorCategory, 'model'>, msg: string) => void

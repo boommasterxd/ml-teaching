@@ -1,6 +1,11 @@
 /**
- * Interactive neural network animation that visualizes forward propagation
- * for dog/cat inputs, demonstrating how a neural network processes data.
+ * NeuralNetViz.tsx
+ *
+ * Animated neural network visualization for the landing page.
+ * Renders a 4-layer network (input → hidden1 → hidden2 → output) with
+ * SVG connection lines and circular nodes that light up step-by-step
+ * during forward propagation. Users trigger the animation by clicking
+ * the dog or cat button.
  */
 import { useMemo } from 'react';
 import { Dog, Cat } from 'lucide-react';
@@ -14,7 +19,13 @@ const LAYERS = [
   { id: 'output', nodes: 2, label: 'Output' },
 ] as const;
 
-/** Calculates the vertical center position of a node within the SVG canvas. */
+/**
+ * Calculates the vertical center position of a node within the SVG canvas.
+ *
+ * @param totalNodes - Total number of nodes in the layer.
+ * @param index - Zero-based index of the node within its layer.
+ * @returns Y coordinate (in pixels) of the node's center, centered vertically in a 320px canvas.
+ */
 function getNodeY(totalNodes: number, index: number): number {
   const nodeHeight = 24;
   const gap = 16;
@@ -23,11 +34,28 @@ function getNodeY(totalNodes: number, index: number): number {
   return startY + index * (nodeHeight + gap) + nodeHeight / 2;
 }
 
-/** Renders an interactive neural-network animation with dog/cat input buttons. */
+/**
+ * Renders an interactive neural network animation with dog/cat input buttons.
+ *
+ * Composes `useNeuralNetAnimation` to drive a step-based animation state.
+ * SVG connection lines and node circles activate sequentially as `animStep`
+ * advances through the forward-propagation stages.
+ */
 export default function NeuralNetViz() {
   const { activeSignal, animStep, animating, result, triggerAnimation } = useNeuralNetAnimation();
 
+  /**
+   * Memoized list of SVG line descriptors for all inter-layer connections.
+   *
+   * Each connection object carries its start/end coordinates plus the
+   * current stroke color and opacity driven by `animStep` and `activeSignal`.
+   * Connections between layers activate at specific animation steps:
+   *   - input → hidden1: step >= 1
+   *   - hidden1 → hidden2: step >= 3
+   *   - hidden2 → output: step >= 5 (only for the target output node)
+   */
   const svgConnections = useMemo(() => {
+    // Red for dog signal, blue for cat signal; muted grey when inactive.
     const color = (isActive: boolean) =>
       isActive ? (activeSignal === 'dog' ? '#ef4444' : '#3b82f6') : '#52525b';
     const opacity = (isActive: boolean) => isActive ? 0.6 : 0.15;
@@ -46,6 +74,7 @@ export default function NeuralNetViz() {
     );
     const layer3 = Array.from({ length: 6 }).flatMap((_, i) =>
       Array.from({ length: 2 }).map((_, j) => {
+        // Only highlight connections leading to the winning output node.
         const isTarget = (activeSignal === 'dog' && j === 0) || (activeSignal === 'cat' && j === 1);
         const active = animStep >= 5 && isTarget;
         return { key: `l3-${i}-${j}`, x1: '55%', y1: getNodeY(6, i), x2: '75%', y2: getNodeY(2, j), color: color(active), opacity: opacity(active) };
@@ -112,8 +141,11 @@ export default function NeuralNetViz() {
 
             {Array.from({ length: layer.nodes }).map((_, nodeIdx) => {
               const isOutput = layer.id === 'output';
+              // The target output node is the one matching the active signal class.
               const isTargetNode = isOutput && ((activeSignal === 'dog' && nodeIdx === 0) || (activeSignal === 'cat' && nodeIdx === 1));
 
+              // Each layer lights up at a different animation step to simulate
+              // sequential forward propagation through the network.
               let isNodeActive = false;
               if (layer.id === 'input' && animStep >= 0) isNodeActive = true;
               if (layer.id === 'hidden1' && animStep >= 2) isNodeActive = true;
