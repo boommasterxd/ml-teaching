@@ -64,7 +64,7 @@ const ImageGallery = memo(function ImageGallery({
         <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
           {isSelectionMode ? `${selectedIds.size} ausgewählt` : 'Gesammelte Bilder'}
         </span>
-        <div className="flex gap-2">
+        <div className="flex gap-2 min-h-[2rem]">
           {isSelectionMode ? (
             <>
               <button
