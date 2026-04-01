@@ -3,6 +3,7 @@
  */
 import { Camera } from 'lucide-react';
 import Dialog from '../Dialog';
+import ModalContent from '../ModalContent';
 import Button from '../Button';
 
 interface CameraConsentModalProps {
@@ -15,7 +16,7 @@ interface CameraConsentModalProps {
 export default function CameraConsentModal({ isOpen, onDecline, onConfirm }: CameraConsentModalProps) {
   return (
     <Dialog isOpen={isOpen} onClose={onDecline} labelledBy="camera-modal-title">
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-md w-full p-8 text-center">
+      <ModalContent maxWidth="md" className="p-8 text-center">
         <div
           className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6"
           aria-hidden="true"
@@ -40,7 +41,7 @@ export default function CameraConsentModal({ isOpen, onDecline, onConfirm }: Cam
             <Camera className="w-5 h-5 mr-2" aria-hidden="true" /> Erlauben
           </Button>
         </div>
-      </div>
+      </ModalContent>
     </Dialog>
   );
 }

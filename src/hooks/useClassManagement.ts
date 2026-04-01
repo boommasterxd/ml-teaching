@@ -4,6 +4,7 @@
 import { useState, useCallback } from 'react';
 import type { MLClass, MLImage } from '../types/ml';
 import { COLORS } from '../types/ml';
+import { ML } from '../constants';
 
 /** Returns the default set of two empty classes. */
 function createInitialClasses(): MLClass[] {
@@ -56,7 +57,7 @@ export function useClassManagement(onInvalidate: () => void) {
 
   /** Renames a class. Does not invalidate the model. */
   const updateClassName = useCallback((id: string, newName: string) => {
-    setClasses(prev => prev.map(c => c.id === id ? { ...c, name: newName } : c));
+    setClasses(prev => prev.map(c => c.id === id ? { ...c, name: newName.slice(0, ML.MAX_CLASS_NAME_LENGTH) } : c));
   }, []);
 
   /** Adds a single training image to a class. */
