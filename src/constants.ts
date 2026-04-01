@@ -1,33 +1,76 @@
 /**
- * Shared constants used across the application.
- * Centralizes magic numbers to improve maintainability.
+ * constants.ts
+ *
+ * Central registry of all magic numbers and configuration values used across
+ * the application. Grouped by domain to avoid scattering literals throughout
+ * the codebase.
  */
 
+/**
+ * Machine-learning configuration for MobileNet feature extraction and KNN
+ * training. These values are tuned for the TensorFlow.js browser runtime.
+ */
 export const ML = {
+  /** Minimum number of distinct classes required before training is allowed. */
   MIN_CLASSES: 2,
+  /** Minimum number of training images required per class. */
   MIN_IMAGES_PER_CLASS: 10,
+  /**
+   * Edge length (in pixels) of the square canvas used to extract MobileNet
+   * feature vectors. MobileNet expects exactly 224×224 input.
+   */
   FEATURE_CANVAS_SIZE: 224,
+  /** MobileNet major version passed to the TensorFlow.js model loader. */
   MOBILENET_VERSION: 2 as const,
+  /**
+   * MobileNet width multiplier (alpha). 1.0 uses the full-size network for
+   * maximum accuracy; lower values trade accuracy for speed.
+   */
   MOBILENET_ALPHA: 1.0,
+  /**
+   * JPEG quality factor (0–1) used when encoding captured frames as
+   * data-URL thumbnails for display in the UI.
+   */
   THUMBNAIL_QUALITY: 0.9,
+  /** Maximum number of characters allowed in a user-defined class name. */
   MAX_CLASS_NAME_LENGTH: 50,
 } as const;
 
+/**
+ * Camera capture and stream configuration for the WebRTC pipeline.
+ */
 export const CAMERA = {
+  /** Interval in milliseconds between consecutive frame captures during recording. */
   CAPTURE_INTERVAL_MS: 100,
+  /** Preferred camera stream width in pixels (may be lower on constrained devices). */
   IDEAL_WIDTH: 640,
+  /** Preferred camera stream height in pixels (may be lower on constrained devices). */
   IDEAL_HEIGHT: 480,
 } as const;
 
+/**
+ * Timing values for UI animations (Framer Motion step transitions).
+ */
 export const ANIMATION = {
+  /** Duration in milliseconds for each animated step transition. */
   STEP_DURATION_MS: 400,
 } as const;
 
+/**
+ * Retry strategy for loading the MobileNet and KNN-Classifier models.
+ * Uses exponential back-off: delay doubles with each failed attempt.
+ */
 export const MODEL_LOAD_RETRY = {
+  /** Total number of load attempts before the operation is considered failed. */
   MAX_ATTEMPTS: 3,
+  /** Initial back-off delay in milliseconds before the first retry. */
   BASE_DELAY_MS: 1000,
 } as const;
 
+/**
+ * Timing for the live prediction loop that runs during classification.
+ */
 export const PREDICTION = {
+  /** Target interval in milliseconds between inference calls (≈ 15 FPS). */
   INTERVAL_MS: 1000 / 15,
 } as const;

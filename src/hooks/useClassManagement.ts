@@ -1,5 +1,8 @@
 /**
- * Hook for managing the list of ML classification classes (add, remove, rename, images).
+ * useClassManagement.ts
+ *
+ * Hook for managing the list of ML classification classes and their training images.
+ * Provides CRUD operations for classes and exposes model invalidation on destructive changes.
  */
 import { useState, useCallback } from 'react';
 import type { MLClass, MLImage } from '../types/ml';
@@ -14,7 +17,13 @@ function createInitialClasses(): MLClass[] {
   ];
 }
 
-/** Provides CRUD operations for ML classes and their training images. */
+/**
+ * Provides CRUD operations for ML classes and their training images.
+ *
+ * @param onInvalidate - Callback invoked whenever a change renders the trained model stale
+ *   (e.g. class or image removed). Renaming a class does NOT trigger this callback.
+ * @returns An object with the current class list and all mutation functions.
+ */
 export function useClassManagement(onInvalidate: () => void) {
   const [classes, setClasses] = useState<MLClass[]>(createInitialClasses);
 

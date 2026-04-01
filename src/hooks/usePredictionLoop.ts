@@ -1,6 +1,10 @@
 /**
+ * usePredictionLoop.ts
+ *
  * Hook that runs a real-time prediction loop using requestAnimationFrame,
- * classifying webcam frames through MobileNet + KNN.
+ * classifying webcam frames through MobileNet + KNN at a throttled frame rate
+ * defined by PREDICTION.INTERVAL_MS. Exposes start/stop controls and the
+ * latest prediction result as reactive state.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type React from 'react';
@@ -10,7 +14,27 @@ import type * as knnClassifier from '@tensorflow-models/knn-classifier';
 import type { Prediction } from '../types/ml';
 import { PREDICTION } from '../constants';
 
-/** Continuously classifies video frames and exposes start/stop controls. */
+/**
+ * Runs a throttled prediction loop that continuously classifies video frames.
+ *
+ * On each animation frame the hook checks whether enough time has passed
+ * (PREDICTION.INTERVAL_MS) before extracting MobileNet features from the
+ * current video frame and passing them to the KNN classifier. Tensor memory
+ * is always freed in a finally-block to prevent GPU memory leaks.
+ *
+ * The loop is started and stopped via the returned callbacks. When stopped,
+ * the last prediction is cleared.
+ *
+ * @param classifier - Trained KNN classifier. Pass null while the model is not yet ready.
+ * @param mobilenetModel - Loaded MobileNet instance used for feature extraction.
+ * @param videoRef - Ref to the video element providing the webcam stream.
+ * @returns An object with the following fields:
+ *   - `prediction` (`Prediction | null`) — the most recent classification result,
+ *     containing `label` and `confidences`. Resets to `null` when the loop stops.
+ *   - `isPredicting` — whether the prediction loop is currently running.
+ *   - `startPredicting` — callback that activates the loop.
+ *   - `stopPredicting` — callback that deactivates the loop and clears `prediction`.
+ */
 export function usePredictionLoop(
   classifier: knnClassifier.KNNClassifier | null,
   mobilenetModel: mobilenet.MobileNet | null,
@@ -23,6 +47,23 @@ export function usePredictionLoop(
   const lastPredictTimeRef = useRef(0);
 
   useEffect(() => {
+    /**
+     * Single iteration of the prediction loop, scheduled via requestAnimationFrame.
+     *
+     * Guard conditions: exits immediately when the classifier, MobileNet model,
+     * or video element is unavailable, or when no classes have been trained yet.
+     *
+     * Throttling: compares `timestamp` against `lastPredictTimeRef` and re-queues
+     * the next frame without running inference if less than PREDICTION.INTERVAL_MS
+     * have elapsed — keeping the effective rate at roughly 15 FPS regardless of
+     * the display refresh rate.
+     *
+     * Tensor disposal: both the raw pixel tensor (`img`) and the MobileNet feature
+     * tensor (`features`) are disposed in a `finally` block so GPU memory is freed
+     * even when `predictClass` throws.
+     *
+     * @param timestamp - DOMHighResTimeStamp provided by requestAnimationFrame.
+     */
     const predictLoop = async (timestamp: number) => {
       if (!classifier || !mobilenetModel || !videoRef.current || classifier.getNumClasses() === 0) {
         return;
@@ -80,12 +121,21 @@ export function usePredictionLoop(
     };
   }, [isPredicting, classifier, mobilenetModel]);
 
-  /** Activates the prediction loop. */
+  /**
+   * Sets `isPredicting` to `true`, which triggers the `useEffect` to reset the
+   * timestamp reference and schedule the first `predictLoop` frame via
+   * requestAnimationFrame.
+   */
   const startPredicting = useCallback(() => {
     setIsPredicting(true);
   }, []);
 
-  /** Stops the prediction loop and clears the last result. */
+  /**
+   * Sets `isPredicting` to `false`, which causes the `useEffect` to cancel the
+   * pending requestAnimationFrame handle and reset `prediction` to `null`.
+   * The `shouldPredictRef` guard inside `predictLoop` prevents any in-flight
+   * frame from re-queuing itself after the effect re-runs.
+   */
   const stopPredicting = useCallback(() => {
     setIsPredicting(false);
   }, []);

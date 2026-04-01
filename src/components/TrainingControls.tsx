@@ -1,23 +1,43 @@
 /**
- * Training section panel showing class readiness, image counts,
- * and the train button with contextual status messages.
+ * TrainingControls.tsx
+ *
+ * Training section panel showing class readiness, total image count,
+ * and the train/retrain button with contextual status messages.
  */
 import { Brain, CheckCircle2, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 
+/**
+ * Props for the TrainingControls component.
+ */
 interface TrainingControlsProps {
+  /** All current ML classes with their collected images. */
   classes: MLClass[];
+  /** Whether the minimum training requirements are met across all classes. */
   canTrain: boolean;
+  /** Whether a training run is currently in progress. */
   isTraining: boolean;
+  /** Whether a trained KNN model already exists and can be used for prediction. */
   hasTrainedModel: boolean;
+  /** Whether any class has an empty or whitespace-only name. */
   hasInvalidNames: boolean;
+  /** Whether two or more classes share the same name. */
   hasDuplicateNames: boolean;
+  /** Callback triggered when the user clicks the train or retrain button. */
   onTrain: () => void;
 }
 
-/** Displays training readiness stats and the train/retrain button. */
+/**
+ * Renders the training control panel.
+ *
+ * Displays how many classes meet the minimum image threshold, the total
+ * image count across all classes, and a button to start or repeat training.
+ * The button is disabled when training is active or requirements are unmet.
+ * A live status message below the button explains why training is blocked
+ * or confirms that the model is ready.
+ */
 export default function TrainingControls({
   classes,
   canTrain,

@@ -1,6 +1,9 @@
 /*
- * Global CSS styles for the Teachable Machine application.
- * Includes Tailwind imports, base styles, and custom utilities.
+ * index.css
+ *
+ * Global stylesheet for the Teachable Machine application.
+ * Imports Tailwind CSS, defines base resets (scrollbar, focus indicators),
+ * custom animation utilities, and reduced-motion overrides.
  */
 
 @import "tailwindcss";
@@ -39,12 +42,14 @@
 }
 
 
+/* Custom utility class that triggers the node-glow animation. */
 @layer utilities {
   .animate-node-glow {
     animation: node-glow 1s ease-in-out forwards;
   }
 }
 
+/* Pulse-and-scale animation used by the neural-network node visualization on the landing page. */
 @keyframes node-glow {
   0% {
     transform: scale(1);
@@ -61,6 +66,9 @@
   }
 }
 
+/* Respects the OS-level "reduce motion" preference (WCAG 2.3.3 / 2.2.2).
+   Disables all Tailwind animation helpers and cuts all transition durations to
+   near-zero so no motion occurs, while preserving layout and interaction. */
 @media (prefers-reduced-motion: reduce) {
   .animate-node-glow,
   .animate-spin,

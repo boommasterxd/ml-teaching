@@ -1,7 +1,9 @@
 /**
- * Express server configuration for the Teachable Machine application.
- * Handles security headers, rate limiting, and serves the application in both
- * development (via Vite middleware) and production modes.
+ * server.ts
+ *
+ * Express server for the Teachable Machine application. Configures security
+ * headers (Helmet CSP), rate limiting, gzip/brotli compression, and serves
+ * the SPA either via Vite dev middleware or pre-built static files in production.
  */
 
 import 'dotenv/config';
@@ -12,6 +14,8 @@ import { rateLimit } from 'express-rate-limit';
 import compression from 'compression';
 import { SERVER } from './server.constants.js';
 
+// Fail fast if mandatory environment variables are absent to prevent
+// silent misconfiguration in deployed containers.
 const REQUIRED_ENV = ['NODE_ENV'] as const;
 const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missingEnv.length > 0) {
@@ -38,13 +42,14 @@ app.use(helmet({
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "script-src": ["'self'"],
       "img-src": ["'self'", "data:", "https:"],
-      // Scoped to specific Google services needed for MobileNet model downloads
+      // Scoped to Google Storage, TensorFlow Hub, and Kaggle for MobileNet model downloads
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
       "base-uri": ["'self'"],
       "form-action": ["'self'"],
       "frame-ancestors": ["'none'"],
     }
   } : false,
+  // COEP is disabled because TensorFlow.js loads WASM binaries cross-origin
   crossOriginEmbedderPolicy: false,
   xFrameOptions: { action: 'deny' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
@@ -54,7 +59,8 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting — applied to /api/ routes only
+// Rate limiting — applied to /api/ routes only.
+// Window: 15 minutes, ceiling: 1 500 requests per IP per window.
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 1500,
@@ -70,7 +76,16 @@ process.on('unhandledRejection', (reason) => {
   process.exit(1);
 });
 
-/** Configures either Vite dev middleware or static file serving and starts listening. */
+/**
+ * Bootstraps the Express server.
+ *
+ * In development mode, attaches Vite as middleware so HMR and on-demand
+ * compilation work without a separate build step. In production, serves
+ * pre-compressed static files from `dist/` with long-lived cache headers
+ * and an SPA fallback for client-side routing.
+ *
+ * Binds to `0.0.0.0` so the server is reachable inside Docker containers.
+ */
 async function setupServer() {
   if (process.env.NODE_ENV !== 'production') {
     // Development: Vite middleware (SPA mode)

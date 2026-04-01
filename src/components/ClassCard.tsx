@@ -1,4 +1,6 @@
 /**
+ * ClassCard.tsx
+ *
  * Card component representing a single ML class.
  * Orchestrates camera recording, image upload, and thumbnail gallery via subcomponents.
  */
@@ -11,22 +13,40 @@ import type { MLClass, MLImage } from '../types/ml';
 import CameraPreview from './CameraPreview';
 import ImageGallery from './ImageGallery';
 
+/**
+ * Props for the ClassCard component.
+ */
 export interface ClassCardProps {
+  /** The ML class data to display and manage. */
   cls: MLClass;
+  /** Whether the class name conflicts with another class name. */
   isDuplicate: boolean;
+  /** Active camera stream to render in the preview. `null` if no camera is available. */
   stream: MediaStream | null;
+  /** Which camera to use: `'user'` for front-facing, `'environment'` for rear-facing. */
   facingMode: 'user' | 'environment';
+  /** Called when a new training frame is captured from the video element. */
   onAddExample: (classId: string, video: HTMLVideoElement) => void;
+  /** Called when a training image is added via file upload. */
   onAddImageExample: (classId: string, img: HTMLImageElement) => void;
+  /** Called to request removal of the entire class. */
   onRemove: (classId: string) => void;
+  /** Called to clear all images from the class without removing it. */
   onClear: (classId: string) => void;
+  /** Called to remove a specific subset of images by their IDs. */
   onRemoveImages: (classId: string, ids: string[]) => void;
+  /** Called when the class name input changes. */
   onUpdateName: (classId: string, name: string) => void;
+  /** Called when a thumbnail image in the gallery is clicked. */
   onImageClick: (classId: string, img: MLImage) => void;
+  /** Called when a file cannot be read or decoded as an image. */
   onError: (message: string) => void;
 }
 
-/** Displays a class with its camera preview, recording controls, and image gallery. */
+/**
+ * Displays a class card with its editable name, camera preview, recording controls, and image gallery.
+ * Uses `memo` to prevent unnecessary re-renders when sibling class cards update.
+ */
 const ClassCard = memo(function ClassCard({
   cls,
   isDuplicate,
@@ -72,6 +92,7 @@ const ClassCard = memo(function ClassCard({
     }
   };
 
+  // Clear the capture interval on unmount to prevent state updates on an unmounted component.
   useEffect(() => {
     return () => {
       if (recordIntervalRef.current) {

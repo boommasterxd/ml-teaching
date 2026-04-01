@@ -1,17 +1,27 @@
 /**
- * Sticky page header with a back button, centered title, and an optional right slot.
+ * PageHeader.tsx
+ *
+ * Sticky page header component with a back-navigation button, centered logo and title,
+ * and an optional right-side action slot.
  */
 import type { ReactNode } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface PageHeaderProps {
+  /** Page title displayed in the center of the header. */
   title: string;
   /** Optional slot rendered on the right side of the header (e.g. action buttons). */
   rightSlot?: ReactNode;
 }
 
-/** Renders a sticky header bar with navigation, logo, page title, and optional actions. */
+/**
+ * Renders a sticky header bar with a back button, the Ada Lovelace project logo,
+ * the page title, and an optional right-side action area.
+ *
+ * When `rightSlot` is omitted, an invisible spacer of equal width is rendered
+ * on the right to keep the title visually centered.
+ */
 export default function PageHeader({ title, rightSlot }: PageHeaderProps) {
   const navigate = useNavigate();
 
@@ -37,6 +47,7 @@ export default function PageHeader({ title, rightSlot }: PageHeaderProps) {
           <h1 className="text-base sm:text-lg font-bold text-zinc-800 line-clamp-1">{title}</h1>
         </div>
 
+        {/* Spacer mirrors the back button width to keep the title centered when no rightSlot is provided. */}
         {rightSlot ?? <div className="w-10 sm:w-20" aria-hidden="true"></div>}
       </div>
     </header>

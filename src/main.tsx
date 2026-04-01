@@ -1,6 +1,10 @@
 /// <reference types="vite/client" />
 /**
- * Entry point for the React application. Renders the App component into the root element.
+ * main.tsx
+ *
+ * Application entry point. Mounts the React app into the DOM root element,
+ * registers global error handlers, and sets up keyboard-navigation detection
+ * for accessible focus management.
  */
 
 import {StrictMode} from 'react';
@@ -8,7 +12,14 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-/** Logs unhandled promise rejections to the console. */
+/**
+ * Logs unhandled promise rejections to the console.
+ *
+ * Registered as a global `unhandledrejection` listener and removed during
+ * Vite HMR module disposal to avoid duplicate handlers on hot reload.
+ *
+ * @param event - The unhandled rejection event containing the rejection reason.
+ */
 const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
   console.error('Unhandled promise rejection:', event.reason);
 };

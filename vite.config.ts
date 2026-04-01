@@ -1,6 +1,9 @@
 /**
- * Vite configuration file for the Teachable Machine application.
- * Configures React and Tailwind CSS plugins, path aliases, and development server settings.
+ * vite.config.ts
+ *
+ * Vite build configuration for the Teachable Machine application.
+ * Sets up React, Tailwind CSS, gzip/Brotli compression, image optimization,
+ * manual chunk splitting for large dependencies, path aliases, and the dev server.
  */
 
 import tailwindcss from '@tailwindcss/vite';
@@ -10,14 +13,19 @@ import {defineConfig} from 'vite';
 import { compression } from 'vite-plugin-compression2';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 
-/** Vite build configuration with chunk splitting, image optimization, and compression. */
 export default defineConfig(() => {
   return {
     plugins: [
       react(),
       tailwindcss(),
+      // Emit pre-compressed .gz files alongside every asset.
+      // Already-compressed files are excluded to prevent double-compression.
       compression({ algorithms: ['gzip'], exclude: [/\.(br)$/, /\.(gz)$/] }),
+      // Emit pre-compressed .br files alongside every asset.
+      // Already-compressed files are excluded to prevent double-compression.
       compression({ algorithms: ['brotliCompress'], exclude: [/\.(br)$/, /\.(gz)$/] }),
+      // Lossy image optimization at quality 80 for PNG, JPEG, and WebP;
+      // AVIF uses quality 70 to balance file size against visual fidelity.
       ViteImageOptimizer({
         png: {
           quality: 80,
@@ -33,11 +41,20 @@ export default defineConfig(() => {
       }),
     ],
     build: {
+      // Raise the warning threshold to accommodate large TensorFlow.js chunks.
       chunkSizeWarningLimit: 1500,
+      // Skip injecting the modulepreload polyfill — modern browsers handle it natively.
       modulePreload: { polyfill: false },
       rollupOptions: {
         output: {
-          /** Splits large dependencies into named chunks to improve caching and load times. */
+          /**
+           * Assigns each node_modules dependency to a named chunk so that
+           * large libraries (React, TensorFlow.js, Framer Motion, Lucide) are
+           * cached independently and only re-downloaded when they actually change.
+           *
+           * @param id - Absolute path of the module being processed by Rollup.
+           * @returns The target chunk name, or `undefined` to use Rollup's default.
+           */
           manualChunks(id): string | undefined {
             if (id.includes('node_modules')) {
               if (id.includes('lucide-react')) {
@@ -60,13 +77,16 @@ export default defineConfig(() => {
       }
     },
     resolve: {
+      // Map the `@` alias to the project root so imports stay short and portable.
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
     },
     server: {
+      // Bind to all interfaces so the dev server is reachable inside Docker.
       host: '0.0.0.0',
       port: 3000,
+      // Allow disabling HMR via environment variable (useful in CI or containerised setups).
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };
