@@ -8,6 +8,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as mobilenet from '@tensorflow-models/mobilenet';
 import * as knnClassifier from '@tensorflow-models/knn-classifier';
 import { ML, MODEL_LOAD_RETRY } from '../constants';
+import type { ErrorCategory } from '../types/errors';
 
 /** Retries an async operation with exponential backoff. Aborts cleanly via signal. */
 async function loadWithRetry<T>(
@@ -38,7 +39,7 @@ async function loadWithRetry<T>(
 /** Initializes the ML backend, creates a KNN classifier, and loads MobileNet v2. */
 export function useModelLoader(
   hasConsented: boolean,
-  onError: (msg: string) => void
+  onError: (category: Extract<ErrorCategory, 'model'>, msg: string) => void
 ) {
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [loadingText, setLoadingText] = useState('Initialisiere TensorFlow.js...');
@@ -84,7 +85,7 @@ export function useModelLoader(
       } catch (err) {
         if (signal.aborted) return;
         console.error('Error loading models:', err);
-        onErrorRef.current('Fehler beim Laden der KI-Modelle. Bitte lade die Seite neu.');
+        onErrorRef.current('model', 'Fehler beim Laden der KI-Modelle. Bitte lade die Seite neu.');
         setIsModelLoading(false);
       }
     }
