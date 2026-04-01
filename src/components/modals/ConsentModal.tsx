@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Dialog from '../Dialog';
+import ModalContent from '../ModalContent';
 import Button from '../Button';
 
 interface ConsentModalProps {
@@ -22,7 +23,7 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
 
   return (
     <Dialog isOpen={isOpen} onClose={onDecline} labelledBy="consent-modal-title">
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-lg w-full p-8">
+      <ModalContent maxWidth="lg" className="p-8">
         <h2 id="consent-modal-title" className="text-2xl font-bold text-zinc-900 mb-6">
           Einwilligung zur Datenverarbeitung
         </h2>
@@ -76,7 +77,7 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
             Zustimmen
           </Button>
         </div>
-      </div>
+      </ModalContent>
     </Dialog>
   );
 }

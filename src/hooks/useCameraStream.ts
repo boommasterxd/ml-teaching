@@ -10,7 +10,7 @@ export function useCameraStream(
   cameraConsent: boolean,
   isModelLoading: boolean,
   predictVideoRef: React.RefObject<HTMLVideoElement | null>,
-  onError: (msg: string) => void
+  onError: (category: 'camera', msg: string) => void
 ) {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -34,7 +34,7 @@ export function useCameraStream(
         setStream(mediaStream);
       } catch (err) {
         console.error('Error accessing webcam:', err);
-        onError('Kamerazugriff verweigert oder keine Kamera gefunden.');
+        onError('camera', 'Kamerazugriff verweigert oder keine Kamera gefunden.');
       }
     }
   }, [facingMode, cameraConsent, onError]);

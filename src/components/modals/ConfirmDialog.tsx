@@ -3,6 +3,7 @@
  */
 import type React from 'react';
 import Dialog from '../Dialog';
+import ModalContent from '../ModalContent';
 import Button from '../Button';
 
 interface ConfirmDialogProps {
@@ -33,7 +34,7 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} labelledBy={titleId} describedBy={descId}>
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-md w-full p-6">
+      <ModalContent maxWidth="md" className="p-6">
         {icon && (
           <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4" aria-hidden="true">
             {icon}
@@ -49,7 +50,7 @@ export default function ConfirmDialog({
             {confirmLabel}
           </Button>
         </div>
-      </div>
+      </ModalContent>
     </Dialog>
   );
 }
