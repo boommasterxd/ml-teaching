@@ -15,7 +15,8 @@ export default function PrivacyPage() {
     <PageLayout>
       <PageHeader title="Datenschutzerklärung" />
       <PageContent labelledBy="privacy-title">
-          <h1 id="privacy-title" className="text-2xl sm:text-3xl font-extrabold text-zinc-900 mb-8 border-b border-zinc-100 pb-4">Datenschutzerklärung</h1>
+          <h1 id="privacy-title" className="text-2xl sm:text-3xl font-extrabold text-zinc-900 mb-2 border-b border-zinc-100 pb-4">Datenschutzerklärung</h1>
+          <p className="text-sm text-zinc-500 mb-8">Zuletzt aktualisiert: 1. April 2026</p>
 
           <h2 className="text-xl sm:text-2xl font-bold mt-12 mb-6 text-zinc-800 border-b border-zinc-100 pb-2">1. Datenschutz auf einen Blick</h2>
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Allgemeine Hinweise</h3>
@@ -175,9 +176,12 @@ export default function PrivacyPage() {
           </p>
 
           <h2 className="text-xl sm:text-2xl font-bold mt-12 mb-6 text-zinc-800 border-b border-zinc-100 pb-2">4. Datenerfassung auf dieser Website</h2>
-          <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Cookies</h3>
-          <p className="text-zinc-600 leading-relaxed mb-4">
-            Unsere Internetseiten verwenden so genannte „Cookies“. Cookies sind kleine Datenpakete und richten auf Ihrem Endgerät keinen Schaden an. Sie werden entweder vorübergehend für die Dauer einer Sitzung (Session-Cookies) oder dauerhaft (permanente Cookies) auf Ihrem Endgerät gespeichert. Session-Cookies werden nach Ende Ihres Besuchs automatisch gelöscht. Permanente Cookies bleiben auf Ihrem Endgerät gespeichert, bis Sie diese selbst löschen oder eine automatische Löschung durch Ihren Webbrowser erfolgt.
+          <h3 className=”text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800”>Cookies</h3>
+          <p className=”text-zinc-600 leading-relaxed mb-4”>
+            <strong>Diese Website setzt selbst keine Cookies.</strong> Die folgenden Hinweise beschreiben allgemein, wie Cookies funktionieren und welche Rechte Sie haben, falls Cookies eingesetzt werden sollten.
+          </p>
+          <p className=”text-zinc-600 leading-relaxed mb-4”>
+            Unsere Internetseiten verwenden so genannte „Cookies”. Cookies sind kleine Datenpakete und richten auf Ihrem Endgerät keinen Schaden an. Sie werden entweder vorübergehend für die Dauer einer Sitzung (Session-Cookies) oder dauerhaft (permanente Cookies) auf Ihrem Endgerät gespeichert. Session-Cookies werden nach Ende Ihres Besuchs automatisch gelöscht. Permanente Cookies bleiben auf Ihrem Endgerät gespeichert, bis Sie diese selbst löschen oder eine automatische Löschung durch Ihren Webbrowser erfolgt.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Cookies können von uns (First-Party-Cookies) oder von Drittunternehmen stammen (sog. Third-Party-Cookies). Third-Party-Cookies ermöglichen die Einbindung bestimmter Dienstleistungen von Drittunternehmen innerhalb von Webseiten (z.&nbsp;B. Cookies zur Abwicklung von Zahlungsdienstleistungen).
