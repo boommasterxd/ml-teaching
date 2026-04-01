@@ -16,8 +16,8 @@ export default defineConfig(() => {
     plugins: [
       react(),
       tailwindcss(),
-      compression({ algorithm: 'gzip', exclude: [/\.(br)$/, /\.(gz)$/] } as any),
-      compression({ algorithm: 'brotliCompress', exclude: [/\.(br)$/, /\.(gz)$/] } as any),
+      compression({ algorithm: 'gzip', exclude: [/\.(br)$/, /\.(gz)$/] }),
+      compression({ algorithm: 'brotliCompress', exclude: [/\.(br)$/, /\.(gz)$/] }),
       ViteImageOptimizer({
         png: {
           quality: 80,
@@ -34,7 +34,7 @@ export default defineConfig(() => {
     ],
     build: {
       chunkSizeWarningLimit: 1500,
-      modulePreload: { polyfill: true },
+      modulePreload: { polyfill: false },
       rollupOptions: {
         output: {
           /** Splits large dependencies into named chunks to improve caching and load times. */
