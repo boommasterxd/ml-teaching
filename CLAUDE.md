@@ -27,8 +27,27 @@ Es gibt keine automatisierten Tests (kein Test-Runner konfiguriert).
 - **`src/App.tsx`** — React-Router-Setup mit lazy-geladenen Seiten (Code-Splitting pro Route).
 - **`src/pages/TrainingPage.tsx`** — Kernseite der App: Consent-Dialog → MobileNet-/KNN-Laden → Kamera/Upload-Erfassung → Training → Live-Klassifizierung. Die gesamte ML-Logik läuft hier client-seitig mit TensorFlow.js.
 - **`src/pages/LandingPage.tsx`** — Hero-Seite mit interaktiver Neural-Network-Visualisierung.
-- **`src/hooks/`** — Accessibility-Hooks: `useFocusTrap` (Modals), `useScrollLock` (Modal-Scroll).
+- **`src/hooks/`** — Hooks für ML-Pipeline, Kamera, Modals und Accessibility.
 - **`src/lib/utils.ts`** — `cn()` Utility (clsx + tailwind-merge) für bedingte Klassen.
+- **`src/constants.ts`** — Alle Magic Numbers zentral: `ML`, `CAMERA`, `ANIMATION`, `MODEL_LOAD_RETRY`, `PREDICTION`.
+
+**Routen:**
+- `/` → `LandingPage`
+- `/lernen` → `TrainingPage`
+- `/impressum`, `/datenschutz`, `/barrierefreiheit` → statische Seiten
+
+**ML-Pipeline in `TrainingPage.tsx`** (Hook-Komposition):
+- `useModelLoader` — lädt MobileNet + KNN-Classifier mit Retry-Logik
+- `useCameraStream` — WebRTC-Stream, front/back-Kamera-Toggle
+- `useImageFeatureExtraction` — MobileNet-Feature-Vektor aus Video-/Bild-Frame (224×224 Canvas)
+- `useClassManagement` — CRUD für `MLClass[]`-State mit `invalidateModel`-Callback
+- `useModelTraining` — KNN-Training auf Feature-Vektoren
+- `usePredictionLoop` — 15 FPS Inferenz-Schleife
+- `useConsentFlow` / `useModalState` — Modal-Sequenz (Datenschutz → Kamera-Consent → Laden)
+
+**Modal-Pattern:** Alle Modals nutzen `Dialog.tsx` als Basis (Focus-Trap + Scroll-Lock + ARIA). Modals in `TrainingPage.tsx` werden über eine diskriminierte Union in `useModalState` verwaltet (`ModalState` = `'none' | 'imagePreview' | 'clearConfirm' | 'clearClass' | 'removeClass'`).
+
+**Typen:** `src/types/ml.ts` definiert `MLImage` (id, dataUrl, featureArray), `MLClass`, `Prediction`. `src/types/errors.ts` definiert `AppError` mit `ErrorCategory` (`'model' | 'camera' | 'training' | 'prediction' | 'validation'`).
 
 **Build-Output:**
 - `dist/` — Client-Build (Vite), mit separaten Chunks für React, TensorFlow, Framer Motion, Lucide
