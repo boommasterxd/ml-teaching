@@ -3,6 +3,7 @@
  */
 import { Trash2, X } from 'lucide-react';
 import Dialog from '../Dialog';
+import ModalContent from '../ModalContent';
 import type { MLImage } from '../../types/ml';
 
 interface ImagePreviewModalProps {
@@ -16,7 +17,7 @@ interface ImagePreviewModalProps {
 export default function ImagePreviewModal({ isOpen, onClose, image, onDelete }: ImagePreviewModalProps) {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} labelledBy="image-modal-title">
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit max-w-sm w-full">
+      <ModalContent maxWidth="sm">
         <div className="p-4 border-b border-zinc-100 flex justify-between items-center">
           <h3 id="image-modal-title" className="font-bold text-zinc-800 text-sm">Bild Vorschau</h3>
           <button
@@ -42,7 +43,7 @@ export default function ImagePreviewModal({ isOpen, onClose, image, onDelete }: 
             </button>
           </div>
         )}
-      </div>
+      </ModalContent>
     </Dialog>
   );
 }

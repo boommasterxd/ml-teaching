@@ -5,15 +5,17 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '../hooks/usePageTitle';
-import * as tf from '@tensorflow/tfjs';
 import {
-  Plus, Trash2, Camera, Play, Square,
-  AlertCircle, CheckCircle2, Loader2, SwitchCamera, Brain, RotateCcw,
+  Plus, Trash2,
+  AlertCircle, SwitchCamera, RotateCcw,
 } from 'lucide-react';
-import { cn } from '../lib/utils';
 
-import type { MLImage, MLClass } from '../types/ml';
+import type { MLClass, MLImage } from '../types/ml';
 import { ML } from '../constants';
+import { useAppError } from '../hooks/useAppError';
+import { useConsentFlow } from '../hooks/useConsentFlow';
+import { useModalState } from '../hooks/useModalState';
+import { useImageFeatureExtraction } from '../hooks/useImageFeatureExtraction';
 import { useModelLoader } from '../hooks/useModelLoader';
 import { useCameraStream } from '../hooks/useCameraStream';
 import { usePredictionLoop } from '../hooks/usePredictionLoop';
@@ -22,6 +24,8 @@ import { useClassManagement } from '../hooks/useClassManagement';
 
 import PageHeader from '../components/PageHeader';
 import ClassCard from '../components/ClassCard';
+import TrainingControls from '../components/TrainingControls';
+import PredictionPanel from '../components/PredictionPanel';
 import ConfirmDialog from '../components/modals/ConfirmDialog';
 import ImagePreviewModal from '../components/modals/ImagePreviewModal';
 import ConsentModal from '../components/modals/ConsentModal';
@@ -33,27 +37,15 @@ export default function TrainingPage() {
   const navigate = useNavigate();
   usePageTitle('Modell trainieren');
 
-  // Error state shared across multiple hooks
-  const [error, setError] = useState<string | null>(null);
+  const { error, setError } = useAppError();
+  const { hasConsented, cameraConsent, grantConsent, grantCameraConsent, showConsentModal, showCameraModal } = useConsentFlow();
+  const { modal, closeModal, showImagePreview, showClearConfirm, showClearClass, showRemoveClass } = useModalState();
 
-  // Consent flow: 1. hasConsented → model loading starts, 2. cameraConsent → camera access starts
-  const [hasConsented, setHasConsented] = useState(false);
-  const [cameraConsent, setCameraConsent] = useState(false);
-
-  // Modal states
-  const [selectedImage, setSelectedImage] = useState<{ classId: string; image: MLImage } | null>(null);
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [classToClear, setClassToClear] = useState<string | null>(null);
-  const [classToRemove, setClassToRemove] = useState<string | null>(null);
-
-  // Whether a trained model currently exists (read/written from multiple places)
+  // Whether a trained model currently exists
   const [hasTrainedModel, setHasTrainedModel] = useState(false);
-
   // Shared video ref used by useCameraStream (stream attach) and usePredictionLoop (inference)
   const predictVideoRef = useRef<HTMLVideoElement>(null);
   const mainHeadingRef = useRef<HTMLHeadingElement>(null);
-  // Reused across addImageToClass calls to avoid GC pressure at 10 frames/sec
-  const thumbnailCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const { classifier, setClassifier, mobilenetModel, isModelLoading, loadingText } =
     useModelLoader(hasConsented, setError);
@@ -73,19 +65,14 @@ export default function TrainingPage() {
   }, [hasTrainedModel, stopPredicting]);
 
   const {
-    classes,
-    addClass,
-    removeClass,
-    updateClassName,
-    addImage,
-    removeImage,
-    removeImages,
-    clearClass,
-    resetClasses,
+    classes, addClass, removeClass, updateClassName,
+    addImage, removeImage, removeImages, clearClass, resetClasses,
   } = useClassManagement(invalidateModel);
 
   const { isTraining, trainModel, canTrain, hasInvalidNames, hasDuplicateNames } =
     useModelTraining(classes, classifier, setClassifier, setHasTrainedModel, setError);
+
+  const { extractFeatures } = useImageFeatureExtraction(mobilenetModel);
 
   /** Starts prediction only if a trained model exists. */
   const startPredicting = useCallback(() => {
@@ -98,48 +85,12 @@ export default function TrainingPage() {
     source: HTMLVideoElement | HTMLImageElement,
     mirror: boolean
   ) => {
-    if (!mobilenetModel) return;
-
-    const sourceWidth = source instanceof HTMLVideoElement ? source.videoWidth : source.width;
-    const sourceHeight = source instanceof HTMLVideoElement ? source.videoHeight : source.height;
-    if (sourceWidth === 0 || sourceHeight === 0) return;
-
-    const img = tf.browser.fromPixels(source);
-    const features = mobilenetModel.infer(img, true) as tf.Tensor;
-    const featureArray = Array.from(await features.data()) as number[];
-
-    if (!thumbnailCanvasRef.current) {
-      thumbnailCanvasRef.current = document.createElement('canvas');
-      thumbnailCanvasRef.current.width = ML.FEATURE_CANVAS_SIZE;
-      thumbnailCanvasRef.current.height = ML.FEATURE_CANVAS_SIZE;
+    const newImage = await extractFeatures(source, mirror);
+    if (newImage) {
+      addImage(classId, newImage);
+      invalidateModel();
     }
-    const canvas = thumbnailCanvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      const size = Math.min(sourceWidth, sourceHeight);
-      const startX = (sourceWidth - size) / 2;
-      const startY = (sourceHeight - size) / 2;
-      if (mirror) {
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-      }
-      ctx.drawImage(source, startX, startY, size, size, 0, 0, canvas.width, canvas.height);
-    }
-    const dataUrl = canvas.toDataURL('image/jpeg', ML.THUMBNAIL_QUALITY);
-
-    const newImage: MLImage = {
-      id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-      dataUrl,
-      featureArray,
-    };
-
-    addImage(classId, newImage);
-    invalidateModel();
-
-    img.dispose();
-    features.dispose();
-  }, [mobilenetModel, addImage, invalidateModel]);
+  }, [extractFeatures, addImage, invalidateModel]);
 
   const addExample = useCallback((classId: string, videoElement: HTMLVideoElement) => {
     addImageToClass(classId, videoElement, facingMode === 'user');
@@ -165,44 +116,35 @@ export default function TrainingPage() {
     setHasTrainedModel(false);
     stopPredicting();
     if (classifier) classifier.clearAllClasses();
-    setShowClearConfirm(false);
-    setSelectedImage(null);
-  }, [classifier, stopPredicting, resetClasses]);
+    closeModal();
+  }, [classifier, stopPredicting, resetClasses, closeModal]);
 
   /** Removes a single image and closes the preview modal if it was showing that image. */
   const handleRemoveImage = useCallback((classId: string, imageId: string) => {
     removeImage(classId, imageId);
-    setSelectedImage(null);
-  }, [removeImage]);
+    closeModal();
+  }, [removeImage, closeModal]);
 
-  /** Removes multiple images from a class and closes the preview if one of them was open. */
+  /** Removes multiple images from a class. */
   const handleRemoveImages = useCallback((classId: string, imageIds: string[]) => {
     removeImages(classId, imageIds);
-    setSelectedImage(prev =>
-      prev && prev.classId === classId && imageIds.includes(prev.image.id) ? null : prev
-    );
-  }, [removeImages]);
+    if (modal.type === 'imagePreview' && modal.classId === classId && imageIds.includes(modal.image.id)) {
+      closeModal();
+    }
+  }, [removeImages, modal, closeModal]);
 
-  /** Clears all images from a class and closes the preview if it belonged to that class. */
+  /** Clears all images from a class. */
   const handleClearClass = useCallback((id: string) => {
     clearClass(id);
-    setSelectedImage(prev => prev?.classId === id ? null : prev);
-  }, [clearClass]);
-
-  /** Opens the delete-class confirmation dialog for the given class. */
-  const handleRequestRemove = useCallback((classId: string) => {
-    setClassToRemove(classId);
-  }, []);
-
-  /** Opens the clear-class confirmation dialog for the given class. */
-  const handleRequestClear = useCallback((classId: string) => {
-    setClassToClear(classId);
-  }, []);
+    if (modal.type === 'imagePreview' && modal.classId === id) {
+      closeModal();
+    }
+  }, [clearClass, modal, closeModal]);
 
   /** Opens the image preview modal for the selected training image. */
   const handleImageClick = useCallback((classId: string, img: MLImage) => {
-    setSelectedImage({ classId, image: img });
-  }, []);
+    showImagePreview(classId, img);
+  }, [showImagePreview]);
 
   // After all consent modals are done, focus the main content heading
   useEffect(() => {
@@ -231,7 +173,7 @@ export default function TrainingPage() {
         <div className="max-w-7xl mx-auto mt-6 px-4 sm:px-6 lg:px-8">
           <div role="alert" aria-live="assertive" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start text-sm">
             <AlertCircle className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
-            <p>{error}</p>
+            <p>{error.message}</p>
           </div>
         </div>
       )}
@@ -244,7 +186,7 @@ export default function TrainingPage() {
             <h2 ref={mainHeadingRef} tabIndex={-1} className="text-lg font-bold text-zinc-800 focus:outline-none">1. Klassen ({classes.length})</h2>
             <div className="flex gap-2">
               <button
-                onClick={() => setShowClearConfirm(true)}
+                onClick={showClearConfirm}
                 className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-200 text-red-600 hover:bg-red-50 hover:border-red-200 rounded-xl text-sm font-medium transition-colors shadow-sm"
                 title="Alles zurücksetzen"
                 aria-label="Alle Klassen und Bilder zurücksetzen"
@@ -278,8 +220,8 @@ export default function TrainingPage() {
                   facingMode={facingMode}
                   onAddExample={addExample}
                   onAddImageExample={addImageExample}
-                  onRemove={handleRequestRemove}
-                  onClear={handleRequestClear}
+                  onRemove={showRemoveClass}
+                  onClear={showClearClass}
                   onRemoveImages={handleRemoveImages}
                   onUpdateName={updateClassName}
                   onImageClick={handleImageClick}
@@ -291,170 +233,40 @@ export default function TrainingPage() {
 
         {/* Right column: training & prediction */}
         <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-24">
+          <TrainingControls
+            classes={classes}
+            canTrain={canTrain}
+            isTraining={isTraining}
+            hasTrainedModel={hasTrainedModel}
+            hasInvalidNames={hasInvalidNames}
+            hasDuplicateNames={hasDuplicateNames}
+            onTrain={trainModel}
+          />
 
-          <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col">
-            <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
-              <h2 className="text-base font-bold text-zinc-800 flex items-center">
-                <Brain className="w-4 h-4 mr-2 text-indigo-500" aria-hidden="true" /> 2. Training
-              </h2>
-              {hasTrainedModel && (
-                <span role="status" className="flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
-                  <CheckCircle2 className="w-3 h-3 mr-1" aria-hidden="true" /> Bereit
-                </span>
-              )}
-            </div>
-            <div className="p-5">
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-zinc-600">Klassen bereit:</span>
-                <span className={cn('font-semibold', canTrain ? 'text-emerald-700' : 'text-red-600')}>
-                  {classes.filter(c => c.images.length >= ML.MIN_IMAGES_PER_CLASS).length} / {Math.max(ML.MIN_CLASSES, classes.length)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm mb-5">
-                <span className="text-zinc-600">Gesammelte Bilder:</span>
-                <span className="font-semibold text-zinc-800">
-                  {classes.reduce((acc, c) => acc + c.images.length, 0)}
-                </span>
-              </div>
-
-              <button
-                onClick={trainModel}
-                disabled={isTraining || !canTrain}
-                aria-disabled={isTraining || !canTrain}
-                className={cn(
-                  'w-full py-3 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
-                  isTraining || !canTrain
-                    ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
-                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5'
-                )}
-              >
-                {isTraining ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" /> Trainiere...</>
-                ) : hasTrainedModel ? (
-                  'Modell neu trainieren'
-                ) : (
-                  'Modell trainieren'
-                )}
-              </button>
-
-              <p className="text-xs text-zinc-600 mt-3 text-center" aria-live="polite">
-                {isTraining
-                  ? 'Bitte warten, das Modell wird trainiert...'
-                  : hasInvalidNames
-                  ? 'Bitte gib allen Klassen einen Namen.'
-                  : hasDuplicateNames
-                  ? 'Bitte gib allen Klassen einen eindeutigen Namen.'
-                  : !canTrain
-                  ? `Sammle mind. ${ML.MIN_IMAGES_PER_CLASS} Bilder in ALLEN Klassen (mind. ${ML.MIN_CLASSES}).`
-                  : hasTrainedModel
-                  ? 'Modell ist bereit. Du kannst es jederzeit neu trainieren.'
-                  : 'Genug Bilder gesammelt! Du kannst das Modell jetzt trainieren.'}
-              </p>
-            </div>
-          </div>
-
-          <div
-            className={cn(
-              'bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col flex-1 transition-opacity duration-300',
-              !hasTrainedModel ? 'opacity-80 pointer-events-none' : 'opacity-100'
-            )}
-            inert={!hasTrainedModel}
-          >
-            <div className="px-5 py-4 border-b border-zinc-100 flex justify-between items-center">
-              <h2 className="text-base font-bold text-zinc-800 flex items-center">
-                <Camera className="w-4 h-4 mr-2 text-indigo-500" aria-hidden="true" /> 3. Vorhersage
-              </h2>
-              {isPredicting && (
-                <span className="flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" aria-hidden="true"></span>
-                  Live
-                </span>
-              )}
-            </div>
-
-            <div className="p-5 flex flex-col flex-1">
-              <div className="relative aspect-[16/10.25] bg-zinc-900 rounded-xl overflow-hidden mb-5 flex-shrink-0">
-                <video
-                  ref={predictVideoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  aria-label="Kameravorschau für Vorhersage"
-                  className={cn(
-                    'w-full h-full object-cover rounded-xl',
-                    facingMode === 'user' ? 'transform scale-x-[-1]' : ''
-                  )}
-                />
-                {!isPredicting && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-xl">
-                    <button
-                      onClick={startPredicting}
-                      className="px-5 py-2.5 bg-white text-zinc-900 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
-                    >
-                      <Play className="w-4 h-4 mr-2 fill-current" aria-hidden="true" /> Starten
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Prediction results */}
-              <div className="flex-1 flex flex-col justify-center min-h-[2.25rem]" aria-live="polite" aria-atomic="true">
-                {isPredicting && prediction ? (
-                  <div className="space-y-4">
-                    <div className="text-center mb-2">
-                      <div className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold mb-1">Erkannt</div>
-                      <div className="text-2xl font-black text-zinc-800">
-                        {classes.find(c => c.id === prediction.label)?.name || 'Unbekannt'}
-                      </div>
-                    </div>
-                    <div className="space-y-2.5">
-                      {classes.map(c => {
-                        const conf = prediction.confidences[c.id] || 0;
-                        return (
-                          <div key={c.id} className="flex items-center text-xs">
-                            <span className="w-20 truncate font-semibold text-zinc-600">{c.name}</span>
-                            <div className="flex-1 h-2 bg-zinc-100 rounded-full overflow-hidden mx-3">
-                              <div
-                                className="h-full rounded-full transition-all duration-200 ease-out"
-                                style={{ width: `${conf * 100}%`, backgroundColor: c.color }}
-                              />
-                            </div>
-                            <span className="w-10 text-right font-mono font-medium text-zinc-600">
-                              {Math.round(conf * 100)}%
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <button
-                      onClick={stopPredicting}
-                      className="w-full mt-4 py-2.5 px-4 bg-zinc-50 hover:bg-zinc-100 text-zinc-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center border border-zinc-200/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2"
-                    >
-                      <Square className="w-4 h-4 mr-2 fill-current" aria-hidden="true" /> Stoppen
-                    </button>
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-zinc-800 text-sm text-center">
-                    Starte die Vorhersage, um Ergebnisse zu sehen.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <PredictionPanel
+            classes={classes}
+            prediction={prediction}
+            isPredicting={isPredicting}
+            hasTrainedModel={hasTrainedModel}
+            facingMode={facingMode}
+            predictVideoRef={predictVideoRef}
+            onStartPredicting={startPredicting}
+            onStopPredicting={stopPredicting}
+          />
         </div>
       </div>
 
       {/* Modal dialogs */}
       <ImagePreviewModal
-        isOpen={!!selectedImage}
-        onClose={() => setSelectedImage(null)}
-        image={selectedImage?.image ?? null}
-        onDelete={() => selectedImage && handleRemoveImage(selectedImage.classId, selectedImage.image.id)}
+        isOpen={modal.type === 'imagePreview'}
+        onClose={closeModal}
+        image={modal.type === 'imagePreview' ? modal.image : null}
+        onDelete={() => modal.type === 'imagePreview' && handleRemoveImage(modal.classId, modal.image.id)}
       />
 
       <ConfirmDialog
-        isOpen={showClearConfirm}
-        onClose={() => setShowClearConfirm(false)}
+        isOpen={modal.type === 'clearConfirm'}
+        onClose={closeModal}
         onConfirm={clearAll}
         titleId="clear-modal-title"
         descId="clear-modal-desc"
@@ -465,15 +277,15 @@ export default function TrainingPage() {
       />
 
       <ConfirmDialog
-        isOpen={!!classToClear}
-        onClose={() => setClassToClear(null)}
-        onConfirm={() => { if (classToClear) { handleClearClass(classToClear); setClassToClear(null); } }}
+        isOpen={modal.type === 'clearClass'}
+        onClose={closeModal}
+        onConfirm={() => { if (modal.type === 'clearClass') { handleClearClass(modal.classId); closeModal(); } }}
         titleId="class-clear-modal-title"
         descId="class-clear-modal-description"
         title="Bilder dieser Klasse löschen?"
         description={
           <>Möchten Sie wirklich alle Bilder der Klasse{' '}
-            <strong>"{classes.find(c => c.id === classToClear)?.name}"</strong>{' '}
+            <strong>"{modal.type === 'clearClass' ? classes.find(c => c.id === modal.classId)?.name : ''}"</strong>{' '}
             unwiderruflich löschen?</>
         }
         confirmLabel="Zurücksetzen"
@@ -481,15 +293,15 @@ export default function TrainingPage() {
       />
 
       <ConfirmDialog
-        isOpen={!!classToRemove}
-        onClose={() => setClassToRemove(null)}
-        onConfirm={() => { if (classToRemove) { removeClass(classToRemove); setClassToRemove(null); } }}
+        isOpen={modal.type === 'removeClass'}
+        onClose={closeModal}
+        onConfirm={() => { if (modal.type === 'removeClass') { removeClass(modal.classId); closeModal(); } }}
         titleId="class-remove-modal-title"
         descId="class-remove-modal-description"
         title="Klasse löschen?"
         description={
           <>Möchten Sie die Klasse{' '}
-            <strong>"{classes.find(c => c.id === classToRemove)?.name}"</strong>{' '}
+            <strong>"{modal.type === 'removeClass' ? classes.find(c => c.id === modal.classId)?.name : ''}"</strong>{' '}
             und alle zugehörigen Bilder wirklich entfernen?</>
         }
         confirmLabel="Löschen"
@@ -497,9 +309,9 @@ export default function TrainingPage() {
       />
 
       <ConsentModal
-        isOpen={!hasConsented}
+        isOpen={showConsentModal}
         onDecline={() => navigate('/')}
-        onConfirm={() => setHasConsented(true)}
+        onConfirm={grantConsent}
       />
 
       <LoadingModal
@@ -508,9 +320,9 @@ export default function TrainingPage() {
       />
 
       <CameraConsentModal
-        isOpen={hasConsented && !isModelLoading && !cameraConsent}
+        isOpen={showCameraModal && !isModelLoading}
         onDecline={() => navigate('/')}
-        onConfirm={() => setCameraConsent(true)}
+        onConfirm={grantCameraConsent}
       />
     </div>
   );

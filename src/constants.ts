@@ -10,6 +10,7 @@ export const ML = {
   MOBILENET_VERSION: 2 as const,
   MOBILENET_ALPHA: 1.0,
   THUMBNAIL_QUALITY: 0.9,
+  MAX_CLASS_NAME_LENGTH: 50,
 } as const;
 
 export const CAMERA = {
