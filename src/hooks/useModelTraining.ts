@@ -86,6 +86,7 @@ export function useModelTraining(
       setIsTraining(false);
     } catch (err) {
       console.error('Training error:', err);
+      newClassifier.dispose();
       onError('training', 'Fehler beim Training des Modells.');
       setIsTraining(false);
     }

@@ -23,6 +23,7 @@ export interface ClassCardProps {
   onRemoveImages: (classId: string, ids: string[]) => void;
   onUpdateName: (classId: string, name: string) => void;
   onImageClick: (classId: string, img: MLImage) => void;
+  onError: (message: string) => void;
 }
 
 /** Displays a class with its camera preview, recording controls, and image gallery. */
@@ -38,6 +39,7 @@ const ClassCard = memo(function ClassCard({
   onRemoveImages,
   onUpdateName,
   onImageClick,
+  onError,
 }: ClassCardProps) {
   const [isRecording, setIsRecording] = useState(false);
   const recordIntervalRef = useRef<number | null>(null);
@@ -92,7 +94,13 @@ const ClassCard = memo(function ClassCard({
         img.onload = () => {
           onAddImageExample(cls.id, img);
         };
+        img.onerror = () => {
+          onError(`"${file.name}" konnte nicht als Bild geladen werden.`);
+        };
         img.src = result;
+      };
+      reader.onerror = () => {
+        onError(`"${file.name}" konnte nicht gelesen werden.`);
       };
       reader.readAsDataURL(file);
     });
