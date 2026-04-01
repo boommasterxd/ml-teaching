@@ -2,10 +2,9 @@
  * Interactive neural network animation that visualizes forward propagation
  * for dog/cat inputs, demonstrating how a neural network processes data.
  */
-import { useState, useEffect, useRef } from 'react';
 import { Dog, Cat } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { ANIMATION } from '../constants';
+import { useNeuralNetAnimation } from '../hooks/useNeuralNetAnimation';
 
 const LAYERS = [
   { id: 'input', nodes: 4, label: 'Input' },
@@ -25,42 +24,7 @@ function getNodeY(totalNodes: number, index: number): number {
 
 /** Renders an interactive neural-network animation with dog/cat input buttons. */
 export default function NeuralNetViz() {
-  const [activeSignal, setActiveSignal] = useState<'dog' | 'cat' | null>(null);
-  const [animStep, setAnimStep] = useState(-1);
-  const [animating, setAnimating] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
-  const timeoutIdsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  useEffect(() => {
-    return () => { timeoutIdsRef.current.forEach(clearTimeout); };
-  }, []);
-
-  /** Starts a multi-step forward-propagation animation for the given input type. */
-  const triggerAnimation = (type: 'dog' | 'cat') => {
-    if (animating) return;
-    timeoutIdsRef.current.forEach(clearTimeout);
-    setAnimating(true);
-    setActiveSignal(type);
-    setResult(null);
-    setAnimStep(0);
-
-    const d = ANIMATION.STEP_DURATION_MS;
-
-    timeoutIdsRef.current = [
-      setTimeout(() => setAnimStep(1), d * 1),
-      setTimeout(() => setAnimStep(2), d * 2),
-      setTimeout(() => setAnimStep(3), d * 3),
-      setTimeout(() => setAnimStep(4), d * 4),
-      setTimeout(() => setAnimStep(5), d * 5),
-      setTimeout(() => setAnimStep(6), d * 6),
-      setTimeout(() => {
-        setAnimStep(7);
-        setResult(type === 'dog' ? 'Hund erkannt (98%)' : 'Katze erkannt (95%)');
-        setAnimating(false);
-        timeoutIdsRef.current = [];
-      }, d * 7),
-    ];
-  };
+  const { activeSignal, animStep, animating, result, triggerAnimation } = useNeuralNetAnimation();
 
   return (
     <div className="bg-zinc-800 p-8 rounded-3xl border border-zinc-700 relative overflow-hidden">
