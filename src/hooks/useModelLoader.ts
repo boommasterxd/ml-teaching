@@ -57,6 +57,7 @@ export function useModelLoader(
     async function initModels() {
       try {
         setLoadingText('Lade TensorFlow.js Backend...');
+        await tf.setBackend('webgl');
         await tf.ready();
         if (signal.aborted) return;
 

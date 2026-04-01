@@ -22,49 +22,47 @@ export function usePredictionLoop(
   const shouldPredictRef = useRef(false);
   const lastPredictTimeRef = useRef(0);
 
-  // Local prediction function — captures current values via closure.
-  // Recreated in the effect when classifier or mobilenetModel changes.
-  const predictLoop = async (timestamp: number) => {
-    if (!classifier || !mobilenetModel || !videoRef.current || classifier.getNumClasses() === 0) {
-      return;
-    }
+  useEffect(() => {
+    const predictLoop = async (timestamp: number) => {
+      if (!classifier || !mobilenetModel || !videoRef.current || classifier.getNumClasses() === 0) {
+        return;
+      }
 
-    if (timestamp - lastPredictTimeRef.current < PREDICTION.INTERVAL_MS) {
+      if (timestamp - lastPredictTimeRef.current < PREDICTION.INTERVAL_MS) {
+        if (shouldPredictRef.current) {
+          requestRef.current = requestAnimationFrame(predictLoop);
+        }
+        return;
+      }
+      lastPredictTimeRef.current = timestamp;
+
+      if (
+        videoRef.current.readyState >= 2 &&
+        videoRef.current.videoWidth > 0 &&
+        videoRef.current.videoHeight > 0
+      ) {
+        const img = tf.browser.fromPixels(videoRef.current);
+        const features = mobilenetModel.infer(img, true);
+
+        try {
+          const result = await classifier.predictClass(features);
+          setPrediction({
+            label: result.label,
+            confidences: result.confidences,
+          });
+        } catch (err) {
+          console.error('Prediction error:', err);
+        } finally {
+          img.dispose();
+          features.dispose();
+        }
+      }
+
       if (shouldPredictRef.current) {
         requestRef.current = requestAnimationFrame(predictLoop);
       }
-      return;
-    }
-    lastPredictTimeRef.current = timestamp;
+    };
 
-    if (
-      videoRef.current.readyState >= 2 &&
-      videoRef.current.videoWidth > 0 &&
-      videoRef.current.videoHeight > 0
-    ) {
-      const img = tf.browser.fromPixels(videoRef.current);
-      const features = mobilenetModel.infer(img, true);
-
-      try {
-        const result = await classifier.predictClass(features);
-        setPrediction({
-          label: result.label,
-          confidences: result.confidences,
-        });
-      } catch (err) {
-        console.error('Prediction error:', err);
-      } finally {
-        img.dispose();
-        features.dispose();
-      }
-    }
-
-    if (shouldPredictRef.current) {
-      requestRef.current = requestAnimationFrame(predictLoop);
-    }
-  };
-
-  useEffect(() => {
     shouldPredictRef.current = isPredicting;
     if (isPredicting) {
       lastPredictTimeRef.current = 0;
@@ -80,7 +78,6 @@ export function usePredictionLoop(
       shouldPredictRef.current = false;
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPredicting, classifier, mobilenetModel]);
 
   /** Activates the prediction loop. */
