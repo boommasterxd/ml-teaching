@@ -7,7 +7,15 @@ import PageHeader from '../components/PageHeader';
 import PageContent from '../components/PageContent';
 import { usePageTitle } from '../hooks/usePageTitle';
 
-/** Renders the full GDPR-compliant privacy policy. */
+/**
+ * Renders the full GDPR-compliant privacy policy page.
+ *
+ * Covers data collection, hosting (Hostinger), cookies, server logs,
+ * contact inquiries, the two-click AI model consent flow, and camera usage
+ * for local ML training. Sets the document title via {@link usePageTitle}.
+ *
+ * @returns The rendered privacy policy page wrapped in the shared page layout.
+ */
 export default function PrivacyPage() {
   usePageTitle('Datenschutzerklärung');
 

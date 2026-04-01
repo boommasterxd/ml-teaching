@@ -1,19 +1,30 @@
 /**
- * React Error Boundary that catches rendering errors and displays
- * a user-friendly fallback UI instead of a blank screen.
+ * ErrorBoundary.tsx
+ *
+ * React Error Boundary that catches rendering errors thrown by any descendant
+ * and displays a user-friendly fallback UI instead of a blank screen.
  */
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { AlertCircle } from 'lucide-react';
 
+/** Props accepted by the ErrorBoundary component. */
 interface Props {
+  /** The subtree to render and protect from uncaught errors. */
   children: ReactNode;
 }
 
+/** Internal state tracking whether a rendering error has been caught. */
 interface State {
+  /** True once a descendant has thrown during rendering. */
   hasError: boolean;
 }
 
+/**
+ * Class-based error boundary wrapping an arbitrary React subtree.
+ * When a descendant throws during rendering, the fallback UI is shown
+ * with a button to reload the page.
+ */
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 

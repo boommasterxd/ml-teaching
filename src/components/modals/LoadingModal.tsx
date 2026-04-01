@@ -1,16 +1,30 @@
 /**
- * Non-dismissible modal shown while ML models are being downloaded and initialized.
+ * LoadingModal.tsx
+ *
+ * Non-dismissible modal shown while ML models (MobileNet + KNN) are being
+ * downloaded and initialized. Blocks user interaction until loading completes.
  */
 import { Loader2 } from 'lucide-react';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 
+/**
+ * Props for the LoadingModal component.
+ */
 interface LoadingModalProps {
+  /** Controls whether the modal is visible. */
   isOpen: boolean;
+  /** Dynamic status text displayed below the spinner (e.g. download progress). */
   loadingText: string;
 }
 
-/** Displays a spinner and progress text while models load. Cannot be closed by the user. */
+/**
+ * Displays a centered spinner and a dynamic status message while ML models load.
+ * The modal cannot be dismissed by the user.
+ *
+ * @param isOpen - Whether the modal is currently shown.
+ * @param loadingText - Status text rendered in a live region for screen readers.
+ */
 export default function LoadingModal({ isOpen, loadingText }: LoadingModalProps) {
   return (
     <Dialog isOpen={isOpen} labelledBy="loading-modal-title">

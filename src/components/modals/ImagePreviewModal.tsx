@@ -1,19 +1,37 @@
 /**
- * Modal that displays an enlarged preview of a training image with a delete option.
+ * ImagePreviewModal.tsx
+ *
+ * Modal that displays an enlarged preview of a single training image
+ * and provides a delete action for that image.
  */
 import { Trash2, X } from 'lucide-react';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import type { MLImage } from '../../types/ml';
 
+/**
+ * Props for the ImagePreviewModal component.
+ */
 interface ImagePreviewModalProps {
+  /** Whether the modal is currently visible. */
   isOpen: boolean;
+  /** Callback invoked when the modal is closed via the close button. */
   onClose: () => void;
+  /** The training image to preview, or null when no image is selected. */
   image: MLImage | null;
+  /** Callback invoked when the user confirms deletion of the previewed image. */
   onDelete: () => void;
 }
 
-/** Shows a larger version of a training image and allows the user to delete it. */
+/**
+ * Renders a modal with an enlarged view of a training image and a delete button.
+ * The image content is only rendered when `image` is non-null.
+ *
+ * @param isOpen - Controls modal visibility.
+ * @param onClose - Called when the close button is clicked.
+ * @param image - The MLImage to display, or null if none is selected.
+ * @param onDelete - Called when the delete button is clicked.
+ */
 export default function ImagePreviewModal({ isOpen, onClose, image, onDelete }: ImagePreviewModalProps) {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} labelledBy="image-modal-title">

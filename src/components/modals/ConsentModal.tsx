@@ -1,4 +1,6 @@
 /**
+ * ConsentModal.tsx
+ *
  * GDPR consent modal that requires the user to accept the privacy policy
  * and acknowledge external model loading before the app can proceed.
  */
@@ -8,17 +10,34 @@ import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import Button from '../Button';
 
+/**
+ * Props for the ConsentModal component.
+ */
 interface ConsentModalProps {
+  /** Whether the modal is currently visible. */
   isOpen: boolean;
+  /** Called when the user dismisses or declines the consent dialog. */
   onDecline: () => void;
+  /** Called when the user confirms both consent checkboxes and submits. */
   onConfirm: () => void;
 }
 
-/** Two-checkbox consent dialog; confirm is only enabled when both boxes are checked. */
+/**
+ * Two-checkbox consent dialog for GDPR compliance.
+ *
+ * Renders a modal with two required checkboxes: one for the privacy policy
+ * and one for acknowledging that the MobileNet model is loaded from Google
+ * servers. The confirm button is disabled until both boxes are checked.
+ *
+ * @param isOpen - Whether the modal is visible.
+ * @param onDecline - Callback fired when the user cancels or closes the dialog.
+ * @param onConfirm - Callback fired when the user submits with both boxes checked.
+ */
 export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentModalProps) {
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [modelChecked, setModelChecked] = useState(false);
 
+  // Both checkboxes must be ticked before the user can proceed.
   const canConfirm = privacyChecked && modelChecked;
 
   return (

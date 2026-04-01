@@ -1,6 +1,10 @@
 /**
- * Training page where users can collect image data for different classes,
- * train a custom KNN classifier on top of MobileNet, and test the model in real-time.
+ * TrainingPage.tsx
+ *
+ * Core training page of the application. Orchestrates the full ML workflow:
+ * consent dialogs → MobileNet + KNN model loading → per-class image capture
+ * (camera or upload) → KNN training → live inference loop at 15 FPS.
+ * All processing runs client-side via TensorFlow.js; no data leaves the browser.
  */
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -31,7 +35,14 @@ import ConsentModal from '../components/modals/ConsentModal';
 import CameraConsentModal from '../components/modals/CameraConsentModal';
 import LoadingModal from '../components/modals/LoadingModal';
 
-/** Main training page: consent → model loading → data collection → training → live prediction. */
+/**
+ * Main page component for the interactive ML training experience.
+ *
+ * Renders the full training UI: class management panel on the left,
+ * training controls and live prediction panel on the right, plus all
+ * modal dialogs (consent, loading, image preview, confirm dialogs).
+ * Hook composition handles all state; this component is layout and wiring only.
+ */
 export default function TrainingPage() {
   const navigate = useNavigate();
   usePageTitle('Modell trainieren');
@@ -97,10 +108,24 @@ export default function TrainingPage() {
     }
   }, [extractFeatures, addImage, invalidateModel]);
 
+  /**
+   * Captures a frame from the live camera feed and adds it as a training example.
+   * Mirrors the frame automatically when the front-facing camera is active.
+   *
+   * @param classId - ID of the target class.
+   * @param videoElement - The video element providing the live camera stream.
+   */
   const addExample = useCallback((classId: string, videoElement: HTMLVideoElement) => {
     addImageToClass(classId, videoElement, facingMode === 'user');
   }, [addImageToClass, facingMode]);
 
+  /**
+   * Adds a user-uploaded image as a training example for a class.
+   * No mirroring is applied to uploaded images.
+   *
+   * @param classId - ID of the target class.
+   * @param imageElement - The image element containing the uploaded image data.
+   */
   const addImageExample = useCallback((classId: string, imageElement: HTMLImageElement) => {
     addImageToClass(classId, imageElement, false);
   }, [addImageToClass]);

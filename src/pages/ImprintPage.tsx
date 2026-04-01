@@ -1,12 +1,23 @@
 /**
- * Imprint page containing legal contact and ownership information.
+ * ImprintPage.tsx
+ *
+ * Static page displaying the legal imprint (Impressum) with owner contact
+ * information required by German law (TMG). Exported as the default route
+ * component for the /impressum path.
  */
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
 import PageContent from '../components/PageContent';
 import { usePageTitle } from '../hooks/usePageTitle';
 
-/** Renders the legal imprint with owner contact details. */
+/**
+ * Renders the legal imprint page with the owner's name, postal address,
+ * phone number and email address.
+ *
+ * @returns The full page layout containing the imprint content.
+ *
+ * Side-effects: sets the document title to "Impressum" via `usePageTitle`.
+ */
 export default function ImprintPage() {
   usePageTitle('Impressum');
 

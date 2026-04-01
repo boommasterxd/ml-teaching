@@ -1,6 +1,10 @@
 /**
- * Landing page with hero section, educational content about neural networks and
- * transfer learning, an interactive neural-net visualization, and calls to action.
+ * LandingPage.tsx
+ *
+ * Landing page of the application. Renders the hero section, a three-step
+ * overview, an interactive neural-network visualization, educational content
+ * about MobileNet and KNN, training tips, real-world examples, and calls to
+ * action that navigate the user to the training page.
  */
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,10 +12,16 @@ import { Brain, Camera, Zap, ArrowRight, Users, ImagePlus, Lightbulb, Car, Smart
 import Button from '../components/Button';
 import NeuralNetViz from '../components/NeuralNetViz';
 
-/** Renders the full landing page with multiple content sections. */
+/**
+ * Full landing page composed of multiple content sections.
+ *
+ * Sets the document title on mount and provides navigation to `/lernen`
+ * via two call-to-action buttons.
+ */
 export default function LandingPage() {
   const navigate = useNavigate();
 
+  // Set the browser tab title once on mount.
   useEffect(() => {
     document.title = 'KI Bilderkennung für Schüler';
   }, []);

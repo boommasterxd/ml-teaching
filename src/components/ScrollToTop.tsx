@@ -1,5 +1,8 @@
 /**
+ * ScrollToTop.tsx
+ *
  * Utility component that scrolls the window to the top on every route change.
+ * Renders nothing — intended to be mounted once inside the router tree.
  */
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";

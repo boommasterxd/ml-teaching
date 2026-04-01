@@ -1,23 +1,40 @@
 /**
- * Live prediction panel showing camera feed, confidence bars, and start/stop controls.
+ * PredictionPanel.tsx
+ *
+ * Live prediction panel showing the camera feed, per-class confidence bars,
+ * and start/stop controls. Disabled and visually dimmed when no trained model is available.
  */
 import type React from 'react';
 import { Camera, Play, Square } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { MLClass, Prediction } from '../types/ml';
 
+/**
+ * Props for the PredictionPanel component.
+ */
 interface PredictionPanelProps {
+  /** All ML classes defined by the user, used to render per-class confidence bars. */
   classes: MLClass[];
+  /** The latest prediction result from the KNN inference loop, or null if not yet available. */
   prediction: Prediction | null;
+  /** Whether the prediction loop is currently running. */
   isPredicting: boolean;
+  /** Whether a trained KNN model is available. Controls the disabled/dimmed state of the panel. */
   hasTrainedModel: boolean;
+  /** Camera facing direction — mirrors the video horizontally when set to 'user'. */
   facingMode: 'user' | 'environment';
+  /** Ref attached to the video element used for the prediction camera feed. */
   predictVideoRef: React.RefObject<HTMLVideoElement | null>;
+  /** Called when the user clicks the start button to begin prediction. */
   onStartPredicting: () => void;
+  /** Called when the user clicks the stop button to halt prediction. */
   onStopPredicting: () => void;
 }
 
-/** Displays the live prediction camera feed with per-class confidence bars. */
+/**
+ * Renders the live prediction panel with a camera feed overlay and confidence bars.
+ * The panel becomes inert and semi-transparent when no trained model exists.
+ */
 export default function PredictionPanel({
   classes,
   prediction,
@@ -73,7 +90,6 @@ export default function PredictionPanel({
           )}
         </div>
 
-        {/* Prediction results */}
         <div className="flex-1 flex flex-col justify-center min-h-[2.25rem]" aria-live="polite" aria-atomic="true">
           {isPredicting && prediction ? (
             <div className="space-y-4">

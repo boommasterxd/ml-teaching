@@ -1,6 +1,10 @@
 /**
+ * App.tsx
+ *
  * Root application component. Configures React Router with lazy-loaded pages,
  * a global loading fallback, skip-to-content link, and the site footer.
+ *
+ * Exports: App (default)
  */
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';

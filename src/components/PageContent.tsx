@@ -3,13 +3,24 @@
  */
 import type { ReactNode } from 'react';
 
+/** Props for the PageContent component. */
 interface PageContentProps {
+  /** Optional HTML id applied to the wrapping `<section>` element. */
   id?: string;
+  /** Value passed to `aria-labelledby` for accessible section labelling. */
   labelledBy?: string;
+  /** Content rendered inside the styled card. */
   children: ReactNode;
 }
 
-/** Renders a white card section with constrained width and prose typography. */
+/**
+ * Renders a white card section with constrained width and prose typography.
+ *
+ * @param id - Optional HTML id for the `<section>` element.
+ * @param labelledBy - Id of the element that labels this section (`aria-labelledby`).
+ * @param children - Content to display inside the card.
+ * @returns A styled `<section>` containing a rounded card with prose styles applied.
+ */
 export default function PageContent({ id, labelledBy, children }: PageContentProps) {
   return (
     <section

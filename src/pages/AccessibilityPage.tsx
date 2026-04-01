@@ -1,5 +1,12 @@
 /**
- * Accessibility statement page (freiwillige BFSG-Erklärung gemäß Muster-Template).
+ * AccessibilityPage.tsx
+ *
+ * Renders the statutory accessibility declaration (Barrierefreiheitserklärung)
+ * as required by the BFSG (Barrierefreiheitsstärkungsgesetz).
+ * Includes conformance status, technical stack, contact information,
+ * and arbitration authority details.
+ *
+ * @exports AccessibilityPage - Default export, rendered at route `/barrierefreiheit`.
  */
 import PageLayout from '../components/PageLayout';
 import PageHeader from '../components/PageHeader';
