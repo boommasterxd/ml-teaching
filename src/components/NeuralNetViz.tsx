@@ -2,6 +2,7 @@
  * Interactive neural network animation that visualizes forward propagation
  * for dog/cat inputs, demonstrating how a neural network processes data.
  */
+import { useMemo } from 'react';
 import { Dog, Cat } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useNeuralNetAnimation } from '../hooks/useNeuralNetAnimation';
@@ -25,6 +26,34 @@ function getNodeY(totalNodes: number, index: number): number {
 /** Renders an interactive neural-network animation with dog/cat input buttons. */
 export default function NeuralNetViz() {
   const { activeSignal, animStep, animating, result, triggerAnimation } = useNeuralNetAnimation();
+
+  const svgConnections = useMemo(() => {
+    const color = (isActive: boolean) =>
+      isActive ? (activeSignal === 'dog' ? '#ef4444' : '#3b82f6') : '#52525b';
+    const opacity = (isActive: boolean) => isActive ? 0.6 : 0.15;
+
+    const layer1 = Array.from({ length: 4 }).flatMap((_, i) =>
+      Array.from({ length: 6 }).map((_, j) => {
+        const active = animStep >= 1;
+        return { key: `l1-${i}-${j}`, x1: '15%', y1: getNodeY(4, i), x2: '35%', y2: getNodeY(6, j), color: color(active), opacity: opacity(active) };
+      })
+    );
+    const layer2 = Array.from({ length: 6 }).flatMap((_, i) =>
+      Array.from({ length: 6 }).map((_, j) => {
+        const active = animStep >= 3;
+        return { key: `l2-${i}-${j}`, x1: '35%', y1: getNodeY(6, i), x2: '55%', y2: getNodeY(6, j), color: color(active), opacity: opacity(active) };
+      })
+    );
+    const layer3 = Array.from({ length: 6 }).flatMap((_, i) =>
+      Array.from({ length: 2 }).map((_, j) => {
+        const isTarget = (activeSignal === 'dog' && j === 0) || (activeSignal === 'cat' && j === 1);
+        const active = animStep >= 5 && isTarget;
+        return { key: `l3-${i}-${j}`, x1: '55%', y1: getNodeY(6, i), x2: '75%', y2: getNodeY(2, j), color: color(active), opacity: opacity(active) };
+      })
+    );
+
+    return [...layer1, ...layer2, ...layer3];
+  }, [animStep, activeSignal]);
 
   return (
     <div className="bg-zinc-800 p-8 rounded-3xl border border-zinc-700 relative overflow-hidden">
@@ -59,61 +88,16 @@ export default function NeuralNetViz() {
         {/* SVG connection lines between layers */}
         <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
            <svg width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">
-             {/* Input -> Hidden 1 */}
-             {Array.from({length: 4}).map((_, i) =>
-               Array.from({length: 6}).map((_, j) => {
-                 const isActive = animStep >= 1;
-                 const color = isActive ? (activeSignal === 'dog' ? '#ef4444' : '#3b82f6') : '#52525b';
-                 const opacity = isActive ? 0.6 : 0.15;
-                 return (
-                   <line
-                     key={`l1-${i}-${j}`}
-                     x1="15%" y1={getNodeY(4, i)}
-                     x2="35%" y2={getNodeY(6, j)}
-                     stroke={color} strokeWidth="2"
-                     opacity={opacity}
-                     style={{ transition: 'opacity 0.4s ease' }}
-                   />
-                 );
-               })
-             )}
-             {/* Hidden 1 -> Hidden 2 */}
-             {Array.from({length: 6}).map((_, i) =>
-               Array.from({length: 6}).map((_, j) => {
-                 const isActive = animStep >= 3;
-                 const color = isActive ? (activeSignal === 'dog' ? '#ef4444' : '#3b82f6') : '#52525b';
-                 const opacity = isActive ? 0.6 : 0.15;
-                 return (
-                   <line
-                     key={`l2-${i}-${j}`}
-                     x1="35%" y1={getNodeY(6, i)}
-                     x2="55%" y2={getNodeY(6, j)}
-                     stroke={color} strokeWidth="2"
-                     opacity={opacity}
-                     style={{ transition: 'opacity 0.4s ease' }}
-                   />
-                 );
-               })
-             )}
-             {/* Hidden 2 -> Output */}
-             {Array.from({length: 6}).map((_, i) =>
-               Array.from({length: 2}).map((_, j) => {
-                 const isTargetNode = (activeSignal === 'dog' && j === 0) || (activeSignal === 'cat' && j === 1);
-                 const isActive = animStep >= 5 && isTargetNode;
-                 const color = isActive ? (activeSignal === 'dog' ? '#ef4444' : '#3b82f6') : '#52525b';
-                 const opacity = isActive ? 0.6 : 0.15;
-                 return (
-                   <line
-                     key={`l3-${i}-${j}`}
-                     x1="55%" y1={getNodeY(6, i)}
-                     x2="75%" y2={getNodeY(2, j)}
-                     stroke={color} strokeWidth="2"
-                     opacity={opacity}
-                     style={{ transition: 'opacity 0.4s ease' }}
-                   />
-                 );
-               })
-             )}
+             {svgConnections.map(({ key, x1, y1, x2, y2, color, opacity }) => (
+               <line
+                 key={key}
+                 x1={x1} y1={y1}
+                 x2={x2} y2={y2}
+                 stroke={color} strokeWidth="2"
+                 opacity={opacity}
+                 style={{ transition: 'opacity 0.4s ease' }}
+               />
+             ))}
            </svg>
         </div>
 
