@@ -7,6 +7,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as knnClassifier from '@tensorflow-models/knn-classifier';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
+import type { ErrorCategory } from '../types/errors';
 
 /** Manages training state, validation checks, and the KNN training procedure. */
 export function useModelTraining(
@@ -14,7 +15,7 @@ export function useModelTraining(
   classifier: knnClassifier.KNNClassifier | null,
   setClassifier: (c: knnClassifier.KNNClassifier) => void,
   setHasTrainedModel: (v: boolean) => void,
-  onError: (category: 'training' | 'validation', msg: string) => void
+  onError: (category: Extract<ErrorCategory, 'training' | 'validation'>, msg: string) => void
 ) {
   const [isTraining, setIsTraining] = useState(false);
 
