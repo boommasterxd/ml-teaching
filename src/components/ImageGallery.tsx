@@ -70,7 +70,8 @@ const ImageGallery = memo(function ImageGallery({
               <button
                 onClick={handleBulkDelete}
                 disabled={selectedIds.size === 0}
-                className="text-[10px] font-bold py-1 px-2 min-h-[24px] transition-opacity hover:opacity-70 disabled:text-zinc-300 disabled:opacity-50"
+                aria-label={`${selectedIds.size} ausgewählte Bilder löschen`}
+                className="text-[10px] font-bold py-1.5 px-3 min-h-[24px] min-w-[44px] transition-opacity hover:opacity-70 disabled:text-zinc-300 disabled:opacity-50"
                 style={{ color: selectedIds.size > 0 ? color : undefined }}
               >
                 Löschen
@@ -80,7 +81,8 @@ const ImageGallery = memo(function ImageGallery({
                   setIsSelectionMode(false);
                   setSelectedIds(new Set());
                 }}
-                className="text-[10px] font-bold py-1 px-2 min-h-[24px] text-zinc-600 hover:text-zinc-700 transition-colors"
+                aria-label="Auswahl abbrechen"
+                className="text-[10px] font-bold py-1.5 px-3 min-h-[24px] min-w-[44px] text-zinc-600 hover:text-zinc-700 transition-colors"
               >
                 Abbrechen
               </button>
@@ -89,7 +91,8 @@ const ImageGallery = memo(function ImageGallery({
             images.length > 0 && (
               <button
                 onClick={() => setIsSelectionMode(true)}
-                className="text-[10px] font-bold py-1 px-2 min-h-[24px] transition-opacity hover:opacity-70"
+                aria-label="Bilder auswählen"
+                className="text-[10px] font-bold py-1.5 px-3 min-h-[24px] min-w-[44px] transition-opacity hover:opacity-70"
                 style={{ color }}
               >
                 Auswählen

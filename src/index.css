@@ -9,6 +9,9 @@
   /* Hide the main page scrollbar (no layout shift, no white strip) */
   html, body {
     scrollbar-width: none;
+    /* Scroll padding compensates for the sticky header (h-16 = 64px) so
+       keyboard-focused elements are never hidden behind it (WCAG 2.4.11) */
+    scroll-padding-top: 4.5rem;
   }
   html::-webkit-scrollbar {
     display: none;
@@ -65,5 +68,10 @@
   .animate-bounce,
   .animate-ping {
     animation: none;
+  }
+  /* Disable all CSS transitions for users who prefer reduced motion (WCAG 2.2.2) */
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }
