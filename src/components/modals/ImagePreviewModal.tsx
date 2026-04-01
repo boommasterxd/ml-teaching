@@ -37,7 +37,7 @@ export default function ImagePreviewModal({ isOpen, onClose, image, onDelete }: 
             />
             <button
               onClick={onDelete}
-              className="w-full py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+              className="w-full py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             >
               <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" /> Bild löschen
             </button>

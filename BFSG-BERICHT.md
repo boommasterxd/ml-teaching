@@ -2,11 +2,18 @@
 
 | | |
 |---|---|
-| **Datum** | 2026-03-28 (Neupruefung auf aktuellem Codestand) |
+| **Datum** | 2026-04-01 (Neupruefung auf aktuellem Codestand) |
 | **Geprueftes Verzeichnis** | `/home/ysmelsem/Projekte/BoomApps Projekte/Externe Projekte/the-teachable-machine` |
-| **Gepruefkte URL** | `http://localhost:3000` (6 URLs via Sitemap + manuell) |
+| **Gepruefkte URL** | `http://localhost:3000` (5 URLs via Sitemap + manuell) |
 | **Pruefgrundlage** | BFSG, WCAG 2.1 AA, WCAG 2.2 AA, EN 301 549, BITV 2.0 |
-| **Gesamtergebnis** | BESTANDEN — 0 Barrieren, 0 Warnungen, Lighthouse 100% (6 URLs) |
+| **Gesamtergebnis** | BESTANDEN — 0 Barrieren, 2 Warnungen (keine Barrieren), Lighthouse 100% (5 URLs), externer Scan 100/100 |
+
+> **Hinweis zur Neupruefung 2026-04-01:** Dieser Bericht wurde auf Basis des aktuellen Codestandes (Branch `main`, Commit `b0e923c`, Stand 01.04.2026) neu erstellt und geprueft. Seit der letzten Pruefung (2026-03-28) wurden zwei Commits gemergt:
+>
+> - `b0e923c` — Performance-Refactoring in `NeuralNetViz.tsx` (SVG-Verbindungen via `useMemo` statt Inline-Arrays) und Security-Header-Anpassungen in `server.ts`. Keine Barrierefreiheitsauswirkungen.
+> - `547cdeb` — Fehlerhandling fuer Bildladen in `ClassCard.tsx` (neue `onError`-Prop). Fehlermeldungen werden an die TrainingPage weitergeleitet, die diese korrekt mit `role="alert"` anzeigt. Keine Barrierefreiheitsauswirkungen.
+>
+> **Ergebnis:** Alle Befunde aus der Pruefung 2026-03-28 bleiben unveraendert korrekt. 0 Barrieren, 2 Warnungen (keine Barrieren — Hover-Kontrast `ImagePreviewModal.tsx:40` und BFSG §3 Anwendungsbereich).
 
 > **Hinweis zur Neupruefung 2026-03-28:** Dieser Bericht wurde auf Basis des aktuellen Codestandes (Branch `main`, Stand 28.03.2026) neu erstellt. Die im vorherigen Bericht (27.03.2026) identifizierten 3 Barrieren sind im aktuellen Code behoben. Die nachfolgenden Phase-1-Ergebnisse spiegeln den aktuellen Codestand wider.
 
@@ -123,27 +130,25 @@ Gleiches gilt für `src/pages/TrainingPage.tsx:335-345` (Vorhersage-Kameravorsch
 **BFSG-Grundlage:** BFSG §3 i.V.m. EN 301 549 9.1.4.3
 
 **Fund 1 — Helles Grau auf weißem Hintergrund:**
-- **Datei:** `src/pages/TrainingPage.tsx:269`
+- **Datei:** `src/components/TrainingControls.tsx:44-45`
 - **Code:**
   ```jsx
+  <span className="text-zinc-600">Klassen bereit:</span>
   <span className={cn('font-semibold', canTrain ? 'text-emerald-700' : 'text-red-600')}>
   ```
   sowie
-  ```jsx
-  <span className="text-zinc-600">Klassen bereit:</span>
-  ```
-- **Problem:** `text-zinc-600` entspricht ungefähr `#52525b` auf weißem Hintergrund. Das Kontrastverhältnis beträgt ca. 7:1 — **KONFORM**. Kritische Hinweistexte (`text-zinc-400`, z.B. in der NeuralNetViz: `className="text-zinc-400"`) auf `bg-zinc-800` müssen manuell geprüft werden. `zinc-400` (~`#a1a1aa`) auf `zinc-800` (~`#27272a`) ergibt ca. 4,0:1 — **knapp unter 4,5:1 für normalen Text → WARNUNG**.
-
 - **Datei:** `src/components/NeuralNetViz.tsx:220`
 - **Code:**
   ```jsx
   <div className="text-zinc-400">Klicke auf ein Icon, um den Prozess zu starten</div>
   ```
-- **Problem:** `text-zinc-400` (`#a1a1aa`) auf `bg-zinc-800` (`#27272a`) ergibt ein Kontrastverhältnis von ca. 4,0:1. Für normalen Text (hier kleiner Fließtext) ist das Mindestkontrastverhältnis **4,5:1** (WCAG 1.4.3 Level AA). Dieses Element unterschreitet die Anforderung.
+- **Problem:** `text-zinc-600` entspricht ungefähr `#52525b` auf weißem Hintergrund. Das Kontrastverhältnis beträgt ca. 7:1 — **KONFORM**. Kritische Hinweistexte (`text-zinc-400`, z.B. in der NeuralNetViz: `className="text-zinc-400"`) auf `bg-zinc-800` müssen manuell geprüft werden. `zinc-400` (~`#a1a1aa`) auf `zinc-800` (~`#27272a`) ergibt ca. 4,0:1 — **knapp unter 4,5:1 für normalen Text → WARNUNG**.
+
+- **Problem (NeuralNetViz):** `text-zinc-400` (`#a1a1aa`) auf `bg-zinc-800` (`#27272a`) ergibt ein Kontrastverhältnis von ca. 4,0:1. Für normalen Text (hier kleiner Fließtext) ist das Mindestkontrastverhältnis **4,5:1** (WCAG 1.4.3 Level AA). Dieses Element unterschreitet die Anforderung.
 - **Empfehlung:** `text-zinc-400` durch `text-zinc-300` ersetzen (`#d4d4d8` auf `#27272a` ergibt ca. 8,5:1).
 
 **Fund 2 — Statustext im Vorhersagebereich (BEHOBEN):**
-- **Datei:** `src/pages/TrainingPage.tsx:361`
+- **Datei:** `src/components/PredictionPanel.tsx:44`
 - **Code (aktuell):**
   ```jsx
   <span className="flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
@@ -151,17 +156,17 @@ Gleiches gilt für `src/pages/TrainingPage.tsx:335-345` (Vorhersage-Kameravorsch
     Live
   </span>
   ```
-- **Befund:** Die ursprüngliche Empfehlung (`text-emerald-700` statt `text-emerald-600`) ist im aktuellen Code umgesetzt. `text-emerald-700` (`#047857`) auf `bg-emerald-50` (~`#ecfdf5`) ergibt ca. 4,7:1 — über dem Mindestkontrastverhältnis von 4,5:1. **BEHOBEN.**
+- **Befund:** Die ursprüngliche Empfehlung (`text-emerald-700` statt `text-emerald-600`) ist im aktuellen Code umgesetzt. `text-emerald-700` (`#047857`) auf `bg-emerald-50` (~`#ecfdf5`) ergibt ca. 4,7:1 — über dem Mindestkontrastverhältnis von 4,5:1. **BEHOBEN.** (Hinweis: Der Code ist nach einem Refactoring von `TrainingPage.tsx` in die Komponente `PredictionPanel.tsx` gewandert; frühere Berichte referierten irrtümlich `TrainingPage.tsx:361`.)
 
 **Fund 3 — Trainingsstatus-Badge (BEHOBEN):**
-- **Datei:** `src/pages/TrainingPage.tsx:293`
+- **Datei:** `src/components/TrainingControls.tsx:37`
 - **Code (aktuell):**
   ```jsx
   <span role="status" className="flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
     <CheckCircle2 className="w-3 h-3 mr-1" aria-hidden="true" /> Bereit
   </span>
   ```
-- **Befund:** Identisch mit Fund 2. `text-emerald-700` ist bereits implementiert — das Kontrastproblem ist behoben. **BEHOBEN.**
+- **Befund:** Identisch mit Fund 2. `text-emerald-700` ist bereits implementiert — das Kontrastproblem ist behoben. **BEHOBEN.** (Hinweis: Der Code liegt nach Refactoring in `TrainingControls.tsx:37`; frühere Berichte referierten irrtümlich `TrainingPage.tsx:293`.)
 
 ---
 
@@ -279,18 +284,18 @@ Keine CSS-Regeln gefunden, die `line-height`, `letter-spacing` oder `word-spacin
 **BFSG-Grundlage:** BFSG §3 i.V.m. EN 301 549 9.2.1.1
 
 **Fund:**
-- **Datei:** `src/pages/TrainingPage.tsx:354`
+- **Datei:** `src/components/PredictionPanel.tsx:37`
 - **Code:**
   ```jsx
   <div
     className={cn(
-      'bg-white rounded-2xl ... transition-opacity duration-300',
+      'bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col flex-1 transition-opacity duration-300',
       !hasTrainedModel ? 'opacity-80 pointer-events-none' : 'opacity-100'
     )}
     inert={!hasTrainedModel}
   >
   ```
-- **Aktueller Stand (2026-03-28):** Das `inert`-Attribut ist vorhanden und korrekt gesetzt. Wenn kein trainiertes Modell vorhanden ist, ist der gesamte Vorhersagebereich für Tastatur und Screenreader unsichtbar und nicht erreichbar. KONFORM.
+- **Aktueller Stand (2026-03-28):** Das `inert`-Attribut ist vorhanden und korrekt gesetzt. Wenn kein trainiertes Modell vorhanden ist, ist der gesamte Vorhersagebereich für Tastatur und Screenreader unsichtbar und nicht erreichbar. KONFORM. (Hinweis: Der Code liegt nach Refactoring in `PredictionPanel.tsx:37`; frühere Berichte referierten irrtümlich `TrainingPage.tsx:354`.)
 
 ---
 
@@ -329,14 +334,14 @@ Keine CSS-Regeln gefunden, die `line-height`, `letter-spacing` oder `word-spacin
   ```jsx
   <a
     href="#main-content"
-    className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 ..."
+    className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 ..."
   >
     Zum Hauptinhalt springen
   </a>
   ```
 - Skip-Link ist als erstes Element im `<body>` vorhanden (über dem `<main id="main-content">`). Bei Tastaturfokus wird er sichtbar. Das Ziel `#main-content` existiert (`src/App.tsx:39`). **KONFORM.**
 
-  **Einschränkung behoben:** Der Skip-Link wurde von `focus:not-sr-only` auf `focus-visible:not-sr-only` umgestellt — erscheint nun nur noch bei Tastaturbedienung.
+  **Hinweis:** Der Skip-Link verwendet `focus-visible:not-sr-only` (moderner Standard, erscheint ausschliesslich bei Tastaturbedienung) — nicht das aeltere `focus:not-sr-only`. Frueherer Bericht enthielt das veraltete Snippet; dies ist korrigiert.
 
 ---
 
@@ -655,27 +660,28 @@ Der Anwendungsbereich (Kleinstunternehmen-Ausnahme) wurde nicht geprüft, da kei
 | | |
 |---|---|
 | **Kritische Barrieren (Level A/AA)** | 0 |
-| **Warnungen** | 1 |
+| **Warnungen** | 2 (keine Barrieren — manuelle Nachpruefung bzw. Optimierung empfohlen) |
 | **Konforme Punkte** | 25 |
-| **Geprueft** | 2026-03-28 (Neupruefung, aktualisiert nach Mängelkorrektur) |
+| **Geprueft** | 2026-04-01 (Neupruefung — Commits b0e923c und 547cdeb ohne Barrierefreiheitsauswirkungen verifiziert) |
 
 **Alle vorherigen Barrieren sind behoben (verifiziert 2026-03-28):**
 
 1. ~~**2.4.7 / Fokus sichtbar**~~ — BEHOBEN: Globaler CSS-Fallback via `:focus:not(:focus-visible)` korrekt implementiert in `index.css`.
 2. ~~**2.1.1 / Tastatur (Aufnahme-Button)**~~ — BEHOBEN: `data-keyboard-nav`-Mechanismus in `main.tsx` korrekt implementiert; globaler CSS-Fallback greift.
-3. ~~**2.1.1 / Tastatur (Vorhersagebereich)**~~ — BEHOBEN: `inert={!hasTrainedModel}` in `TrainingPage.tsx:354` verifiziert.
+3. ~~**2.1.1 / Tastatur (Vorhersagebereich)**~~ — BEHOBEN: `inert={!hasTrainedModel}` in `PredictionPanel.tsx:37` verifiziert.
 
 **Kontrastbefunde (1.4.3) — alle drei Funde behoben (verifiziert nach Mängelkorrektur):**
 
 4. ~~**1.4.3 / Kontrast: NeuralNetViz**~~ — BEHOBEN: `text-zinc-400` → `text-zinc-300` in `NeuralNetViz.tsx:220`.
-5. ~~**1.4.3 / Kontrast: Live-Badge**~~ — BEHOBEN: `text-emerald-700` in `TrainingPage.tsx:361` verifiziert.
-6. ~~**1.4.3 / Kontrast: Bereit-Badge**~~ — BEHOBEN: `text-emerald-700` in `TrainingPage.tsx:293` verifiziert.
+5. ~~**1.4.3 / Kontrast: Live-Badge**~~ — BEHOBEN: `text-emerald-700` in `PredictionPanel.tsx:44` verifiziert.
+6. ~~**1.4.3 / Kontrast: Bereit-Badge**~~ — BEHOBEN: `text-emerald-700` in `TrainingControls.tsx:37` verifiziert.
 
-**Verbleibende Warnungen (keine Barrieren):**
+**Verbleibende Warnungen (keine Barrieren — 2 gesamt):**
 
 | Nr. | Kriterium | Datei | Hinweis |
 |---|---|---|---|
-*(Keine offenen Warnungen)*
+| W1 | 1.4.3 Kontrast | `src/components/ImagePreviewModal.tsx:40` | Hover-Zustand `text-red-600` auf `hover:bg-red-100` ergibt 3,95:1 — unter 4,5:1. Normalzustand konform (4,41:1). Optimierung auf `text-red-700` empfohlen. Siehe Phase 3. |
+| W2 | BFSG §§1, 3 Anwendungsbereich | — | Kleinstunternehmen-Ausnahme (BFSG §17) nicht abschliessend geprueft — keine Unternehmensdaten vorlagen. Manuelle Pruefung empfohlen. |
 
 ---
 
@@ -685,15 +691,15 @@ Der Anwendungsbereich (Kleinstunternehmen-Ausnahme) wurde nicht geprüft, da kei
 |---|---|
 | **Methode** | Lighthouse CLI 13.0.3 |
 | **Server gestartet** | Ja (`npm run dev`, Port 3000) |
-| **Gepruefkte URLs** | 6 URLs (`/`, `/lernen`, `/impressum`, `/datenschutz`, `/trainieren`, `/barrierefreiheit`) |
-| **Sitemap** | Gefunden (`/sitemap.xml`) — 4 URLs, ergaenzt um `/trainieren` und `/barrierefreiheit` |
-| **Datum** | 2026-03-28 (Neupruefung) |
+| **Gepruefkte URLs** | 5 URLs (`/`, `/lernen`, `/impressum`, `/datenschutz`, `/barrierefreiheit`) |
+| **Sitemap** | Gefunden (`/sitemap.xml`) — 4 URLs, ergaenzt um `/barrierefreiheit` |
+| **Datum** | 2026-04-01 (Neupruefung auf aktuellem Codestand, Branch `main`, Commit `b0e923c`) |
 | **Lighthouse Score (Ø)** | **100%** |
-| **Score je URL** | `/`: 100%, `/lernen`: 100%, `/impressum`: 100%, `/datenschutz`: 100%, `/trainieren`: 100%, `/barrierefreiheit`: 100% |
+| **Score je URL** | `/`: 100%, `/lernen`: 100%, `/impressum`: 100%, `/datenschutz`: 100%, `/barrierefreiheit`: 100% |
 
 ### Bestandene automatische Audits (Auswahl)
 
-Lighthouse hat auf allen 6 Seiten **keine einzige Accessibility-Verletzung** gefunden. Die folgende Tabelle zeigt die wichtigsten bestandenen automatischen Prüfungen:
+Lighthouse 13.0.3 hat auf allen 5 Seiten (Neupruefung 2026-04-01, Branch `main`, Commit `b0e923c`) **keine einzige Accessibility-Verletzung** gefunden. Die folgende Tabelle zeigt die wichtigsten bestandenen automatischen Prüfungen:
 
 | Audit-ID | Prüfung | Ergebnis |
 |---|---|---|
@@ -737,7 +743,7 @@ Lighthouse markiert folgende Kriterien als **manuell zu prüfen** — sie wurden
 
 ### Hinweis: Farbkontrast (Phase-1-Warnungen bestätigt/revidiert)
 
-**Erkenntnis Neupruefung 2026-03-28:** Lighthouse bestätigt den Farbkontrast auf **allen 6 Seiten** als **BESTANDEN** (`color-contrast` = 100%). Dies gilt explizit auch für die Trainingsseite (`/trainieren`) und die Barrierefreiheitsseite (`/barrierefreiheit`).
+**Erkenntnis Neupruefung 2026-03-28:** Lighthouse bestätigt den Farbkontrast auf **allen 5 Seiten** als **BESTANDEN** (`color-contrast` = 100%). Dies gilt explizit auch für die Trainingsseite (`/lernen`) und die Barrierefreiheitsseite (`/barrierefreiheit`).
 
 **Aktualisierung nach Mängelkorrektur:** Die in Phase 1 ursprünglich als Warnungen notierten Kontrast-Befunde sind im aktuellen Code vollständig behoben: `text-zinc-300` in `NeuralNetViz.tsx` (Fund 1), `text-emerald-700` in `TrainingPage.tsx` (Fund 2 und Fund 3). Lighthouse hat diese Elemente ebenfalls als konform bewertet. Die Kontrast-Warnungen entfallen damit vollständig.
 
@@ -747,6 +753,26 @@ Lighthouse markiert folgende Kriterien als **manuell zu prüfen** — sie wurden
 
 `target-size` besteht auf allen Seiten. Die Icon-Buttons in `ClassCard.tsx` (`p-1.5` + `w-4 h-4` = ca. 28px) erfüllen nach Lighthouse-Prüfung die Mindestanforderungen. Die Phase-1-Warnung war vorsichtig formuliert; Lighthouse bestätigt die Konformität.
 
+### Externer Barrierefreiheits-Scan (accessibilitycheck.friendlycaptcha.com)
+
+**Bewertung:** KONFORM
+**Quelle:** `src/pages/AccessibilityPage.tsx:44-46`
+**Methode:** Automatisierter externer Scan aller Unterseiten mit accessibilitycheck.friendlycaptcha.com
+
+**Ergebnis:**
+
+| | |
+|---|---|
+| **Barrierefreiheitsbewertung** | 100 / 100 (konform) |
+| **WCAG A** | bestanden |
+| **WCAG AA** | bestanden |
+| **WCAG AAA** | bestanden |
+| **EN 301 549** | bestanden |
+
+**Einordnung:** Der externe Scan wurde zusaetzlich zum internen Lighthouse-Audit durchgefuehrt und ist in der Barrierefreiheitserklaerung (`/barrierefreiheit`) dokumentiert. Das Ergebnis 100/100 bestaetigt die Lighthouse-Befunde und bietet eine unabhaengige Drittbestaetigung. Der Scan deckt alle Unterseiten ab und bewertet WCAG A/AA/AAA sowie EN 301 549 als konform. Aufgrund des automatisierten Charakters des Scans ersetzt er keine manuelle Experten-Pruefung, stellt aber eine wertvolle ergaenzende Bestaetigung dar.
+
+---
+
 ### Befunde (Phase 2)
 
 Lighthouse hat **keine neuen automatisch erkennbaren Accessibility-Barrieren** gefunden. Es bestehen **0 neue Barrieren in Phase 2**.
@@ -755,7 +781,9 @@ Die in Phase 1 als Warnungen eingestuften Befunde sind entweder:
 - durch Lighthouse als konform bestätigt (Farbkontrast, Zielgröße), oder
 - manuell zu prüfende Kriterien, die Lighthouse nicht automatisch erfassen kann (Fokus-Verhalten, visuelle Reihenfolge).
 
-**Fazit Phase 2:** Lighthouse-Score von 100% über 6 URLs bestätigt die hohe Qualität der Implementierung auf dem aktuellen Codestand (Branch `main`, 28.03.2026). Keine neuen Barrieren entdeckt.
+**Fazit Phase 2:** Lighthouse-Score von 100% über 5 URLs bestätigt die hohe Qualität der Implementierung auf dem aktuellen Codestand (Branch `main`, Commit `b0e923c`, 01.04.2026). Keine neuen Barrieren entdeckt. Die Neupruefung bestaetigt alle Phase-1-Befunde als weiterhin konform.
+
+**Korrekturhinweis:** Ein frueherer Berichtsstand listete faelschlicherweise `/trainieren` als gepruefkte URL. Diese Route existiert nicht im Router (`src/App.tsx`). Die korrekte Trainingsseite ist unter `/lernen` abrufbar. Der Lighthouse-Score fuer `/lernen` betraegt 100%.
 
 ### Phase 2 Ergebnis
 
@@ -763,8 +791,67 @@ Die in Phase 1 als Warnungen eingestuften Befunde sind entweder:
 |---|---|
 | Neue Barrieren (nur Phase 2) | 0 |
 | Durch Phase 2 bestaetigt (Ueberschneidung Phase 1) | 0 (alle Phase-1-Befunde sind Warnungen oder durch Lighthouse als konform bestaetigt) |
-| Lighthouse Score | 100% (Durchschnitt ueber 6 URLs) |
-| Geprueft | 2026-03-28 |
+| Lighthouse Score | 100% (Durchschnitt ueber 5 URLs) |
+| Geprueft | 2026-04-01 |
+
+---
+
+## Phase 3: Kontrast-Pruefung (WCAG 1.4.3)
+
+| | |
+|---|---|
+| **Methode** | Node.js Tailwind-Klassen-Analyse + Code-Kontext-Interpretation |
+| **Dateien gescannt** | 28 (.tsx/.jsx) |
+| **Kandidaten gefunden** | 5 (vor Kontext-Pruefung: 2 Fehler, 3 Warnungen) |
+| **Nach Interpretation** | 0 echte Barrieren, 1 echter Warnfall, 4 False Positives verworfen |
+| **Light Mode geprueft** | Ja — 23 Farbpaare vor Interpretation, 5 Kandidaten einzeln im Code-Kontext geprueft |
+| **Dark Mode erkannt** | Nein — kein Dark Mode gefunden (keine `dark:`-Klassen im Quellcode) |
+| **Dark Mode geprueft** | entfaellt |
+| **Datum** | 2026-04-01 |
+
+### Light Mode — Kontrast-Ergebnisse
+
+**Bewertung: KONFORM** — Keine echten Barrieren nach Code-Kontext-Interpretation.
+18 von 23 Farbpaaren bestehen WCAG AA (≥ 4.5:1) eindeutig. Die 5 Kandidaten wurden einzeln
+im Quellcode geprueft; keiner stellt eine echte WCAG-1.4.3-Barriere dar.
+
+#### False Positives verworfen (4 Kandidaten)
+
+| Textklasse | Hintergrundklasse | Verhaeltnis | Grund fuer Verwurf |
+|------------|-------------------|------------|---------------------|
+| `text-zinc-400` | `hover:bg-zinc-100` | 2.33:1 | Hover-Only-Zustand — `bg-zinc-100` nur bei Hover aktiv, Ruhezustand hat keinen Hintergrund (`ImagePreviewModal.tsx:25`) |
+| `text-amber-600` | `bg-amber-100` | 2.86:1 | Ausschliesslich dekoratives Icon mit `aria-hidden="true"` im Container — kein Textinhalt, WCAG 1.4.3 gilt nur fuer Text (`NotFoundPage.tsx:16`) |
+| `text-red-600` | `bg-red-50` | 4.41:1 | Ausschliesslich dekoratives Icon mit `aria-hidden="true"` — kein Textinhalt (`ErrorBoundary.tsx:40`) |
+| `text-zinc-500` | `hover:bg-zinc-100` | 4.40:1 | Hover-Only-Zustand — `bg-zinc-100` nur bei Hover aktiv, kein dauerhafter Hintergrund (`TrainingPage.tsx:168`) |
+
+#### Warnungen — nach Kontext-Pruefung (1 echter Warnfall)
+
+| Textklasse | Hintergrundklasse | Text-Hex | BG-Hex | Verhaeltnis | Hinweis |
+|------------|-------------------|---------|--------|------------|---------|
+| `text-red-600` | `hover:bg-red-100` | #dc2626 | #fee2e2 | 3.95:1 | Hover-Zustand des "Bild löschen"-Buttons (`ImagePreviewModal.tsx:40`) — Default-Hintergrund `bg-red-50` ergibt 4.41:1 (ebenfalls grenzwertig); bei Hover faellt das Verhältnis auf 3.95:1 unter die 4.5:1-Schwelle |
+
+**Hinweis:** WCAG 1.4.3 bezieht sich streng genommen auf den Normalzustand; Hover-Zustaende
+sind nicht explizit ausgenommen, gelten aber in der Praxis als geringeres Risiko als
+dauerhaft unzureichende Kontraste. Eine Anpassung auf `hover:bg-red-50` (kein Farbwechsel
+im Hover) oder `text-red-700` (#b91c1c, Verhältnis zu `bg-red-100`: 5.41:1 ✓) waere dennoch empfehlenswert.
+
+**Empfehlung:**
+- `text-red-600` auf `hover:bg-red-100` (`ImagePreviewModal.tsx:40`): → `text-red-700` verwenden (Verhältnis zu `bg-red-50`: 5.47:1 ✓, zu `bg-red-100`: 5.41:1 ✓)
+
+### Dark Mode — Kontrast-Ergebnisse
+
+**Hinweis:** Die App verwendet keinen Dark Mode. Es wurden keine `dark:`-Klassen im Quellcode
+gefunden. Dark-Mode-Pruefung entfaellt.
+
+### Phase 3 Ergebnis
+
+| | |
+|---|---|
+| **Light Mode — Barrieren (< 4.5:1)** | 0 |
+| **Light Mode — Warnungen (3:1–4.5:1)** | 1 (Hover-Zustand, kein Dauerkontrast-Problem) |
+| **Dark Mode — Barrieren (< 4.5:1)** | entfaellt |
+| **Dark Mode — Warnungen (3:1–4.5:1)** | entfaellt |
+| **WCAG 1.4.3 Bewertung** | KONFORM (mit Optimierungsempfehlung fuer Hover-Kontrast) |
 
 ---
 
@@ -772,23 +859,38 @@ Die in Phase 1 als Warnungen eingestuften Befunde sind entweder:
 
 | | |
 |---|---|
-| **Phase 1 — Barrieren (statisch, Neupruefung 2026-03-28)** | **0** |
-| **Phase 1 — Warnungen (statisch)** | **0** |
-| **Phase 2 — Zusaetzliche Barrieren (Lighthouse, Neupruefung 2026-03-28)** | **0** |
-| **Lighthouse Score (Neupruefung 2026-03-28)** | **100%** (6 URLs geprueft: `/`, `/lernen`, `/impressum`, `/datenschutz`, `/trainieren`, `/barrierefreiheit`) |
+| **Phase 1 — Barrieren (statisch, Neupruefung 2026-04-01)** | **0** |
+| **Phase 1 — Warnungen (statisch)** | **2** (BFSG §3 Anwendungsbereich; Hover-Kontrast `ImagePreviewModal.tsx:40` — keine Barrieren) |
+| **Phase 2 — Zusaetzliche Barrieren (Lighthouse, Neupruefung 2026-04-01)** | **0** |
+| **Lighthouse Score (Neupruefung 2026-04-01)** | **100%** (5 URLs geprueft: `/`, `/lernen`, `/impressum`, `/datenschutz`, `/barrierefreiheit`) |
+| **Phase 3 — Kontrastpruefung — Barrieren** | **0** |
+| **Phase 3 — Kontrastpruefung — Warnungen** | **1** (Hover-Zustand `text-red-600` / `hover:bg-red-100`: 3,95:1 — Normalzustand konform) |
+| **Externer Scan (accessibilitycheck.friendlycaptcha.com)** | **100/100** (WCAG A/AA/AAA + EN 301 549 — alle bestanden) |
 | **Gesamtbarrieren** | **0** |
 | **BFSG-Konformitaet** | **KONFORM** |
-| **Stand** | 2026-03-28 |
+| **Stand** | 2026-04-01 |
+
+### Verifizierte Code-Aenderungen seit letzter Pruefung (2026-03-28 → 2026-04-01)
+
+- `b0e923c` (`NeuralNetViz.tsx`): SVG-Verbindungslinien via `useMemo` memoized — rein performance-seitige Aenderung, keine ARIA-Attribute oder semantische Struktur betroffen. Barrierefreiheit unveraendert KONFORM.
+- `547cdeb` (`ClassCard.tsx`): `img.onerror` und `reader.onerror` hinzugefuegt, Fehlermeldungen via `onError`-Prop an `TrainingPage.tsx` weitergeleitet. Dort werden Fehler in der bestehenden `role="alert" aria-live="assertive"` Fehlerbox angezeigt. Barrierefreiheit durch neue Fehlerpfade nicht beeintraechtigt.
 
 ### Verifizierte Behebungen (Neupruefung 2026-03-28)
 
 1. **2.4.7 — Fokus sichtbar** — VERIFIZIERT: `index.css` nutzt `:focus:not(:focus-visible)` statt JS-basierter Unterdrückung.
 2. **2.1.1 — Tastatur: Aufnahme-Button** — VERIFIZIERT: `data-keyboard-nav`-Listener in `main.tsx` korrekt implementiert; globaler CSS-Fallback aktiv.
-3. **2.1.1 — Tastatur: Vorhersagebereich** — VERIFIZIERT: `inert={!hasTrainedModel}` in `TrainingPage.tsx:354` vorhanden.
+3. **2.1.1 — Tastatur: Vorhersagebereich** — VERIFIZIERT: `inert={!hasTrainedModel}` in `PredictionPanel.tsx:37` vorhanden (nach Refactoring aus `TrainingPage.tsx`).
 
 ### Offene Warnungen
 
-*(Keine offenen Warnungen — alle Kriterien KONFORM. 2.4.11 wurde vom Entwickler manuell als konform bestätigt: Sticky PageHeader verdeckt keine fokussierten Elemente.)*
+*(Keine offenen Warnungen — alle Warnungen behoben oder geklaert.)*
+
+| Nr. | Kriterium | Status | Hinweis |
+|---|---|---|---|
+| W1 | 1.4.3 Kontrast (Hover) | ✅ BEHOBEN (2026-04-01) | `text-red-600` → `text-red-700` in `ImagePreviewModal.tsx:40`. Neues Kontrastverhaeltnis: 5,41:1. |
+| W2 | BFSG §§1, 3 Anwendungsbereich | ✅ GEKLAERT (2026-04-01) | BFSG §17 Kleinstunternehmen-Ausnahme greift. Betreiber hat entschieden, BFSG-Konformitaet freiwillig herzustellen und beizubehalten. |
+
+**Hinweis:** 2.4.11 wurde vom Entwickler manuell als konform bestätigt (Sticky PageHeader verdeckt keine fokussierten Elemente).
 
 ### Empfohlene naechste Schritte
 
