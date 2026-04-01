@@ -7,6 +7,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as knnClassifier from '@tensorflow-models/knn-classifier';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
+import type { ErrorCategory } from '../types/errors';
 
 /** Manages training state, validation checks, and the KNN training procedure. */
 export function useModelTraining(
@@ -14,7 +15,7 @@ export function useModelTraining(
   classifier: knnClassifier.KNNClassifier | null,
   setClassifier: (c: knnClassifier.KNNClassifier) => void,
   setHasTrainedModel: (v: boolean) => void,
-  onError: (msg: string) => void
+  onError: (category: Extract<ErrorCategory, 'training' | 'validation'>, msg: string) => void
 ) {
   const [isTraining, setIsTraining] = useState(false);
 
@@ -40,7 +41,7 @@ export function useModelTraining(
   /** Validates all prerequisites and trains a new KNN classifier from collected features. */
   const trainModel = useCallback(async () => {
     if (classes.length < ML.MIN_CLASSES) {
-      onError(`Du brauchst mindestens ${ML.MIN_CLASSES} Klassen, um ein Modell zu trainieren.`);
+      onError('validation', `Du brauchst mindestens ${ML.MIN_CLASSES} Klassen, um ein Modell zu trainieren.`);
       return;
     }
     const classesWithFewImages = classes.filter(c => c.images.length < ML.MIN_IMAGES_PER_CLASS);
@@ -48,17 +49,17 @@ export function useModelTraining(
       const names = classesWithFewImages
         .map(c => `"${c.name || 'Ohne Namen'}" (${c.images.length} Bilder)`)
         .join(', ');
-      onError(`Zu wenig Bilder: ${names}. Jede Klasse braucht mindestens ${ML.MIN_IMAGES_PER_CLASS} Bilder.`);
+      onError('validation', `Zu wenig Bilder: ${names}. Jede Klasse braucht mindestens ${ML.MIN_IMAGES_PER_CLASS} Bilder.`);
       return;
     }
 
     if (hasInvalidNames) {
-      onError('Bitte gib allen Klassen einen Namen.');
+      onError('validation', 'Bitte gib allen Klassen einen Namen.');
       return;
     }
 
     if (hasDuplicateNames) {
-      onError('Bitte gib allen Klassen einen eindeutigen Namen.');
+      onError('validation', 'Bitte gib allen Klassen einen eindeutigen Namen.');
       return;
     }
 
@@ -85,7 +86,7 @@ export function useModelTraining(
       setIsTraining(false);
     } catch (err) {
       console.error('Training error:', err);
-      onError('Fehler beim Training des Modells.');
+      onError('training', 'Fehler beim Training des Modells.');
       setIsTraining(false);
     }
   }, [classes, classifier, setClassifier, setHasTrainedModel, onError, hasInvalidNames, hasDuplicateNames]);

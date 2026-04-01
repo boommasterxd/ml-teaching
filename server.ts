@@ -41,6 +41,8 @@ app.use(helmet({
       "img-src": ["'self'", "data:", "https:"],
       // Scoped to specific Google services needed for MobileNet model downloads
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
+      "base-uri": ["'self'"],
+      "form-action": ["'self'"],
       "frame-ancestors": ["'none'"],
     }
   } : false,

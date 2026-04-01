@@ -6,7 +6,7 @@ import type React from 'react';
 import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { Trash2, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { CAMERA } from '../constants';
+import { CAMERA, ML } from '../constants';
 import type { MLClass, MLImage } from '../types/ml';
 import CameraPreview from './CameraPreview';
 import ImageGallery from './ImageGallery';
@@ -126,6 +126,7 @@ const ClassCard = memo(function ClassCard({
               type="text"
               autoComplete="off"
               value={cls.name}
+              maxLength={ML.MAX_CLASS_NAME_LENGTH}
               onChange={(e) => onUpdateName(cls.id, e.target.value)}
               className={cn(
                 'font-semibold bg-transparent border-b border-transparent focus:ring-0 focus:ring-offset-0 p-0 w-[120px] sm:w-[160px] text-sm transition-colors',
