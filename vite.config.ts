@@ -16,8 +16,8 @@ export default defineConfig(() => {
     plugins: [
       react(),
       tailwindcss(),
-      compression({ algorithm: 'gzip', exclude: [/\.(br)$/, /\.(gz)$/] }),
-      compression({ algorithm: 'brotliCompress', exclude: [/\.(br)$/, /\.(gz)$/] }),
+      compression({ algorithms: ['gzip'], exclude: [/\.(br)$/, /\.(gz)$/] }),
+      compression({ algorithms: ['brotliCompress'], exclude: [/\.(br)$/, /\.(gz)$/] }),
       ViteImageOptimizer({
         png: {
           quality: 80,
