@@ -230,6 +230,7 @@ export default function TrainingPage() {
                   onRemoveImages={handleRemoveImages}
                   onUpdateName={updateClassName}
                   onImageClick={handleImageClick}
+                  onError={(msg) => setError('validation', msg)}
                 />
               ))
             )}
