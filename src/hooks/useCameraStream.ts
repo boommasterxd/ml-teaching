@@ -4,13 +4,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type React from 'react';
 import { CAMERA } from '../constants';
+import type { ErrorCategory } from '../types/errors';
 
 /** Requests camera access once consent is given and attaches the stream to a video element. */
 export function useCameraStream(
   cameraConsent: boolean,
   isModelLoading: boolean,
   predictVideoRef: React.RefObject<HTMLVideoElement | null>,
-  onError: (category: 'camera', msg: string) => void
+  onError: (category: Extract<ErrorCategory, 'camera'>, msg: string) => void
 ) {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [stream, setStream] = useState<MediaStream | null>(null);
