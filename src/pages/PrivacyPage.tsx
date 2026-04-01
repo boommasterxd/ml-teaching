@@ -27,7 +27,7 @@ export default function PrivacyPage() {
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Datenerfassung auf dieser Website</h3>
           <h4 className="text-lg font-bold mt-6 mb-3 text-zinc-800">Wer ist verantwortlich für die Datenerfassung auf dieser Website?</h4>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten können Sie dem Abschnitt „Hinweis zur Verantwortlichen Stelle“ in dieser Datenschutzerklärung entnehmen.
+            Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten können Sie dem Abschnitt „Hinweis zur Verantwortlichen Stelle" in dieser Datenschutzerklärung entnehmen.
           </p>
 
           <h4 className="text-lg font-bold mt-6 mb-3 text-zinc-800">Wie erfassen wir Ihre Daten?</h4>
@@ -169,19 +169,19 @@ export default function PrivacyPage() {
 
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">SSL- bzw. TLS-Verschlüsselung</h3>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Diese Seite nutzt aus Sicherheitsgründen und zum Schutz der Übertragung vertraulicher Inhalte, wie zum Beispiel Bestellungen oder Anfragen, die Sie an uns als Seitenbetreiber senden, eine SSL- bzw. TLS-Verschlüsselung. Eine verschlüsselte Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von „http://“ auf „https://“ wechselt und an dem Schloss-Symbol in Ihrer Browserzeile.
+            Diese Seite nutzt aus Sicherheitsgründen und zum Schutz der Übertragung vertraulicher Inhalte, wie zum Beispiel Bestellungen oder Anfragen, die Sie an uns als Seitenbetreiber senden, eine SSL- bzw. TLS-Verschlüsselung. Eine verschlüsselte Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von „http://" auf „https://" wechselt und an dem Schloss-Symbol in Ihrer Browserzeile.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Wenn die SSL- bzw. TLS-Verschlüsselung aktiviert ist, können die Daten, die Sie an uns übermitteln, nicht von Dritten mitgelesen werden.
           </p>
 
           <h2 className="text-xl sm:text-2xl font-bold mt-12 mb-6 text-zinc-800 border-b border-zinc-100 pb-2">4. Datenerfassung auf dieser Website</h2>
-          <h3 className=”text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800”>Cookies</h3>
-          <p className=”text-zinc-600 leading-relaxed mb-4”>
+          <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Cookies</h3>
+          <p className="text-zinc-600 leading-relaxed mb-4">
             <strong>Diese Website setzt selbst keine Cookies.</strong> Die folgenden Hinweise beschreiben allgemein, wie Cookies funktionieren und welche Rechte Sie haben, falls Cookies eingesetzt werden sollten.
           </p>
-          <p className=”text-zinc-600 leading-relaxed mb-4”>
-            Unsere Internetseiten verwenden so genannte „Cookies”. Cookies sind kleine Datenpakete und richten auf Ihrem Endgerät keinen Schaden an. Sie werden entweder vorübergehend für die Dauer einer Sitzung (Session-Cookies) oder dauerhaft (permanente Cookies) auf Ihrem Endgerät gespeichert. Session-Cookies werden nach Ende Ihres Besuchs automatisch gelöscht. Permanente Cookies bleiben auf Ihrem Endgerät gespeichert, bis Sie diese selbst löschen oder eine automatische Löschung durch Ihren Webbrowser erfolgt.
+          <p className="text-zinc-600 leading-relaxed mb-4">
+            Unsere Internetseiten verwenden so genannte „Cookies". Cookies sind kleine Datenpakete und richten auf Ihrem Endgerät keinen Schaden an. Sie werden entweder vorübergehend für die Dauer einer Sitzung (Session-Cookies) oder dauerhaft (permanente Cookies) auf Ihrem Endgerät gespeichert. Session-Cookies werden nach Ende Ihres Besuchs automatisch gelöscht. Permanente Cookies bleiben auf Ihrem Endgerät gespeichert, bis Sie diese selbst löschen oder eine automatische Löschung durch Ihren Webbrowser erfolgt.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Cookies können von uns (First-Party-Cookies) oder von Drittunternehmen stammen (sog. Third-Party-Cookies). Third-Party-Cookies ermöglichen die Einbindung bestimmter Dienstleistungen von Drittunternehmen innerhalb von Webseiten (z.&nbsp;B. Cookies zur Abwicklung von Zahlungsdienstleistungen).
@@ -230,7 +230,7 @@ export default function PrivacyPage() {
             Diese Website nutzt clientseitige KI-Modelle zur Bilderkennung (MobileNet). Um Ihre Privatsphäre zu schützen, werden diese Modelle nicht automatisch beim Laden der Website, sondern erst nach Ihrer ausdrücklichen Zustimmung (2-Klick-Lösung) von Servern des Anbieters Google geladen.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Anbieter der KI-Modelle ist die Google LLC („Google”), 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA. Google LLC ist unter dem EU-US-Datenschutzrahmen (Data Privacy Framework) zertifiziert.
+            Anbieter der KI-Modelle ist die Google LLC („Google"), 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA. Google LLC ist unter dem EU-US-Datenschutzrahmen (Data Privacy Framework) zertifiziert.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Erst wenn Sie die KI-Funktionen aktiv starten und der damit verbundenen Datenübertragung zustimmen, wird eine Verbindung zu den Servern von Google hergestellt und Ihre IP-Adresse an Google übertragen. Die eigentliche Verarbeitung der Bilddaten erfolgt jedoch auch nach dem Laden der Modelle ausschließlich lokal in Ihrem Browser; es findet zu keinem Zeitpunkt ein Upload von privatem Bildmaterial auf externe Server statt.
@@ -239,7 +239,7 @@ export default function PrivacyPage() {
             Die Nutzung dieser KI-gestützten Funktionen erfolgt auf Grundlage Ihrer Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG. Sie können Ihre Einwilligung jederzeit für die Zukunft widerrufen. Da die Einwilligung nur für die aktuelle Sitzung gilt, genügt ein Neuladen der Seite als Widerruf.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Das Unternehmen verfügt über eine Zertifizierung nach dem „EU-US Data Privacy Framework“ (DPF). Der DPF ist ein Übereinkommen zwischen der Europäischen Union und den USA, der die Einhaltung europäischer Datenschutzstandards bei Datenverarbeitungen in den USA gewährleisten soll. Jedes nach dem DPF zertifizierte Unternehmen verpflichtet sich, diese Datenschutzstandards einzuhalten. Weitere Informationen hierzu erhalten Sie vom Anbieter unter folgendem Link: <a href="https://www.dataprivacyframework.gov/participant/5780" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">https://www.dataprivacyframework.gov/participant/5780</a>.
+            Das Unternehmen verfügt über eine Zertifizierung nach dem „EU-US Data Privacy Framework" (DPF). Der DPF ist ein Übereinkommen zwischen der Europäischen Union und den USA, der die Einhaltung europäischer Datenschutzstandards bei Datenverarbeitungen in den USA gewährleisten soll. Jedes nach dem DPF zertifizierte Unternehmen verpflichtet sich, diese Datenschutzstandards einzuhalten. Weitere Informationen hierzu erhalten Sie vom Anbieter unter folgendem Link: <a href="https://www.dataprivacyframework.gov/participant/5780" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">https://www.dataprivacyframework.gov/participant/5780</a>.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
             Wenn Sie auf unserer Website mit Elementen interagieren, in denen künstliche Intelligenz zum Einsatz kommt, werden Ihre Eingaben inklusive Metadaten verarbeitet, um die gewünschte Analyse oder Reaktion lokal zu generieren.
