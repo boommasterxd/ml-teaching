@@ -2,7 +2,7 @@
  * server.ts
  *
  * Express server for the Teachable Machine application. Configures security
- * headers (Helmet CSP), rate limiting, gzip/brotli compression, and serves
+ * headers (Helmet CSP, Permissions-Policy, COOP), gzip/brotli compression, and serves
  * the SPA either via Vite dev middleware or pre-built static files in production.
  */
 
@@ -10,7 +10,6 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import helmet from 'helmet';
-import { rateLimit } from 'express-rate-limit';
 import compression from 'compression';
 import { SERVER } from './server.constants.js';
 
@@ -30,7 +29,6 @@ const app = express();
 const port = Number(process.env.PORT) || 3000;
 
 app.use(compression());
-app.use(express.json({ limit: '500kb' }));
 
 // Trust the first proxy (required for Traefik / reverse proxy setups)
 app.set('trust proxy', 1);
@@ -41,7 +39,8 @@ app.use(helmet({
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "script-src": ["'self'"],
-      "img-src": ["'self'", "data:", "https:"],
+      "style-src": ["'self'", "'unsafe-inline'"],
+      "img-src": ["'self'", "data:"],
       // Scoped to Google Storage, TensorFlow Hub, and Kaggle for MobileNet model downloads
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
       "base-uri": ["'self'"],
@@ -51,25 +50,21 @@ app.use(helmet({
   } : false,
   // COEP is disabled because TensorFlow.js loads WASM binaries cross-origin
   crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: { policy: 'same-origin' },
   xFrameOptions: { action: 'deny' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   hsts: {
     maxAge: SERVER.HSTS_MAX_AGE,
     includeSubDomains: true,
+    preload: true,
   },
 }));
 
-// Rate limiting — applied to /api/ routes only.
-// Window: 15 minutes, ceiling: 1 500 requests per IP per window.
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 1500,
-  message: { error: 'Zu viele Anfragen von dieser IP, bitte versuche es später erneut.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-  validate: { trustProxy: true, xForwardedForHeader: true },
+// Permissions-Policy — restrict browser APIs to same-origin only
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=()');
+  next();
 });
-app.use('/api/', globalLimiter);
 
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);

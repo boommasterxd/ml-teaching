@@ -13,9 +13,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache python3 make g++
 
-# Verzeichnis für die Datenbank erstellen und Berechtigungen setzen
-RUN mkdir -p /app/database && chown -R node:node /app/database
-
 # Wir kopieren nur die notwendigen Artefakte. .env wird NICHT kopiert!
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/dist ./dist
