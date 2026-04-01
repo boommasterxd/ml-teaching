@@ -1,6 +1,7 @@
 /**
  * Live prediction panel showing camera feed, confidence bars, and start/stop controls.
  */
+import type React from 'react';
 import { Camera, Play, Square } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { MLClass, Prediction } from '../types/ml';

@@ -2,6 +2,7 @@
  * Shared wrapper for modal dialog content panels.
  * Provides consistent styling (rounded corners, shadow, max-width) across all modals.
  */
+import type React from 'react';
 import { cn } from '../lib/utils';
 
 const maxWidthClasses = {
