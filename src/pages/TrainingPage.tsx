@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 
 import type { MLClass, MLImage } from '../types/ml';
-import { ML } from '../constants';
 import { useAppError } from '../hooks/useAppError';
 import { useConsentFlow } from '../hooks/useConsentFlow';
 import { useModalState } from '../hooks/useModalState';
@@ -37,7 +36,7 @@ export default function TrainingPage() {
   const navigate = useNavigate();
   usePageTitle('Modell trainieren');
 
-  const { error, setError } = useAppError();
+  const { error, setError, clearError } = useAppError();
   const { hasConsented, cameraConsent, grantConsent, grantCameraConsent, showConsentModal, showCameraModal } = useConsentFlow();
   const { modal, closeModal, showImagePreview, showClearConfirm, showClearClass, showRemoveClass } = useModalState();
 
@@ -69,8 +68,14 @@ export default function TrainingPage() {
     addImage, removeImage, removeImages, clearClass, resetClasses,
   } = useClassManagement(invalidateModel);
 
-  const { isTraining, trainModel, canTrain, hasInvalidNames, hasDuplicateNames } =
+  const { isTraining, trainModel: runTraining, canTrain, hasInvalidNames, hasDuplicateNames } =
     useModelTraining(classes, classifier, setClassifier, setHasTrainedModel, setError);
+
+  /** Clears any previous error before starting a new training run. */
+  const trainModel = useCallback(() => {
+    clearError();
+    runTraining();
+  }, [clearError, runTraining]);
 
   const { extractFeatures } = useImageFeatureExtraction(mobilenetModel);
 
