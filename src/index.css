@@ -9,12 +9,11 @@
 @import "tailwindcss";
 
 @layer base {
-  html {
-    /* Reserve space for the scrollbar at all times to prevent layout shift
-       when the scrollbar appears or disappears (e.g. on page scroll or modal open). */
-    scrollbar-gutter: stable;
-  }
   html, body {
+    /* Clip any horizontal overflow to prevent layout widening on mobile
+       (e.g. from elements with minimum intrinsic widths exceeding the viewport). */
+    overflow-x: clip;
+
     /* Scroll padding compensates for the sticky header (h-16 = 64px) so
        keyboard-focused elements are never hidden behind it (WCAG 2.4.11) */
     scroll-padding-top: 4.5rem;
