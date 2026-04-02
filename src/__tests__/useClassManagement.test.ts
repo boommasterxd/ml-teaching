@@ -1,9 +1,22 @@
+/**
+ * useClassManagement.test.ts
+ *
+ * Unit tests for the useClassManagement hook, covering class CRUD operations,
+ * image management, and invalidation callback behaviour.
+ */
+
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClassManagement } from '../hooks/useClassManagement';
 import { ML } from '../constants';
 import type { MLImage } from '../types/ml';
 
+/**
+ * Creates a minimal MLImage fixture with the given ID.
+ *
+ * @param id - Unique identifier used for both the image ID and base64 payload.
+ * @returns A stub MLImage object suitable for use in tests.
+ */
 const mockImage = (id: string): MLImage => ({
   id,
   dataUrl: `data:image/png;base64,${id}`,
@@ -60,11 +73,11 @@ describe('useClassManagement', () => {
     it('setzt die Nummer korrekt fort nach umbenennen', () => {
       const { result } = renderHook(() => useClassManagement(onInvalidate));
 
-      // Klasse 2 umbenennen → auto-increment basiert auf höchster "Klasse N"-Nummer
+      // Rename "Klasse 2" — auto-increment is based on the highest existing "Klasse N" number.
       act(() => result.current.updateClassName(result.current.classes[1].id, 'Hund'));
       act(() => result.current.addClass());
 
-      // Höchste verbleibende "Klasse N"-Nummer ist 1 → nächste ist 2
+      // Highest remaining "Klasse N" number is 1, so the next one should be 2.
       expect(result.current.classes[2].name).toBe('Klasse 2');
     });
   });

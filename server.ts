@@ -19,7 +19,7 @@ import { SERVER } from './server.constants.js';
 const REQUIRED_ENV = ['NODE_ENV'] as const;
 const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missingEnv.length > 0) {
-  console.error('FEHLER: Folgende Umgebungsvariablen fehlen:');
+  console.error('ERROR: The following environment variables are missing:');
   missingEnv.forEach((key) => console.error(`  - ${key}`));
   process.exit(1);
 }
@@ -73,7 +73,11 @@ app.use(helmet({
   },
 }));
 
-// Permissions-Policy: declare only the browser APIs this app actually uses
+/**
+ * Sets the `Permissions-Policy` response header to restrict browser feature access.
+ * Only `camera` is allowed (required for WebRTC capture); all other sensitive APIs
+ * (microphone, geolocation, payment) are explicitly disabled.
+ */
 app.use((_req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=()');
   next();

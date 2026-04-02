@@ -1,8 +1,16 @@
+/**
+ * useModalState.test.ts
+ *
+ * Unit tests for the useModalState hook, covering all modal transitions:
+ * initial state, opening each modal variant, closing, and overwriting an open modal.
+ */
+
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useModalState } from '../hooks/useModalState';
 import type { MLImage } from '../types/ml';
 
+/** Minimal MLImage fixture used across image-preview tests. */
 const mockImage: MLImage = {
   id: 'img-1',
   dataUrl: 'data:image/png;base64,abc',
@@ -10,12 +18,12 @@ const mockImage: MLImage = {
 };
 
 describe('useModalState', () => {
-  it('startet mit modal.type === "none"', () => {
+  it('starts with modal.type === "none"', () => {
     const { result } = renderHook(() => useModalState());
     expect(result.current.modal.type).toBe('none');
   });
 
-  it('öffnet die Bildvorschau', () => {
+  it('opens the image preview modal', () => {
     const { result } = renderHook(() => useModalState());
 
     act(() => result.current.showImagePreview('class-1', mockImage));
@@ -27,7 +35,7 @@ describe('useModalState', () => {
     }
   });
 
-  it('öffnet den ClearAll-Dialog', () => {
+  it('opens the clear-all confirmation dialog', () => {
     const { result } = renderHook(() => useModalState());
 
     act(() => result.current.showClearConfirm());
@@ -35,7 +43,7 @@ describe('useModalState', () => {
     expect(result.current.modal.type).toBe('clearConfirm');
   });
 
-  it('öffnet den ClearClass-Dialog mit der richtigen classId', () => {
+  it('opens the clear-class dialog with the correct classId', () => {
     const { result } = renderHook(() => useModalState());
 
     act(() => result.current.showClearClass('class-42'));
@@ -46,7 +54,7 @@ describe('useModalState', () => {
     }
   });
 
-  it('öffnet den RemoveClass-Dialog mit der richtigen classId', () => {
+  it('opens the remove-class dialog with the correct classId', () => {
     const { result } = renderHook(() => useModalState());
 
     act(() => result.current.showRemoveClass('class-99'));
@@ -57,7 +65,7 @@ describe('useModalState', () => {
     }
   });
 
-  it('schließt jeden Modal-Zustand mit closeModal', () => {
+  it('closes any open modal state via closeModal', () => {
     const { result } = renderHook(() => useModalState());
 
     act(() => result.current.showClearConfirm());
@@ -67,7 +75,7 @@ describe('useModalState', () => {
     expect(result.current.modal.type).toBe('none');
   });
 
-  it('überschreibt einen offenen Modal wenn ein neuer geöffnet wird', () => {
+  it('overwrites an already open modal when a new one is opened', () => {
     const { result } = renderHook(() => useModalState());
 
     act(() => result.current.showClearConfirm());
