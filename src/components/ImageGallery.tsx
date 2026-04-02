@@ -80,7 +80,7 @@ const ImageGallery = memo(function ImageGallery({
   };
 
   return (
-    <div className="flex-1 relative min-h-[160px] max-h-[220px] sm:h-[220px] sm:max-h-none sm:min-h-0 min-w-0 flex flex-col">
+    <div className="flex-1 relative h-[220px] min-w-0 flex flex-col">
       <div className="flex justify-between items-center mb-2 px-1">
         <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
           {isSelectionMode ? `${selectedIds.size} ausgewählt` : 'Gesammelte Bilder'}
