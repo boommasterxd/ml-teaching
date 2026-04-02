@@ -1,3 +1,10 @@
+/**
+ * utils.test.ts
+ *
+ * Unit tests for the `cn()` utility function from `src/lib/utils`.
+ * Verifies class merging, Tailwind conflict resolution, and falsy value handling.
+ */
+
 import { describe, it, expect } from 'vitest';
 import { cn } from '../lib/utils';
 

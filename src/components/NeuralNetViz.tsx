@@ -12,6 +12,7 @@ import { Dog, Cat } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useNeuralNetAnimation } from '../hooks/useNeuralNetAnimation';
 
+/** Defines the four layers of the visualized network: input (4 nodes), two hidden layers (6 nodes each), and output (2 nodes for dog/cat). */
 const LAYERS = [
   { id: 'input', nodes: 4, label: 'Input' },
   { id: 'hidden1', nodes: 6, label: 'Hidden 1' },
@@ -44,16 +45,13 @@ function getNodeY(totalNodes: number, index: number): number {
 export default function NeuralNetViz() {
   const { activeSignal, animStep, animating, result, triggerAnimation } = useNeuralNetAnimation();
 
-  /**
-   * Memoized list of SVG line descriptors for all inter-layer connections.
-   *
-   * Each connection object carries its start/end coordinates plus the
-   * current stroke color and opacity driven by `animStep` and `activeSignal`.
-   * Connections between layers activate at specific animation steps:
-   *   - input → hidden1: step >= 1
-   *   - hidden1 → hidden2: step >= 3
-   *   - hidden2 → output: step >= 5 (only for the target output node)
-   */
+  // Memoized list of SVG line descriptors for all inter-layer connections.
+  // Each connection object carries its start/end coordinates plus the
+  // current stroke color and opacity driven by `animStep` and `activeSignal`.
+  // Connections between layers activate at specific animation steps:
+  //   - input → hidden1: step >= 1
+  //   - hidden1 → hidden2: step >= 3
+  //   - hidden2 → output: step >= 5 (only for the target output node)
   const svgConnections = useMemo(() => {
     // Red for dog signal, blue for cat signal; muted grey when inactive.
     const color = (isActive: boolean) =>

@@ -62,7 +62,9 @@ export default function TrainingPage() {
   const { prediction, isPredicting, startPredicting: activatePredicting, stopPredicting } =
     usePredictionLoop(classifier, mobilenetModel, predictVideoRef);
 
-  /** Resets the trained model flag and stops prediction when training data changes. */
+  /**
+   * Resets the trained model flag and stops prediction when training data changes.
+   */
   const invalidateModel = useCallback(() => {
     if (hasTrainedModel) {
       setHasTrainedModel(false);
@@ -78,7 +80,9 @@ export default function TrainingPage() {
   const { isTraining, trainModel: runTraining, canTrain, hasInvalidNames, hasDuplicateNames } =
     useModelTraining(classes, classifier, setClassifier, setHasTrainedModel, setError);
 
-  /** Clears any previous error before starting a new training run. */
+  /**
+   * Clears any previous error before starting a new training run.
+   */
   const trainModel = useCallback(() => {
     clearError();
     runTraining();
@@ -86,12 +90,16 @@ export default function TrainingPage() {
 
   const { extractFeatures } = useImageFeatureExtraction(mobilenetModel);
 
-  /** Starts prediction only if a trained model exists. */
+  /**
+   * Starts prediction only if a trained model exists.
+   */
   const startPredicting = useCallback(() => {
     if (hasTrainedModel) activatePredicting();
   }, [hasTrainedModel, activatePredicting]);
 
-  /** Captures a frame from the source, extracts MobileNet features, and adds it to a class. */
+  /**
+   * Captures a frame from the source, extracts MobileNet features, and adds it to a class.
+   */
   const addImageToClass = useCallback(async (
     classId: string,
     source: HTMLVideoElement | HTMLImageElement,
@@ -126,7 +134,9 @@ export default function TrainingPage() {
     addImageToClass(classId, imageElement, false);
   }, [addImageToClass]);
 
-  /** Pre-computed set of class names that appear more than once (O(n) vs O(n²) per render). */
+  /**
+   * Pre-computed set of class names that appear more than once (O(n) vs O(n²) per render).
+   */
   const duplicateClassNames = useMemo(() => {
     const counts = new Map<string, number>();
     for (const c of classes) {
@@ -136,7 +146,9 @@ export default function TrainingPage() {
     return new Set([...counts.entries()].filter(([, n]) => n > 1).map(([name]) => name));
   }, [classes]);
 
-  /** Resets all classes, the trained model, and prediction state. */
+  /**
+   * Resets all classes, the trained model, and prediction state.
+   */
   const clearAll = useCallback(() => {
     resetClasses();
     setHasTrainedModel(false);
@@ -145,13 +157,17 @@ export default function TrainingPage() {
     closeModal();
   }, [classifier, stopPredicting, resetClasses, closeModal]);
 
-  /** Removes a single image and closes the preview modal if it was showing that image. */
+  /**
+   * Removes a single image and closes the preview modal if it was showing that image.
+   */
   const handleRemoveImage = useCallback((classId: string, imageId: string) => {
     removeImage(classId, imageId);
     closeModal();
   }, [removeImage, closeModal]);
 
-  /** Removes multiple images from a class. */
+  /**
+   * Removes multiple images from a class.
+   */
   const handleRemoveImages = useCallback((classId: string, imageIds: string[]) => {
     removeImages(classId, imageIds);
     if (modal.type === 'imagePreview' && modal.classId === classId && imageIds.includes(modal.image.id)) {
@@ -159,7 +175,9 @@ export default function TrainingPage() {
     }
   }, [removeImages, modal, closeModal]);
 
-  /** Clears all images from a class. */
+  /**
+   * Clears all images from a class.
+   */
   const handleClearClass = useCallback((id: string) => {
     clearClass(id);
     if (modal.type === 'imagePreview' && modal.classId === id) {
@@ -167,7 +185,9 @@ export default function TrainingPage() {
     }
   }, [clearClass, modal, closeModal]);
 
-  /** Confirms clearing all images from the class currently referenced in the modal. */
+  /**
+   * Confirms clearing all images from the class currently referenced in the modal.
+   */
   const handleClearClassConfirm = useCallback(() => {
     if (modal.type === 'clearClass') {
       handleClearClass(modal.classId);
@@ -175,7 +195,9 @@ export default function TrainingPage() {
     }
   }, [modal, handleClearClass, closeModal]);
 
-  /** Confirms removing the class currently referenced in the modal. */
+  /**
+   * Confirms removing the class currently referenced in the modal.
+   */
   const handleRemoveClassConfirm = useCallback(() => {
     if (modal.type === 'removeClass') {
       removeClass(modal.classId);
@@ -183,7 +205,9 @@ export default function TrainingPage() {
     }
   }, [modal, removeClass, closeModal]);
 
-  /** Opens the image preview modal for the selected training image. */
+  /**
+   * Opens the image preview modal for the selected training image.
+   */
   const handleImageClick = useCallback((classId: string, img: MLImage) => {
     showImagePreview(classId, img);
   }, [showImagePreview]);

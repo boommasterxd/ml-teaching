@@ -1,48 +1,56 @@
+/**
+ * useAppError.test.ts
+ *
+ * Unit tests for the useAppError hook. Covers initial state, setting errors
+ * with category and message, overwriting existing errors, clearing errors,
+ * and support for all valid error categories.
+ */
+
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAppError } from '../hooks/useAppError';
 
 describe('useAppError', () => {
-  it('startet ohne Fehler', () => {
+  it('starts without an error', () => {
     const { result } = renderHook(() => useAppError());
     expect(result.current.error).toBeNull();
   });
 
-  it('setzt einen Fehler mit Kategorie und Nachricht', () => {
+  it('sets an error with category and message', () => {
     const { result } = renderHook(() => useAppError());
 
     act(() => {
-      result.current.setError('model', 'Modell konnte nicht geladen werden');
+      result.current.setError('model', 'Model could not be loaded');
     });
 
     expect(result.current.error).toEqual({
       category: 'model',
-      message: 'Modell konnte nicht geladen werden',
+      message: 'Model could not be loaded',
     });
   });
 
-  it('überschreibt einen bestehenden Fehler', () => {
+  it('overwrites an existing error', () => {
     const { result } = renderHook(() => useAppError());
 
-    act(() => result.current.setError('camera', 'Kamera nicht verfügbar'));
-    act(() => result.current.setError('training', 'Training fehlgeschlagen'));
+    act(() => result.current.setError('camera', 'Camera not available'));
+    act(() => result.current.setError('training', 'Training failed'));
 
     expect(result.current.error).toEqual({
       category: 'training',
-      message: 'Training fehlgeschlagen',
+      message: 'Training failed',
     });
   });
 
-  it('löscht den Fehler mit clearError', () => {
+  it('clears the error with clearError', () => {
     const { result } = renderHook(() => useAppError());
 
-    act(() => result.current.setError('prediction', 'Vorhersage fehlgeschlagen'));
+    act(() => result.current.setError('prediction', 'Prediction failed'));
     act(() => result.current.clearError());
 
     expect(result.current.error).toBeNull();
   });
 
-  it('unterstützt alle Fehlerkategorien', () => {
+  it('supports all error categories', () => {
     const { result } = renderHook(() => useAppError());
     const categories = ['model', 'camera', 'training', 'prediction', 'validation'] as const;
 

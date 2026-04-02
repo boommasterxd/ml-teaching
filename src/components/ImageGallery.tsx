@@ -52,9 +52,11 @@ const ImageGallery = memo(function ImageGallery({
     });
   };
 
-  // Keep the selection state consistent whenever the image list changes.
-  // If all images are removed, exit selection mode. Otherwise, drop any
-  // selected IDs that no longer exist in the current image list.
+  /**
+   * Keeps the selection state consistent whenever the image list changes.
+   * Exits selection mode when all images are removed. Otherwise, drops any
+   * selected IDs that no longer exist in the current image list.
+   */
   useEffect(() => {
     if (images.length === 0) {
       setIsSelectionMode(false);
