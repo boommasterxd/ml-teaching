@@ -219,8 +219,44 @@ export default function TrainingPage() {
     }
   }, [cameraConsent, hasConsented, isModelLoading]);
 
+  // --- TEMP DEBUG: remove after fixing layout ---
+  const [debugInfo, setDebugInfo] = useState('');
+  useEffect(() => {
+    const measure = () => {
+      const html = document.documentElement;
+      const body = document.body;
+      const container = document.querySelector('[data-debug-container]') as HTMLElement;
+      const card = document.querySelector('[data-debug-container] .rounded-2xl') as HTMLElement;
+      const lines = [
+        `window.innerWidth: ${window.innerWidth}`,
+        `html.clientWidth: ${html.clientWidth}`,
+        `html.scrollWidth: ${html.scrollWidth}`,
+        `body.clientWidth: ${body.clientWidth}`,
+        `body.scrollWidth: ${body.scrollWidth}`,
+        `body.offsetWidth: ${body.offsetWidth}`,
+      ];
+      if (container) {
+        const r = container.getBoundingClientRect();
+        lines.push(`container: L=${r.left.toFixed(1)} R=${(window.innerWidth - r.right).toFixed(1)} W=${r.width.toFixed(1)}`);
+        lines.push(`container paddingL=${getComputedStyle(container).paddingLeft} paddingR=${getComputedStyle(container).paddingRight}`);
+      }
+      if (card) {
+        const r = card.getBoundingClientRect();
+        lines.push(`card: L=${r.left.toFixed(1)} R=${(window.innerWidth - r.right).toFixed(1)} W=${r.width.toFixed(1)}`);
+      }
+      setDebugInfo(lines.join('\n'));
+    };
+    measure();
+    const id = setInterval(measure, 2000);
+    return () => clearInterval(id);
+  }, []);
+  // --- END TEMP DEBUG ---
+
   return (
     <div className="bg-zinc-50 text-zinc-900 font-sans pb-20">
+      {/* TEMP DEBUG OVERLAY */}
+      <pre className="fixed bottom-0 left-0 right-0 z-[9999] bg-black/90 text-green-400 text-[10px] p-2 font-mono whitespace-pre pointer-events-none">{debugInfo}</pre>
+
       <PageHeader
         title="Modell trainieren"
         rightSlot={
@@ -244,7 +280,7 @@ export default function TrainingPage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid lg:grid-cols-12 gap-6 items-start">
+      <div data-debug-container className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid lg:grid-cols-12 gap-6 items-start">
 
         {/* Left column: classes */}
         <div className="lg:col-span-7 space-y-6">
