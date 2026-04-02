@@ -43,10 +43,7 @@ export function useClassManagement(onInvalidate: () => void) {
   const addClass = useCallback(() => {
     setClasses(prev => {
       const nextNum = getNextClassNumber(prev);
-      const newId =
-        typeof crypto !== 'undefined' && 'randomUUID' in crypto
-          ? `class-${crypto.randomUUID()}`
-          : `class-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+      const newId = `class-${crypto.randomUUID()}`;
       return [...prev, {
         id: newId,
         name: `Klasse ${nextNum}`,
