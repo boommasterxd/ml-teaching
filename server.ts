@@ -35,12 +35,14 @@ app.use(express.json({ limit: '500kb' }));
 // Trust the first proxy (required for Traefik / reverse proxy setups)
 app.set('trust proxy', 1);
 
-// Security headers — CSP enabled in production (with TF.js rules), report-only in dev
+// Security headers — CSP enforced in production (with TF.js rules), report-only in dev
+// wasm-unsafe-eval is required: TF.js compiles a WASM module even when WebGL is the primary backend
+// Dev note: Vite-related violations (inline scripts, HMR websocket) are expected noise in report-only mode
 app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      "script-src": ["'self'"],
+      "script-src": ["'self'", "'wasm-unsafe-eval'"],
       "img-src": ["'self'", "data:", "https:"],
       // Scoped to Google Storage, TensorFlow Hub, and Kaggle for MobileNet model downloads
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
