@@ -35,6 +35,9 @@ Es gibt keine automatisierten Tests (kein Test-Runner konfiguriert).
 - `/` → `LandingPage`
 - `/lernen` → `TrainingPage`
 - `/impressum`, `/datenschutz`, `/barrierefreiheit` → statische Seiten
+- `*` → `NotFoundPage`
+
+`App.tsx` umschließt den gesamten Router mit `ErrorBoundary` (React Error Boundary als letzter Fangpunkt für unbehandelte Render-Fehler).
 
 **ML-Pipeline in `TrainingPage.tsx`** (Hook-Komposition):
 - `useModelLoader` — lädt MobileNet + KNN-Classifier mit Retry-Logik
@@ -44,6 +47,8 @@ Es gibt keine automatisierten Tests (kein Test-Runner konfiguriert).
 - `useModelTraining` — KNN-Training auf Feature-Vektoren
 - `usePredictionLoop` — 15 FPS Inferenz-Schleife
 - `useConsentFlow` / `useModalState` — Modal-Sequenz (Datenschutz → Kamera-Consent → Laden)
+- `useAppError` — typisiertes Fehler-State-Management mit `AppError` (`category` + `message`); ersetzt einfaches `useState<string | null>`
+- `useNeuralNetAnimation` — Animations-Loop für die Neural-Network-Visualisierung auf der `LandingPage`
 
 **Modal-Pattern:** Alle Modals nutzen `Dialog.tsx` als Basis (Focus-Trap + Scroll-Lock + ARIA). Modals in `TrainingPage.tsx` werden über eine diskriminierte Union in `useModalState` verwaltet (`ModalState` = `'none' | 'imagePreview' | 'clearConfirm' | 'clearClass' | 'removeClass'`).
 

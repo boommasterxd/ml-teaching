@@ -92,6 +92,8 @@ export function usePredictionLoop(
             confidences: result.confidences,
           });
         } catch (err) {
+          // Prediction errors are logged but not surfaced to the user.
+          // The loop continues so a single frame failure does not interrupt classification.
           console.error('Prediction error:', err);
         } finally {
           img.dispose();

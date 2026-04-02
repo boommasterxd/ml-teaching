@@ -29,11 +29,7 @@ import PageHeader from '../components/PageHeader';
 import ClassCard from '../components/ClassCard';
 import TrainingControls from '../components/TrainingControls';
 import PredictionPanel from '../components/PredictionPanel';
-import ConfirmDialog from '../components/modals/ConfirmDialog';
-import ImagePreviewModal from '../components/modals/ImagePreviewModal';
-import ConsentModal from '../components/modals/ConsentModal';
-import CameraConsentModal from '../components/modals/CameraConsentModal';
-import LoadingModal from '../components/modals/LoadingModal';
+import { ConfirmDialog, ImagePreviewModal, ConsentModal, CameraConsentModal, LoadingModal } from '../components/modals';
 
 /**
  * Main page component for the interactive ML training experience.
@@ -170,6 +166,22 @@ export default function TrainingPage() {
       closeModal();
     }
   }, [clearClass, modal, closeModal]);
+
+  /** Confirms clearing all images from the class currently referenced in the modal. */
+  const handleClearClassConfirm = useCallback(() => {
+    if (modal.type === 'clearClass') {
+      handleClearClass(modal.classId);
+      closeModal();
+    }
+  }, [modal, handleClearClass, closeModal]);
+
+  /** Confirms removing the class currently referenced in the modal. */
+  const handleRemoveClassConfirm = useCallback(() => {
+    if (modal.type === 'removeClass') {
+      removeClass(modal.classId);
+      closeModal();
+    }
+  }, [modal, removeClass, closeModal]);
 
   /** Opens the image preview modal for the selected training image. */
   const handleImageClick = useCallback((classId: string, img: MLImage) => {
@@ -310,7 +322,7 @@ export default function TrainingPage() {
       <ConfirmDialog
         isOpen={modal.type === 'clearClass'}
         onClose={closeModal}
-        onConfirm={() => { if (modal.type === 'clearClass') { handleClearClass(modal.classId); closeModal(); } }}
+        onConfirm={handleClearClassConfirm}
         titleId="class-clear-modal-title"
         descId="class-clear-modal-description"
         title="Bilder dieser Klasse löschen?"
@@ -326,7 +338,7 @@ export default function TrainingPage() {
       <ConfirmDialog
         isOpen={modal.type === 'removeClass'}
         onClose={closeModal}
-        onConfirm={() => { if (modal.type === 'removeClass') { removeClass(modal.classId); closeModal(); } }}
+        onConfirm={handleRemoveClassConfirm}
         titleId="class-remove-modal-title"
         descId="class-remove-modal-description"
         title="Klasse löschen?"
