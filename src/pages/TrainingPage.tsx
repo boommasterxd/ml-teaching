@@ -220,7 +220,7 @@ export default function TrainingPage() {
   }, [cameraConsent, hasConsented, isModelLoading]);
 
   return (
-    <div className="bg-zinc-50 text-zinc-900 font-sans pb-20">
+    <div className="bg-zinc-50 text-zinc-900 font-sans pb-20 overflow-x-hidden">
       <PageHeader
         title="Modell trainieren"
         rightSlot={
