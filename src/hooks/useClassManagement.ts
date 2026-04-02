@@ -9,6 +9,18 @@ import type { MLClass, MLImage } from '../types/ml';
 import { COLORS } from '../types/ml';
 import { ML } from '../constants';
 
+/** Returns the next auto-incremented class number based on existing "Klasse N" names. */
+function getNextClassNumber(classes: MLClass[]): number {
+  const existingNums = classes
+    .map(c => c.name.match(/Klasse (\d+)/))
+    .filter((m): m is RegExpMatchArray => m !== null)
+    .map(m => parseInt(m[1], 10));
+
+  if (existingNums.length > 0) return Math.max(...existingNums) + 1;
+  if (classes.length > 0) return classes.length + 1;
+  return 1;
+}
+
 /** Returns the default set of two empty classes. */
 function createInitialClasses(): MLClass[] {
   return [
@@ -30,20 +42,7 @@ export function useClassManagement(onInvalidate: () => void) {
   /** Appends a new empty class with an auto-incremented name and color. */
   const addClass = useCallback(() => {
     setClasses(prev => {
-      let nextNum = 1;
-      const existingNums = prev
-        .map(c => {
-          const match = c.name.match(/Klasse (\d+)/);
-          return match ? parseInt(match[1], 10) : null;
-        })
-        .filter((n): n is number => n !== null);
-
-      if (existingNums.length > 0) {
-        nextNum = Math.max(...existingNums) + 1;
-      } else if (prev.length > 0) {
-        nextNum = prev.length + 1;
-      }
-
+      const nextNum = getNextClassNumber(prev);
       const newId =
         typeof crypto !== 'undefined' && 'randomUUID' in crypto
           ? `class-${crypto.randomUUID()}`

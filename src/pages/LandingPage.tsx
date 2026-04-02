@@ -6,11 +6,11 @@
  * about MobileNet and KNN, training tips, real-world examples, and calls to
  * action that navigate the user to the training page.
  */
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Brain, Camera, Zap, ArrowRight, Users, ImagePlus, Lightbulb, Car, Smartphone, Stethoscope } from 'lucide-react';
 import Button from '../components/Button';
 import NeuralNetViz from '../components/NeuralNetViz';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 /**
  * Full landing page composed of multiple content sections.
@@ -20,11 +20,7 @@ import NeuralNetViz from '../components/NeuralNetViz';
  */
 export default function LandingPage() {
   const navigate = useNavigate();
-
-  // Set the browser tab title once on mount.
-  useEffect(() => {
-    document.title = 'KI Bilderkennung für Schüler';
-  }, []);
+  usePageTitle('');
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
