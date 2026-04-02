@@ -78,7 +78,7 @@ const ImageGallery = memo(function ImageGallery({
   };
 
   return (
-    <div className="flex-1 relative min-h-[160px] sm:min-h-0 flex flex-col">
+    <div className="flex-1 relative min-h-[160px] sm:h-[220px] sm:min-h-0 flex flex-col">
       <div className="flex justify-between items-center mb-2 px-1">
         <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
           {isSelectionMode ? `${selectedIds.size} ausgewählt` : 'Gesammelte Bilder'}
@@ -120,7 +120,7 @@ const ImageGallery = memo(function ImageGallery({
           )}
         </div>
       </div>
-      <div className="flex-1 relative h-[190px] max-h-[190px] bg-zinc-50/50 rounded-xl border border-zinc-200 p-2 overflow-y-auto">
+      <div className="flex-1 min-h-0 bg-zinc-50/50 rounded-xl border border-zinc-200 p-2 overflow-y-auto">
         {images.length > 0 ? (
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
             {images.map((img, imgIndex) => (
