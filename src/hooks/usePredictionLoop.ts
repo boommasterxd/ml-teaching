@@ -9,10 +9,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type React from 'react';
 import * as tf from '@tensorflow/tfjs';
-import type * as mobilenet from '@tensorflow-models/mobilenet';
-import type * as knnClassifier from '@tensorflow-models/knn-classifier';
 import type { Prediction } from '../types/ml';
 import { PREDICTION } from '../constants';
+import type { Classifier, FeatureExtractor } from '../types/ml-models';
 
 /**
  * Runs a throttled prediction loop that continuously classifies video frames.
@@ -36,8 +35,8 @@ import { PREDICTION } from '../constants';
  *   - `stopPredicting` — callback that deactivates the loop and clears `prediction`.
  */
 export function usePredictionLoop(
-  classifier: knnClassifier.KNNClassifier | null,
-  mobilenetModel: mobilenet.MobileNet | null,
+  classifier: Classifier | null,
+  mobilenetModel: FeatureExtractor | null,
   videoRef: React.RefObject<HTMLVideoElement | null>
 ) {
   const [isPredicting, setIsPredicting] = useState(false);

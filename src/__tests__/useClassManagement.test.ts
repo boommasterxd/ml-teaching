@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClassManagement } from '../hooks/useClassManagement';
 import { ML } from '../constants';
@@ -11,10 +11,10 @@ const mockImage = (id: string): MLImage => ({
 });
 
 describe('useClassManagement', () => {
-  let onInvalidate: ReturnType<typeof vi.fn>;
+  let onInvalidate: Mock<() => void>;
 
   beforeEach(() => {
-    onInvalidate = vi.fn();
+    onInvalidate = vi.fn<() => void>();
   });
 
   describe('Initialer Zustand', () => {

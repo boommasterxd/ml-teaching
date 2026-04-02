@@ -9,6 +9,7 @@ import * as mobilenet from '@tensorflow-models/mobilenet';
 import * as knnClassifier from '@tensorflow-models/knn-classifier';
 import { ML, MODEL_LOAD_RETRY } from '../constants';
 import type { ErrorCategory } from '../types/errors';
+import type { Classifier, FeatureExtractor } from '../types/ml-models';
 
 /**
  * Retries an async operation with exponential backoff until it succeeds or the
@@ -69,8 +70,8 @@ export function useModelLoader(
 ) {
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [loadingText, setLoadingText] = useState('Initialisiere TensorFlow.js...');
-  const [classifier, setClassifier] = useState<knnClassifier.KNNClassifier | null>(null);
-  const [mobilenetModel, setMobilenetModel] = useState<mobilenet.MobileNet | null>(null);
+  const [classifier, setClassifier] = useState<Classifier | null>(null);
+  const [mobilenetModel, setMobilenetModel] = useState<FeatureExtractor | null>(null);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
