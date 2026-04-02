@@ -88,6 +88,10 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
           </label>
         </div>
 
+        <p className="text-sm text-zinc-500 mb-6" role="note">
+          Sie können Ihre Einwilligung jederzeit widerrufen. Ein Neuladen der Seite genügt.
+        </p>
+
         <div className="flex gap-3">
           <Button variant="secondary" onClick={onDecline} className="flex-1">
             Abbrechen
