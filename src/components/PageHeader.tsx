@@ -44,7 +44,7 @@ export default function PageHeader({ title, rightSlot }: PageHeaderProps) {
             className="h-8 w-auto object-contain hidden lg:block"
             referrerPolicy="no-referrer"
           />
-          <h1 className="text-base sm:text-lg font-bold text-zinc-800 line-clamp-1">{title}</h1>
+          <span className="text-base sm:text-lg font-bold text-zinc-800 line-clamp-1">{title}</span>
         </div>
 
         {/* Spacer mirrors the back button width to keep the title centered when no rightSlot is provided. */}

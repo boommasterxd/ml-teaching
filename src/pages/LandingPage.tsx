@@ -41,7 +41,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero section */}
-      <header className="bg-white border-b border-zinc-200 py-16 px-4 sm:px-6 lg:px-8">
+      <div className="bg-white border-b border-zinc-200 py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center">
           <div className="inline-flex items-center justify-center p-3 bg-red-50 text-red-600 rounded-2xl mb-6">
             <Brain className="w-10 h-10" aria-hidden="true" />
@@ -56,11 +56,11 @@ export default function LandingPage() {
             Jetzt ausprobieren <ArrowRight className="ml-2 w-5 h-5" aria-hidden="true" />
           </Button>
         </div>
-      </header>
+      </div>
 
       {/* Three-step overview */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-16">In 3 Schritten zur eigenen KI</h2>
+      <section aria-labelledby="section-steps" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <h2 id="section-steps" className="text-3xl font-bold text-center mb-16">In 3 Schritten zur eigenen KI</h2>
         <div className="grid md:grid-cols-3 gap-10">
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-zinc-100 text-center relative">
             <div className="w-16 h-16 bg-zinc-100 text-zinc-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold" aria-hidden="true">1</div>
@@ -84,10 +84,10 @@ export default function LandingPage() {
       </section>
 
       {/* Interactive neural network visualization */}
-      <section className="py-20 bg-zinc-900 text-white px-4 sm:px-6 lg:px-8">
+      <section aria-labelledby="section-neural-net" className="py-20 bg-zinc-900 text-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-6">Wie lernt ein Computer?</h2>
+            <h2 id="section-neural-net" className="text-3xl font-bold mb-6">Wie lernt ein Computer?</h2>
             <p className="text-zinc-300 max-w-3xl mx-auto text-lg">
               Um zu verstehen, was er sieht, nutzt ein Computer ein sogenanntes künstliches neuronales Netz. 
               Das ist eine Technik, die sich an der Arbeitsweise unseres Gehirns orientiert. 
@@ -102,10 +102,10 @@ export default function LandingPage() {
       </section>
 
       {/* Explanation section for students */}
-      <section className="py-20 bg-white">
+      <section aria-labelledby="section-explanation" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-6 text-zinc-900">Wie funktioniert das hier genau?</h2>
+            <h2 id="section-explanation" className="text-3xl font-bold mb-6 text-zinc-900">Wie funktioniert das hier genau?</h2>
             <p className="text-zinc-600 max-w-3xl mx-auto text-lg">
               Ein Blick unter die Haube – einfach erklärt für dich! Wir nutzen zwei clevere Techniken, die wie ein Team zusammenarbeiten, damit dein Computer sehen lernt.
             </p>
@@ -150,10 +150,10 @@ export default function LandingPage() {
       </section>
 
       {/* Tips for a smart model */}
-      <section className="py-20 bg-zinc-50 px-4 sm:px-6 lg:px-8">
+      <section aria-labelledby="section-tips" className="py-20 bg-zinc-50 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-6 text-zinc-900">Tipps für ein schlaues Modell</h2>
+            <h2 id="section-tips" className="text-3xl font-bold mb-6 text-zinc-900">Tipps für ein schlaues Modell</h2>
             <p className="text-zinc-600 max-w-3xl mx-auto text-lg">
               Damit dein Computer nicht durcheinanderkommt, braucht er gutes Training. Hier sind drei goldene Regeln für perfekte Bilder:
             </p>
@@ -194,10 +194,10 @@ export default function LandingPage() {
       </section>
 
       {/* Real-world examples */}
-      <section className="py-20 bg-white px-4 sm:px-6 lg:px-8">
+      <section aria-labelledby="section-examples" className="py-20 bg-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-6 text-zinc-900">Wo findest du das im Alltag?</h2>
+            <h2 id="section-examples" className="text-3xl font-bold mb-6 text-zinc-900">Wo findest du das im Alltag?</h2>
             <p className="text-zinc-600 max-w-3xl mx-auto text-lg">
               Bilderkennung ist keine Zukunftsmusik mehr. Du nutzt sie wahrscheinlich schon jeden Tag!
             </p>
@@ -238,10 +238,10 @@ export default function LandingPage() {
       </section>
       
       {/* Final call to action */}
-      <section className="py-24 bg-zinc-900 text-white px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
+      <section aria-labelledby="section-cta" className="py-24 bg-zinc-900 text-white px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} aria-hidden="true"></div>
         <div className="max-w-3xl mx-auto relative z-10">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">Bereit für dein eigenes Experiment?</h2>
+          <h2 id="section-cta" className="text-3xl md:text-5xl font-bold mb-6">Bereit für dein eigenes Experiment?</h2>
           <p className="text-xl text-zinc-400 mb-10">
             Du hast gelernt, wie KI sieht und entscheidet. Jetzt ist es Zeit, dein eigenes Modell zu trainieren und auszuprobieren!
           </p>
@@ -252,7 +252,7 @@ export default function LandingPage() {
       </section>
 
       {/* Collaboration section */}
-      <section className="bg-white py-16 border-t border-zinc-200">
+      <section aria-label="Kooperation" className="bg-white py-16 border-t border-zinc-200">
         <div className="max-w-7xl mx-auto px-6 flex flex-col items-center text-center">
           <p className="text-zinc-600 mb-6 font-medium">
             Entwickelt in Zusammenarbeit mit dem

@@ -9,15 +9,23 @@
 @import "tailwindcss";
 
 @layer base {
-  /* Hide the main page scrollbar (no layout shift, no white strip) */
   html, body {
-    scrollbar-width: none;
     /* Scroll padding compensates for the sticky header (h-16 = 64px) so
        keyboard-focused elements are never hidden behind it (WCAG 2.4.11) */
     scroll-padding-top: 4.5rem;
+    /* Thin, unobtrusive scrollbar for scroll-position visibility (WCAG 1.4.10) */
+    scrollbar-width: thin;
+    scrollbar-color: #a1a1aa transparent;
   }
   html::-webkit-scrollbar {
-    display: none;
+    width: 6px;
+  }
+  html::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  html::-webkit-scrollbar-thumb {
+    background: #a1a1aa;
+    border-radius: 3px;
   }
 }
 
