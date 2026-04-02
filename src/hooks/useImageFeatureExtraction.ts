@@ -83,9 +83,7 @@ export function useImageFeatureExtraction(mobilenetModel: FeatureExtractor | nul
       const dataUrl = canvas.toDataURL('image/jpeg', ML.THUMBNAIL_QUALITY);
 
       return {
-        id: typeof crypto !== 'undefined' && 'randomUUID' in crypto
-          ? `img-${crypto.randomUUID()}`
-          : `img-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+        id: `img-${crypto.randomUUID()}`,
         dataUrl,
         featureArray,
       };
