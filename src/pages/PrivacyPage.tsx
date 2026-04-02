@@ -252,6 +252,12 @@ export default function PrivacyPage() {
           <p className="text-zinc-600 leading-relaxed mb-4">
             Wenn Sie auf unserer Website mit Elementen interagieren, in denen künstliche Intelligenz zum Einsatz kommt, werden Ihre Eingaben inklusive Metadaten verarbeitet, um die gewünschte Analyse oder Reaktion lokal zu generieren.
           </p>
+          <p className="text-zinc-600 leading-relaxed mb-4">
+            Informationen zur Speicherdauer der von Google verarbeiteten Daten (insbesondere der IP-Adresse) entnehmen Sie der{' '}
+            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">
+              Google Datenschutzerklärung<span className="sr-only"> (öffnet in neuem Tab)</span>
+            </a>.
+          </p>
 
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Kameranutzung (lokales ML-Training)</h3>
           <p className="text-zinc-600 leading-relaxed mb-4">
