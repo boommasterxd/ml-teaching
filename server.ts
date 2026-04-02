@@ -35,7 +35,7 @@ app.use(express.json({ limit: '500kb' }));
 // Trust the first proxy (required for Traefik / reverse proxy setups)
 app.set('trust proxy', 1);
 
-// Security headers — CSP enabled in production (with TF.js rules), disabled in dev
+// Security headers — CSP enabled in production (with TF.js rules), report-only in dev
 app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
@@ -48,16 +48,26 @@ app.use(helmet({
       "form-action": ["'self'"],
       "frame-ancestors": ["'none'"],
     }
-  } : false,
-  // COEP is disabled because TensorFlow.js loads WASM binaries cross-origin
+  } : {
+    reportOnly: true,
+    directives: helmet.contentSecurityPolicy.getDefaultDirectives(),
+  },
+  // COEP is disabled because TensorFlow.js loads model weights cross-origin (Google Storage, TF Hub)
   crossOriginEmbedderPolicy: false,
   xFrameOptions: { action: 'deny' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   hsts: {
     maxAge: SERVER.HSTS_MAX_AGE,
     includeSubDomains: true,
+    preload: true,
   },
 }));
+
+// Permissions-Policy: declare only the browser APIs this app actually uses
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=()');
+  next();
+});
 
 // Rate limiting — applied to /api/ routes only.
 // Window: 15 minutes, ceiling: 1 500 requests per IP per window.
@@ -69,7 +79,7 @@ const globalLimiter = rateLimit({
   legacyHeaders: false,
   validate: { trustProxy: true, xForwardedForHeader: true },
 });
-app.use('/api/', globalLimiter);
+app.use(globalLimiter);
 
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
@@ -123,6 +133,12 @@ async function setupServer() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
+
+  // Global error handler — must be registered after all routes
+  app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error('Server Error:', err.message);
+    res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });
+  });
 
   app.listen(port, '0.0.0.0', () => {
     console.log(`🚀 Server running on http://0.0.0.0:${port} (${process.env.NODE_ENV || 'development'})`);
