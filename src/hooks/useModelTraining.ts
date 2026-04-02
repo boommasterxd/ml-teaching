@@ -11,6 +11,7 @@ import * as knnClassifier from '@tensorflow-models/knn-classifier';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import type { ErrorCategory } from '../types/errors';
+import type { Classifier } from '../types/ml-models';
 
 /**
  * Manages training state, input validation, and the KNN training procedure.
@@ -24,8 +25,8 @@ import type { ErrorCategory } from '../types/errors';
  */
 export function useModelTraining(
   classes: MLClass[],
-  classifier: knnClassifier.KNNClassifier | null,
-  setClassifier: (c: knnClassifier.KNNClassifier) => void,
+  classifier: Classifier | null,
+  setClassifier: (c: Classifier) => void,
   setHasTrainedModel: (v: boolean) => void,
   onError: (category: Extract<ErrorCategory, 'training' | 'validation'>, msg: string) => void
 ) {

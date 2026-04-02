@@ -7,9 +7,9 @@
  */
 import { useRef, useCallback } from 'react';
 import * as tf from '@tensorflow/tfjs';
-import type { MobileNet } from '@tensorflow-models/mobilenet';
 import type { MLImage } from '../types/ml';
 import { ML } from '../constants';
+import type { FeatureExtractor } from '../types/ml-models';
 
 /**
  * Provides an `extractFeatures` function that converts a video or image
@@ -19,7 +19,7 @@ import { ML } from '../constants';
  *   extraction, or `null` if the model has not been loaded yet.
  * @returns An object with the `extractFeatures` callback.
  */
-export function useImageFeatureExtraction(mobilenetModel: MobileNet | null) {
+export function useImageFeatureExtraction(mobilenetModel: FeatureExtractor | null) {
   const thumbnailCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   /**
