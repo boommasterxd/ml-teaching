@@ -93,6 +93,9 @@ export function useModelTraining(
     }
 
     const newClassifier = knnClassifier.create();
+    // Yield to the browser for one render cycle so the isTraining state
+    // propagates and the loading spinner becomes visible before the
+    // synchronous KNN training loop blocks the main thread.
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {

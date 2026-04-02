@@ -15,6 +15,6 @@ const BASE_TITLE = 'KI Bilderkennung für Schüler';
  */
 export function usePageTitle(title: string) {
   useEffect(() => {
-    document.title = `${title} – ${BASE_TITLE}`;
+    document.title = title ? `${title} – ${BASE_TITLE}` : BASE_TITLE;
   }, [title]);
 }
