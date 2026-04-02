@@ -9,7 +9,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import {defineConfig} from 'vitest/config';
 import { compression } from 'vite-plugin-compression2';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 
@@ -81,6 +81,10 @@ export default defineConfig(() => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
+    },
+    test: {
+      environment: 'jsdom',
+      globals: true,
     },
     server: {
       // Bind to all interfaces so the dev server is reachable inside Docker.
