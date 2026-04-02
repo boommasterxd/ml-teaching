@@ -175,8 +175,8 @@ const ClassCard = memo(function ClassCard({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3 mt-1 sm:mt-0 flex-shrink-0">
-          <span className="text-xs font-mono text-zinc-600 bg-zinc-100 px-2 py-1 rounded-md whitespace-nowrap flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-0 flex-shrink-0 min-w-0">
+          <span className="text-xs font-mono text-zinc-600 bg-zinc-100 px-2 py-1 rounded-md whitespace-nowrap">
             {cls.images.length} Bilder
           </span>
           <button
