@@ -221,7 +221,7 @@
 - **Checklistenpunkt:** DSGVO-Quickcheck Schritt 3 — "HSTS: Strict-Transport-Security-Header gesetzt"; DSGVO-Checklist Abschnitt 9 — "SSL/TLS-Verschlüsselung"; Art. 32 DSGVO
 - **Rechtliche Grundlage:** Art. 32 DSGVO — TOM
 - **Bewertung:** KONFORM
-- **Begründung:** Helmet setzt HSTS mit `includeSubDomains: true` und konfigurierter `maxAge`. X-Frame-Options ist auf `deny` gesetzt (Clickjacking-Schutz). Referrer-Policy auf `strict-origin-when-cross-origin`. CSP in Produktion aktiv (`process.env.NODE_ENV === 'production'`) und auf Google-APIs beschränkt. Rate Limiting via `express-rate-limit` implementiert und auf `/api/`-Routen beschränkt. `trust proxy` korrekt konfiguriert für Traefik-Reverse-Proxy-Setup. Die Sicherheits-Header entsprechen dem Stand der Technik und erfüllen die TOM-Anforderungen nach Art. 32 DSGVO.
+- **Begründung:** Helmet setzt HSTS mit `includeSubDomains: true`, `preload` und konfigurierter `maxAge`. X-Frame-Options ist auf `deny` gesetzt (Clickjacking-Schutz). Referrer-Policy auf `strict-origin-when-cross-origin`. Cross-Origin-Opener-Policy auf `same-origin`. Permissions-Policy schränkt Browser-APIs ein (Kamera nur same-origin; Mikrofon, Geolocation und Payment deaktiviert). CSP in Produktion aktiv (`process.env.NODE_ENV === 'production'`) und auf Google-APIs beschränkt. `trust proxy` korrekt konfiguriert für Traefik-Reverse-Proxy-Setup. Rate-Limiting erfolgt über die vorgelagerte Infrastruktur (Reverse-Proxy/Traefik). Die Sicherheits-Header entsprechen dem Stand der Technik und erfüllen die TOM-Anforderungen nach Art. 32 DSGVO.
 
 ---
 

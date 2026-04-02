@@ -39,7 +39,9 @@ app.use(helmet({
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "script-src": ["'self'"],
-      "style-src": ["'self'", "'unsafe-inline'"],
+      "style-src": ["'self'"],
+      "style-src-attr": ["'unsafe-inline'"],
+      "style-src-elem": ["'self'"],
       "img-src": ["'self'", "data:"],
       // Scoped to Google Storage, TensorFlow Hub, and Kaggle for MobileNet model downloads
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
