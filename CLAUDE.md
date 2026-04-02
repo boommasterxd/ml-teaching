@@ -10,14 +10,17 @@ Eine interaktive Web-App, die Besuchern erklärt, wie Machine Learning (Transfer
 
 ```bash
 npm run dev          # Entwicklungsserver (Port 3000, TSX + Vite HMR)
+npm start            # Produktionsserver starten (benötigt vorherigen Build)
 npm run build        # Produktions-Build (Client + Server)
 npm run build:client # Nur Vite-Build
 npm run build:server # Nur TypeScript-Server-Build (→ dist-server/)
 npm run lint         # TypeScript-Typcheck ohne Emission
 npm run clean        # dist/ und dist-server/ löschen
+npm test             # Vitest (einmaliger Durchlauf)
+npm run test:watch   # Vitest im Watch-Modus
 ```
 
-Es gibt keine automatisierten Tests (kein Test-Runner konfiguriert).
+Tests liegen in `src/__tests__/` (jsdom-Umgebung, Globals aktiviert). Vitest ist in `vite.config.ts` unter `test:` konfiguriert — es gibt keine separate `vitest.config.*`-Datei.
 
 ## Architektur
 
@@ -60,7 +63,7 @@ Es gibt keine automatisierten Tests (kein Test-Runner konfiguriert).
 
 ## Konfiguration
 
-- **`vite.config.ts`**: Chunk-Splitting, Image-Optimierung (PNG/JPEG/WebP Quality 80), gzip- und brotli-Komprimierung.
+- **`vite.config.ts`**: Chunk-Splitting, Image-Optimierung (PNG/JPEG/WebP Quality 80), gzip- und brotli-Komprimierung. Definiert den `@`-Alias (→ Projekt-Root). Enthält auch die Vitest-Konfiguration (`test.environment: jsdom`).
 - **`tsconfig.server.json`**: Erweitert `tsconfig.json`, setzt `module: NodeNext` und `outDir: dist-server`. Der Server verwendet ESM.
 - **`.env.example`**: `PORT`, `NODE_ENV`, `DOMAIN_NAME` — werden im Server und im Dockerfile verwendet.
 - **`server.ts` CSP**: `connect-src` erlaubt Google APIs und TensorFlow Hub (Modell-Downloads). `script-src` benötigt `unsafe-inline` und `wasm-unsafe-eval` für TensorFlow.js/WASM.
@@ -83,7 +86,7 @@ Das Dockerfile nutzt einen Multi-Stage Alpine-Build. Der Container läuft als `n
 - Brand-Farbe: `#D51317` (Rot)
 - Tailwind CSS 4 mit `@import "tailwindcss"` in `src/index.css`
 - Klassen-Komposition immer über `cn()` aus `src/lib/utils.ts`
-- Animationen mit Framer Motion
+- Animationen mit dem `motion`-Paket (v12, ehemals Framer Motion)
 
 ## Barrierefreiheit
 
