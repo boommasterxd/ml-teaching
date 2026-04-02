@@ -498,16 +498,14 @@
 - **Code-Snippet:**
   ```dockerfile
   # Dockerfile — Production Stage
-  RUN mkdir -p /app/database && chown -R node:node /app/database
-  ...
   USER node        # ← Non-root User
   EXPOSE 3000
   CMD ["node", "dist-server/server.js"]
   ```
-- **Checklistenpunkt:** DSGVO-Checklist Abschnitt 9 TOM — "Zugriffsberechtigungen: Least Privilege — nur notwendige Datenbankrechte"
+- **Checklistenpunkt:** DSGVO-Checklist Abschnitt 9 TOM — "Zugriffsberechtigungen: Least Privilege"
 - **Rechtliche Grundlage:** Art. 32 DSGVO — TOM; Art. 25 DSGVO — Privacy by Design
 - **Bewertung:** KONFORM
-- **Begründung:** Der Docker-Container läuft als unprivilegierter `node`-User (nicht `root`). Das Datenbankverzeichnis `/app/database` gehört `node:node`. Es gibt keine Datenbankverbindung mit separatem DB-User — da keine relationale Datenbank eingesetzt wird, entfällt die Prüfung auf Datenbankrechte im engeren Sinne. Auf Betriebssystemebene ist Least-Privilege umgesetzt: kein Root-Zugriff im Container, keine unnötigen Capabilities. Der Multi-Stage-Build verhindert, dass Build-Tooling im Production-Image mit Laufzeitberechtigungen verfügbar ist.
+- **Begründung:** Der Docker-Container läuft als unprivilegierter `node`-User (nicht `root`). Es gibt keine Datenbank und keine persistente Datenspeicherung im Container. Auf Betriebssystemebene ist Least-Privilege umgesetzt: kein Root-Zugriff im Container, keine unnötigen Capabilities. Der Multi-Stage-Build verhindert, dass Build-Tooling im Production-Image mit Laufzeitberechtigungen verfügbar ist.
 
 ---
 

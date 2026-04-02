@@ -11,7 +11,6 @@ RUN npm run build
 FROM node:lts-alpine
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache python3 make g++
 
 # Wir kopieren nur die notwendigen Artefakte. .env wird NICHT kopiert!
 COPY --from=builder /app/package*.json ./

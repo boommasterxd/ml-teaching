@@ -60,7 +60,7 @@ app.use(helmet({
   },
 }));
 
-// Permissions-Policy — restrict browser APIs to same-origin only
+// Permissions-Policy — allow camera for same-origin; disable microphone, geolocation, and payment
 app.use((_req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=()');
   next();
