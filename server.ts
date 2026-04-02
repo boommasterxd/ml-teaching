@@ -52,7 +52,15 @@ app.use(helmet({
     }
   } : {
     reportOnly: true,
-    directives: helmet.contentSecurityPolicy.getDefaultDirectives(),
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", "'wasm-unsafe-eval'"],
+      "img-src": ["'self'", "data:", "https:"],
+      "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
+      "base-uri": ["'self'"],
+      "form-action": ["'self'"],
+      "frame-ancestors": ["'none'"],
+    },
   },
   // COEP is disabled because TensorFlow.js loads model weights cross-origin (Google Storage, TF Hub)
   crossOriginEmbedderPolicy: false,
@@ -143,7 +151,7 @@ async function setupServer() {
   });
 
   app.listen(port, '0.0.0.0', () => {
-    console.log(`🚀 Server running on http://0.0.0.0:${port} (${process.env.NODE_ENV || 'development'})`);
+    console.log(`🚀 Server running on http://localhost:${port} (${process.env.NODE_ENV || 'development'})`);
   });
 }
 
