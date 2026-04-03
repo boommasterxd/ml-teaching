@@ -23,7 +23,7 @@ import type { Classifier, FeatureExtractor } from '../types/ml-models';
  * @returns The resolved value of `fn` on the first successful attempt.
  * @throws The last error thrown by `fn`, or the abort reason if the signal fires.
  */
-async function loadWithRetry<T>(
+export async function loadWithRetry<T>(
   fn: () => Promise<T>,
   maxAttempts: number,
   baseDelayMs: number,
@@ -46,6 +46,58 @@ async function loadWithRetry<T>(
     }
   }
   throw new Error('Unreachable');
+}
+
+/**
+ * Initializes the TensorFlow.js WebGL backend.
+ */
+async function initTfBackend(
+  setLoadingText: (text: string) => void,
+  signal: AbortSignal,
+): Promise<void> {
+  setLoadingText('Lade TensorFlow.js Backend...');
+  await tf.setBackend('webgl');
+  await tf.ready();
+  if (signal.aborted) throw signal.reason as Error;
+}
+
+/**
+ * Creates a new KNN classifier instance and exposes it via the provided setter.
+ *
+ * @returns The created KNN classifier.
+ */
+async function createKnnClassifier(
+  setLoadingText: (text: string) => void,
+  signal: AbortSignal,
+): Promise<Classifier> {
+  setLoadingText('Erstelle KNN Klassifikator...');
+  const knn = knnClassifier.create();
+  if (signal.aborted) throw signal.reason as Error;
+  return knn;
+}
+
+/**
+ * Downloads and initializes the MobileNet feature extractor with retry logic.
+ *
+ * @returns The loaded MobileNet instance.
+ */
+async function loadMobileNet(
+  setLoadingText: (text: string) => void,
+  signal: AbortSignal,
+): Promise<FeatureExtractor> {
+  return loadWithRetry(
+    async () => {
+      if (signal.aborted) throw signal.reason as Error;
+      setLoadingText('Lade MobileNet (Feature Extractor)...');
+      return mobilenet.load({
+        version: ML.MOBILENET_VERSION,
+        alpha: ML.MOBILENET_ALPHA,
+      });
+    },
+    MODEL_LOAD_RETRY.MAX_ATTEMPTS,
+    MODEL_LOAD_RETRY.BASE_DELAY_MS,
+    signal,
+  );
 }
 
 /**
@@ -83,29 +135,14 @@ export function useModelLoader(
 
     async function initModels() {
       try {
-        setLoadingText('Lade TensorFlow.js Backend...');
-        await tf.setBackend('webgl');
-        await tf.ready();
+        await initTfBackend(setLoadingText, signal);
         if (signal.aborted) return;
 
-        setLoadingText('Erstelle KNN Klassifikator...');
-        const knn = knnClassifier.create();
+        const knn = await createKnnClassifier(setLoadingText, signal);
         if (signal.aborted) return;
         setClassifier(knn);
 
-        const mn = await loadWithRetry(
-          async () => {
-            if (signal.aborted) throw signal.reason as Error;
-            setLoadingText('Lade MobileNet (Feature Extractor)...');
-            return mobilenet.load({
-              version: ML.MOBILENET_VERSION,
-              alpha: ML.MOBILENET_ALPHA,
-            });
-          },
-          MODEL_LOAD_RETRY.MAX_ATTEMPTS,
-          MODEL_LOAD_RETRY.BASE_DELAY_MS,
-          signal,
-        );
+        const mn = await loadMobileNet(setLoadingText, signal);
         if (signal.aborted) return;
         setMobilenetModel(mn);
 
