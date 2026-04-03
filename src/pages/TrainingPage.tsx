@@ -8,12 +8,8 @@
  */
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Plus,
-  AlertCircle, SwitchCamera, RotateCcw,
-} from 'lucide-react';
+import { AlertCircle, SwitchCamera } from 'lucide-react';
 
-import type { MLClass } from '../types/ml';
 import {
   useAppError, useConsentFlow, useModalState,
   useImageFeatureExtraction, useModelLoader,
@@ -22,7 +18,7 @@ import {
 } from '../hooks';
 
 import PageHeader from '../components/PageHeader';
-import ClassCard from '../components/ClassCard';
+import TrainingClassesPanel from '../components/TrainingClassesPanel';
 import TrainingControls from '../components/TrainingControls';
 import PredictionPanel from '../components/PredictionPanel';
 import TrainingPageModals from '../components/TrainingPageModals';
@@ -75,7 +71,7 @@ export default function TrainingPage() {
   } = useClassManagement(invalidateModel);
 
   const { isTraining, trainModel: runTraining, canTrain, hasInvalidNames, hasDuplicateNames } =
-    useModelTraining(classes, classifier, setClassifier, setHasTrainedModel, setError);
+    useModelTraining(classes, classifier, { setClassifier, setHasTrainedModel, onError: setError });
 
   /**
    * Clears any previous error before starting a new training run.
@@ -189,58 +185,25 @@ export default function TrainingPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid lg:grid-cols-12 gap-6 items-start">
 
         {/* Left column: classes */}
-        <div className="lg:col-span-7 space-y-6 min-w-0">
-          <div className="flex justify-between items-center">
-            <h2 ref={mainHeadingRef} tabIndex={-1} className="text-lg font-bold text-zinc-800 focus:outline-none">1. Klassen ({classes.length})</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={showClearConfirm}
-                className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-200 text-red-600 hover:bg-red-50 hover:border-red-200 rounded-xl text-sm font-medium transition-colors shadow-sm"
-                title="Alles zurücksetzen"
-                aria-label="Alle Klassen und Bilder zurücksetzen"
-              >
-                <RotateCcw className="w-4 h-4 sm:mr-2" aria-hidden="true" />
-                <span className="hidden sm:inline">Zurücksetzen</span>
-              </button>
-              <button
-                onClick={addClass}
-                className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl text-sm font-medium transition-colors shadow-sm"
-                aria-label="Neue Klasse hinzufügen"
-              >
-                <Plus className="w-4 h-4 sm:mr-2" aria-hidden="true" />
-                <span className="hidden sm:inline">Hinzufügen</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            {classes.length === 0 ? (
-              <div className="text-center p-12 bg-white rounded-2xl border border-zinc-200 border-dashed">
-                <p className="text-zinc-600 text-sm">Keine Klassen vorhanden. Füge Klassen hinzu, um zu starten.</p>
-              </div>
-            ) : (
-              classes.map((cls: MLClass) => (
-                <ClassCard
-                  key={cls.id}
-                  cls={cls}
-                  isDuplicate={duplicateClassNames.has(cls.name.trim())}
-                  stream={stream}
-                  facingMode={facingMode}
-                  actions={{
-                    onAddExample: addExample,
-                    onAddImageExample: addImageExample,
-                    onRemove: showRemoveClass,
-                    onClear: showClearClass,
-                    onRemoveImages: handleRemoveImages,
-                    onUpdateName: updateClassName,
-                    onImageClick: showImagePreview,
-                    onError: (msg) => setError('validation', msg),
-                  }}
-                />
-              ))
-            )}
-          </div>
-        </div>
+        <TrainingClassesPanel
+          classes={classes}
+          duplicateClassNames={duplicateClassNames}
+          stream={stream}
+          facingMode={facingMode}
+          mainHeadingRef={mainHeadingRef}
+          cardActions={{
+            onAddExample: addExample,
+            onAddImageExample: addImageExample,
+            onRemove: showRemoveClass,
+            onClear: showClearClass,
+            onRemoveImages: handleRemoveImages,
+            onUpdateName: updateClassName,
+            onImageClick: showImagePreview,
+            onError: (msg) => setError('validation', msg),
+          }}
+          onAddClass={addClass}
+          onShowClearConfirm={showClearConfirm}
+        />
 
         {/* Right column: training & prediction */}
         <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-24 min-w-0">

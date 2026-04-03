@@ -43,6 +43,27 @@ async function runInference(
 }
 
 /**
+ * Runs a single inference on the given video frame, updates the prediction state,
+ * and tracks consecutive failures. Returns `'ok'` on success, `'error'` on a
+ * recoverable failure, and `'fatal'` when MAX_CONSECUTIVE_ERRORS is reached.
+ */
+async function handleInference(
+  classifier: Classifier,
+  mobilenetModel: FeatureExtractor,
+  video: HTMLVideoElement,
+  setPrediction: (p: Prediction) => void,
+  consecutiveErrorRef: React.MutableRefObject<number>,
+): Promise<'ok' | 'error' | 'fatal'> {
+  const success = await runInference(classifier, mobilenetModel, video, setPrediction);
+  if (success) {
+    consecutiveErrorRef.current = 0;
+    return 'ok';
+  }
+  consecutiveErrorRef.current += 1;
+  return consecutiveErrorRef.current >= PREDICTION.MAX_CONSECUTIVE_ERRORS ? 'fatal' : 'error';
+}
+
+/**
  * Runs a throttled prediction loop that continuously classifies video frames.
  *
  * On each animation frame the hook checks whether enough time has passed
@@ -114,16 +135,11 @@ export function usePredictionLoop(
         videoRef.current.videoWidth > 0 &&
         videoRef.current.videoHeight > 0
       ) {
-        const success = await runInference(classifier, mobilenetModel, videoRef.current, setPrediction);
-        if (success) {
-          consecutiveErrorRef.current = 0;
-        } else {
-          consecutiveErrorRef.current += 1;
-          if (consecutiveErrorRef.current >= PREDICTION.MAX_CONSECUTIVE_ERRORS) {
-            onErrorRef.current('prediction', 'Die Klassifizierung ist wiederholt fehlgeschlagen. Bitte trainiere das Modell erneut.');
-            setIsPredicting(false);
-            return;
-          }
+        const result = await handleInference(classifier, mobilenetModel, videoRef.current, setPrediction, consecutiveErrorRef);
+        if (result === 'fatal') {
+          onErrorRef.current('prediction', 'Die Klassifizierung ist wiederholt fehlgeschlagen. Bitte trainiere das Modell erneut.');
+          setIsPredicting(false);
+          return;
         }
       }
 
