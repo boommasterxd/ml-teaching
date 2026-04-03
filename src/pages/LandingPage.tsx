@@ -26,7 +26,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
       {/* Top navigation */}
       <nav aria-label="Hauptnavigation" className="bg-white border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2">
           <img
             src="/ada-logo.png"
             alt="Ada Lovelace Projekt Logo"
@@ -261,7 +261,7 @@ export default function LandingPage() {
             href="https://ada-lovelace.de/"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col items-center gap-4 hover:opacity-90 transition-opacity"
+            className="group flex flex-col items-center gap-4 hover:opacity-90 transition-opacity rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2"
           >
             <img
               src="/ada-logo.png"
