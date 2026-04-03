@@ -18,6 +18,11 @@ import './index.css';
  * Registered as a global `unhandledrejection` listener and removed during
  * Vite HMR module disposal to avoid duplicate handlers on hot reload.
  *
+ * Design decision: Unhandled rejections are logged but not surfaced to the
+ * user. All async operations in the app have dedicated error handling via
+ * useAppError/onError callbacks. This global handler serves only as a safety
+ * net for unexpected rejections that bypass the normal error flow.
+ *
  * @param event - The unhandled rejection event containing the rejection reason.
  */
 const handleUnhandledRejection = (event: PromiseRejectionEvent) => {

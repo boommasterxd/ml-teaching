@@ -15,6 +15,28 @@ import type { Classifier, FeatureExtractor } from '../types/ml-models';
 import type { ErrorCategory } from '../types/errors';
 
 /**
+ * Groups the three ML objects that are always passed together into inference
+ * functions, eliminating the recurring Data Clump.
+ */
+interface InferenceContext {
+  classifier: Classifier;
+  mobilenetModel: FeatureExtractor;
+  video: HTMLVideoElement;
+}
+
+/**
+ * Returns `true` when the video element has buffered at least one full frame
+ * and has non-zero dimensions — safe to pass to `tf.browser.fromPixels`.
+ */
+function isVideoReady(video: HTMLVideoElement): boolean {
+  return (
+    video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+    video.videoWidth > 0 &&
+    video.videoHeight > 0
+  );
+}
+
+/**
  * Extracts MobileNet features from the current video frame, runs KNN inference,
  * and updates the prediction state. Disposes both tensors in a finally-block
  * to prevent GPU memory leaks even when predictClass throws.
@@ -22,18 +44,20 @@ import type { ErrorCategory } from '../types/errors';
  * @returns `true` on success, `false` on error.
  */
 async function runInference(
-  classifier: Classifier,
-  mobilenetModel: FeatureExtractor,
-  video: HTMLVideoElement,
+  ctx: InferenceContext,
   setPrediction: (p: Prediction) => void,
 ): Promise<boolean> {
-  const img = tf.browser.fromPixels(video);
-  const features = mobilenetModel.infer(img, true);
+  const img = tf.browser.fromPixels(ctx.video);
+  const features = ctx.mobilenetModel.infer(img, true);
   try {
-    const result = await classifier.predictClass(features);
+    const result = await ctx.classifier.predictClass(features);
     setPrediction({ label: result.label, confidences: result.confidences });
     return true;
   } catch (err) {
+    // Design decision: Individual prediction errors are intentionally only
+    // logged here — the caller (handleInference) tracks consecutive failures
+    // and escalates to onError after MAX_CONSECUTIVE_ERRORS, avoiding UI
+    // disruption from transient single-frame failures in a 15 FPS loop.
     console.error('Prediction error:', err);
     return false;
   } finally {
@@ -48,13 +72,11 @@ async function runInference(
  * recoverable failure, and `'fatal'` when MAX_CONSECUTIVE_ERRORS is reached.
  */
 async function handleInference(
-  classifier: Classifier,
-  mobilenetModel: FeatureExtractor,
-  video: HTMLVideoElement,
+  ctx: InferenceContext,
   setPrediction: (p: Prediction) => void,
   consecutiveErrorRef: React.MutableRefObject<number>,
 ): Promise<'ok' | 'error' | 'fatal'> {
-  const success = await runInference(classifier, mobilenetModel, video, setPrediction);
+  const success = await runInference(ctx, setPrediction);
   if (success) {
     consecutiveErrorRef.current = 0;
     return 'ok';
@@ -130,12 +152,9 @@ export function usePredictionLoop(
       }
       lastPredictTimeRef.current = timestamp;
 
-      if (
-        videoRef.current.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
-        videoRef.current.videoWidth > 0 &&
-        videoRef.current.videoHeight > 0
-      ) {
-        const result = await handleInference(classifier, mobilenetModel, videoRef.current, setPrediction, consecutiveErrorRef);
+      if (isVideoReady(videoRef.current)) {
+        const ctx: InferenceContext = { classifier, mobilenetModel, video: videoRef.current };
+        const result = await handleInference(ctx, setPrediction, consecutiveErrorRef);
         if (result === 'fatal') {
           onErrorRef.current('prediction', 'Die Klassifizierung ist wiederholt fehlgeschlagen. Bitte trainiere das Modell erneut.');
           setIsPredicting(false);

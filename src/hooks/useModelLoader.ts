@@ -101,6 +101,16 @@ async function loadMobileNet(
 }
 
 /**
+ * Optional dependency-injection interface for the three model-loading steps.
+ * Provide this in tests to avoid real TF.js / network calls.
+ */
+export interface ModelLoaderFunctions {
+  initBackend: typeof initTfBackend;
+  createClassifier: typeof createKnnClassifier;
+  loadFeatureExtractor: typeof loadMobileNet;
+}
+
+/**
  * Loads and initializes the TensorFlow.js WebGL backend, a KNN classifier, and
  * the MobileNet v2 feature extractor once the user has given consent. Exposes
  * loading state and the ready model instances to the caller.
@@ -109,6 +119,8 @@ async function loadMobileNet(
  *   Setting this back to `false` aborts any in-progress load.
  * @param onError - Called with category `'model'` and a human-readable message
  *   if any step of the loading sequence fails permanently.
+ * @param loaderFns - Optional overrides for the three loading steps; intended
+ *   for unit tests to inject stubs instead of real TF.js / network calls.
  * @returns An object containing:
  *   - `classifier` — the KNN classifier instance, or `null` while loading.
  *   - `setClassifier` — state setter to reset or replace the classifier externally.
@@ -118,7 +130,8 @@ async function loadMobileNet(
  */
 export function useModelLoader(
   hasConsented: boolean,
-  onError: (category: Extract<ErrorCategory, 'model'>, msg: string) => void
+  onError: (category: Extract<ErrorCategory, 'model'>, msg: string) => void,
+  loaderFns?: Partial<ModelLoaderFunctions>,
 ) {
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [loadingText, setLoadingText] = useState('Initialisiere TensorFlow.js...');
@@ -127,22 +140,33 @@ export function useModelLoader(
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
+  // Keep loaderFns in a ref so the effect always calls the latest injected
+  // functions without needing loaderFns in the dependency array. Adding an
+  // object to deps would cause infinite re-runs if the caller passes an inline
+  // object literal on every render.
+  const loaderFnsRef = useRef(loaderFns);
+  loaderFnsRef.current = loaderFns;
+
   useEffect(() => {
     if (!hasConsented) return;
 
     const controller = new AbortController();
     const { signal } = controller;
 
+    const _initBackend = loaderFnsRef.current?.initBackend ?? initTfBackend;
+    const _createClassifier = loaderFnsRef.current?.createClassifier ?? createKnnClassifier;
+    const _loadFeatureExtractor = loaderFnsRef.current?.loadFeatureExtractor ?? loadMobileNet;
+
     async function initModels() {
       try {
-        await initTfBackend(setLoadingText, signal);
+        await _initBackend(setLoadingText, signal);
         if (signal.aborted) return;
 
-        const knn = await createKnnClassifier(setLoadingText, signal);
+        const knn = await _createClassifier(setLoadingText, signal);
         if (signal.aborted) return;
         setClassifier(knn);
 
-        const mn = await loadMobileNet(setLoadingText, signal);
+        const mn = await _loadFeatureExtractor(setLoadingText, signal);
         if (signal.aborted) return;
         setMobilenetModel(mn);
 
