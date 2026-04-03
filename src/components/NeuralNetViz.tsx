@@ -78,7 +78,7 @@ function InputButtons({ activeSignal, animating, onTrigger }: InputButtonsProps)
         onClick={() => onTrigger('dog')}
         disabled={animating}
         className={cn(
-          "flex flex-col items-center p-4 rounded-2xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50",
+          "flex flex-col items-center p-4 rounded-2xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-800",
           activeSignal === 'dog' ? "border-red-500 bg-red-500/20" : "border-zinc-600 hover:border-zinc-500 bg-zinc-700/50",
           animating && activeSignal !== 'dog' ? "opacity-50" : ""
         )}
@@ -90,7 +90,7 @@ function InputButtons({ activeSignal, animating, onTrigger }: InputButtonsProps)
         onClick={() => onTrigger('cat')}
         disabled={animating}
         className={cn(
-          "flex flex-col items-center p-4 rounded-2xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50",
+          "flex flex-col items-center p-4 rounded-2xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-800",
           activeSignal === 'cat' ? "border-blue-500 bg-blue-500/20" : "border-zinc-600 hover:border-zinc-500 bg-zinc-700/50",
           animating && activeSignal !== 'cat' ? "opacity-50" : ""
         )}
