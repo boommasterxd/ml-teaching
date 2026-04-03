@@ -41,7 +41,7 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
   const canConfirm = privacyChecked && modelChecked;
 
   return (
-    <Dialog isOpen={isOpen} onClose={onDecline} labelledBy="consent-modal-title">
+    <Dialog isOpen={isOpen} onClose={onDecline} labelledBy="consent-modal-title" describedBy="consent-modal-desc">
       <ModalContent maxWidth="lg" className="p-8">
         <h2 id="consent-modal-title" className="text-2xl font-bold text-zinc-900 mb-6">
           Einwilligung zur Datenverarbeitung
@@ -88,7 +88,7 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
           </label>
         </div>
 
-        <p className="text-sm text-zinc-500 mb-6" role="note">
+        <p id="consent-modal-desc" className="text-sm text-zinc-500 mb-6" role="note">
           Sie können Ihre Einwilligung jederzeit widerrufen. Ein Neuladen der Seite genügt.
         </p>
 

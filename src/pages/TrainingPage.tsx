@@ -10,11 +10,11 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '../hooks/usePageTitle';
 import {
-  Plus, Trash2,
+  Plus,
   AlertCircle, SwitchCamera, RotateCcw,
 } from 'lucide-react';
 
-import type { MLClass, MLImage } from '../types/ml';
+import type { MLClass } from '../types/ml';
 import { useAppError } from '../hooks/useAppError';
 import { useConsentFlow } from '../hooks/useConsentFlow';
 import { useModalState } from '../hooks/useModalState';
@@ -29,7 +29,8 @@ import PageHeader from '../components/PageHeader';
 import ClassCard from '../components/ClassCard';
 import TrainingControls from '../components/TrainingControls';
 import PredictionPanel from '../components/PredictionPanel';
-import { ConfirmDialog, ImagePreviewModal, ConsentModal, CameraConsentModal, LoadingModal } from '../components/modals';
+import TrainingPageModals from '../components/TrainingPageModals';
+import { ConsentModal, CameraConsentModal, LoadingModal } from '../components/modals';
 
 /**
  * Main page component for the interactive ML training experience.
@@ -147,26 +148,8 @@ export default function TrainingPage() {
   }, [classes]);
 
   /**
-   * Resets all classes, the trained model, and prediction state.
-   */
-  const clearAll = useCallback(() => {
-    resetClasses();
-    setHasTrainedModel(false);
-    stopPredicting();
-    if (classifier) classifier.clearAllClasses();
-    closeModal();
-  }, [classifier, stopPredicting, resetClasses, closeModal]);
-
-  /**
-   * Removes a single image and closes the preview modal if it was showing that image.
-   */
-  const handleRemoveImage = useCallback((classId: string, imageId: string) => {
-    removeImage(classId, imageId);
-    closeModal();
-  }, [removeImage, closeModal]);
-
-  /**
-   * Removes multiple images from a class.
+   * Removes multiple images and closes the preview modal if the currently
+   * previewed image is among the removed ones.
    */
   const handleRemoveImages = useCallback((classId: string, imageIds: string[]) => {
     removeImages(classId, imageIds);
@@ -174,43 +157,6 @@ export default function TrainingPage() {
       closeModal();
     }
   }, [removeImages, modal, closeModal]);
-
-  /**
-   * Clears all images from a class.
-   */
-  const handleClearClass = useCallback((id: string) => {
-    clearClass(id);
-    if (modal.type === 'imagePreview' && modal.classId === id) {
-      closeModal();
-    }
-  }, [clearClass, modal, closeModal]);
-
-  /**
-   * Confirms clearing all images from the class currently referenced in the modal.
-   */
-  const handleClearClassConfirm = useCallback(() => {
-    if (modal.type === 'clearClass') {
-      handleClearClass(modal.classId);
-      closeModal();
-    }
-  }, [modal, handleClearClass, closeModal]);
-
-  /**
-   * Confirms removing the class currently referenced in the modal.
-   */
-  const handleRemoveClassConfirm = useCallback(() => {
-    if (modal.type === 'removeClass') {
-      removeClass(modal.classId);
-      closeModal();
-    }
-  }, [modal, removeClass, closeModal]);
-
-  /**
-   * Opens the image preview modal for the selected training image.
-   */
-  const handleImageClick = useCallback((classId: string, img: MLImage) => {
-    showImagePreview(classId, img);
-  }, [showImagePreview]);
 
   // After all consent modals are done, focus the main content heading
   useEffect(() => {
@@ -284,14 +230,16 @@ export default function TrainingPage() {
                   isDuplicate={duplicateClassNames.has(cls.name.trim())}
                   stream={stream}
                   facingMode={facingMode}
-                  onAddExample={addExample}
-                  onAddImageExample={addImageExample}
-                  onRemove={showRemoveClass}
-                  onClear={showClearClass}
-                  onRemoveImages={handleRemoveImages}
-                  onUpdateName={updateClassName}
-                  onImageClick={handleImageClick}
-                  onError={(msg) => setError('validation', msg)}
+                  actions={{
+                    onAddExample: addExample,
+                    onAddImageExample: addImageExample,
+                    onRemove: showRemoveClass,
+                    onClear: showClearClass,
+                    onRemoveImages: handleRemoveImages,
+                    onUpdateName: updateClassName,
+                    onImageClick: showImagePreview,
+                    onError: (msg) => setError('validation', msg),
+                  }}
                 />
               ))
             )}
@@ -324,55 +272,17 @@ export default function TrainingPage() {
       </div>
 
       {/* Modal dialogs */}
-      <ImagePreviewModal
-        isOpen={modal.type === 'imagePreview'}
-        onClose={closeModal}
-        image={modal.type === 'imagePreview' ? modal.image : null}
-        onDelete={() => modal.type === 'imagePreview' && handleRemoveImage(modal.classId, modal.image.id)}
-      />
-
-      <ConfirmDialog
-        isOpen={modal.type === 'clearConfirm'}
-        onClose={closeModal}
-        onConfirm={clearAll}
-        titleId="clear-modal-title"
-        descId="clear-modal-desc"
-        title="Daten unwiderruflich löschen?"
-        description="Möchten Sie wirklich alle erfassten Klassen und Bilddaten löschen? Das aktuell trainierte Modell wird dabei unwiderruflich entfernt und der Vorgang kann nicht rückgängig gemacht werden."
-        confirmLabel="Unwiderruflich löschen"
-        icon={<AlertCircle className="w-6 h-6" />}
-      />
-
-      <ConfirmDialog
-        isOpen={modal.type === 'clearClass'}
-        onClose={closeModal}
-        onConfirm={handleClearClassConfirm}
-        titleId="class-clear-modal-title"
-        descId="class-clear-modal-description"
-        title="Bilder dieser Klasse löschen?"
-        description={
-          <>Möchten Sie wirklich alle Bilder der Klasse{' '}
-            <strong>"{modal.type === 'clearClass' ? classes.find(c => c.id === modal.classId)?.name : ''}"</strong>{' '}
-            unwiderruflich löschen?</>
-        }
-        confirmLabel="Zurücksetzen"
-        icon={<RotateCcw className="w-6 h-6" />}
-      />
-
-      <ConfirmDialog
-        isOpen={modal.type === 'removeClass'}
-        onClose={closeModal}
-        onConfirm={handleRemoveClassConfirm}
-        titleId="class-remove-modal-title"
-        descId="class-remove-modal-description"
-        title="Klasse löschen?"
-        description={
-          <>Möchten Sie die Klasse{' '}
-            <strong>"{modal.type === 'removeClass' ? classes.find(c => c.id === modal.classId)?.name : ''}"</strong>{' '}
-            und alle zugehörigen Bilder wirklich entfernen?</>
-        }
-        confirmLabel="Löschen"
-        icon={<Trash2 className="w-6 h-6" />}
+      <TrainingPageModals
+        modal={modal}
+        classes={classes}
+        classifier={classifier}
+        closeModal={closeModal}
+        removeImage={removeImage}
+        clearClass={clearClass}
+        removeClass={removeClass}
+        resetClasses={resetClasses}
+        setHasTrainedModel={setHasTrainedModel}
+        stopPredicting={stopPredicting}
       />
 
       <ConsentModal

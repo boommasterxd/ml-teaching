@@ -14,17 +14,9 @@ import CameraPreview from './CameraPreview';
 import ImageGallery from './ImageGallery';
 
 /**
- * Props for the ClassCard component.
+ * Callback actions for the ClassCard component, grouped to reduce prop count.
  */
-export interface ClassCardProps {
-  /** The ML class data to display and manage. */
-  cls: MLClass;
-  /** Whether the class name conflicts with another class name. */
-  isDuplicate: boolean;
-  /** Active camera stream to render in the preview. `null` if no camera is available. */
-  stream: MediaStream | null;
-  /** Which camera to use: `'user'` for front-facing, `'environment'` for rear-facing. */
-  facingMode: 'user' | 'environment';
+export interface ClassCardActions {
   /** Called when a new training frame is captured from the video element. */
   onAddExample: (classId: string, video: HTMLVideoElement) => void;
   /** Called when a training image is added via file upload. */
@@ -44,6 +36,22 @@ export interface ClassCardProps {
 }
 
 /**
+ * Props for the ClassCard component.
+ */
+export interface ClassCardProps {
+  /** The ML class data to display and manage. */
+  cls: MLClass;
+  /** Whether the class name conflicts with another class name. */
+  isDuplicate: boolean;
+  /** Active camera stream to render in the preview. `null` if no camera is available. */
+  stream: MediaStream | null;
+  /** Which camera to use: `'user'` for front-facing, `'environment'` for rear-facing. */
+  facingMode: 'user' | 'environment';
+  /** Grouped callback actions for class management and user interactions. */
+  actions: ClassCardActions;
+}
+
+/**
  * Displays a class card with its editable name, camera preview, recording controls, and image gallery.
  * Uses `memo` to prevent unnecessary re-renders when sibling class cards update.
  */
@@ -52,15 +60,9 @@ const ClassCard = memo(function ClassCard({
   isDuplicate,
   stream,
   facingMode,
-  onAddExample,
-  onAddImageExample,
-  onRemove,
-  onClear,
-  onRemoveImages,
-  onUpdateName,
-  onImageClick,
-  onError,
+  actions,
 }: ClassCardProps) {
+  const { onAddExample, onAddImageExample, onRemove, onClear, onRemoveImages, onUpdateName, onImageClick, onError } = actions;
   const [isRecording, setIsRecording] = useState(false);
   const recordIntervalRef = useRef<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);

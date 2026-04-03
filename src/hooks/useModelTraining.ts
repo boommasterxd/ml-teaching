@@ -14,6 +14,40 @@ import type { ErrorCategory } from '../types/errors';
 import type { Classifier } from '../types/ml-models';
 
 /**
+ * Validates all training prerequisites and reports the first encountered error.
+ *
+ * @returns `true` when all prerequisites are met, `false` when an error was reported.
+ */
+function validateClasses(
+  classes: MLClass[],
+  hasInvalidNames: boolean,
+  hasDuplicateNames: boolean,
+  onError: (category: Extract<ErrorCategory, 'training' | 'validation'>, msg: string) => void
+): boolean {
+  if (classes.length < ML.MIN_CLASSES) {
+    onError('validation', `Du brauchst mindestens ${ML.MIN_CLASSES} Klassen, um ein Modell zu trainieren.`);
+    return false;
+  }
+  const classesWithFewImages = classes.filter(c => c.images.length < ML.MIN_IMAGES_PER_CLASS);
+  if (classesWithFewImages.length > 0) {
+    const names = classesWithFewImages
+      .map(c => `"${c.name || 'Ohne Namen'}" (${c.images.length} Bilder)`)
+      .join(', ');
+    onError('validation', `Zu wenig Bilder: ${names}. Jede Klasse braucht mindestens ${ML.MIN_IMAGES_PER_CLASS} Bilder.`);
+    return false;
+  }
+  if (hasInvalidNames) {
+    onError('validation', 'Bitte gib allen Klassen einen Namen.');
+    return false;
+  }
+  if (hasDuplicateNames) {
+    onError('validation', 'Bitte gib allen Klassen einen eindeutigen Namen.');
+    return false;
+  }
+  return true;
+}
+
+/**
  * Manages training state, input validation, and the KNN training procedure.
  *
  * @param classes - The list of ML classes, each carrying its captured images and feature vectors.
@@ -64,28 +98,7 @@ export function useModelTraining(
    * updates `isTraining` throughout the async operation.
    */
   const trainModel = useCallback(async () => {
-    if (classes.length < ML.MIN_CLASSES) {
-      onError('validation', `Du brauchst mindestens ${ML.MIN_CLASSES} Klassen, um ein Modell zu trainieren.`);
-      return;
-    }
-    const classesWithFewImages = classes.filter(c => c.images.length < ML.MIN_IMAGES_PER_CLASS);
-    if (classesWithFewImages.length > 0) {
-      const names = classesWithFewImages
-        .map(c => `"${c.name || 'Ohne Namen'}" (${c.images.length} Bilder)`)
-        .join(', ');
-      onError('validation', `Zu wenig Bilder: ${names}. Jede Klasse braucht mindestens ${ML.MIN_IMAGES_PER_CLASS} Bilder.`);
-      return;
-    }
-
-    if (hasInvalidNames) {
-      onError('validation', 'Bitte gib allen Klassen einen Namen.');
-      return;
-    }
-
-    if (hasDuplicateNames) {
-      onError('validation', 'Bitte gib allen Klassen einen eindeutigen Namen.');
-      return;
-    }
+    if (!validateClasses(classes, hasInvalidNames, hasDuplicateNames, onError)) return;
 
     setIsTraining(true);
 

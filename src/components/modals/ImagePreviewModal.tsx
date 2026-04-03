@@ -34,10 +34,11 @@ interface ImagePreviewModalProps {
  */
 export default function ImagePreviewModal({ isOpen, onClose, image, onDelete }: ImagePreviewModalProps) {
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} labelledBy="image-modal-title">
+    <Dialog isOpen={isOpen} onClose={onClose} labelledBy="image-modal-title" describedBy="image-modal-desc">
       <ModalContent maxWidth="sm">
         <div className="p-4 border-b border-zinc-100 flex justify-between items-center">
           <h3 id="image-modal-title" className="font-bold text-zinc-800 text-sm">Bild Vorschau</h3>
+          <p id="image-modal-desc" className="sr-only">Vergrößerte Ansicht eines Trainingsbildes mit Option zum Löschen.</p>
           <button
             onClick={onClose}
             className="p-1.5 text-zinc-600 hover:text-zinc-600 hover:bg-zinc-100 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
