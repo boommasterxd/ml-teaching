@@ -31,7 +31,7 @@ interface CameraConsentModalProps {
  */
 export default function CameraConsentModal({ isOpen, onDecline, onConfirm }: CameraConsentModalProps) {
   return (
-    <Dialog isOpen={isOpen} onClose={onDecline} labelledBy="camera-modal-title">
+    <Dialog isOpen={isOpen} onClose={onDecline} labelledBy="camera-modal-title" describedBy="camera-modal-desc">
       <ModalContent maxWidth="md" className="p-8 text-center">
         <div
           className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6"
@@ -42,7 +42,7 @@ export default function CameraConsentModal({ isOpen, onDecline, onConfirm }: Cam
         <h2 id="camera-modal-title" className="text-2xl font-bold text-zinc-900 mb-4">
           Berechtigung zur Kameranutzung
         </h2>
-        <p className="text-zinc-600 mb-8 text-sm leading-relaxed">
+        <p id="camera-modal-desc" className="text-zinc-600 mb-8 text-sm leading-relaxed">
           Für die Erfassung von Trainingsdaten benötigt diese Anwendung Zugriff auf die Kamera Ihres Endgeräts.{' '}
           <strong>
             Die erfassten Bilddaten werden ausschließlich lokal im Browser verarbeitet und zu keinem Zeitpunkt an externe

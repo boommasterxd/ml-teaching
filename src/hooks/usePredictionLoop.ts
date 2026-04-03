@@ -77,7 +77,7 @@ export function usePredictionLoop(
       lastPredictTimeRef.current = timestamp;
 
       if (
-        videoRef.current.readyState >= 2 &&
+        videoRef.current.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
         videoRef.current.videoWidth > 0 &&
         videoRef.current.videoHeight > 0
       ) {
