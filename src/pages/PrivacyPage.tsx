@@ -90,9 +90,8 @@ export default function PrivacyPage() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-indigo-600 hover:text-indigo-800 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
-              aria-label="Hostinger Datenschutzerklärung (öffnet in neuem Tab)"
             >
-              https://www.hostinger.com/privacy-policy
+              Hostinger Datenschutzerklärung<span className="sr-only"> (öffnet in neuem Tab)</span>
             </a>
           </p>
 
