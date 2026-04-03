@@ -27,6 +27,7 @@ if (missingEnv.length > 0) {
 const rootDir = process.cwd();
 
 const app = express();
+app.disable('x-powered-by');
 const port = Number(process.env.PORT) || 3000;
 
 app.use(compression());
@@ -46,6 +47,7 @@ app.use(helmet({
       "img-src": ["'self'", "data:", "https:"],
       // Scoped to Google Storage, TensorFlow Hub, and Kaggle for MobileNet model downloads
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
+      "object-src": ["'none'"],
       "base-uri": ["'self'"],
       "form-action": ["'self'"],
       "frame-ancestors": ["'none'"],
@@ -57,6 +59,7 @@ app.use(helmet({
       "script-src": ["'self'", "'wasm-unsafe-eval'"],
       "img-src": ["'self'", "data:", "https:"],
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
+      "object-src": ["'none'"],
       "base-uri": ["'self'"],
       "form-action": ["'self'"],
       "frame-ancestors": ["'none'"],
@@ -64,6 +67,8 @@ app.use(helmet({
   },
   // COEP is disabled because TensorFlow.js loads model weights cross-origin (Google Storage, TF Hub)
   crossOriginEmbedderPolicy: false,
+  // COOP: isolates the browsing context to prevent cross-origin window access
+  crossOriginOpenerPolicy: { policy: 'same-origin' },
   xFrameOptions: { action: 'deny' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   hsts: {
