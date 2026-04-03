@@ -14,5 +14,5 @@ export const SERVER = {
   /** Rate-limit window duration in milliseconds (15 minutes). */
   RATE_LIMIT_WINDOW_MS: 15 * 60 * 1000,
   /** Maximum number of requests per IP within a single rate-limit window. */
-  RATE_LIMIT_MAX_REQUESTS: 1_500,
+  RATE_LIMIT_MAX_REQUESTS: 300,
 } as const;
