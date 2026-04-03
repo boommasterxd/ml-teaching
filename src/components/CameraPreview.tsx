@@ -124,16 +124,17 @@ export default function CameraPreview({
             }
           }}
           className={cn(
-            'flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center select-none touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2',
+            'flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center select-none touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--btn-color)] focus-visible:ring-offset-2',
             isRecording
               ? 'scale-95 shadow-inner opacity-90'
               : 'shadow-sm hover:-translate-y-0.5 hover:shadow-md'
           )}
           style={{
             backgroundColor: color,
+            ['--btn-color' as string]: color,
             WebkitUserSelect: 'none',
             WebkitTouchCallout: 'none',
-          }}
+          } as React.CSSProperties}
         >
           <Camera
             className={cn('w-4 h-4 mr-2', isRecording && 'animate-pulse')}
@@ -143,7 +144,7 @@ export default function CameraPreview({
         </button>
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="px-3 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-xl transition-colors flex items-center justify-center shadow-sm"
+          className="px-3 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-xl transition-colors flex items-center justify-center shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2"
           title="Bilder hochladen"
           aria-label="Bilder hochladen"
         >
