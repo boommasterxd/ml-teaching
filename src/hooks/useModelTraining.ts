@@ -14,6 +14,30 @@ import type { ErrorCategory } from '../types/errors';
 import type { Classifier } from '../types/ml-models';
 
 /**
+ * Grouped callbacks passed to {@link useModelTraining} to report results
+ * and update parent state after a training run.
+ */
+export interface TrainingCallbacks {
+  setClassifier: (c: Classifier) => void;
+  setHasTrainedModel: (v: boolean) => void;
+  onError: (category: Extract<ErrorCategory, 'training' | 'validation'>, msg: string) => void;
+}
+
+/**
+ * Trains a new KNN classifier by adding all stored feature vectors class by class.
+ * Each tensor is disposed immediately after use to prevent GPU memory leaks.
+ */
+function trainClassifier(classes: MLClass[], newClassifier: Classifier): void {
+  for (const cls of classes) {
+    for (const img of cls.images) {
+      const tensor = tf.tensor1d(img.featureArray);
+      newClassifier.addExample(tensor, cls.id);
+      tensor.dispose();
+    }
+  }
+}
+
+/**
  * Validates all training prerequisites and reports the first encountered error.
  *
  * @returns `true` when all prerequisites are met, `false` when an error was reported.
@@ -52,18 +76,15 @@ function validateClasses(
  *
  * @param classes - The list of ML classes, each carrying its captured images and feature vectors.
  * @param classifier - The current KNN classifier instance, or null if none exists yet.
- * @param setClassifier - Callback to replace the active classifier after a successful training run.
- * @param setHasTrainedModel - Callback invoked with `true` once training completes successfully.
- * @param onError - Callback for reporting validation or training errors by category.
+ * @param callbacks - Grouped callbacks for updating parent state and reporting errors.
  * @returns An object with the training state flag, the train function, and derived validation flags.
  */
 export function useModelTraining(
   classes: MLClass[],
   classifier: Classifier | null,
-  setClassifier: (c: Classifier) => void,
-  setHasTrainedModel: (v: boolean) => void,
-  onError: (category: Extract<ErrorCategory, 'training' | 'validation'>, msg: string) => void
+  callbacks: TrainingCallbacks,
 ) {
+  const { setClassifier, setHasTrainedModel, onError } = callbacks;
   const [isTraining, setIsTraining] = useState(false);
 
   /** True when at least one class has an empty or whitespace-only name. */
@@ -113,13 +134,7 @@ export function useModelTraining(
     await new Promise(resolve => setTimeout(resolve, ML.TRAINING_UI_YIELD_MS));
 
     try {
-      for (const cls of classes) {
-        for (const img of cls.images) {
-          const tensor = tf.tensor1d(img.featureArray);
-          newClassifier.addExample(tensor, cls.id);
-          tensor.dispose();
-        }
-      }
+      trainClassifier(classes, newClassifier);
 
       setClassifier(newClassifier);
       setHasTrainedModel(true);
