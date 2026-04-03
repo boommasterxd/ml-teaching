@@ -65,11 +65,12 @@ beforeEach(() => {
     return 1;
   }));
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
+  vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 /** Führt den aktuell gespeicherten RAF-Callback mit dem gegebenen Timestamp aus. */

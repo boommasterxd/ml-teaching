@@ -6,7 +6,7 @@
  * including classifier disposal, creation, and error reporting.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useModelTraining } from '../hooks/useModelTraining';
 import { ML } from '../constants';
@@ -59,6 +59,11 @@ describe('useModelTraining', () => {
     setHasTrainedModel = vi.fn() as unknown as (v: boolean) => void;
     onError = vi.fn() as unknown as TrainingOnError;
     vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('canTrain', () => {
@@ -214,6 +219,23 @@ describe('useModelTraining', () => {
 
       expect(result.current.isTraining).toBe(false);
       await act(async () => { await result.current.trainModel(); });
+      expect(result.current.isTraining).toBe(false);
+    });
+
+    it('ruft onError mit "training" auf wenn trainClassifier wirft', async () => {
+      const tfMock = await import('@tensorflow/tfjs');
+      vi.mocked(tfMock.tensor1d).mockImplementationOnce(() => { throw new Error('GPU-Fehler'); });
+
+      const classes = makeClasses(2);
+      const { result } = renderHook(() =>
+        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+      );
+
+      await act(async () => { await result.current.trainModel(); });
+
+      expect(console.error).toHaveBeenCalledWith('Training error:', expect.any(Error));
+      expect(onError).toHaveBeenCalledWith('training', 'Fehler beim Training des Modells.');
+      expect(mockNewClassifier.dispose).toHaveBeenCalled();
       expect(result.current.isTraining).toBe(false);
     });
   });

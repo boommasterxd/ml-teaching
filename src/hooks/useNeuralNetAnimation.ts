@@ -6,7 +6,7 @@
  * via staggered timeouts, driven by `ANIMATION.STEP_DURATION_MS`.
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ANIMATION } from '../constants';
+import { ANIMATION, NEURAL_NET_VIZ } from '../constants';
 
 /**
  * Manages animation state and timeout orchestration for the neural network
@@ -64,7 +64,7 @@ export function useNeuralNetAnimation() {
       setTimeout(() => setAnimStep(6), d * 6),
       setTimeout(() => {
         setAnimStep(7);
-        setResult(type === 'dog' ? 'Hund erkannt (98%)' : 'Katze erkannt (95%)');
+        setResult(type === 'dog' ? NEURAL_NET_VIZ.DEMO_RESULTS.DOG : NEURAL_NET_VIZ.DEMO_RESULTS.CAT);
         setAnimating(false);
         timeoutIdsRef.current = [];
       }, d * 7),
