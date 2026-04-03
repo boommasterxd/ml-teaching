@@ -62,27 +62,38 @@ app.set('trust proxy', 1);
 app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
-      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      // Deny-by-default: every resource type not listed below is blocked
+      "default-src": ["'none'"],
       "script-src": ["'self'", "'wasm-unsafe-eval'"],
+      "style-src": ["'self'"],
       "img-src": ["'self'", "data:", "https:"],
       // Scoped to Google Storage, TensorFlow Hub, and Kaggle for MobileNet model downloads
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
+      // TensorFlow.js spawns Web Workers via blob: URLs
+      "worker-src": ["blob:"],
+      // WebRTC camera stream
+      "media-src": ["'self'"],
       "object-src": ["'none'"],
       "base-uri": ["'self'"],
       "form-action": ["'self'"],
       "frame-ancestors": ["'none'"],
+      "upgrade-insecure-requests": [],
     }
   } : {
     reportOnly: true,
     directives: {
-      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "default-src": ["'none'"],
       "script-src": ["'self'", "'wasm-unsafe-eval'"],
+      "style-src": ["'self'"],
       "img-src": ["'self'", "data:", "https:"],
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
+      "worker-src": ["blob:"],
+      "media-src": ["'self'"],
       "object-src": ["'none'"],
       "base-uri": ["'self'"],
       "form-action": ["'self'"],
       "frame-ancestors": ["'none'"],
+      "upgrade-insecure-requests": [],
     },
   },
   // COEP is disabled because TensorFlow.js loads model weights cross-origin (Google Storage, TF Hub)
