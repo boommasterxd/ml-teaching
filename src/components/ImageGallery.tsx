@@ -23,6 +23,59 @@ export interface ImageGalleryProps {
   onRemoveImages: (ids: string[]) => void;
 }
 
+interface ImageThumbnailProps {
+  img: MLImage;
+  imgIndex: number;
+  isSelectionMode: boolean;
+  isSelected: boolean;
+  color: string;
+  onToggleSelect: (id: string) => void;
+  onImageClick: (img: MLImage) => void;
+}
+
+/** Renders a single training image thumbnail with optional selection overlay. */
+function ImageThumbnail({ img, imgIndex, isSelectionMode, isSelected, color, onToggleSelect, onImageClick }: ImageThumbnailProps) {
+  return (
+    <button
+      type="button"
+      aria-label={
+        isSelectionMode
+          ? isSelected ? 'Bild abwählen' : 'Bild auswählen'
+          : 'Bild vergrößern'
+      }
+      className={cn(
+        'aspect-square rounded-lg overflow-hidden border cursor-pointer transition-all relative block w-full h-full p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500',
+        isSelectionMode
+          ? isSelected
+            ? 'ring-2'
+            : 'border-zinc-200 opacity-60 hover:opacity-100'
+          : 'border-zinc-200 hover:shadow-sm'
+      )}
+      style={{
+        borderColor: (isSelectionMode && isSelected) ? color : undefined,
+        boxShadow: (isSelectionMode && isSelected) ? `0 0 0 2px ${color}33` : undefined,
+      }}
+      onClick={() => isSelectionMode ? onToggleSelect(img.id) : onImageClick(img)}
+    >
+      <img src={img.dataUrl} alt={`Trainingsbeispiel ${imgIndex + 1}`} className="w-full h-full object-cover" />
+      {isSelectionMode && (
+        <div
+          className={cn(
+            'absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center transition-colors',
+            isSelected ? 'text-white' : 'bg-white/80 border-zinc-300'
+          )}
+          style={{
+            backgroundColor: isSelected ? color : undefined,
+            borderColor: isSelected ? color : undefined,
+          }}
+        >
+          {isSelected && <CheckCircle2 className="w-3 h-3" aria-hidden="true" />}
+        </div>
+      )}
+    </button>
+  );
+}
+
 /**
  * Scrollable thumbnail grid for training images with selectable bulk-delete mode.
  *
@@ -126,44 +179,16 @@ const ImageGallery = memo(function ImageGallery({
         {images.length > 0 ? (
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
             {images.map((img, imgIndex) => (
-              <button
+              <ImageThumbnail
                 key={img.id}
-                type="button"
-                aria-label={
-                  isSelectionMode
-                    ? selectedIds.has(img.id) ? 'Bild abwählen' : 'Bild auswählen'
-                    : 'Bild vergrößern'
-                }
-                className={cn(
-                  'aspect-square rounded-lg overflow-hidden border cursor-pointer transition-all relative block w-full h-full p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500',
-                  isSelectionMode
-                    ? selectedIds.has(img.id)
-                      ? 'ring-2'
-                      : 'border-zinc-200 opacity-60 hover:opacity-100'
-                    : 'border-zinc-200 hover:shadow-sm'
-                )}
-                style={{
-                  borderColor: (isSelectionMode && selectedIds.has(img.id)) ? color : undefined,
-                  boxShadow: (isSelectionMode && selectedIds.has(img.id)) ? `0 0 0 2px ${color}33` : undefined,
-                }}
-                onClick={() => isSelectionMode ? toggleImageSelection(img.id) : onImageClick(img)}
-              >
-                <img src={img.dataUrl} alt={`Trainingsbeispiel ${imgIndex + 1}`} className="w-full h-full object-cover" />
-                {isSelectionMode && (
-                  <div
-                    className={cn(
-                      'absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center transition-colors',
-                      selectedIds.has(img.id) ? 'text-white' : 'bg-white/80 border-zinc-300'
-                    )}
-                    style={{
-                      backgroundColor: selectedIds.has(img.id) ? color : undefined,
-                      borderColor: selectedIds.has(img.id) ? color : undefined,
-                    }}
-                  >
-                    {selectedIds.has(img.id) && <CheckCircle2 className="w-3 h-3" aria-hidden="true" />}
-                  </div>
-                )}
-              </button>
+                img={img}
+                imgIndex={imgIndex}
+                isSelectionMode={isSelectionMode}
+                isSelected={selectedIds.has(img.id)}
+                color={color}
+                onToggleSelect={toggleImageSelection}
+                onImageClick={onImageClick}
+              />
             ))}
           </div>
         ) : (
