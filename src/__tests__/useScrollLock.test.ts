@@ -1,7 +1,19 @@
+/**
+ * useScrollLock.test.ts
+ *
+ * Unit tests for the `ScrollLockManager` class and the `useScrollLock` hook.
+ * Covers reference-counted locking behaviour, style cleanup on release,
+ * and correct integration with the React lifecycle (mount, unmount, re-render).
+ */
+
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import useScrollLock, { ScrollLockManager } from '../hooks/useScrollLock';
 
+/**
+ * Creates a new, isolated `ScrollLockManager` instance for each test
+ * to prevent shared state between test cases.
+ */
 function freshManager() {
   return new ScrollLockManager();
 }
@@ -13,7 +25,7 @@ describe('ScrollLockManager', () => {
     document.body.style.overscrollBehavior = '';
   });
 
-  it('setzt overflow:hidden beim ersten acquire', () => {
+  it('sets overflow:hidden on the first acquire', () => {
     const manager = freshManager();
     manager.acquire();
     expect(document.body.style.overflow).toBe('hidden');
@@ -21,7 +33,7 @@ describe('ScrollLockManager', () => {
     expect(document.body.style.overscrollBehavior).toBe('none');
   });
 
-  it('setzt Styles zurück wenn alle Consumer released haben', () => {
+  it('resets styles when all consumers have released', () => {
     const manager = freshManager();
     manager.acquire();
     manager.release();
@@ -30,7 +42,7 @@ describe('ScrollLockManager', () => {
     expect(document.body.style.overscrollBehavior).toBe('');
   });
 
-  it('behält Lock aktiv solange noch Consumer aktiv sind', () => {
+  it('keeps the lock active while at least one consumer is still active', () => {
     const manager = freshManager();
     manager.acquire();
     manager.acquire();
@@ -38,7 +50,7 @@ describe('ScrollLockManager', () => {
     expect(document.body.style.overflow).toBe('hidden');
   });
 
-  it('released Lock erst wenn letzter Consumer released', () => {
+  it('releases the lock only when the last consumer releases', () => {
     const manager = freshManager();
     manager.acquire();
     manager.acquire();
@@ -55,19 +67,19 @@ describe('useScrollLock', () => {
     document.body.style.overscrollBehavior = '';
   });
 
-  it('sperrt Scroll wenn lock=true', () => {
+  it('locks scroll when lock=true', () => {
     const manager = freshManager();
     renderHook(() => useScrollLock(true, manager));
     expect(document.body.style.overflow).toBe('hidden');
   });
 
-  it('sperrt Scroll nicht wenn lock=false', () => {
+  it('does not lock scroll when lock=false', () => {
     const manager = freshManager();
     renderHook(() => useScrollLock(false, manager));
     expect(document.body.style.overflow).toBe('');
   });
 
-  it('gibt Lock beim Unmount frei', () => {
+  it('releases the lock on unmount', () => {
     const manager = freshManager();
     const { unmount } = renderHook(() => useScrollLock(true, manager));
     expect(document.body.style.overflow).toBe('hidden');
@@ -75,7 +87,7 @@ describe('useScrollLock', () => {
     expect(document.body.style.overflow).toBe('');
   });
 
-  it('gibt Lock frei wenn lock von true auf false wechselt', () => {
+  it('releases the lock when lock transitions from true to false', () => {
     const manager = freshManager();
     const { rerender } = renderHook(({ lock }) => useScrollLock(lock, manager), {
       initialProps: { lock: true },
@@ -85,13 +97,13 @@ describe('useScrollLock', () => {
     expect(document.body.style.overflow).toBe('');
   });
 
-  it('Instanzen teilen keinen Zustand (Isolationstest)', () => {
+  it('instances do not share state (isolation test)', () => {
     const managerA = freshManager();
     const managerB = freshManager();
     renderHook(() => useScrollLock(true, managerA));
     expect(document.body.style.overflow).toBe('hidden');
-    // managerB hat nichts acquired — Lock käme nur von A
+    // managerB has not acquired anything — the lock is held by managerA only
     renderHook(() => useScrollLock(false, managerB));
-    expect(document.body.style.overflow).toBe('hidden'); // A hält noch
+    expect(document.body.style.overflow).toBe('hidden'); // managerA still holds the lock
   });
 });

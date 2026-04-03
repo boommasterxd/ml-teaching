@@ -34,8 +34,15 @@ function getNodeY(totalNodes: number, index: number): number {
   return startY + index * (NEURAL_NET_VIZ.NODE_HEIGHT + NEURAL_NET_VIZ.NODE_GAP) + NEURAL_NET_VIZ.NODE_HEIGHT / 2;
 }
 
+/** Represents which input class is currently being propagated through the network, or null before any animation has been triggered. */
 type Signal = 'dog' | 'cat' | null;
 
+/**
+ * Describes a single SVG line connecting two nodes across adjacent layers.
+ * Coordinates are in the SVG canvas space produced by `getNodeY`.
+ * Color and opacity are pre-computed from `animStep` and `activeSignal`
+ * so the SVG renderer stays a pure display component.
+ */
 type SvgConnection = {
   key: string;
   x1: string; y1: number;
@@ -46,13 +53,24 @@ type SvgConnection = {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
+/** Props for the InputButtons component. */
 interface InputButtonsProps {
+  /** The currently active signal class, or null if no animation has been triggered yet. */
   activeSignal: Signal;
+  /** Whether a forward-propagation animation is currently running. Disables both buttons while true. */
   animating: boolean;
+  /** Callback invoked when the user clicks a trigger button. */
   onTrigger: (type: 'dog' | 'cat') => void;
 }
 
-/** Renders the dog and cat trigger buttons above the network visualization. */
+/**
+ * Renders the dog and cat input buttons that start a forward-propagation animation.
+ * Each button calls `onTrigger` with its class identifier, which kicks off the
+ * step-based animation in `useNeuralNetAnimation`. Buttons are disabled while an
+ * animation runs to prevent overlapping states. The icon elements carry
+ * `aria-hidden` because the visible text label already conveys the action;
+ * the button itself needs no additional aria-label.
+ */
 function InputButtons({ activeSignal, animating, onTrigger }: InputButtonsProps) {
   return (
     <div className="flex justify-center gap-6 mb-12 relative z-10">
@@ -84,11 +102,19 @@ function InputButtons({ activeSignal, animating, onTrigger }: InputButtonsProps)
   );
 }
 
+/** Props for the SvgConnections component. */
 interface SvgConnectionsProps {
+  /** Pre-computed list of connection descriptors, including coordinates, color, and opacity. */
   connections: SvgConnection[];
 }
 
-/** Renders the SVG connection lines between network layers. */
+/**
+ * Renders all inter-layer connection lines as a full-bleed SVG overlay.
+ * SVG is used because fractional pixel coordinates from `getNodeY` map
+ * directly to SVG geometry without layout reflows. The wrapper div carries
+ * `pointer-events-none` so clicks pass through to the node buttons beneath,
+ * and `aria-hidden` hides the decorative lines from screen readers entirely.
+ */
 function SvgConnections({ connections }: SvgConnectionsProps) {
   return (
     <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
@@ -108,12 +134,22 @@ function SvgConnections({ connections }: SvgConnectionsProps) {
   );
 }
 
+/** Props for the LayerNodes component. */
 interface LayerNodesProps {
+  /** The currently active signal class, determines which output node and glow color to highlight. */
   activeSignal: Signal;
+  /** Current animation step (0–7). Controls which layers and nodes appear lit up. */
   animStep: number;
 }
 
-/** Renders all layer columns with their circular nodes, lighting them up based on animStep. */
+/**
+ * Renders all four layer columns with their circular nodes.
+ * Node activation is gated by `animStep`: input lights up at step 0,
+ * hidden1 at step 2, hidden2 at step 4, and only the target output node
+ * (matching `activeSignal`) activates at step 6. This sequential threshold
+ * simulates forward propagation through the network. Inactive nodes render
+ * at reduced opacity; active nodes scale up and glow in the signal color.
+ */
 function LayerNodes({ activeSignal, animStep }: LayerNodesProps) {
   return (
     <>
@@ -178,13 +214,26 @@ function LayerNodes({ activeSignal, animStep }: LayerNodesProps) {
   );
 }
 
+/** Props for the AnimationResult component. */
 interface AnimationResultProps {
+  /** The prediction label to display after animation completes, or null if no result is available yet. */
   result: string | null;
+  /** Whether the animation is currently running; shows a processing hint when true. */
   animating: boolean;
+  /** The active signal class, used to apply the correct color theme to the result label. */
   activeSignal: Signal;
 }
 
-/** Displays the prediction result label after animation completes, or a status hint. */
+/**
+ * Displays the prediction outcome at the end of an animation cycle.
+ * Three mutually exclusive states are rendered inside a fixed-height container
+ * to prevent layout shifts: when `result` is set (animation finished), a
+ * colored badge with the predicted class appears; while `animating` is true
+ * but no result exists yet, a pulsing processing hint is shown; otherwise an
+ * idle call-to-action prompts the user to click an input button. The wrapper
+ * uses `aria-live="polite"` so screen readers announce the result automatically
+ * without requiring focus to move to this region.
+ */
 function AnimationResult({ result, animating, activeSignal }: AnimationResultProps) {
   return (
     <div className="mt-12 text-center h-16" aria-live="polite">

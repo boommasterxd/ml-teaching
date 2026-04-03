@@ -11,9 +11,9 @@ import { useModelLoader } from '../hooks/useModelLoader';
 import type { ModelLoaderFunctions } from '../hooks/useModelLoader';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
 
-// ─── Mock-Factories ──────────────────────────────────────────────────────────
+// ─── Mock Factories ──────────────────────────────────────────────────────────
 
-/** Erstellt einen vollständigen Mock-Classifier. */
+/** Creates a fully stubbed Classifier mock. */
 function makeClassifier(): Classifier {
   return {
     addExample: vi.fn(),
@@ -24,14 +24,20 @@ function makeClassifier(): Classifier {
   };
 }
 
-/** Erstellt einen minimalen Mock-FeatureExtractor. */
+/** Creates a minimal FeatureExtractor stub. */
 function makeFeatureExtractor(): FeatureExtractor {
   return {
     infer: vi.fn(() => ({ dispose: vi.fn() })) as unknown as FeatureExtractor['infer'],
   };
 }
 
-/** Erstellt eine vollständige erfolgreiche loaderFns-Implementierung. */
+/**
+ * Creates a fully successful loaderFns implementation.
+ *
+ * @param classifier - Classifier stub to return from createClassifier.
+ * @param featureExtractor - FeatureExtractor stub to return from loadFeatureExtractor.
+ * @returns A complete ModelLoaderFunctions stub where all steps succeed.
+ */
 function makeSuccessfulLoaderFns(
   classifier: Classifier,
   featureExtractor: FeatureExtractor,
@@ -51,7 +57,7 @@ function makeSuccessfulLoaderFns(
   };
 }
 
-// ─── Tests ──────────────────────────────────────────────────────────────────
+// ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('useModelLoader', () => {
   const onError = vi.fn();
@@ -95,7 +101,7 @@ describe('useModelLoader', () => {
         useModelLoader(false, onError, loaderFns)
       );
 
-      // Warten auf mögliche async-Effekte
+      // Wait for any potential async side effects
       await act(async () => {
         await new Promise<void>(resolve => setTimeout(resolve, 0));
       });
@@ -262,10 +268,10 @@ describe('useModelLoader', () => {
         useModelLoader(true, onError, loaderFns)
       );
 
-      // Unmount vor dem Ende des Ladens
+      // Unmount before loading completes
       unmount();
 
-      // Backend-Promise auflösen nach dem Unmount
+      // Resolve the backend promise after unmount
       resolveBackend();
 
       await act(async () => {

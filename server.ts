@@ -14,8 +14,13 @@ import { rateLimit } from 'express-rate-limit';
 import compression from 'compression';
 import { SERVER } from './server.constants.js';
 
-// Fail fast if mandatory environment variables are absent to prevent
-// silent misconfiguration in deployed containers.
+/**
+ * Validates that all mandatory environment variables are present at startup.
+ * Follows a crash-fast strategy: missing variables indicate a misconfigured
+ * deployment (e.g. missing `.env` in a container) that cannot be recovered from
+ * at runtime. Exiting immediately surfaces the problem early rather than allowing
+ * the server to run silently in a broken state.
+ */
 const REQUIRED_ENV = ['NODE_ENV'] as const;
 const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missingEnv.length > 0) {
@@ -36,9 +41,24 @@ app.use(express.json({ limit: '500kb' }));
 // Trust the first proxy (required for Traefik / reverse proxy setups)
 app.set('trust proxy', 1);
 
-// Security headers — CSP enforced in production (with TF.js rules), report-only in dev
-// wasm-unsafe-eval is required: TF.js compiles a WASM module even when WebGL is the primary backend
-// Dev note: Vite-related violations (inline scripts, HMR websocket) are expected noise in report-only mode
+/**
+ * Configures HTTP security headers via Helmet.
+ *
+ * Content Security Policy (CSP):
+ * - Production: enforced (hard block). Allows `wasm-unsafe-eval` in `script-src`
+ *   because TensorFlow.js compiles a WASM module at runtime even when WebGL is
+ *   the primary backend. `connect-src` is scoped to Google Storage, gstatic,
+ *   TensorFlow Hub, and Kaggle — all required for MobileNet model downloads.
+ * - Development: report-only mode (violations are logged, not blocked). Vite
+ *   violations (inline scripts, HMR WebSocket) are expected noise in this mode.
+ *
+ * Additional headers:
+ * - `Cross-Origin-Embedder-Policy` is disabled because TF.js loads model weights
+ *   cross-origin (Google Storage, TF Hub), which COEP would block.
+ * - `Cross-Origin-Opener-Policy` is set to `same-origin` to isolate the browsing context.
+ * - `X-Frame-Options` is set to `DENY` to prevent clickjacking.
+ * - HSTS is enabled with a 1-year max-age, subdomain inclusion, and preload.
+ */
 app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
@@ -88,8 +108,16 @@ app.use((_req, res, next) => {
   next();
 });
 
-// Rate limiting — applied to /api/ routes only.
-// Window: 15 minutes, ceiling: 1 500 requests per IP per window.
+/**
+ * Global rate limiter applied to all incoming requests.
+ * Limits each IP address to `SERVER.RATE_LIMIT_MAX_REQUESTS` requests within
+ * a sliding window of `SERVER.RATE_LIMIT_WINDOW_MS` milliseconds (default: 300
+ * requests per 15-minute window). Exceeding the limit returns a 429 response
+ * with a German-language error message for end users. Standard `RateLimit-*`
+ * headers are sent; legacy `X-RateLimit-*` headers are suppressed.
+ * Proxy trust validation is enabled to correctly identify client IPs behind
+ * Traefik or other reverse proxies.
+ */
 const globalLimiter = rateLimit({
   windowMs: SERVER.RATE_LIMIT_WINDOW_MS,
   max: SERVER.RATE_LIMIT_MAX_REQUESTS,
@@ -100,6 +128,14 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
+/**
+ * Handles unhandled promise rejections by logging and terminating the process.
+ *
+ * Deliberately exits with code 1 (crash-fast strategy): an unhandled rejection
+ * signals an unexpected state that cannot be safely recovered from. Keeping the
+ * server alive in that state risks silent data corruption or inconsistent
+ * behaviour, so a clean exit and a process-supervisor restart is preferable.
+ */
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
   process.exit(1);

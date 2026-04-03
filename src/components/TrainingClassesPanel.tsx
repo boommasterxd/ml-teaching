@@ -11,14 +11,25 @@ import type { MLClass } from '../types/ml';
 import ClassCard from './ClassCard';
 import type { ClassCardActions } from './ClassCard';
 
+/**
+ * Props for the TrainingClassesPanel component.
+ */
 interface TrainingClassesPanelProps {
+  /** List of ML classes to display. */
   classes: MLClass[];
+  /** Set of class names that appear more than once (used to show duplicate warnings). */
   duplicateClassNames: Set<string>;
+  /** Active camera stream passed down to each ClassCard for live capture. */
   stream: MediaStream | null;
+  /** Camera facing mode: front-facing ('user') or rear-facing ('environment'). */
   facingMode: 'user' | 'environment';
+  /** Ref to the main heading element for programmatic focus management. */
   mainHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+  /** Callbacks for all actions a ClassCard can trigger (rename, delete, add image, etc.). */
   cardActions: ClassCardActions;
+  /** Called when the user clicks the "Add class" button. */
   onAddClass: () => void;
+  /** Called when the user clicks the "Reset all" button to open the confirmation modal. */
   onShowClearConfirm: () => void;
 }
 

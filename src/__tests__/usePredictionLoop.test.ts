@@ -12,36 +12,49 @@ import { usePredictionLoop } from '../hooks/usePredictionLoop';
 import { PREDICTION } from '../constants';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
 
-// Mock TF.js — nur fromPixels wird im Loop aufgerufen
+// Mock TF.js — only fromPixels is called inside the prediction loop.
 vi.mock('@tensorflow/tfjs', () => ({
   browser: {
     fromPixels: vi.fn(() => ({ dispose: vi.fn() })),
   },
 }));
 
-// ─── Hilfsfunktionen ────────────────────────────────────────────────────────
+// ─── Helper functions ────────────────────────────────────────────────────────
 
-/** Erstellt einen Mock-Classifier. */
+/**
+ * Creates a mock KNN Classifier with a configurable number of classes.
+ *
+ * @param numClasses - Number of classes the classifier reports (default: 2).
+ * @param shouldThrow - When true, `predictClass` rejects with an inference error.
+ */
 function makeClassifier(numClasses = 2, shouldThrow = false): Classifier {
   return {
     addExample: vi.fn(),
     predictClass: shouldThrow
-      ? vi.fn().mockRejectedValue(new Error('Inferenz-Fehler'))
-      : vi.fn().mockResolvedValue({ label: 'Klasse 1', confidences: { 'Klasse 1': 0.9 } }),
+      ? vi.fn().mockRejectedValue(new Error('Inference error'))
+      : vi.fn().mockResolvedValue({ label: 'Class 1', confidences: { 'Class 1': 0.9 } }),
     getNumClasses: vi.fn(() => numClasses),
     dispose: vi.fn(),
     clearAllClasses: vi.fn(),
   };
 }
 
-/** Erstellt einen Mock-FeatureExtractor. */
+/**
+ * Creates a mock MobileNet feature extractor whose `infer` method returns
+ * a disposable tensor stub.
+ */
 function makeFeatureExtractor(): FeatureExtractor {
   return {
     infer: vi.fn(() => ({ dispose: vi.fn() })) as unknown as FeatureExtractor['infer'],
   };
 }
 
-/** Erstellt einen Mock-VideoRef mit bereitstehendem Video. */
+/**
+ * Creates a mock React ref pointing to a stub HTMLVideoElement.
+ *
+ * @param ready - When true the video is in HAVE_CURRENT_DATA state with a
+ *   640×480 frame; when false all values are 0 (not ready).
+ */
 function makeVideoRef(ready = true): React.RefObject<HTMLVideoElement | null> {
   const video = {
     readyState: ready ? 2 /* HAVE_CURRENT_DATA */ : 0,
@@ -53,9 +66,12 @@ function makeVideoRef(ready = true): React.RefObject<HTMLVideoElement | null> {
 
 import type React from 'react';
 
-// ─── RAF-Mock Setup ──────────────────────────────────────────────────────────
+// ─── RAF mock setup ──────────────────────────────────────────────────────────
 
+/** Signature of a `requestAnimationFrame` callback. */
 type RafCallback = (timestamp: number) => void;
+
+/** Holds the most recently scheduled RAF callback so tests can fire it manually. */
 let capturedRafCallback: RafCallback | null = null;
 
 beforeEach(() => {
@@ -73,16 +89,22 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** Führt den aktuell gespeicherten RAF-Callback mit dem gegebenen Timestamp aus. */
+/**
+ * Fires the currently captured RAF callback with the given timestamp and
+ * flushes the microtask queue so any async work inside `predictLoop` completes.
+ *
+ * @param timestamp - DOMHighResTimeStamp passed to the callback (default: one
+ *   tick past `PREDICTION.INTERVAL_MS` so the throttle check always passes).
+ */
 async function fireRaf(timestamp = PREDICTION.INTERVAL_MS + 1): Promise<void> {
   if (capturedRafCallback) {
     capturedRafCallback(timestamp);
   }
-  // Micro-task-Queue leeren, damit async-Funktionen innerhalb predictLoop abgeschlossen werden
+  // Drain the microtask queue so async functions inside predictLoop finish.
   await new Promise<void>(resolve => setTimeout(resolve, 0));
 }
 
-// ─── Tests ──────────────────────────────────────────────────────────────────
+// ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('usePredictionLoop', () => {
   const onError = vi.fn();
@@ -149,8 +171,8 @@ describe('usePredictionLoop', () => {
 
       act(() => { result.current.startPredicting(); });
 
-      // RAF wird zwar geplant, aber predictLoop kehrt sofort zurück
-      // und plant sich NICHT erneut → capturedRafCallback bleibt der initiale Aufruf
+      // RAF is scheduled, but predictLoop returns immediately without
+      // re-scheduling — capturedRafCallback stays at the initial call.
       expect(requestAnimationFrame).toHaveBeenCalled();
     });
 
@@ -189,8 +211,8 @@ describe('usePredictionLoop', () => {
 
       await act(async () => { result.current.startPredicting(); });
 
-      // MAX_CONSECUTIVE_ERRORS RAF-Callbacks feuern — Timestamps steigend (je 1000ms),
-      // damit der Throttle-Check (INTERVAL_MS ≈ 67ms) immer passiert
+      // Fire MAX_CONSECUTIVE_ERRORS RAF callbacks with increasing timestamps
+      // (1000 ms apart) so the throttle check (INTERVAL_MS ≈ 67 ms) always passes.
       for (let i = 0; i < PREDICTION.MAX_CONSECUTIVE_ERRORS; i++) {
         await act(async () => {
           await fireRaf((i + 1) * 1000);
