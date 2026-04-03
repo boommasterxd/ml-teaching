@@ -8,22 +8,18 @@
  */
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePageTitle } from '../hooks/usePageTitle';
 import {
   Plus,
   AlertCircle, SwitchCamera, RotateCcw,
 } from 'lucide-react';
 
 import type { MLClass } from '../types/ml';
-import { useAppError } from '../hooks/useAppError';
-import { useConsentFlow } from '../hooks/useConsentFlow';
-import { useModalState } from '../hooks/useModalState';
-import { useImageFeatureExtraction } from '../hooks/useImageFeatureExtraction';
-import { useModelLoader } from '../hooks/useModelLoader';
-import { useCameraStream } from '../hooks/useCameraStream';
-import { usePredictionLoop } from '../hooks/usePredictionLoop';
-import { useModelTraining } from '../hooks/useModelTraining';
-import { useClassManagement } from '../hooks/useClassManagement';
+import {
+  useAppError, useConsentFlow, useModalState,
+  useImageFeatureExtraction, useModelLoader,
+  useCameraStream, usePredictionLoop,
+  useModelTraining, useClassManagement, usePageTitle,
+} from '../hooks';
 
 import PageHeader from '../components/PageHeader';
 import ClassCard from '../components/ClassCard';
@@ -61,7 +57,7 @@ export default function TrainingPage() {
     useCameraStream(cameraConsent, isModelLoading, predictVideoRef, setError);
 
   const { prediction, isPredicting, startPredicting: activatePredicting, stopPredicting } =
-    usePredictionLoop(classifier, mobilenetModel, predictVideoRef);
+    usePredictionLoop(classifier, mobilenetModel, predictVideoRef, setError);
 
   /**
    * Resets the trained model flag and stops prediction when training data changes.

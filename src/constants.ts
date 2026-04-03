@@ -34,6 +34,11 @@ export const ML = {
   THUMBNAIL_QUALITY: 0.9,
   /** Maximum number of characters allowed in a user-defined class name. */
   MAX_CLASS_NAME_LENGTH: 50,
+  /**
+   * Delay in milliseconds yielded to the browser before starting the synchronous
+   * KNN training loop. Allows React to render the isTraining spinner first.
+   */
+  TRAINING_UI_YIELD_MS: 100,
 } as const;
 
 /**
@@ -73,4 +78,9 @@ export const MODEL_LOAD_RETRY = {
 export const PREDICTION = {
   /** Target interval in milliseconds between inference calls (≈ 15 FPS). */
   INTERVAL_MS: 1000 / 15,
+  /**
+   * Maximum number of consecutive inference errors before the prediction loop
+   * stops automatically and surfaces an error to the user.
+   */
+  MAX_CONSECUTIVE_ERRORS: 10,
 } as const;
