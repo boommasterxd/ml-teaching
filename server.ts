@@ -66,7 +66,8 @@ app.use(helmet({
       "default-src": ["'none'"],
       "script-src": ["'self'", "'wasm-unsafe-eval'"],
       "style-src": ["'self'"],
-      "img-src": ["'self'", "data:", "https:"],
+      // data: is required for camera captures (canvas.toDataURL)
+      "img-src": ["'self'", "data:"],
       // Scoped to Google Storage, TensorFlow Hub, and Kaggle for MobileNet model downloads
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
       // TensorFlow.js spawns Web Workers via blob: URLs
@@ -77,6 +78,8 @@ app.use(helmet({
       "base-uri": ["'self'"],
       "form-action": ["'self'"],
       "frame-ancestors": ["'none'"],
+      // Override Helmet's default font-src (which includes https:) to block external fonts
+      "font-src": ["'self'"],
       "upgrade-insecure-requests": [],
     }
   } : {
@@ -85,7 +88,8 @@ app.use(helmet({
       "default-src": ["'none'"],
       "script-src": ["'self'", "'wasm-unsafe-eval'"],
       "style-src": ["'self'"],
-      "img-src": ["'self'", "data:", "https:"],
+      // data: is required for camera captures (canvas.toDataURL)
+      "img-src": ["'self'", "data:"],
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
       "worker-src": ["blob:"],
       "media-src": ["'self'"],
@@ -93,6 +97,8 @@ app.use(helmet({
       "base-uri": ["'self'"],
       "form-action": ["'self'"],
       "frame-ancestors": ["'none'"],
+      // Override Helmet's default font-src (which includes https:) to block external fonts
+      "font-src": ["'self'"],
       "upgrade-insecure-requests": [],
     },
   },
