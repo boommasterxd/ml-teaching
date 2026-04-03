@@ -128,6 +128,7 @@ const ClassCard = memo(function ClassCard({
       reader.readAsDataURL(file);
     });
 
+    // Reset the input value so the same file can be re-selected after upload.
     if (e.target) {
       e.target.value = '';
     }

@@ -17,15 +17,25 @@ import { ConfirmDialog, ImagePreviewModal } from './modals';
  * Props for TrainingPageModals.
  */
 interface TrainingPageModalsProps {
+  /** Current modal state from useModalState; determines which dialog is visible. */
   modal: ModalState;
+  /** List of all ML classes, used to resolve class names for confirmation dialogs. */
   classes: MLClass[];
+  /** KNN classifier instance; cleared when the user confirms a full reset. */
   classifier: Classifier | null;
+  /** Closes the currently open modal. */
   closeModal: () => void;
+  /** Removes a single image from the given class. */
   removeImage: (classId: string, imageId: string) => void;
+  /** Clears all images from the given class without removing the class itself. */
   clearClass: (classId: string) => void;
+  /** Removes the given class and all its images. */
   removeClass: (classId: string) => void;
+  /** Resets all classes to their initial empty state. */
   resetClasses: () => void;
+  /** Updates the trained-model flag after a full reset. */
   setHasTrainedModel: (v: boolean) => void;
+  /** Stops the active prediction loop before resetting training data. */
   stopPredicting: () => void;
 }
 

@@ -23,17 +23,32 @@ export interface ImageGalleryProps {
   onRemoveImages: (ids: string[]) => void;
 }
 
+/** Internal props for the ImageThumbnail component. */
 interface ImageThumbnailProps {
+  /** The training image to render. */
   img: MLImage;
+  /** Zero-based position in the image list, used for the alt text. */
   imgIndex: number;
+  /** Whether the gallery is currently in bulk-selection mode. */
   isSelectionMode: boolean;
+  /** Whether this specific thumbnail is currently selected. */
   isSelected: boolean;
+  /** Accent color applied to the selection indicator and border. */
   color: string;
+  /** Called with the image ID when the user toggles its selection state. */
   onToggleSelect: (id: string) => void;
+  /** Called with the full image object when clicked outside of selection mode. */
   onImageClick: (img: MLImage) => void;
 }
 
-/** Renders a single training image thumbnail with optional selection overlay. */
+/**
+ * Renders a single training image thumbnail with an optional selection overlay.
+ *
+ * In selection mode the thumbnail shows a colored checkbox indicator and calls
+ * `onToggleSelect` on click. Outside selection mode it calls `onImageClick`.
+ *
+ * @param props - See {@link ImageThumbnailProps}.
+ */
 function ImageThumbnail({ img, imgIndex, isSelectionMode, isSelected, color, onToggleSelect, onImageClick }: ImageThumbnailProps) {
   return (
     <button

@@ -13,15 +13,18 @@ import { ML } from '../constants';
 import type { MLClass } from '../types/ml';
 import type { Classifier } from '../types/ml-models';
 
+/** Callback type for updating the active KNN classifier instance. */
 type SetClassifier = (c: Classifier) => void;
+
+/** Callback type for reporting training or validation errors. */
 type TrainingOnError = (category: 'training' | 'validation', msg: string) => void;
 
-// Mock TensorFlow.js — tensor1d wird im Training aufgerufen
+// Mock TensorFlow.js — tensor1d is called during training to wrap feature arrays.
 vi.mock('@tensorflow/tfjs', () => ({
   tensor1d: vi.fn(() => ({ dispose: vi.fn() })),
 }));
 
-// Der neue Classifier, der von knnClassifier.create() zurückgegeben wird
+// The new classifier returned by knnClassifier.create() after each training run.
 const mockNewClassifier: Classifier = {
   addExample: vi.fn(),
   predictClass: vi.fn(),
@@ -34,7 +37,14 @@ vi.mock('@tensorflow-models/knn-classifier', () => ({
   create: vi.fn(() => mockNewClassifier),
 }));
 
-/** Erzeugt N Klassen mit je `imagesPerClass` Dummy-Bildern. */
+/**
+ * Creates an array of N MLClass objects, each containing `imagesPerClass` dummy images
+ * with placeholder feature arrays. Cycles through a fixed color palette.
+ *
+ * @param count - Number of classes to generate.
+ * @param imagesPerClass - Number of images per class (defaults to ML.MIN_IMAGES_PER_CLASS).
+ * @returns Array of MLClass objects ready for use in hook tests.
+ */
 function makeClasses(count: number, imagesPerClass: number = ML.MIN_IMAGES_PER_CLASS): MLClass[] {
   const colors = ['#dc2626', '#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777'];
   return Array.from({ length: count }, (_, i) => ({
@@ -67,14 +77,14 @@ describe('useModelTraining', () => {
   });
 
   describe('canTrain', () => {
-    it('ist false bei weniger als MIN_CLASSES Klassen', () => {
+    it('is false when fewer than MIN_CLASSES classes are provided', () => {
       const { result } = renderHook(() =>
         useModelTraining([makeClasses(1)[0]], null, { setClassifier, setHasTrainedModel, onError })
       );
       expect(result.current.canTrain).toBe(false);
     });
 
-    it('ist false wenn Klassen zu wenig Bilder haben', () => {
+    it('is false when classes have fewer than the minimum number of images', () => {
       const classes = makeClasses(2, 0);
       const { result } = renderHook(() =>
         useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
@@ -82,7 +92,7 @@ describe('useModelTraining', () => {
       expect(result.current.canTrain).toBe(false);
     });
 
-    it('ist false bei leeren Klassennamen', () => {
+    it('is false when a class name is empty', () => {
       const classes = makeClasses(2);
       classes[0].name = '';
       const { result } = renderHook(() =>
@@ -91,7 +101,7 @@ describe('useModelTraining', () => {
       expect(result.current.canTrain).toBe(false);
     });
 
-    it('ist false bei doppelten Klassennamen', () => {
+    it('is false when class names are duplicates', () => {
       const classes = makeClasses(2);
       classes[0].name = 'Gleich';
       classes[1].name = 'Gleich';
@@ -101,7 +111,7 @@ describe('useModelTraining', () => {
       expect(result.current.canTrain).toBe(false);
     });
 
-    it('ist true bei ausreichend Klassen, Bildern und eindeutigen Namen', () => {
+    it('is true when enough classes, images, and unique names are provided', () => {
       const { result } = renderHook(() =>
         useModelTraining(makeClasses(2), null, { setClassifier, setHasTrainedModel, onError })
       );
@@ -110,7 +120,7 @@ describe('useModelTraining', () => {
   });
 
   describe('hasInvalidNames', () => {
-    it('erkennt leere Klassennamen', () => {
+    it('detects empty class names', () => {
       const classes = makeClasses(2);
       classes[0].name = '';
       const { result } = renderHook(() =>
@@ -119,7 +129,7 @@ describe('useModelTraining', () => {
       expect(result.current.hasInvalidNames).toBe(true);
     });
 
-    it('erkennt Whitespace-only Namen', () => {
+    it('detects whitespace-only names', () => {
       const classes = makeClasses(2);
       classes[0].name = '   ';
       const { result } = renderHook(() =>
@@ -128,7 +138,7 @@ describe('useModelTraining', () => {
       expect(result.current.hasInvalidNames).toBe(true);
     });
 
-    it('ist false bei gültigen Namen', () => {
+    it('is false when all names are valid', () => {
       const { result } = renderHook(() =>
         useModelTraining(makeClasses(2), null, { setClassifier, setHasTrainedModel, onError })
       );
@@ -137,7 +147,7 @@ describe('useModelTraining', () => {
   });
 
   describe('hasDuplicateNames', () => {
-    it('erkennt doppelte Klassennamen (nach trim)', () => {
+    it('detects duplicate class names after trimming whitespace', () => {
       const classes = makeClasses(2);
       classes[0].name = ' Gleich ';
       classes[1].name = 'Gleich';
@@ -147,7 +157,7 @@ describe('useModelTraining', () => {
       expect(result.current.hasDuplicateNames).toBe(true);
     });
 
-    it('ist false bei eindeutigen Namen', () => {
+    it('is false when all names are unique', () => {
       const { result } = renderHook(() =>
         useModelTraining(makeClasses(3), null, { setClassifier, setHasTrainedModel, onError })
       );
@@ -156,7 +166,7 @@ describe('useModelTraining', () => {
   });
 
   describe('trainModel', () => {
-    it('ruft onError auf wenn Mindestklassenanzahl nicht erreicht', async () => {
+    it('calls onError when the minimum class count is not reached', async () => {
       const classes = makeClasses(1);
       const { result } = renderHook(() =>
         useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
@@ -168,7 +178,7 @@ describe('useModelTraining', () => {
       expect(setClassifier).not.toHaveBeenCalled();
     });
 
-    it('ruft onError auf wenn Klassen zu wenig Bilder haben', async () => {
+    it('calls onError when classes have too few images', async () => {
       const classes = makeClasses(2, 0);
       const { result } = renderHook(() =>
         useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
@@ -179,7 +189,7 @@ describe('useModelTraining', () => {
       expect(onError).toHaveBeenCalledWith('validation', expect.any(String));
     });
 
-    it('erstellt neuen Classifier und ruft setClassifier auf', async () => {
+    it('creates a new classifier and calls setClassifier on successful training', async () => {
       const classes = makeClasses(2);
       const { result } = renderHook(() =>
         useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
@@ -192,7 +202,7 @@ describe('useModelTraining', () => {
       expect(onError).not.toHaveBeenCalled();
     });
 
-    it('disposed den alten Classifier vor dem Training', async () => {
+    it('disposes the previous classifier before training begins', async () => {
       const disposeSpy = vi.fn();
       const oldClassifier: Classifier = {
         addExample: vi.fn(),
@@ -211,7 +221,7 @@ describe('useModelTraining', () => {
       expect(disposeSpy).toHaveBeenCalledOnce();
     });
 
-    it('isTraining ist false nach abgeschlossenem Training', async () => {
+    it('isTraining is false after training completes', async () => {
       const classes = makeClasses(2);
       const { result } = renderHook(() =>
         useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
@@ -222,7 +232,7 @@ describe('useModelTraining', () => {
       expect(result.current.isTraining).toBe(false);
     });
 
-    it('ruft onError mit "training" auf wenn trainClassifier wirft', async () => {
+    it('calls onError with category "training" when the classifier throws during training', async () => {
       const tfMock = await import('@tensorflow/tfjs');
       vi.mocked(tfMock.tensor1d).mockImplementationOnce(() => { throw new Error('GPU-Fehler'); });
 

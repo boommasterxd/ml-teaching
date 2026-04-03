@@ -48,7 +48,7 @@ describe('loadWithRetry', () => {
     const controller = new AbortController();
 
     const promise = loadWithRetry(fn, 3, 100, controller.signal);
-    // Rejection-Handler vor Timer-Advance anhängen, damit keine "unhandled rejection" entsteht
+    // Attach rejection handler before advancing timers to avoid unhandled rejection warnings.
     const assertion = expect(promise).rejects.toThrow('Dauerhafter Fehler');
     await vi.runAllTimersAsync();
     await assertion;
@@ -70,10 +70,10 @@ describe('loadWithRetry', () => {
     const controller = new AbortController();
 
     const promise = loadWithRetry(fn, 3, 1000, controller.signal);
-    // Rejection-Handler vor Abort und Timer-Advance anhängen
+    // Attach rejection handler before aborting and advancing timers to avoid unhandled rejection warnings.
     const assertion = expect(promise).rejects.toThrow();
 
-    // Signal abbrennen während der Wartezeit nach dem ersten Fehler
+    // Abort the signal while waiting after the first failure.
     controller.abort(new DOMException('Abgebrochen', 'AbortError'));
     await vi.runAllTimersAsync();
     await assertion;
@@ -90,14 +90,14 @@ describe('loadWithRetry', () => {
 
     const promise = loadWithRetry(fn, 3, baseDelay, controller.signal);
 
-    // Nach erstem Fehler: Wartezeit = 1000ms (baseDelay * 2^0)
+    // After first failure: delay = 1000ms (baseDelay * 2^0)
     await vi.advanceTimersByTimeAsync(baseDelay - 1);
     expect(fn).toHaveBeenCalledTimes(1);
 
     await vi.advanceTimersByTimeAsync(1);
     expect(fn).toHaveBeenCalledTimes(2);
 
-    // Nach zweitem Fehler: Wartezeit = 2000ms (baseDelay * 2^1)
+    // After second failure: delay = 2000ms (baseDelay * 2^1)
     await vi.advanceTimersByTimeAsync(baseDelay * 2 - 1);
     expect(fn).toHaveBeenCalledTimes(2);
 
