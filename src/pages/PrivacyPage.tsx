@@ -83,6 +83,18 @@ export default function PrivacyPage() {
             Phone: <a href="tel:+37064503378" className="text-indigo-600 hover:text-indigo-800 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">+37064503378</a><br />
             Email: <a href="mailto:domains@hostinger.com" className="text-indigo-600 hover:text-indigo-800 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded">domains@hostinger.com</a>
           </p>
+          <p className="text-zinc-600 leading-relaxed mb-4">
+            Informationen zur Datenverarbeitung und Speicherdauer durch Hostinger entnehmen Sie der Datenschutzerklärung des Anbieters:{' '}
+            <a
+              href="https://www.hostinger.com/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-indigo-600 hover:text-indigo-800 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
+              aria-label="Hostinger Datenschutzerklärung (öffnet in neuem Tab)"
+            >
+              https://www.hostinger.com/privacy-policy
+            </a>
+          </p>
 
           <h4 className="text-lg font-bold mt-6 mb-3 text-zinc-800">Auftragsverarbeitung</h4>
           <p className="text-zinc-600 leading-relaxed mb-4">

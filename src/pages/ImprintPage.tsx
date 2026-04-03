@@ -2,7 +2,7 @@
  * ImprintPage.tsx
  *
  * Static page displaying the legal imprint (Impressum) with owner contact
- * information required by German law (TMG). Exported as the default route
+ * information required by German law (DDG). Exported as the default route
  * component for the /impressum path.
  */
 import PageLayout from '../components/PageLayout';
