@@ -41,7 +41,7 @@ export default function ImagePreviewModal({ isOpen, onClose, image, onDelete }: 
           <p id="image-modal-desc" className="sr-only">Vergrößerte Ansicht eines Trainingsbildes mit Option zum Löschen.</p>
           <button
             onClick={onClose}
-            className="p-1.5 text-zinc-600 hover:text-zinc-600 hover:bg-zinc-100 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
+            className="p-2 text-zinc-600 hover:text-zinc-600 hover:bg-zinc-100 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
             aria-label="Schließen"
           >
             <X className="w-4 h-4" />
@@ -52,7 +52,7 @@ export default function ImagePreviewModal({ isOpen, onClose, image, onDelete }: 
             <img
               src={image.dataUrl}
               alt="Vergrößerte Bildvorschau"
-              className="w-48 h-48 object-cover rounded-2xl shadow-sm border border-zinc-200 mb-6"
+              className="w-48 h-48 object-cover rounded-2xl shadow-sm border border-zinc-300 mb-6"
             />
             <button
               onClick={onDelete}

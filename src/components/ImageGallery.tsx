@@ -63,8 +63,8 @@ function ImageThumbnail({ img, imgIndex, isSelectionMode, isSelected, color, onT
         isSelectionMode
           ? isSelected
             ? 'ring-2'
-            : 'border-zinc-200 opacity-60 hover:opacity-100'
-          : 'border-zinc-200 hover:shadow-sm'
+            : 'border-zinc-300 opacity-60 hover:opacity-100'
+          : 'border-zinc-300 hover:shadow-sm'
       )}
       style={{
         borderColor: (isSelectionMode && isSelected) ? color : undefined,
@@ -190,7 +190,7 @@ const ImageGallery = memo(function ImageGallery({
           )}
         </div>
       </div>
-      <div className="flex-1 min-h-0 bg-zinc-50/50 rounded-xl border border-zinc-200 p-2 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 min-h-0 bg-zinc-50/50 rounded-xl border border-zinc-300 p-2 overflow-y-auto overflow-x-hidden">
         {images.length > 0 ? (
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
             {images.map((img, imgIndex) => (
