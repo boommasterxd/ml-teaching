@@ -148,13 +148,17 @@ const ClassCard = memo(function ClassCard({
   const errorMsg = isEmpty ? 'Name darf nicht leer sein' : isDuplicate ? 'Name muss eindeutig sein' : null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col transition-all hover:shadow-md">
+    <div className="bg-white rounded-2xl shadow-sm border border-zinc-300 overflow-hidden flex flex-col transition-all hover:shadow-md">
 
       <div className="px-4 py-3 border-b border-zinc-100 flex justify-between items-start sm:items-center bg-zinc-50/50">
         <div className="flex flex-col">
+          <label htmlFor={`class-name-${cls.id}`} className="text-[10px] font-medium text-zinc-500 mb-0.5 ml-[22px]">
+            Klassenname
+          </label>
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: cls.color }} aria-hidden="true" />
             <input
+              id={`class-name-${cls.id}`}
               type="text"
               autoComplete="off"
               value={cls.name}
@@ -166,7 +170,6 @@ const ClassCard = memo(function ClassCard({
               )}
               onPointerDown={(e) => { e.currentTarget.dataset.mouseFocused = '1'; }}
               onBlur={(e) => { delete e.currentTarget.dataset.mouseFocused; }}
-              placeholder="Klassenname"
               aria-label={`Name für Klasse ${cls.name || 'ohne Namen'}`}
               aria-invalid={!!errorMsg}
               aria-errormessage={errorMsg ? `error-${cls.id}` : undefined}
