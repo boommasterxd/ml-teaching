@@ -21,4 +21,4 @@ SICHERHEITS-BERICHT.md
 QUALITAETS-BERICHT.md
 
 # Lokale Claude Code Settings
-.claude/settings.local.json
+.claude/
