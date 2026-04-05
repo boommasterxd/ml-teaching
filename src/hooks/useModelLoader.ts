@@ -4,7 +4,8 @@
  * Uses an AbortSignal to cancel pending retries on unmount or consent change.
  */
 import { useState, useEffect, useRef } from 'react';
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-core';
+import '@tensorflow/tfjs-backend-webgl';
 import * as mobilenet from '@tensorflow-models/mobilenet';
 import * as knnClassifier from '@tensorflow-models/knn-classifier';
 import { ML, MODEL_LOAD_RETRY } from '../constants';

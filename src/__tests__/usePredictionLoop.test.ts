@@ -13,7 +13,7 @@ import { PREDICTION } from '../constants';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
 
 // Mock TF.js — only fromPixels is called inside the prediction loop.
-vi.mock('@tensorflow/tfjs', () => ({
+vi.mock('@tensorflow/tfjs-core', () => ({
   browser: {
     fromPixels: vi.fn(() => ({ dispose: vi.fn() })),
   },

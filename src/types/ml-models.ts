@@ -6,7 +6,7 @@
  * TensorFlow.js types, which keeps them testable without requiring the
  * real TF.js runtime.
  */
-import type * as tf from '@tensorflow/tfjs';
+import type * as tf from '@tensorflow/tfjs-core';
 
 /**
  * Minimal interface for a feature extractor (e.g. MobileNet).

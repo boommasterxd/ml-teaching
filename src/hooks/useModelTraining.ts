@@ -6,7 +6,7 @@
  * validation flags so the UI can reflect readiness and progress.
  */
 import { useState, useCallback, useMemo } from 'react';
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-core';
 import * as knnClassifier from '@tensorflow-models/knn-classifier';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';

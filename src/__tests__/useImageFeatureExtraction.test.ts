@@ -14,7 +14,7 @@ import { ML } from '../constants';
 import type { FeatureExtractor } from '../types/ml-models';
 
 // Mock TF.js — only browser.fromPixels is called inside the hook.
-vi.mock('@tensorflow/tfjs', () => ({
+vi.mock('@tensorflow/tfjs-core', () => ({
   browser: {
     fromPixels: vi.fn(),
   },
@@ -75,7 +75,7 @@ function makeVideoSource(width = 640, height = 480): HTMLVideoElement {
 // ─── Setup ───────────────────────────────────────────────────────────────────
 
 beforeEach(async () => {
-  const tfMock = await import('@tensorflow/tfjs');
+  const tfMock = await import('@tensorflow/tfjs-core');
   vi.mocked(tfMock.browser.fromPixels).mockReturnValue(makeTensor() as never);
 
   vi.stubGlobal('crypto', {
@@ -204,7 +204,7 @@ describe('useImageFeatureExtraction', () => {
 
       const featureTensor = makeTensor();
       const inputTensor = makeTensor();
-      const tfMock = await import('@tensorflow/tfjs');
+      const tfMock = await import('@tensorflow/tfjs-core');
       vi.mocked(tfMock.browser.fromPixels).mockReturnValue(inputTensor as never);
 
       const model = makeFeatureExtractor(featureTensor);
@@ -220,7 +220,7 @@ describe('useImageFeatureExtraction', () => {
 
     it('disposed den input-Tensor auch wenn infer() einen Fehler wirft', async () => {
       const inputTensor = makeTensor();
-      const tfMock = await import('@tensorflow/tfjs');
+      const tfMock = await import('@tensorflow/tfjs-core');
       vi.mocked(tfMock.browser.fromPixels).mockReturnValue(inputTensor as never);
 
       const errorModel: FeatureExtractor = {

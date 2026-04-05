@@ -6,7 +6,7 @@
  * and TensorFlow tensor operations, including proper tensor disposal.
  */
 import { useRef, useCallback } from 'react';
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-core';
 import type { MLImage } from '../types/ml';
 import { ML } from '../constants';
 import type { FeatureExtractor } from '../types/ml-models';
