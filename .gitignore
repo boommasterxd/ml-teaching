@@ -6,21 +6,16 @@ coverage/
 *.log
 .env*
 !.env.example
-.dsgvo-materialien/dsgvo.pdf
-.dsgvo-materialien/Checklisten/cookie-banner-checklist.pdf
-.dsgvo-materialien/Checklisten/dsgvo-checkliste.pdf
-.dsgvo-materialien/Checklisten/dsgvo-quickcheck.pdf
-.dsgvo-materialien/Checklisten/impressum-checklist.pdf
-.dsgvo-materialien/Checklisten/kontakt-formular-checklist.pdf
-.dsgvo-materialien/Checklisten/privacy-shield-checklist.pdf
-.dsgvo-materialien/Mustertexte/datenschutz-erklärung-muster.md
-.dsgvo-materialien/Mustertexte/impressum-muster.md
-.vps-materialien/create-cloud-backup.sh
-.vps-materialien/docker-compose.yml
-.vps-materialien/Dockerfile
-.vps-materialien/Hostinger VPS Master Guide.md
-.vps-materialien/Server Backup N8N Workflow.json
-.vps-materialien/Update Docker Container N8N Workflow.json
-.vps-materialien/update-stack.sh
-.vps-materialien/VPS Security Masterplan.md
 dist-server/
+.env
+*.test.*
+*.spec.*
+*.md
+*.log
+*.pem
+*.key
+coverage/
+BFSG-BERICHT.md
+DSGVO-BERICHT.md
+SICHERHEITS-BERICHT.md
+QUALITAETS-BERICHT.md
