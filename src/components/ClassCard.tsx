@@ -173,6 +173,7 @@ const ClassCard = memo(function ClassCard({
               aria-label={`Name für Klasse ${cls.name || 'ohne Namen'}`}
               aria-invalid={!!errorMsg}
               aria-errormessage={errorMsg ? `error-${cls.id}` : undefined}
+              aria-describedby={errorMsg ? `error-${cls.id}` : undefined}
             />
           </div>
           {errorMsg && (
