@@ -17,6 +17,7 @@ coverage/
 .claude/
 Dockerfile
 .dockerignore
+.gitignore
 BFSG-BERICHT.md
 DSGVO-BERICHT.md
 SICHERHEITS-BERICHT.md
