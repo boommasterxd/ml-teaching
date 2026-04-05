@@ -152,9 +152,6 @@ const ClassCard = memo(function ClassCard({
 
       <div className="px-4 py-3 border-b border-zinc-100 flex justify-between items-start sm:items-center bg-zinc-50/50">
         <div className="flex flex-col">
-          <label htmlFor={`class-name-${cls.id}`} className="text-[10px] font-medium text-zinc-500 mb-0.5 ml-[22px]">
-            Klassenname
-          </label>
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: cls.color }} aria-hidden="true" />
             <input
