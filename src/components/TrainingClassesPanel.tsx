@@ -51,7 +51,7 @@ export default function TrainingClassesPanel({
   return (
     <div className="lg:col-span-7 space-y-6 min-w-0">
       <div className="flex justify-between items-center">
-        <h1 ref={mainHeadingRef} tabIndex={-1} className="text-lg font-bold text-zinc-800 focus:outline-none">1. Klassen ({classes.length})</h1>
+        <h1 ref={mainHeadingRef} tabIndex={-1} className="text-lg font-bold text-zinc-800 focus-visible:outline-none">1. Klassen ({classes.length})</h1>
         <div className="flex gap-2">
           <button
             onClick={onShowClearConfirm}
