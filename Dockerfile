@@ -11,7 +11,6 @@ RUN npm run build
 FROM node:lts-alpine
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache python3 make g++
 
 # Verzeichnis für die Datenbank erstellen und Berechtigungen setzen
 RUN mkdir -p /app/database && chown -R node:node /app/database
@@ -21,6 +20,9 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/node_modules ./node_modules
+
+# Remove devDependencies — native modules stay compiled from builder
+RUN npm prune --omit=dev --legacy-peer-deps
 
 USER node
 EXPOSE 3000
