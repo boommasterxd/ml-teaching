@@ -20,7 +20,7 @@ type SetClassifier = (c: Classifier) => void;
 type TrainingOnError = (category: 'training' | 'validation', msg: string) => void;
 
 // Mock TensorFlow.js — tensor1d is called during training to wrap feature arrays.
-vi.mock('@tensorflow/tfjs', () => ({
+vi.mock('@tensorflow/tfjs-core', () => ({
   tensor1d: vi.fn(() => ({ dispose: vi.fn() })),
 }));
 
@@ -233,7 +233,7 @@ describe('useModelTraining', () => {
     });
 
     it('calls onError with category "training" when the classifier throws during training', async () => {
-      const tfMock = await import('@tensorflow/tfjs');
+      const tfMock = await import('@tensorflow/tfjs-core');
       vi.mocked(tfMock.tensor1d).mockImplementationOnce(() => { throw new Error('GPU-Fehler'); });
 
       const classes = makeClasses(2);

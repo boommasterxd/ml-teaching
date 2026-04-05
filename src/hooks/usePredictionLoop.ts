@@ -8,7 +8,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type React from 'react';
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-core';
 import type { Prediction } from '../types/ml';
 import { PREDICTION } from '../constants';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';

@@ -45,10 +45,8 @@ app.set('trust proxy', 1);
  * Configures HTTP security headers via Helmet.
  *
  * Content Security Policy (CSP):
- * - Production: enforced (hard block). Allows `wasm-unsafe-eval` in `script-src`
- *   because TensorFlow.js compiles a WASM module at runtime even when WebGL is
- *   the primary backend. `connect-src` is scoped to Google Storage, gstatic,
- *   TensorFlow Hub, and Kaggle — all required for MobileNet model downloads.
+ * - Production: enforced (hard block). `connect-src` is scoped to Google Storage,
+ *   gstatic, TensorFlow Hub, and Kaggle — all required for MobileNet model downloads.
  * - Development: report-only mode (violations are logged, not blocked). Vite
  *   violations (inline scripts, HMR WebSocket) are expected noise in this mode.
  *
@@ -64,7 +62,7 @@ app.use(helmet({
     directives: {
       // Deny-by-default: every resource type not listed below is blocked
       "default-src": ["'none'"],
-      "script-src": ["'self'", "'wasm-unsafe-eval'"],
+      "script-src": ["'self'"],
       "style-src": ["'self'"],
       // data: is required for camera captures (canvas.toDataURL)
       "img-src": ["'self'", "data:"],
@@ -72,14 +70,20 @@ app.use(helmet({
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
       // TensorFlow.js spawns Web Workers via blob: URLs
       "worker-src": ["blob:"],
-      // WebRTC camera stream
-      "media-src": ["'self'"],
+      // Camera uses srcObject (not URL-based src) — media-src does not apply to WebRTC
+      "media-src": ["'none'"],
       "object-src": ["'none'"],
-      "base-uri": ["'self'"],
-      "form-action": ["'self'"],
+      // No <base> tag in the app — 'none' prevents base-tag injection via XSS
+      "base-uri": ["'none'"],
+      // No form submissions in the app
+      "form-action": ["'none'"],
       "frame-ancestors": ["'none'"],
       // Override Helmet's default font-src (which includes https:) to block external fonts
       "font-src": ["'self'"],
+      // Explicitly block inline event handlers (onclick=, onerror=, …)
+      "script-src-attr": ["'none'"],
+      // Explicitly block inline style attributes (style="…")
+      "style-src-attr": ["'none'"],
       "upgrade-insecure-requests": [],
       "report-uri": [SERVER.CSP_REPORT_PATH],
     }
@@ -87,19 +91,20 @@ app.use(helmet({
     reportOnly: true,
     directives: {
       "default-src": ["'none'"],
-      "script-src": ["'self'", "'wasm-unsafe-eval'"],
+      "script-src": ["'self'"],
       "style-src": ["'self'"],
       // data: is required for camera captures (canvas.toDataURL)
       "img-src": ["'self'", "data:"],
       "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
       "worker-src": ["blob:"],
-      "media-src": ["'self'"],
+      "media-src": ["'none'"],
       "object-src": ["'none'"],
-      "base-uri": ["'self'"],
-      "form-action": ["'self'"],
+      "base-uri": ["'none'"],
+      "form-action": ["'none'"],
       "frame-ancestors": ["'none'"],
-      // Override Helmet's default font-src (which includes https:) to block external fonts
       "font-src": ["'self'"],
+      "script-src-attr": ["'none'"],
+      "style-src-attr": ["'none'"],
       "upgrade-insecure-requests": [],
       "report-uri": [SERVER.CSP_REPORT_PATH],
     },
@@ -122,10 +127,16 @@ app.use(helmet({
 /**
  * Sets the `Permissions-Policy` response header to restrict browser feature access.
  * Only `camera` is allowed (required for WebRTC capture); all other sensitive APIs
- * (microphone, geolocation, payment) are explicitly disabled.
+ * are explicitly disabled.
  */
 app.use((_req, res, next) => {
-  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=()');
+  res.setHeader(
+    'Permissions-Policy',
+    'camera=(self), microphone=(), geolocation=(), payment=(), ' +
+    'usb=(), bluetooth=(), serial=(), display-capture=(), ' +
+    'xr-spatial-tracking=(), accelerometer=(), gyroscope=(), ' +
+    'magnetometer=(), ambient-light-sensor=(), battery=()',
+  );
   next();
 });
 
