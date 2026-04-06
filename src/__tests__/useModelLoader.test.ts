@@ -60,10 +60,12 @@ function makeSuccessfulLoaderFns(
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('useModelLoader', () => {
+  /** Shared error callback spy, cleared before each test. */
   const onError = vi.fn();
 
   beforeEach(() => {
     onError.mockClear();
+    // Suppress console.error output from expected error paths under test.
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -251,6 +253,12 @@ describe('useModelLoader', () => {
   });
 
   describe('Abort bei Unmount', () => {
+    /**
+     * Verifies that the AbortSignal passed to loader functions prevents
+     * onError from firing when the component unmounts mid-load. A pending
+     * backend promise is held open until after unmount, then resolved — the
+     * hook must check signal.aborted and swallow the resulting error.
+     */
     it('ruft onError nicht auf wenn nach Unmount ein Fehler auftritt', async () => {
       let resolveBackend!: () => void;
       const backendPromise = new Promise<void>(resolve => { resolveBackend = resolve; });

@@ -84,8 +84,9 @@ export default function LandingPage() {
       </section>
 
       {/* Interactive neural network visualization */}
-      <section aria-labelledby="section-neural-net" className="py-20 bg-zinc-900 text-white px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
+      <section aria-labelledby="section-neural-net" className="py-20 bg-zinc-900 text-white px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} aria-hidden="true"></div>
+        <div className="max-w-5xl mx-auto relative z-10">
           <div className="text-center mb-16">
             <h2 id="section-neural-net" className="text-3xl font-bold mb-6">Wie lernt ein Computer?</h2>
             <p className="text-zinc-300 max-w-3xl mx-auto text-lg">

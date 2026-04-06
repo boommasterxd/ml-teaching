@@ -12,8 +12,11 @@ import { renderHook, act } from '@testing-library/react';
 import { useNeuralNetAnimation } from '../hooks/useNeuralNetAnimation';
 import { ANIMATION, NEURAL_NET_VIZ } from '../constants';
 
+/** Shorthand for the configured step duration to keep timer advances readable. */
 const STEP = ANIMATION.STEP_DURATION_MS;
 
+// Replace real timers with fake ones before each test so setTimeout calls
+// can be advanced manually without waiting for real time.
 beforeEach(() => {
   vi.useFakeTimers();
 });
@@ -23,30 +26,30 @@ afterEach(() => {
 });
 
 describe('useNeuralNetAnimation', () => {
-  describe('Initialer Zustand', () => {
-    it('activeSignal startet als null', () => {
+  describe('initial state', () => {
+    it('activeSignal starts as null', () => {
       const { result } = renderHook(() => useNeuralNetAnimation());
       expect(result.current.activeSignal).toBeNull();
     });
 
-    it('animStep startet als -1', () => {
+    it('animStep starts as -1', () => {
       const { result } = renderHook(() => useNeuralNetAnimation());
       expect(result.current.animStep).toBe(-1);
     });
 
-    it('animating startet als false', () => {
+    it('animating starts as false', () => {
       const { result } = renderHook(() => useNeuralNetAnimation());
       expect(result.current.animating).toBe(false);
     });
 
-    it('result startet als null', () => {
+    it('result starts as null', () => {
       const { result } = renderHook(() => useNeuralNetAnimation());
       expect(result.current.result).toBeNull();
     });
   });
 
   describe('triggerAnimation dog', () => {
-    it('setzt animating und activeSignal sofort beim Start', () => {
+    it('sets animating and activeSignal immediately on start', () => {
       const { result } = renderHook(() => useNeuralNetAnimation());
 
       act(() => { result.current.triggerAnimation('dog'); });
@@ -56,11 +59,12 @@ describe('useNeuralNetAnimation', () => {
       expect(result.current.animStep).toBe(0);
     });
 
-    it('durchläuft alle 7 Schritte', () => {
+    it('advances through all 7 steps', () => {
       const { result } = renderHook(() => useNeuralNetAnimation());
 
       act(() => { result.current.triggerAnimation('dog'); });
 
+      // Each timer tick advances one step; after step 7 the animation finishes.
       for (let step = 1; step <= 7; step++) {
         act(() => { vi.advanceTimersByTime(STEP); });
         if (step < 7) {
@@ -71,7 +75,7 @@ describe('useNeuralNetAnimation', () => {
       expect(result.current.animStep).toBe(7);
     });
 
-    it('setzt das richtige Ergebnis nach Abschluss', () => {
+    it('sets the correct result after completion', () => {
       const { result } = renderHook(() => useNeuralNetAnimation());
 
       act(() => { result.current.triggerAnimation('dog'); });
@@ -80,7 +84,7 @@ describe('useNeuralNetAnimation', () => {
       expect(result.current.result).toBe(NEURAL_NET_VIZ.DEMO_RESULTS.DOG);
     });
 
-    it('setzt animating auf false nach Abschluss', () => {
+    it('sets animating to false after completion', () => {
       const { result } = renderHook(() => useNeuralNetAnimation());
 
       act(() => { result.current.triggerAnimation('dog'); });
@@ -91,7 +95,7 @@ describe('useNeuralNetAnimation', () => {
   });
 
   describe('triggerAnimation cat', () => {
-    it('setzt das richtige Ergebnis für cat', () => {
+    it('sets the correct result for cat', () => {
       const { result } = renderHook(() => useNeuralNetAnimation());
 
       act(() => { result.current.triggerAnimation('cat'); });
@@ -102,21 +106,23 @@ describe('useNeuralNetAnimation', () => {
     });
   });
 
-  describe('Blockierung bei laufender Animation', () => {
-    it('ignoriert triggerAnimation wenn Animation läuft', () => {
+  describe('guard against concurrent animations', () => {
+    it('ignores triggerAnimation calls while an animation is running', () => {
       const { result } = renderHook(() => useNeuralNetAnimation());
 
       act(() => { result.current.triggerAnimation('dog'); });
+      // Advance partway through the sequence so the animation is still active.
       act(() => { vi.advanceTimersByTime(STEP * 3); });
 
+      // Attempting to start a second animation should be ignored.
       act(() => { result.current.triggerAnimation('cat'); });
 
       expect(result.current.activeSignal).toBe('dog');
     });
   });
 
-  describe('Cleanup bei Unmount', () => {
-    it('cancelt ausstehende Timeouts beim Unmount', () => {
+  describe('cleanup on unmount', () => {
+    it('cancels pending timeouts on unmount', () => {
       const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
       const { result, unmount } = renderHook(() => useNeuralNetAnimation());
 
