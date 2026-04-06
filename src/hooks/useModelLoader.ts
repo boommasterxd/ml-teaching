@@ -50,7 +50,10 @@ export async function loadWithRetry<T>(
 }
 
 /**
- * Initializes the TensorFlow.js WebGL backend.
+ * Initializes the TensorFlow.js WebGL backend and waits until it is ready.
+ *
+ * @param setLoadingText - Callback to update the human-readable loading status string.
+ * @param signal - AbortSignal used to cancel the initialization if consent is revoked or the component unmounts.
  */
 async function initTfBackend(
   setLoadingText: (text: string) => void,
@@ -63,8 +66,10 @@ async function initTfBackend(
 }
 
 /**
- * Creates a new KNN classifier instance and exposes it via the provided setter.
+ * Creates a new KNN classifier instance.
  *
+ * @param setLoadingText - Callback to update the human-readable loading status string.
+ * @param signal - AbortSignal used to cancel the operation if consent is revoked or the component unmounts.
  * @returns The created KNN classifier.
  */
 async function createKnnClassifier(
@@ -80,6 +85,8 @@ async function createKnnClassifier(
 /**
  * Downloads and initializes the MobileNet feature extractor with retry logic.
  *
+ * @param setLoadingText - Callback to update the human-readable loading status string.
+ * @param signal - AbortSignal forwarded to `loadWithRetry` to abort pending retry delays.
  * @returns The loaded MobileNet instance.
  */
 async function loadMobileNet(

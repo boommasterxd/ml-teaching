@@ -56,6 +56,10 @@ export function useCameraStream(
     }
   }, [facingMode, cameraConsent, onError]);
 
+  /**
+   * Initializes the webcam stream on mount and whenever `setupWebcam` changes.
+   * Stops all media tracks on cleanup to release the camera hardware.
+   */
   useEffect(() => {
     setupWebcam();
     return () => {
@@ -65,8 +69,11 @@ export function useCameraStream(
     };
   }, [setupWebcam]);
 
-  // Attach stream to prediction video element. isModelLoading is a dependency
-  // because the video element only appears in the DOM after loading completes.
+  /**
+   * Attaches the active stream to the prediction video element.
+   * `isModelLoading` is listed as a dependency because the video element is
+   * only mounted in the DOM after the model loading phase completes.
+   */
   useEffect(() => {
     if (predictVideoRef.current && stream) {
       predictVideoRef.current.srcObject = stream;

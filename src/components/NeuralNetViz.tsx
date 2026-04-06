@@ -166,7 +166,8 @@ function LayerNodes({ activeSignal, animStep }: LayerNodesProps) {
 
           {Array.from({ length: layer.nodes }).map((_, nodeIdx) => {
             const isOutput = layer.id === 'output';
-            // The target output node is the one matching the active signal class.
+            // KNN returns a single winning class, so only the output node matching
+            // that class lights up — not all outputs simultaneously.
             const isTargetNode = isOutput && ((activeSignal === 'dog' && nodeIdx === 0) || (activeSignal === 'cat' && nodeIdx === 1));
 
             // Each layer lights up at a different animation step to simulate
@@ -194,7 +195,6 @@ function LayerNodes({ activeSignal, animStep }: LayerNodesProps) {
                       : "bg-zinc-700 border-2 border-zinc-600 opacity-30"
                   )}
                 />
-                {/* Output labels */}
                 {isOutput && (
                   <span className={cn(
                     "absolute left-full ml-4 top-1/2 -translate-y-1/2 whitespace-nowrap font-medium transition-all duration-500",
