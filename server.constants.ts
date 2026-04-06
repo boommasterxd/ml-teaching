@@ -24,7 +24,7 @@ export const SERVER = {
   /** Rate-limit window for the CSP report endpoint in milliseconds (15 minutes). */
   CSP_REPORT_RATE_LIMIT_WINDOW_MS: 15 * 60 * 1000,
   /** Maximum CSP violation reports per IP within a single rate-limit window. */
-  CSP_REPORT_RATE_LIMIT_MAX: 50,
+  CSP_REPORT_RATE_LIMIT_MAX: 10,
   /** Maximum payload size accepted by the CSP report endpoint. */
   CSP_REPORT_MAX_BODY_SIZE: '10kb',
   /** URL path of the CSP violation report endpoint. */
