@@ -62,6 +62,8 @@ app.use(helmet({
     directives: {
       // Deny-by-default: every resource type not listed below is blocked
       "default-src": ["'none'"],
+      // wasm-unsafe-eval is intentionally omitted: the app forces the WebGL backend of TensorFlow.js,
+      // not the WASM backend. Omitting it reduces the CSP attack surface.
       "script-src": ["'self'"],
       "style-src": ["'self'"],
       // data: is required for camera captures (canvas.toDataURL)
@@ -114,7 +116,7 @@ app.use(helmet({
   // COOP: isolates the browsing context to prevent cross-origin window access
   crossOriginOpenerPolicy: { policy: 'same-origin' },
   xFrameOptions: { action: 'deny' },
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  referrerPolicy: { policy: 'no-referrer' },
   hsts: {
     maxAge: SERVER.HSTS_MAX_AGE,
     includeSubDomains: true,
@@ -135,7 +137,13 @@ app.use((_req, res, next) => {
     'camera=(self), microphone=(), geolocation=(), payment=(), ' +
     'usb=(), bluetooth=(), serial=(), display-capture=(), ' +
     'xr-spatial-tracking=(), accelerometer=(), gyroscope=(), ' +
-    'magnetometer=(), ambient-light-sensor=(), battery=()',
+    'magnetometer=(), ambient-light-sensor=(), battery=(), ' +
+    'autoplay=(), fullscreen=(), web-share=(), midi=(), ' +
+    'picture-in-picture=(), gamepad=(), publickey-credentials-get=(), ' +
+    'screen-wake-lock=(), idle-detection=(), storage-access=(), ' +
+    'window-management=(), local-fonts=(), compute-pressure=(), ' +
+    'speaker-selection=(), document-domain=(), encrypted-media=(), ' +
+    'browsing-topics=(), attribution-reporting=()',
   );
   next();
 });
