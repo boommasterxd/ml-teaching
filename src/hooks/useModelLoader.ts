@@ -12,6 +12,11 @@ import { ML, MODEL_LOAD_RETRY } from '../constants';
 import type { ErrorCategory } from '../types/errors';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
 
+// Module-level cache: MobileNet is re-used across in-app resets without re-downloading.
+// Cleared on page reload (JS context reset), but TF.js IndexedDB cache prevents re-download anyway.
+let cachedMobilenet: FeatureExtractor | null = null;
+let tfBackendInitialized = false;
+
 /**
  * Configuration options for `loadWithRetry`.
  */
@@ -68,10 +73,12 @@ async function initTfBackend(
   setLoadingText: (text: string) => void,
   signal: AbortSignal,
 ): Promise<void> {
+  if (tfBackendInitialized) return;
   setLoadingText('Lade TensorFlow.js Backend...');
   await tf.setBackend('webgl');
   await tf.ready();
   if (signal.aborted) throw signal.reason as Error;
+  tfBackendInitialized = true;
 }
 
 /**
@@ -102,7 +109,8 @@ async function loadMobileNet(
   setLoadingText: (text: string) => void,
   signal: AbortSignal,
 ): Promise<FeatureExtractor> {
-  return loadWithRetry(
+  if (cachedMobilenet) return cachedMobilenet;
+  const model = await loadWithRetry(
     async () => {
       if (signal.aborted) throw signal.reason as Error;
       setLoadingText('Lade MobileNet (Feature Extractor)...');
@@ -123,6 +131,8 @@ async function loadMobileNet(
     { maxAttempts: MODEL_LOAD_RETRY.MAX_ATTEMPTS, baseDelayMs: MODEL_LOAD_RETRY.BASE_DELAY_MS },
     signal,
   );
+  cachedMobilenet = model;
+  return model;
 }
 
 /**
