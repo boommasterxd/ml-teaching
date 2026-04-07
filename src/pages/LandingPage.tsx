@@ -29,6 +29,8 @@ export default function LandingPage() {
         <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2">
           <img
             src="/ada-logo.webp"
+            srcSet="/ada-logo-48.webp 48w, /ada-logo-96.webp 96w"
+            sizes="40px"
             alt="Ada Lovelace Projekt Logo"
             className="h-10 w-auto object-contain"
             width="40"
@@ -266,6 +268,8 @@ export default function LandingPage() {
           >
             <img
               src="/ada-logo.webp"
+              srcSet="/ada-logo-96.webp 96w, /ada-logo-192.webp 192w"
+              sizes="96px"
               alt=""
               aria-hidden="true"
               className="h-24 w-auto object-contain"
