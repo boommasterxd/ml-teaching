@@ -22,6 +22,12 @@ export class ScrollLockManager {
   }
 
   private apply(lock: boolean) {
+    if (lock) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.paddingRight = scrollbarWidth > 0 ? `${scrollbarWidth}px` : '';
+    } else {
+      document.body.style.paddingRight = '';
+    }
     const overflow = lock ? 'hidden' : '';
     document.body.style.overflow = overflow;
     document.documentElement.style.overflow = overflow;

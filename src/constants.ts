@@ -45,7 +45,7 @@ export const ML = {
    * Number of KNN addExample calls between async yield points during training.
    * Keeps the main thread responsive by returning control to the browser every N iterations.
    */
-  TRAINING_BATCH_SIZE: 16,
+  TRAINING_BATCH_SIZE: 8,
 } as const;
 
 /**

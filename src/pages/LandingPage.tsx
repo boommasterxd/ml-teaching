@@ -28,7 +28,7 @@ export default function LandingPage() {
       <nav aria-label="Hauptnavigation" className="bg-white border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2">
           <img
-            src="/ada-logo.png"
+            src="/ada-logo.webp"
             alt="Ada Lovelace Projekt Logo"
             className="h-10 w-auto object-contain"
             width="40"
@@ -265,7 +265,7 @@ export default function LandingPage() {
             className="group flex flex-col items-center gap-4 hover:opacity-90 transition-opacity rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2"
           >
             <img
-              src="/ada-logo.png"
+              src="/ada-logo.webp"
               alt=""
               aria-hidden="true"
               className="h-24 w-auto object-contain"
