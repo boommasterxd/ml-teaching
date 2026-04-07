@@ -22,7 +22,7 @@ describe('loadWithRetry', () => {
     const fn = vi.fn().mockResolvedValue('result');
     const controller = new AbortController();
 
-    const result = await loadWithRetry(fn, 3, 1000, controller.signal);
+    const result = await loadWithRetry(fn, { maxAttempts: 3, baseDelayMs: 1000 }, controller.signal);
 
     expect(result).toBe('result');
     expect(fn).toHaveBeenCalledTimes(1);
@@ -34,7 +34,7 @@ describe('loadWithRetry', () => {
       .mockResolvedValueOnce('result');
     const controller = new AbortController();
 
-    const promise = loadWithRetry(fn, 3, 100, controller.signal);
+    const promise = loadWithRetry(fn, { maxAttempts: 3, baseDelayMs: 100 }, controller.signal);
     await vi.runAllTimersAsync();
 
     const result = await promise;
@@ -47,7 +47,7 @@ describe('loadWithRetry', () => {
     const fn = vi.fn().mockRejectedValue(error);
     const controller = new AbortController();
 
-    const promise = loadWithRetry(fn, 3, 100, controller.signal);
+    const promise = loadWithRetry(fn, { maxAttempts: 3, baseDelayMs: 100 }, controller.signal);
     // Attach rejection handler before advancing timers to avoid unhandled rejection warnings.
     const assertion = expect(promise).rejects.toThrow('persistent error');
     await vi.runAllTimersAsync();
@@ -61,7 +61,7 @@ describe('loadWithRetry', () => {
 
     const fn = vi.fn().mockResolvedValue('result');
 
-    await expect(loadWithRetry(fn, 3, 1000, controller.signal)).rejects.toThrow();
+    await expect(loadWithRetry(fn, { maxAttempts: 3, baseDelayMs: 1000 }, controller.signal)).rejects.toThrow();
     expect(fn).not.toHaveBeenCalled();
   });
 
@@ -69,7 +69,7 @@ describe('loadWithRetry', () => {
     const fn = vi.fn().mockRejectedValue(new Error('network error'));
     const controller = new AbortController();
 
-    const promise = loadWithRetry(fn, 3, 1000, controller.signal);
+    const promise = loadWithRetry(fn, { maxAttempts: 3, baseDelayMs: 1000 }, controller.signal);
     // Attach rejection handler before aborting and advancing timers to avoid unhandled rejection warnings.
     const assertion = expect(promise).rejects.toThrow();
 
@@ -88,7 +88,7 @@ describe('loadWithRetry', () => {
     const controller = new AbortController();
     const baseDelay = 1000;
 
-    const promise = loadWithRetry(fn, 3, baseDelay, controller.signal);
+    const promise = loadWithRetry(fn, { maxAttempts: 3, baseDelayMs: baseDelay }, controller.signal);
 
     // After first failure: delay = 1000ms (baseDelay * 2^0)
     await vi.advanceTimersByTimeAsync(baseDelay - 1);
