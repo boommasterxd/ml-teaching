@@ -23,6 +23,7 @@ describe('ScrollLockManager', () => {
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
     document.body.style.overscrollBehavior = '';
+    document.body.style.paddingRight = '';
   });
 
   it('sets overflow:hidden on the first acquire', () => {
@@ -58,6 +59,31 @@ describe('ScrollLockManager', () => {
     manager.release();
     expect(document.body.style.overflow).toBe('');
   });
+
+  it('sets paddingRight to compensate for scrollbar width', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true, configurable: true });
+    Object.defineProperty(document.documentElement, 'clientWidth', { value: 1009, writable: true, configurable: true });
+    const manager = freshManager();
+    manager.acquire();
+    expect(document.body.style.paddingRight).toBe('15px');
+  });
+
+  it('resets paddingRight on release', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true, configurable: true });
+    Object.defineProperty(document.documentElement, 'clientWidth', { value: 1009, writable: true, configurable: true });
+    const manager = freshManager();
+    manager.acquire();
+    manager.release();
+    expect(document.body.style.paddingRight).toBe('');
+  });
+
+  it('does not set paddingRight when scrollbar is not visible', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true, configurable: true });
+    Object.defineProperty(document.documentElement, 'clientWidth', { value: 1024, writable: true, configurable: true });
+    const manager = freshManager();
+    manager.acquire();
+    expect(document.body.style.paddingRight).toBe('');
+  });
 });
 
 describe('useScrollLock', () => {
@@ -65,6 +91,7 @@ describe('useScrollLock', () => {
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
     document.body.style.overscrollBehavior = '';
+    document.body.style.paddingRight = '';
   });
 
   it('locks scroll when lock=true', () => {

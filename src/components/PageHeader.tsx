@@ -39,7 +39,7 @@ export default function PageHeader({ title, rightSlot }: PageHeaderProps) {
 
         <div className={`flex-1 flex items-center justify-center gap-3 ${rightSlot ? 'px-2' : 'pr-8 sm:pr-0'}`}>
           <img
-            src="/ada-logo.png"
+            src="/ada-logo.webp"
             alt="Ada Lovelace Projekt Logo"
             className="h-8 w-auto object-contain hidden lg:block"
             width="32"

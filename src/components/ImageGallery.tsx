@@ -4,7 +4,8 @@
  * Scrollable thumbnail gallery for collected ML training images. Supports a
  * selection mode that lets users mark and bulk-delete multiple images at once.
  */
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useRef, useCallback } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { MLImage } from '../types/ml';
@@ -49,7 +50,7 @@ interface ImageThumbnailProps {
  *
  * @param props - See {@link ImageThumbnailProps}.
  */
-function ImageThumbnail({ img, imgIndex, isSelectionMode, isSelected, color, onToggleSelect, onImageClick }: ImageThumbnailProps) {
+const ImageThumbnail = memo(function ImageThumbnail({ img, imgIndex, isSelectionMode, isSelected, color, onToggleSelect, onImageClick }: ImageThumbnailProps) {
   return (
     <button
       type="button"
@@ -69,8 +70,6 @@ function ImageThumbnail({ img, imgIndex, isSelectionMode, isSelected, color, onT
       style={{
         borderColor: (isSelectionMode && isSelected) ? color : undefined,
         boxShadow: (isSelectionMode && isSelected) ? `0 0 0 2px ${color}33` : undefined,
-        contentVisibility: 'auto',
-        containIntrinsicSize: 'auto 80px',
       }}
       onClick={() => isSelectionMode ? onToggleSelect(img.id) : onImageClick(img)}
     >
@@ -91,6 +90,36 @@ function ImageThumbnail({ img, imgIndex, isSelectionMode, isSelected, color, onT
       )}
     </button>
   );
+});
+
+/**
+ * Returns the number of grid columns matching the current viewport width,
+ * mirroring the Tailwind responsive breakpoints used in the gallery grid.
+ */
+function useColumnCount(): number {
+  const [cols, setCols] = useState(4);
+
+  useEffect(() => {
+    const queries = [
+      { mql: window.matchMedia('(min-width: 1280px)'), cols: 6 }, // xl:grid-cols-6
+      { mql: window.matchMedia('(min-width: 1024px)'), cols: 5 }, // lg:grid-cols-5
+      { mql: window.matchMedia('(min-width: 768px)'), cols: 6 },  // md:grid-cols-6
+      { mql: window.matchMedia('(min-width: 640px)'), cols: 5 },  // sm:grid-cols-5
+    ];
+
+    const update = () => {
+      for (const { mql, cols } of queries) {
+        if (mql.matches) { setCols(cols); return; }
+      }
+      setCols(4);
+    };
+
+    update();
+    queries.forEach(({ mql }) => mql.addEventListener('change', update));
+    return () => queries.forEach(({ mql }) => mql.removeEventListener('change', update));
+  }, []);
+
+  return cols;
 }
 
 /**
@@ -108,9 +137,11 @@ const ImageGallery = memo(function ImageGallery({
 }: ImageGalleryProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const columnCount = useColumnCount();
 
   /** Adds or removes an image ID from the current selection set. */
-  const toggleImageSelection = (id: string) => {
+  const toggleImageSelection = useCallback((id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -120,7 +151,7 @@ const ImageGallery = memo(function ImageGallery({
       }
       return next;
     });
-  };
+  }, []);
 
   /**
    * Keeps the selection state consistent whenever the image list changes.
@@ -148,6 +179,15 @@ const ImageGallery = memo(function ImageGallery({
     setSelectedIds(new Set());
     setIsSelectionMode(false);
   };
+
+  const rowCount = Math.ceil(images.length / columnCount);
+
+  const virtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 88,
+    overscan: 3,
+  });
 
   return (
     <div className="relative h-[220px] sm:flex-1 min-w-0 flex flex-col">
@@ -192,21 +232,52 @@ const ImageGallery = memo(function ImageGallery({
           )}
         </div>
       </div>
-      <div className="flex-1 min-h-0 bg-zinc-50/50 rounded-xl border border-zinc-300 p-2 overflow-y-auto overflow-x-hidden">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 min-h-0 bg-zinc-50/50 rounded-xl border border-zinc-300 p-2 overflow-y-auto overflow-x-hidden"
+      >
         {images.length > 0 ? (
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-            {images.map((img, imgIndex) => (
-              <ImageThumbnail
-                key={img.id}
-                img={img}
-                imgIndex={imgIndex}
-                isSelectionMode={isSelectionMode}
-                isSelected={selectedIds.has(img.id)}
-                color={color}
-                onToggleSelect={toggleImageSelection}
-                onImageClick={onImageClick}
-              />
-            ))}
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {virtualizer.getVirtualItems().map(virtualRow => {
+              const startIndex = virtualRow.index * columnCount;
+              const rowImages = images.slice(startIndex, startIndex + columnCount);
+              return (
+                <div
+                  key={virtualRow.key}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
+                    gap: '0.5rem',
+                    alignContent: 'start',
+                  }}
+                >
+                  {rowImages.map((img, colIdx) => (
+                    <ImageThumbnail
+                      key={img.id}
+                      img={img}
+                      imgIndex={startIndex + colIdx}
+                      isSelectionMode={isSelectionMode}
+                      isSelected={selectedIds.has(img.id)}
+                      color={color}
+                      onToggleSelect={toggleImageSelection}
+                      onImageClick={onImageClick}
+                    />
+                  ))}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center px-4 text-zinc-600">
