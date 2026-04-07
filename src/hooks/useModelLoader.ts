@@ -13,23 +13,32 @@ import type { ErrorCategory } from '../types/errors';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
 
 /**
+ * Configuration options for `loadWithRetry`.
+ */
+export interface RetryOptions {
+  /** Maximum number of attempts before re-throwing the last error. */
+  maxAttempts: number;
+  /** Base delay in milliseconds; doubled on each successive attempt (exponential backoff). */
+  baseDelayMs: number;
+}
+
+/**
  * Retries an async operation with exponential backoff until it succeeds or the
  * maximum number of attempts is reached. Aborts cleanly when the provided
  * AbortSignal fires, rejecting the delay promise immediately.
  *
  * @param fn - Async factory that performs the operation to retry.
- * @param maxAttempts - Maximum number of attempts before re-throwing the last error.
- * @param baseDelayMs - Base delay in milliseconds; doubled on each successive attempt.
+ * @param options - Retry configuration: `maxAttempts` and `baseDelayMs`.
  * @param signal - AbortSignal used to cancel any pending retry delay.
  * @returns The resolved value of `fn` on the first successful attempt.
  * @throws The last error thrown by `fn`, or the abort reason if the signal fires.
  */
 export async function loadWithRetry<T>(
   fn: () => Promise<T>,
-  maxAttempts: number,
-  baseDelayMs: number,
+  options: RetryOptions,
   signal: AbortSignal,
 ): Promise<T> {
+  const { maxAttempts, baseDelayMs } = options;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     signal.throwIfAborted();
     try {
@@ -111,8 +120,7 @@ async function loadMobileNet(
         }),
       ]);
     },
-    MODEL_LOAD_RETRY.MAX_ATTEMPTS,
-    MODEL_LOAD_RETRY.BASE_DELAY_MS,
+    { maxAttempts: MODEL_LOAD_RETRY.MAX_ATTEMPTS, baseDelayMs: MODEL_LOAD_RETRY.BASE_DELAY_MS },
     signal,
   );
 }
