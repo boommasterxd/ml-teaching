@@ -108,17 +108,18 @@ export default function PredictionPanel({
               <div className="space-y-2.5">
                 {classes.map(c => {
                   const conf = prediction.confidences[c.id] || 0;
+                  const confPercent = Math.round(conf * 100);
                   return (
                     <div key={c.id} className="flex items-center text-xs">
                       <span className="w-20 truncate font-semibold text-zinc-600">{c.name}</span>
                       <div className="flex-1 h-2 bg-zinc-100 rounded-full overflow-hidden mx-3">
                         <div
                           className="h-full rounded-full transition-all duration-200 ease-out"
-                          style={{ width: `${conf * 100}%`, backgroundColor: c.color }}
+                          style={{ width: `${confPercent}%`, backgroundColor: c.color }}
                         />
                       </div>
                       <span className="w-10 text-right font-mono font-medium text-zinc-600">
-                        {Math.round(conf * 100)}%
+                        {confPercent}%
                       </span>
                     </div>
                   );
