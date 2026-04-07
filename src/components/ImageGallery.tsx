@@ -69,6 +69,8 @@ function ImageThumbnail({ img, imgIndex, isSelectionMode, isSelected, color, onT
       style={{
         borderColor: (isSelectionMode && isSelected) ? color : undefined,
         boxShadow: (isSelectionMode && isSelected) ? `0 0 0 2px ${color}33` : undefined,
+        contentVisibility: 'auto',
+        containIntrinsicSize: 'auto 80px',
       }}
       onClick={() => isSelectionMode ? onToggleSelect(img.id) : onImageClick(img)}
     >

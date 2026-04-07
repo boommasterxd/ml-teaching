@@ -15,6 +15,8 @@ export const ML = {
   MIN_CLASSES: 2,
   /** Minimum number of training images required per class. */
   MIN_IMAGES_PER_CLASS: 10,
+  /** Maximum number of training images allowed per class to prevent unbounded RAM growth. */
+  MAX_IMAGES_PER_CLASS: 200,
   /**
    * Edge length (in pixels) of the square canvas used to extract MobileNet
    * feature vectors. MobileNet expects exactly 224×224 input.
@@ -39,6 +41,11 @@ export const ML = {
    * KNN training loop. Allows React to render the isTraining spinner first.
    */
   TRAINING_UI_YIELD_MS: 100,
+  /**
+   * Number of KNN addExample calls between async yield points during training.
+   * Keeps the main thread responsive by returning control to the browser every N iterations.
+   */
+  TRAINING_BATCH_SIZE: 16,
 } as const;
 
 /**
@@ -70,6 +77,8 @@ export const MODEL_LOAD_RETRY = {
   MAX_ATTEMPTS: 3,
   /** Initial back-off delay in milliseconds before the first retry. */
   BASE_DELAY_MS: 1000,
+  /** Timeout in milliseconds for a single model load attempt before triggering a retry. */
+  LOAD_TIMEOUT_MS: 30_000,
 } as const;
 
 /**

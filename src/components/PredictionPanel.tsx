@@ -5,6 +5,7 @@
  * and start/stop controls. Disabled and visually dimmed when no trained model is available.
  */
 import type React from 'react';
+import { useMemo } from 'react';
 import { Camera, Play, Square } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { MLClass, Prediction } from '../types/ml';
@@ -45,6 +46,11 @@ export default function PredictionPanel({
   onStartPredicting,
   onStopPredicting,
 }: PredictionPanelProps) {
+  const predictedClassName = useMemo(
+    () => classes.find(c => c.id === prediction?.label)?.name ?? 'Unbekannt',
+    [classes, prediction?.label]
+  );
+
   return (
     <div
       className={cn(
@@ -96,7 +102,7 @@ export default function PredictionPanel({
               <div className="text-center mb-2">
                 <div className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold mb-1">Erkannt</div>
                 <div className="text-2xl font-black text-zinc-800">
-                  {classes.find(c => c.id === prediction.label)?.name || 'Unbekannt'}
+                  {predictedClassName}
                 </div>
               </div>
               <div className="space-y-2.5">

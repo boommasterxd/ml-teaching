@@ -271,6 +271,7 @@ export default function LandingPage() {
               className="h-24 w-auto object-contain"
               width="96"
               height="96"
+              loading="lazy"
               referrerPolicy="no-referrer"
             />
             <span className="text-zinc-600 font-bold border-b border-transparent group-hover:border-zinc-300 transition-all">

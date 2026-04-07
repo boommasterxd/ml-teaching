@@ -65,11 +65,13 @@ export function useClassManagement(onInvalidate: () => void) {
     setClasses(prev => prev.map(c => c.id === id ? { ...c, name: newName.slice(0, ML.MAX_CLASS_NAME_LENGTH) } : c));
   }, []);
 
-  /** Adds a single training image to a class. */
+  /** Adds a single training image to a class, up to MAX_IMAGES_PER_CLASS. */
   const addImage = useCallback((classId: string, newImage: MLImage) => {
-    setClasses(prev => prev.map(c =>
-      c.id === classId ? { ...c, images: [...c.images, newImage] } : c
-    ));
+    setClasses(prev => prev.map(c => {
+      if (c.id !== classId) return c;
+      if (c.images.length >= ML.MAX_IMAGES_PER_CLASS) return c;
+      return { ...c, images: [...c.images, newImage] };
+    }));
   }, []);
 
   /** Removes a single image from a class and invalidates the model. */

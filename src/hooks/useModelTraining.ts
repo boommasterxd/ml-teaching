@@ -26,13 +26,19 @@ export interface TrainingCallbacks {
 /**
  * Trains a new KNN classifier by adding all stored feature vectors class by class.
  * Each tensor is disposed immediately after use to prevent GPU memory leaks.
+ * Yields to the browser every TRAINING_BATCH_SIZE iterations to keep the UI responsive.
  */
-function trainClassifier(classes: MLClass[], newClassifier: Classifier): void {
+async function trainClassifier(classes: MLClass[], newClassifier: Classifier): Promise<void> {
+  let count = 0;
   for (const cls of classes) {
     for (const img of cls.images) {
       const tensor = tf.tensor1d(img.featureArray);
       newClassifier.addExample(tensor, cls.id);
       tensor.dispose();
+      count++;
+      if (count % ML.TRAINING_BATCH_SIZE === 0) {
+        await new Promise<void>(resolve => setTimeout(resolve, 0));
+      }
     }
   }
 }
@@ -134,7 +140,7 @@ export function useModelTraining(
     await new Promise(resolve => setTimeout(resolve, ML.TRAINING_UI_YIELD_MS));
 
     try {
-      trainClassifier(classes, newClassifier);
+      await trainClassifier(classes, newClassifier);
 
       setClassifier(newClassifier);
       setHasTrainedModel(true);

@@ -42,6 +42,8 @@ export default function PageHeader({ title, rightSlot }: PageHeaderProps) {
             src="/ada-logo.png"
             alt="Ada Lovelace Projekt Logo"
             className="h-8 w-auto object-contain hidden lg:block"
+            width="32"
+            height="32"
             referrerPolicy="no-referrer"
           />
           <span className="text-base sm:text-lg font-bold text-zinc-800 line-clamp-1">{title}</span>
