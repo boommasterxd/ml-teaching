@@ -65,6 +65,15 @@ export default function TrainingPage() {
     }
   }, [hasTrainedModel, stopPredicting]);
 
+  /**
+   * Forwards validation warnings from class management to the global error state.
+   *
+   * Passed as the `onWarning` prop to `useClassManagement`. Called when a class
+   * operation fails validation (e.g. duplicate name, missing images), routing
+   * the message into `setError` under the `'validation'` category.
+   *
+   * @param message - Human-readable validation error message to display.
+   */
   const onWarning = useCallback((message: string) => {
     setError('validation', message);
   }, [setError]);

@@ -24,7 +24,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
-      {/* Top navigation */}
       <nav aria-label="Hauptnavigation" className="bg-white border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2">
           <img
@@ -42,7 +41,6 @@ export default function LandingPage() {
         </a>
       </nav>
 
-      {/* Hero section */}
       <div className="bg-white border-b border-zinc-200 py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center">
           <div className="inline-flex items-center justify-center p-3 bg-red-50 text-red-600 rounded-2xl mb-6">
@@ -60,7 +58,6 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Three-step overview */}
       <section aria-labelledby="section-steps" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <h2 id="section-steps" className="text-3xl font-bold text-center mb-16">In 3 Schritten zur eigenen KI</h2>
         <div className="grid md:grid-cols-3 gap-10">
@@ -115,7 +112,6 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-12 items-stretch">
-            {/* Neural network explanation */}
             <div className="bg-zinc-50 p-8 rounded-3xl border border-zinc-100 relative overflow-hidden group hover:shadow-md transition-all">
               <div className="absolute top-0 right-0 w-32 h-32 bg-red-100 rounded-bl-full -mr-8 -mt-8 opacity-50 transition-transform group-hover:scale-110" aria-hidden="true" />
               <Brain className="w-12 h-12 text-red-500 mb-6 relative z-10" aria-hidden="true" />
@@ -127,7 +123,6 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* KNN explanation */}
             <div className="bg-zinc-50 p-8 rounded-3xl border border-zinc-100 relative overflow-hidden group hover:shadow-md transition-all">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-bl-full -mr-8 -mt-8 opacity-50 transition-transform group-hover:scale-110" aria-hidden="true" />
               <Users className="w-12 h-12 text-blue-500 mb-6 relative z-10" aria-hidden="true" />
@@ -152,7 +147,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Tips for a smart model */}
       <section aria-labelledby="section-tips" className="py-20 bg-zinc-50 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -196,7 +190,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Real-world examples */}
       <section aria-labelledby="section-examples" className="py-20 bg-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -240,7 +233,6 @@ export default function LandingPage() {
         </div>
       </section>
       
-      {/* Final call to action */}
       <section aria-labelledby="section-cta" className="py-24 bg-zinc-900 text-white px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} aria-hidden="true"></div>
         <div className="max-w-3xl mx-auto relative z-10">

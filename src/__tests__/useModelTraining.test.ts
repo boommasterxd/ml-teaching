@@ -24,7 +24,10 @@ vi.mock('@tensorflow/tfjs-core', () => ({
   tensor1d: vi.fn(() => ({ dispose: vi.fn() })),
 }));
 
-// The new classifier returned by knnClassifier.create() after each training run.
+/**
+ * Shared mock classifier returned by `knnClassifier.create()` after each training run.
+ * All methods are jest/vitest fns so call counts can be asserted in tests.
+ */
 const mockNewClassifier: Classifier = {
   addExample: vi.fn(),
   predictClass: vi.fn(),

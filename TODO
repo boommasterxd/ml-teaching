@@ -1,6 +1,6 @@
-- [] DSGVO-Check
-- [] BFSG-Check
+- [X] DSGVO-Check
+- [X] BFSG-Check
 - [X] Sicherheits-Check
 - [X] Performance-Check
 - [X] Codequlaitäts-Check
-- [] Docs erstellen
+- [X] Docs erstellen
