@@ -230,7 +230,7 @@ export default function PrivacyPage() {
             Eine Zusammenführung dieser Daten mit anderen Datenquellen wird nicht vorgenommen.
           </p>
           <p className="text-zinc-600 leading-relaxed mb-4">
-            Die Erfassung dieser Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Der Websitebetreiber hat ein berechtigtes Interesse an der technisch fehlerfreien Darstellung und der Optimierung seiner Website – hierzu müssen die Server-Log-Files erfasst werden. Die Server-Log-Dateien werden nach spätestens 7 Tagen automatisch gelöscht.
+            Die Erfassung dieser Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Der Websitebetreiber hat ein berechtigtes Interesse an der technisch fehlerfreien Darstellung und der Optimierung seiner Website – hierzu müssen die Server-Log-Files erfasst werden. Die Server-Log-Dateien des Hosting-Providers (Hostinger) werden nach spätestens 7 Tagen automatisch gelöscht.
           </p>
 
           <h3 className="text-lg sm:text-xl font-bold mt-8 mb-4 text-zinc-800">Anfrage per E-Mail oder Telefon</h3>
