@@ -12,7 +12,7 @@ import path from 'path';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import compression from 'compression';
-import { SERVER } from './server.constants.js';
+import { SERVER, CSP_DIRECTIVES } from './server.constants.js';
 
 /**
  * Validates that all mandatory environment variables are present at startup.
@@ -58,59 +58,9 @@ app.set('trust proxy', 1);
  * - HSTS is enabled with a 1-year max-age, subdomain inclusion, and preload.
  */
 app.use(helmet({
-  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
-    directives: {
-      // Deny-by-default: every resource type not listed below is blocked
-      "default-src": ["'none'"],
-      // wasm-unsafe-eval is intentionally omitted: the app forces the WebGL backend of TensorFlow.js,
-      // not the WASM backend. Omitting it reduces the CSP attack surface.
-      "script-src": ["'self'"],
-      "style-src": ["'self'"],
-      // data: is required for camera captures (canvas.toDataURL)
-      "img-src": ["'self'", "data:"],
-      // Scoped to Google Storage, TensorFlow Hub, and Kaggle for MobileNet model downloads
-      "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
-      // TensorFlow.js spawns Web Workers via blob: URLs
-      "worker-src": ["blob:"],
-      // Camera uses srcObject (not URL-based src) — media-src does not apply to WebRTC
-      "media-src": ["'none'"],
-      "object-src": ["'none'"],
-      // No <base> tag in the app — 'none' prevents base-tag injection via XSS
-      "base-uri": ["'none'"],
-      // No form submissions in the app
-      "form-action": ["'none'"],
-      "frame-ancestors": ["'none'"],
-      // Override Helmet's default font-src (which includes https:) to block external fonts
-      "font-src": ["'self'"],
-      // Explicitly block inline event handlers (onclick=, onerror=, …)
-      "script-src-attr": ["'none'"],
-      // Explicitly block inline style attributes (style="…")
-      "style-src-attr": ["'none'"],
-      "upgrade-insecure-requests": [],
-      "report-uri": [SERVER.CSP_REPORT_PATH],
-    }
-  } : {
-    reportOnly: true,
-    directives: {
-      "default-src": ["'none'"],
-      "script-src": ["'self'"],
-      "style-src": ["'self'"],
-      // data: is required for camera captures (canvas.toDataURL)
-      "img-src": ["'self'", "data:"],
-      "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
-      "worker-src": ["blob:"],
-      "media-src": ["'none'"],
-      "object-src": ["'none'"],
-      "base-uri": ["'none'"],
-      "form-action": ["'none'"],
-      "frame-ancestors": ["'none'"],
-      "font-src": ["'self'"],
-      "script-src-attr": ["'none'"],
-      "style-src-attr": ["'none'"],
-      "upgrade-insecure-requests": [],
-      "report-uri": [SERVER.CSP_REPORT_PATH],
-    },
-  },
+  contentSecurityPolicy: process.env.NODE_ENV === 'production'
+    ? { directives: CSP_DIRECTIVES }
+    : { reportOnly: true, directives: CSP_DIRECTIVES },
   // COEP is disabled because TensorFlow.js loads model weights cross-origin (Google Storage, TF Hub)
   crossOriginEmbedderPolicy: false,
   // COOP: isolates the browsing context to prevent cross-origin window access

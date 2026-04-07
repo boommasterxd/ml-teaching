@@ -30,3 +30,42 @@ export const SERVER = {
   /** URL path of the CSP violation report endpoint. */
   CSP_REPORT_PATH: '/csp-report',
 } as const;
+
+/**
+ * Shared Content Security Policy directives used in both production (enforced)
+ * and development (report-only) mode. The only difference between the two modes
+ * is the `reportOnly` flag in the Helmet configuration — the directives themselves
+ * are identical, so they are centralized here to avoid duplication.
+ *
+ * - `default-src 'none'`: deny-by-default; every unlisted resource type is blocked.
+ * - `script-src 'self'`: wasm-unsafe-eval is intentionally omitted — the app forces
+ *   the WebGL backend of TensorFlow.js, not the WASM backend.
+ * - `img-src data:`: required for camera captures (canvas.toDataURL).
+ * - `connect-src`: scoped to Google Storage, TensorFlow Hub, and Kaggle for MobileNet
+ *   model downloads.
+ * - `worker-src blob:`: TensorFlow.js spawns Web Workers via blob: URLs.
+ * - `media-src 'none'`: camera uses srcObject (not URL-based src) — media-src does
+ *   not apply to WebRTC.
+ * - `base-uri 'none'`: no <base> tag in the app — prevents base-tag injection via XSS.
+ * - `form-action 'none'`: no form submissions in the app.
+ * - `script-src-attr 'none'`: explicitly blocks inline event handlers (onclick=, …).
+ * - `style-src-attr 'none'`: explicitly blocks inline style attributes (style="…").
+ */
+export const CSP_DIRECTIVES = {
+  "default-src": ["'none'"],
+  "script-src": ["'self'"],
+  "style-src": ["'self'"],
+  "img-src": ["'self'", "data:"],
+  "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
+  "worker-src": ["blob:"],
+  "media-src": ["'none'"],
+  "object-src": ["'none'"],
+  "base-uri": ["'none'"],
+  "form-action": ["'none'"],
+  "frame-ancestors": ["'none'"],
+  "font-src": ["'self'"],
+  "script-src-attr": ["'none'"],
+  "style-src-attr": ["'none'"],
+  "upgrade-insecure-requests": [],
+  "report-uri": [SERVER.CSP_REPORT_PATH],
+} as const;
