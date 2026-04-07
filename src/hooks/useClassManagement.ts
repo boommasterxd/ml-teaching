@@ -4,7 +4,7 @@
  * Hook for managing the list of ML classification classes and their training images.
  * Provides CRUD operations for classes and exposes model invalidation on destructive changes.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { MLClass, MLImage } from '../types/ml';
 import { COLORS } from '../types/ml';
 import { ML } from '../constants';
@@ -34,13 +34,21 @@ function createInitialClasses(): MLClass[] {
  *
  * @param onInvalidate - Callback invoked whenever a change renders the trained model stale
  *   (e.g. class or image removed). Renaming a class does NOT trigger this callback.
+ * @param onWarning - Optional callback invoked when a user action is blocked by a limit
+ *   (e.g. max classes or max images per class reached).
  * @returns An object with the current class list and all mutation functions.
  */
-export function useClassManagement(onInvalidate: () => void) {
+export function useClassManagement(onInvalidate: () => void, onWarning?: (message: string) => void) {
   const [classes, setClasses] = useState<MLClass[]>(createInitialClasses);
+  const classesRef = useRef(classes);
+  classesRef.current = classes;
 
   /** Appends a new empty class with an auto-incremented name and color. */
   const addClass = useCallback(() => {
+    if (classesRef.current.length >= ML.MAX_CLASSES) {
+      onWarning?.(`Maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht.`);
+      return;
+    }
     setClasses(prev => {
       const nextNum = getNextClassNumber(prev);
       const newId = `class-${crypto.randomUUID()}`;
@@ -52,7 +60,7 @@ export function useClassManagement(onInvalidate: () => void) {
       }];
     });
     onInvalidate();
-  }, [onInvalidate]);
+  }, [onInvalidate, onWarning]);
 
   /** Removes a class by ID and invalidates the trained model. */
   const removeClass = useCallback((id: string) => {

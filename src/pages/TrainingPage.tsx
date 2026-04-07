@@ -65,10 +65,14 @@ export default function TrainingPage() {
     }
   }, [hasTrainedModel, stopPredicting]);
 
+  const onWarning = useCallback((message: string) => {
+    setError('validation', message);
+  }, [setError]);
+
   const {
     classes, addClass, removeClass, updateClassName,
     addImage, removeImage, removeImages, clearClass, resetClasses,
-  } = useClassManagement(invalidateModel);
+  } = useClassManagement(invalidateModel, onWarning);
 
   const { isTraining, trainModel: runTraining, canTrain, hasInvalidNames, hasDuplicateNames } =
     useModelTraining(classes, classifier, { setClassifier, setHasTrainedModel, onError: setError });

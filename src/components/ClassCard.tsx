@@ -180,8 +180,16 @@ const ClassCard = memo(function ClassCard({
           )}
         </div>
         <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-0 flex-shrink-0 min-w-0">
-          <span className="text-xs font-mono text-zinc-600 bg-zinc-100 px-2 py-1 rounded-md whitespace-nowrap">
-            {cls.images.length} Bilder
+          <span
+            className={cn(
+              'text-xs font-mono px-2 py-1 rounded-md whitespace-nowrap',
+              cls.images.length >= ML.MAX_IMAGES_PER_CLASS
+                ? 'bg-amber-100 text-amber-700 font-semibold'
+                : 'bg-zinc-100 text-zinc-600'
+            )}
+            title={cls.images.length >= ML.MAX_IMAGES_PER_CLASS ? `Limit von ${ML.MAX_IMAGES_PER_CLASS} Bildern erreicht` : undefined}
+          >
+            {cls.images.length} / {ML.MAX_IMAGES_PER_CLASS} Bilder
           </span>
           <button
             onClick={() => onClear(cls.id)}
