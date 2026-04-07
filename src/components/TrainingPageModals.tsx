@@ -57,7 +57,7 @@ export default function TrainingPageModals({
   stopPredicting,
 }: TrainingPageModalsProps) {
 
-  /** Resets all classes, the trained model, and prediction state. */
+  // Resets all classes, the trained model, and prediction state.
   const clearAll = useCallback(() => {
     resetClasses();
     setHasTrainedModel(false);
@@ -66,13 +66,13 @@ export default function TrainingPageModals({
     closeModal();
   }, [classifier, stopPredicting, resetClasses, closeModal, setHasTrainedModel]);
 
-  /** Removes a single image and closes the preview modal. */
+  // Removes a single image and closes the preview modal.
   const handleRemoveImage = useCallback((classId: string, imageId: string) => {
     removeImage(classId, imageId);
     closeModal();
   }, [removeImage, closeModal]);
 
-  /** Clears all images from a class. */
+  // Clears all images from a class; closes the preview modal if it currently shows the same class.
   const handleClearClass = useCallback((id: string) => {
     clearClass(id);
     if (modal.type === 'imagePreview' && modal.classId === id) {
@@ -80,7 +80,7 @@ export default function TrainingPageModals({
     }
   }, [clearClass, modal, closeModal]);
 
-  /** Confirms clearing all images from the class referenced in the modal. */
+  // Confirms clearing all images from the class referenced in the modal.
   const handleClearClassConfirm = useCallback(() => {
     if (modal.type === 'clearClass') {
       handleClearClass(modal.classId);
@@ -88,7 +88,7 @@ export default function TrainingPageModals({
     }
   }, [modal, handleClearClass, closeModal]);
 
-  /** Confirms removing the class referenced in the modal. */
+  // Confirms removing the class referenced in the modal.
   const handleRemoveClassConfirm = useCallback(() => {
     if (modal.type === 'removeClass') {
       removeClass(modal.classId);

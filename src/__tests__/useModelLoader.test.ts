@@ -13,7 +13,11 @@ import type { Classifier, FeatureExtractor } from '../types/ml-models';
 
 // ─── Mock Factories ──────────────────────────────────────────────────────────
 
-/** Creates a fully stubbed Classifier mock. */
+/**
+ * Creates a fully stubbed Classifier mock with all required methods as spies.
+ *
+ * @returns A Classifier stub where predictClass resolves with a single class 'A' at full confidence.
+ */
 function makeClassifier(): Classifier {
   return {
     addExample: vi.fn(),
@@ -24,7 +28,11 @@ function makeClassifier(): Classifier {
   };
 }
 
-/** Creates a minimal FeatureExtractor stub. */
+/**
+ * Creates a minimal FeatureExtractor stub with a disposable infer spy.
+ *
+ * @returns A FeatureExtractor stub whose infer method returns an object with a no-op dispose.
+ */
 function makeFeatureExtractor(): FeatureExtractor {
   return {
     infer: vi.fn(() => ({ dispose: vi.fn() })) as unknown as FeatureExtractor['infer'],

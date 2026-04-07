@@ -11,8 +11,9 @@
  * training. These values are tuned for the TensorFlow.js browser runtime.
  */
 export const ML = {
-  /** Minimum number of distinct classes required before training is allowed. */
+  /** Maximum number of distinct classes a user can create. */
   MAX_CLASSES: 15,
+  /** Minimum number of distinct classes required before training is allowed. */
   MIN_CLASSES: 2,
   /** Minimum number of training images required per class. */
   MIN_IMAGES_PER_CLASS: 10,

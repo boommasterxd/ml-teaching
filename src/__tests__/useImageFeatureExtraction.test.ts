@@ -74,6 +74,8 @@ function makeVideoSource(width = 640, height = 480): HTMLVideoElement {
 
 // ─── Setup ───────────────────────────────────────────────────────────────────
 
+// Re-register the fromPixels mock for each test to ensure a clean default stub.
+// crypto.randomUUID is stubbed so MLImage IDs are deterministic in assertions.
 beforeEach(async () => {
   const tfMock = await import('@tensorflow/tfjs-core');
   vi.mocked(tfMock.browser.fromPixels).mockReturnValue(makeTensor() as never);
@@ -224,14 +226,14 @@ describe('useImageFeatureExtraction', () => {
       vi.mocked(tfMock.browser.fromPixels).mockReturnValue(inputTensor as never);
 
       const errorModel: FeatureExtractor = {
-        infer: vi.fn(() => { throw new Error('GPU-Fehler'); }) as unknown as FeatureExtractor['infer'],
+        infer: vi.fn(() => { throw new Error('GPU error'); }) as unknown as FeatureExtractor['infer'],
       };
       const { result } = renderHook(() => useImageFeatureExtraction(errorModel));
 
       await act(async () => {
         await expect(
           result.current.extractFeatures(makeVideoSource(), false)
-        ).rejects.toThrow('GPU-Fehler');
+        ).rejects.toThrow('GPU error');
       });
 
       expect(inputTensor.dispose).toHaveBeenCalledOnce();

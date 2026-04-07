@@ -100,7 +100,7 @@ export default function PredictionPanel({
           {isPredicting && prediction ? (
             <div className="space-y-4">
               <div className="text-center mb-2">
-                <div className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold mb-1">Erkannt</div>
+                <div className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mb-1">Erkannt</div>
                 <div className="text-2xl font-black text-zinc-800">
                   {predictedClassName}
                 </div>

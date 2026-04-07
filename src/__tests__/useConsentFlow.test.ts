@@ -11,53 +11,53 @@ import { renderHook, act } from '@testing-library/react';
 import { useConsentFlow } from '../hooks/useConsentFlow';
 
 describe('useConsentFlow', () => {
-  describe('Initialer Zustand', () => {
-    it('hasConsented startet als false', () => {
+  describe('initial state', () => {
+    it('hasConsented starts as false', () => {
       const { result } = renderHook(() => useConsentFlow());
       expect(result.current.hasConsented).toBe(false);
     });
 
-    it('cameraConsent startet als false', () => {
+    it('cameraConsent starts as false', () => {
       const { result } = renderHook(() => useConsentFlow());
       expect(result.current.cameraConsent).toBe(false);
     });
 
-    it('showConsentModal ist initial true', () => {
+    it('showConsentModal is true initially', () => {
       const { result } = renderHook(() => useConsentFlow());
       expect(result.current.showConsentModal).toBe(true);
     });
 
-    it('showCameraModal ist initial false', () => {
+    it('showCameraModal is false initially', () => {
       const { result } = renderHook(() => useConsentFlow());
       expect(result.current.showCameraModal).toBe(false);
     });
 
-    it('isFullyConsented ist initial false', () => {
+    it('isFullyConsented is false initially', () => {
       const { result } = renderHook(() => useConsentFlow());
       expect(result.current.isFullyConsented).toBe(false);
     });
   });
 
   describe('grantConsent', () => {
-    it('setzt hasConsented auf true', () => {
+    it('sets hasConsented to true', () => {
       const { result } = renderHook(() => useConsentFlow());
       act(() => { result.current.grantConsent(); });
       expect(result.current.hasConsented).toBe(true);
     });
 
-    it('blendet showConsentModal aus', () => {
+    it('hides showConsentModal', () => {
       const { result } = renderHook(() => useConsentFlow());
       act(() => { result.current.grantConsent(); });
       expect(result.current.showConsentModal).toBe(false);
     });
 
-    it('zeigt showCameraModal nachdem allgemeiner Consent erteilt wurde', () => {
+    it('shows showCameraModal after general consent is granted', () => {
       const { result } = renderHook(() => useConsentFlow());
       act(() => { result.current.grantConsent(); });
       expect(result.current.showCameraModal).toBe(true);
     });
 
-    it('isFullyConsented bleibt false ohne Kamera-Consent', () => {
+    it('isFullyConsented remains false without camera consent', () => {
       const { result } = renderHook(() => useConsentFlow());
       act(() => { result.current.grantConsent(); });
       expect(result.current.isFullyConsented).toBe(false);
@@ -65,21 +65,21 @@ describe('useConsentFlow', () => {
   });
 
   describe('grantCameraConsent', () => {
-    it('setzt cameraConsent auf true', () => {
+    it('sets cameraConsent to true', () => {
       const { result } = renderHook(() => useConsentFlow());
       act(() => { result.current.grantConsent(); });
       act(() => { result.current.grantCameraConsent(); });
       expect(result.current.cameraConsent).toBe(true);
     });
 
-    it('setzt isFullyConsented auf true nach vollständigem Consent-Flow', () => {
+    it('sets isFullyConsented to true after completing the full consent flow', () => {
       const { result } = renderHook(() => useConsentFlow());
       act(() => { result.current.grantConsent(); });
       act(() => { result.current.grantCameraConsent(); });
       expect(result.current.isFullyConsented).toBe(true);
     });
 
-    it('blendet showCameraModal nach Kamera-Consent aus', () => {
+    it('hides showCameraModal after camera consent is granted', () => {
       const { result } = renderHook(() => useConsentFlow());
       act(() => { result.current.grantConsent(); });
       act(() => { result.current.grantCameraConsent(); });
@@ -87,14 +87,14 @@ describe('useConsentFlow', () => {
     });
   });
 
-  describe('Reihenfolge-Erzwingung', () => {
-    it('showCameraModal bleibt false wenn nur Kamera-Consent ohne allgemeinen Consent erteilt wird', () => {
+  describe('order enforcement', () => {
+    it('showCameraModal stays false when only camera consent is granted without prior general consent', () => {
       const { result } = renderHook(() => useConsentFlow());
       act(() => { result.current.grantCameraConsent(); });
       expect(result.current.showCameraModal).toBe(false);
     });
 
-    it('isFullyConsented bleibt false wenn nur Kamera-Consent ohne allgemeinen Consent erteilt wird', () => {
+    it('isFullyConsented stays false when only camera consent is granted without prior general consent', () => {
       const { result } = renderHook(() => useConsentFlow());
       act(() => { result.current.grantCameraConsent(); });
       expect(result.current.isFullyConsented).toBe(false);
