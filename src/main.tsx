@@ -33,18 +33,22 @@ window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
 // Track whether the user is navigating by keyboard so focus traps can
 // conditionally auto-focus the first interactive element (see useFocusTrap).
-document.addEventListener('keydown', (e) => {
+const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Tab') {
     document.documentElement.setAttribute('data-keyboard-nav', '');
   }
-});
-document.addEventListener('pointerdown', () => {
+};
+const handlePointerdown = () => {
   document.documentElement.removeAttribute('data-keyboard-nav');
-});
+};
+document.addEventListener('keydown', handleKeydown);
+document.addEventListener('pointerdown', handlePointerdown);
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    document.removeEventListener('keydown', handleKeydown);
+    document.removeEventListener('pointerdown', handlePointerdown);
   });
 }
 createRoot(document.getElementById('root')!).render(

@@ -97,10 +97,19 @@ async function loadMobileNet(
     async () => {
       if (signal.aborted) throw signal.reason as Error;
       setLoadingText('Lade MobileNet (Feature Extractor)...');
-      return mobilenet.load({
-        version: ML.MOBILENET_VERSION,
-        alpha: ML.MOBILENET_ALPHA,
-      });
+      return Promise.race([
+        mobilenet.load({
+          version: ML.MOBILENET_VERSION,
+          alpha: ML.MOBILENET_ALPHA,
+        }),
+        new Promise<never>((_, reject) => {
+          const timer = setTimeout(
+            () => reject(new Error('MobileNet load timed out')),
+            MODEL_LOAD_RETRY.LOAD_TIMEOUT_MS,
+          );
+          signal.addEventListener('abort', () => clearTimeout(timer), { once: true });
+        }),
+      ]);
     },
     MODEL_LOAD_RETRY.MAX_ATTEMPTS,
     MODEL_LOAD_RETRY.BASE_DELAY_MS,
