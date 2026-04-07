@@ -8,6 +8,7 @@
 import type React from 'react';
 import { Plus, RotateCcw } from 'lucide-react';
 import type { MLClass } from '../types/ml';
+import { ML } from '../constants';
 import ClassCard from './ClassCard';
 import type { ClassCardActions } from './ClassCard';
 
@@ -64,9 +65,10 @@ export default function TrainingClassesPanel({
           </button>
           <button
             onClick={onAddClass}
-            className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl text-sm font-medium transition-colors shadow-sm"
-            title="Neue Klasse hinzufügen"
-            aria-label="Neue Klasse hinzufügen"
+            disabled={classes.length >= ML.MAX_CLASSES}
+            className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl text-sm font-medium transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-zinc-700"
+            title={classes.length >= ML.MAX_CLASSES ? `Maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht` : 'Neue Klasse hinzufügen'}
+            aria-label={classes.length >= ML.MAX_CLASSES ? `Maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht` : 'Neue Klasse hinzufügen'}
           >
             <Plus className="w-4 h-4 sm:mr-2" aria-hidden="true" />
             <span className="hidden sm:inline">Hinzufügen</span>

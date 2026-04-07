@@ -12,6 +12,7 @@
  */
 export const ML = {
   /** Minimum number of distinct classes required before training is allowed. */
+  MAX_CLASSES: 15,
   MIN_CLASSES: 2,
   /** Minimum number of training images required per class. */
   MIN_IMAGES_PER_CLASS: 10,
