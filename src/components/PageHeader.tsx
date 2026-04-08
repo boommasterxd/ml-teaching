@@ -16,8 +16,8 @@ interface PageHeaderProps {
 }
 
 /**
- * Renders a sticky header bar with a back button, the Ada Lovelace project logo,
- * the page title, and an optional right-side action area.
+ * Renders a sticky header bar with a back button, a brain icon, the page title,
+ * and an optional right-side action area.
  *
  * When `rightSlot` is omitted, an invisible spacer of equal width is rendered
  * on the right to keep the title visually centered.
@@ -39,14 +39,14 @@ export default function PageHeader({ title, rightSlot }: PageHeaderProps) {
 
         <div className={`flex-1 flex items-center justify-center gap-3 ${rightSlot ? 'px-2' : 'pr-8 sm:pr-0'}`}>
           <img
-            src="/ada-logo.webp"
-            srcSet="/ada-logo-48.webp 48w, /ada-logo-96.webp 96w"
+            src="/brain.webp"
+            srcSet="/brain-48.webp 48w, /brain-96.webp 96w"
             sizes="32px"
-            alt="Ada Lovelace Projekt Logo"
-            className="h-8 w-auto object-contain hidden lg:block"
+            alt=""
+            aria-hidden="true"
+            className="h-8 w-8 object-contain hidden lg:block"
             width="32"
             height="32"
-            referrerPolicy="no-referrer"
           />
           <span className="text-base sm:text-lg font-bold text-zinc-800 line-clamp-1">{title}</span>
         </div>
