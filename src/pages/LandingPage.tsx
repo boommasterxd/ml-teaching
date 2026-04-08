@@ -27,15 +27,15 @@ export default function LandingPage() {
       <nav aria-label="Hauptnavigation" className="bg-white border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2">
           <img
-            src="/ada-logo.webp"
-            srcSet="/ada-logo-48.webp 48w, /ada-logo-96.webp 96w"
+            src="/brain.webp"
+            srcSet="/brain-48.webp 48w, /brain-96.webp 96w"
             sizes="40px"
-            alt="Ada Lovelace Projekt Logo"
-            className="h-10 w-auto object-contain"
+            alt=""
+            aria-hidden="true"
+            className="h-10 w-10 object-contain"
             width="40"
             height="40"
             fetchPriority="high"
-            referrerPolicy="no-referrer"
           />
           <span className="font-bold text-lg text-zinc-800 hidden sm:block">KI Bilderkennung</span>
         </a>
@@ -246,35 +246,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Collaboration section */}
-      <section aria-label="Kooperation" className="bg-white py-16 border-t border-zinc-200">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col items-center text-center">
-          <p className="text-zinc-600 mb-6 font-medium">
-            Entwickelt in Zusammenarbeit mit dem
-          </p>
-          <a
-            href="https://ada-lovelace.de/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex flex-col items-center gap-4 hover:opacity-90 transition-opacity rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2"
-          >
-            <img
-              src="/ada-logo.webp"
-              srcSet="/ada-logo-96.webp 96w, /ada-logo-192.webp 192w"
-              sizes="96px"
-              alt=""
-              aria-hidden="true"
-              className="h-24 w-auto object-contain"
-              width="96"
-              height="96"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-            />
-            <span className="text-zinc-600 font-bold border-b border-transparent group-hover:border-zinc-300 transition-all">
-              Ada-Lovelace-Projekt<span className="sr-only"> (öffnet in neuem Tab)</span>
-            </span>
-          </a>        </div>
-      </section>
       </div>
       );
       }
