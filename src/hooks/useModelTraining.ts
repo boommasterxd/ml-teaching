@@ -83,12 +83,15 @@ function validateClasses(
  * @param classes - The list of ML classes, each carrying its captured images and feature vectors.
  * @param classifier - The current KNN classifier instance, or null if none exists yet.
  * @param callbacks - Grouped callbacks for updating parent state and reporting errors.
+ * @param hasDuplicateNames - Pre-computed flag: true when two or more classes share the same trimmed name.
+ *   Passed in from the caller to avoid recomputing what is already derived from `duplicateClassNames`.
  * @returns An object with the training state flag, the train function, and derived validation flags.
  */
 export function useModelTraining(
   classes: MLClass[],
   classifier: Classifier | null,
   callbacks: TrainingCallbacks,
+  hasDuplicateNames: boolean,
 ) {
   const { setClassifier, setHasTrainedModel, onError } = callbacks;
   const [isTraining, setIsTraining] = useState(false);
@@ -96,12 +99,6 @@ export function useModelTraining(
   /** True when at least one class has an empty or whitespace-only name. */
   const hasInvalidNames = useMemo(
     () => classes.some(c => c.name.trim() === ''),
-    [classes]
-  );
-
-  /** True when two or more classes share the same trimmed name. */
-  const hasDuplicateNames = useMemo(
-    () => new Set(classes.map(c => c.name.trim())).size !== classes.length,
     [classes]
   );
 
@@ -153,5 +150,5 @@ export function useModelTraining(
     }
   }, [classes, classifier, setClassifier, setHasTrainedModel, onError, hasInvalidNames, hasDuplicateNames]);
 
-  return { isTraining, trainModel, canTrain, hasInvalidNames, hasDuplicateNames };
+  return { isTraining, trainModel, canTrain, hasInvalidNames };
 }

@@ -83,8 +83,22 @@ export default function TrainingPage() {
     addImage, removeImage, removeImages, clearClass, resetClasses,
   } = useClassManagement(invalidateModel, onWarning);
 
-  const { isTraining, trainModel: runTraining, canTrain, hasInvalidNames, hasDuplicateNames } =
-    useModelTraining(classes, classifier, { setClassifier, setHasTrainedModel, onError: setError });
+  /**
+   * Pre-computed set of class names that appear more than once (O(n) vs O(n²) per render).
+   */
+  const duplicateClassNames = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of classes) {
+      const name = c.name.trim();
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+    return new Set([...counts.entries()].filter(([, n]) => n > 1).map(([name]) => name));
+  }, [classes]);
+
+  const hasDuplicateNames = duplicateClassNames.size > 0;
+
+  const { isTraining, trainModel: runTraining, canTrain, hasInvalidNames } =
+    useModelTraining(classes, classifier, { setClassifier, setHasTrainedModel, onError: setError }, hasDuplicateNames);
 
   /**
    * Clears any previous error before starting a new training run.
@@ -139,18 +153,6 @@ export default function TrainingPage() {
   const addImageExample = useCallback((classId: string, imageElement: HTMLImageElement) => {
     addImageToClass(classId, imageElement, false);
   }, [addImageToClass]);
-
-  /**
-   * Pre-computed set of class names that appear more than once (O(n) vs O(n²) per render).
-   */
-  const duplicateClassNames = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const c of classes) {
-      const name = c.name.trim();
-      counts.set(name, (counts.get(name) ?? 0) + 1);
-    }
-    return new Set([...counts.entries()].filter(([, n]) => n > 1).map(([name]) => name));
-  }, [classes]);
 
   /**
    * Removes multiple images and closes the preview modal if the currently
