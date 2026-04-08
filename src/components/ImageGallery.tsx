@@ -60,7 +60,7 @@ const ImageThumbnail = memo(function ImageThumbnail({ img, imgIndex, isSelection
           : 'Bild vergrößern'
       }
       className={cn(
-        'aspect-square rounded-lg overflow-hidden border cursor-pointer transition-all relative block w-full h-full p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500',
+        'aspect-square rounded-lg overflow-hidden border cursor-pointer transition-all relative block w-full h-full p-0 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500',
         isSelectionMode
           ? isSelected
             ? 'ring-2'
@@ -202,7 +202,7 @@ const ImageGallery = memo(function ImageGallery({
                 onClick={handleBulkDelete}
                 disabled={selectedIds.size === 0}
                 aria-label={`${selectedIds.size} ausgewählte Bilder löschen`}
-                className="text-[10px] font-bold py-1.5 px-3 min-h-[24px] min-w-[44px] transition-opacity hover:opacity-70 disabled:text-zinc-300 disabled:opacity-50"
+                className="text-[10px] font-bold py-1.5 px-3 min-h-[44px] min-w-[44px] transition-opacity hover:opacity-70 disabled:text-zinc-300 disabled:opacity-50"
                 style={{ color: selectedIds.size > 0 ? color : undefined }}
               >
                 Löschen
@@ -213,7 +213,7 @@ const ImageGallery = memo(function ImageGallery({
                   setSelectedIds(new Set());
                 }}
                 aria-label="Auswahl abbrechen"
-                className="text-[10px] font-bold py-1.5 px-3 min-h-[24px] min-w-[44px] text-zinc-600 hover:text-zinc-700 transition-colors"
+                className="text-[10px] font-bold py-1.5 px-3 min-h-[44px] min-w-[44px] text-zinc-600 hover:text-zinc-700 transition-colors"
               >
                 Abbrechen
               </button>
@@ -223,7 +223,7 @@ const ImageGallery = memo(function ImageGallery({
               <button
                 onClick={() => setIsSelectionMode(true)}
                 aria-label="Bilder auswählen"
-                className="text-[10px] font-bold py-1.5 px-3 min-h-[24px] min-w-[44px] transition-opacity hover:opacity-70"
+                className="text-[10px] font-bold py-1.5 px-3 min-h-[44px] min-w-[44px] transition-opacity hover:opacity-70"
                 style={{ color }}
               >
                 Auswählen
