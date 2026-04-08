@@ -136,6 +136,47 @@ async function loadMobileNet(
 }
 
 /**
+ * Pre-compiles WebGL shaders for the KNN training and prediction operations by running
+ * a dummy forward pass through MobileNet + KNN. Without this warmup, shader compilation
+ * happens on the user's first training run, causing visible UI lag. After warmup the
+ * compiled shaders are cached in the WebGL context and all subsequent calls are fast.
+ *
+ * Uses `tf.tidy` to ensure all intermediate tensors are freed automatically.
+ *
+ * @param model - The already-loaded MobileNet instance.
+ * @param signal - AbortSignal to cancel the warmup if consent is revoked or the component unmounts.
+ */
+async function warmupKnnShaders(model: FeatureExtractor, signal: AbortSignal): Promise<void> {
+  if (signal.aborted) return;
+  const dummyClassifier = knnClassifier.create();
+  try {
+    // Run two dummy examples (two different class IDs) so that predictClass has
+    // at least one example per class and compiles the full distance-computation path.
+    for (let classId = 0; classId < 2; classId++) {
+      const features = tf.tidy(() => {
+        const dummyImg = tf.zeros([224, 224, 3]) as tf.Tensor3D;
+        return model.infer(dummyImg, true);
+      });
+      dummyClassifier.addExample(features, String(classId));
+      features.dispose();
+    }
+    if (signal.aborted) return;
+    // Trigger predictClass to compile the distance-computation shaders.
+    const dummyInput = tf.tidy(() => {
+      const img = tf.zeros([224, 224, 3]) as tf.Tensor3D;
+      return model.infer(img, true);
+    });
+    try {
+      await dummyClassifier.predictClass(dummyInput);
+    } finally {
+      dummyInput.dispose();
+    }
+  } finally {
+    dummyClassifier.dispose();
+  }
+}
+
+/**
  * Optional dependency-injection interface for the three model-loading steps.
  * Provide this in tests to avoid real TF.js / network calls.
  */
@@ -204,6 +245,10 @@ export function useModelLoader(
         const mn = await _loadFeatureExtractor(setLoadingText, signal);
         if (signal.aborted) return;
         setMobilenetModel(mn);
+
+        setLoadingText('Optimiere GPU-Performance...');
+        await warmupKnnShaders(mn, signal);
+        if (signal.aborted) return;
 
         setIsModelLoading(false);
       } catch (err) {
