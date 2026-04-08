@@ -29,7 +29,7 @@ Hier findet der Machine-Learning-Workflow vollständig im Browser statt:
 
 *   **Modernes Framework:** Entwickelt mit React 19 für höchste Performance und Reaktivität.
 *   **Interaktives Lernen:** Trainiere deine eigene "Maschine" ohne Vorkenntnisse direkt im Browser.
-*   **Visuelle Rückmeldung:** Flüssige UI-Animationen mit Framer Motion visualisieren den Lernprozess.
+*   **Visuelle Rückmeldung:** Flüssige UI-Animationen mit dem motion-Paket (v12) visualisieren den Lernprozess.
 *   **Vite 8 Speed:** Optimiert für blitzschnelle Ladezeiten.
 *   **Responsive Design:** Nahtlose Nutzung auf Desktop, Tablet und Smartphone dank Tailwind CSS 4.
 *   **Vollständiger Datenschutz:** Client-seitige Verarbeitung mit TensorFlow.js schützt deine Privatsphäre.
@@ -41,7 +41,7 @@ Die Anwendung nutzt **Tailwind CSS 4** für ein konsistentes und modernes Ersche
 **Design-Highlights**
 - **Branding:** Ein markantes Rot (`#D51317`) leitet den Nutzer durch die Anwendung.
 - **Benutzeroberfläche:** Ein klares, kartenbasiertes Design mit dezenten Schatten sorgt für Übersichtlichkeit.
-- **Interaktionen:** Hochwertige Animationen durch **Framer Motion** machen den Workflow greifbar.
+- **Interaktionen:** Hochwertige Animationen durch das **motion-Paket (v12)** machen den Workflow greifbar.
 - **Symbolik:** Präzise Icons von **Lucide React** unterstützen die intuitive Bedienung.
 
 ## 🚀 So benutzt du es
@@ -79,9 +79,16 @@ Die Anwendung nutzt **Tailwind CSS 4** für ein konsistentes und modernes Ersche
     ```
     Die App ist unter `http://localhost:3000` erreichbar.
 
-4.  **Produktions-Build erstellen:**
+4.  **Produktions-Build erstellen und starten:**
     ```bash
     npm run build
+    npm start
+    ```
+
+5.  **Alternativ mit Docker:**
+    ```bash
+    docker build -t teachable-machine .
+    docker run -p 3000:3000 --env-file .env teachable-machine
     ```
 
 ## 🛠️ Technischer Stack
@@ -92,8 +99,9 @@ Die Anwendung nutzt **Tailwind CSS 4** für ein konsistentes und modernes Ersche
 *   **Styling:** [Tailwind CSS 4](https://tailwindcss.com/)
 *   **Routing:** [React Router 7](https://reactrouter.com/)
 *   **KI/ML:** [TensorFlow.js](https://www.tensorflow.org/js) (MobileNet & KNN Classifier)
-*   **Animationen:** [Framer Motion](https://www.framer.com/motion/)
+*   **Animationen:** [motion (v12)](https://motion.dev/) (ehemals Framer Motion)
 *   **Icons:** [Lucide React](https://lucide.dev/)
+*   **Server:** [Express](https://expressjs.com/) mit Helmet CSP und Rate Limiting
 
 ## 🤝 Mitwirken
 
@@ -136,7 +144,7 @@ This is where the machine learning workflow takes place entirely in the browser:
 
 *   **Modern Framework:** Built with React 19 for maximum performance and reactivity.
 *   **Interactive Learning:** Train your own "machine" directly in the browser with no prior knowledge.
-*   **Visual Feedback:** Smooth UI animations with Framer Motion visualize the learning process.
+*   **Visual Feedback:** Smooth UI animations with the motion package (v12) visualize the learning process.
 *   **Vite 8 Speed:** Optimized for lightning-fast loading times.
 *   **Responsive Design:** Seamless use on desktop, tablet, and smartphone thanks to Tailwind CSS 4.
 *   **Full Privacy:** Client-side processing with TensorFlow.js protects your privacy.
@@ -148,7 +156,7 @@ The application uses **Tailwind CSS 4** for a consistent and modern appearance.
 **Design Highlights**
 - **Branding:** A striking red (`#D51317`) guides the user through the application.
 - **User Interface:** A clear, card-based design with subtle shadows ensures clarity.
-- **Interactions:** High-quality animations by **Framer Motion** make the workflow tangible.
+- **Interactions:** High-quality animations by the **motion package (v12)** make the workflow tangible.
 - **Symbolism:** Precise icons from **Lucide React** support intuitive operation.
 
 ## 🚀 How to Use It
@@ -186,9 +194,16 @@ The application uses **Tailwind CSS 4** for a consistent and modern appearance.
     ```
     The app is accessible at `http://localhost:3000`.
 
-4.  **Create Production Build:**
+4.  **Create Production Build and Start:**
     ```bash
     npm run build
+    npm start
+    ```
+
+5.  **Alternatively with Docker:**
+    ```bash
+    docker build -t teachable-machine .
+    docker run -p 3000:3000 --env-file .env teachable-machine
     ```
 
 ## 🛠️ Technical Stack
@@ -199,8 +214,9 @@ The application uses **Tailwind CSS 4** for a consistent and modern appearance.
 *   **Styling:** [Tailwind CSS 4](https://tailwindcss.com/)
 *   **Routing:** [React Router 7](https://reactrouter.com/)
 *   **AI/ML:** [TensorFlow.js](https://www.tensorflow.org/js) (MobileNet & KNN Classifier)
-*   **Animations:** [Framer Motion](https://www.framer.com/motion/)
+*   **Animations:** [motion (v12)](https://motion.dev/) (formerly Framer Motion)
 *   **Icons:** [Lucide React](https://lucide.dev/)
+*   **Server:** [Express](https://expressjs.com/) with Helmet CSP and rate limiting
 
 ## 🤝 Contributing
 
