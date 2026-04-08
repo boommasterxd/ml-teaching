@@ -156,15 +156,15 @@ function LayerNodes({ activeSignal, animStep }: LayerNodesProps) {
                     "w-full h-full rounded-full transition-[opacity,transform] duration-500",
                     isNodeActive
                       ? glowColor + " shadow-[0_0_15px_rgba(0,0,0,0.5)] border-transparent scale-110 opacity-100"
-                      : "bg-zinc-700 border-2 border-zinc-600 opacity-30"
+                      : "bg-zinc-500 border-2 border-zinc-400 opacity-60"
                   )}
                 />
                 {isOutput && (
                   <span className={cn(
                     "absolute left-full ml-4 top-1/2 -translate-y-1/2 whitespace-nowrap font-medium transition-all duration-500",
                     animStep >= 7 && isTargetNode
-                      ? (activeSignal === 'dog' ? "text-red-400 opacity-100 translate-x-0" : "text-blue-400 opacity-100 translate-x-0")
-                      : "text-[#52525b] opacity-100 translate-x-0"
+                      ? (activeSignal === 'dog' ? "text-red-400 opacity-100 translate-x-0" : "text-blue-300 opacity-100 translate-x-0")
+                      : "text-zinc-400 opacity-100 translate-x-0"
                   )}>
                     {nodeIdx === 0 ? 'Hund' : 'Katze'}
                   </span>

@@ -56,7 +56,7 @@ export default function TrainingClassesPanel({
         <div className="flex gap-2">
           <button
             onClick={onShowClearConfirm}
-            className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-200 text-red-600 hover:bg-red-50 hover:border-red-200 rounded-xl text-sm font-medium transition-colors shadow-sm"
+            className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-400 text-red-600 hover:bg-red-50 hover:border-red-400 rounded-xl text-sm font-medium transition-colors shadow-sm"
             title="Alles zurücksetzen"
             aria-label="Alle Klassen und Bilder zurücksetzen"
           >
@@ -66,7 +66,7 @@ export default function TrainingClassesPanel({
           <button
             onClick={onAddClass}
             disabled={classes.length >= ML.MAX_CLASSES}
-            className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl text-sm font-medium transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-zinc-700"
+            className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-400 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl text-sm font-medium transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-zinc-700"
             title={classes.length >= ML.MAX_CLASSES ? `Maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht` : 'Neue Klasse hinzufügen'}
             aria-label={classes.length >= ML.MAX_CLASSES ? `Hinzufügen deaktiviert — maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht` : 'Neue Klasse hinzufügen'}
           >

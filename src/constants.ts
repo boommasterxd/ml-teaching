@@ -118,12 +118,12 @@ export const NEURAL_NET_VIZ = {
   COLORS: {
     DOG: '#ef4444',
     CAT: '#3b82f6',
-    INACTIVE: '#52525b',
+    INACTIVE: '#a1a1aa',
   },
   /** Opacity values for active vs. inactive SVG connection lines. */
   OPACITY: {
     ACTIVE: 0.6,
-    INACTIVE: 0.15,
+    INACTIVE: 0.35,
   },
   /** Human-readable demo result labels shown after the animation completes. */
   DEMO_RESULTS: {
