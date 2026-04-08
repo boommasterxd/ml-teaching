@@ -20,7 +20,13 @@ npm test             # Vitest (einmaliger Durchlauf)
 npm run test:watch   # Vitest im Watch-Modus
 ```
 
-Tests liegen in `src/__tests__/` (jsdom-Umgebung, Globals aktiviert). Vitest ist in `vite.config.ts` unter `test:` konfiguriert — es gibt keine separate `vitest.config.*`-Datei.
+Tests liegen in `src/__tests__/` (jsdom-Umgebung, Globals aktiviert). Vitest ist in `vite.config.ts` unter `test:` konfiguriert - es gibt keine separate `vitest.config.*`-Datei.
+
+Einzelnen Test ausführen:
+```bash
+npm test -- useModelLoader          # Dateiname als Filter
+npm test -- --reporter=verbose      # Ausführliche Ausgabe
+```
 
 ## Architektur
 
@@ -55,7 +61,11 @@ Tests liegen in `src/__tests__/` (jsdom-Umgebung, Globals aktiviert). Vitest ist
 
 **Modal-Pattern:** Alle Modals nutzen `Dialog.tsx` als Basis (Focus-Trap + Scroll-Lock + ARIA). Modals in `TrainingPage.tsx` werden über eine diskriminierte Union in `useModalState` verwaltet (`ModalState` = `'none' | 'imagePreview' | 'clearConfirm' | 'clearClass' | 'removeClass'`).
 
-**Typen:** `src/types/ml.ts` definiert `MLImage` (id, dataUrl, featureArray), `MLClass`, `Prediction`. `src/types/errors.ts` definiert `AppError` mit `ErrorCategory` (`'model' | 'camera' | 'training' | 'prediction' | 'validation'`).
+**Typen:** `src/types/ml.ts` definiert `MLImage` (id, dataUrl, featureArray), `MLClass`, `Prediction`. `src/types/errors.ts` definiert `AppError` mit `ErrorCategory` (`'model' | 'camera' | 'training' | 'prediction' | 'validation'`). `src/types/ml-models.ts` definiert minimale Interfaces (`FeatureExtractor`, `Classifier`) für TF.js-Abhängigkeiten - Hooks hängen von diesen Interfaces ab statt von konkreten TF.js-Typen, damit Tests ohne echtes TF.js-Runtime laufen.
+
+**Test-DI-Muster:** ML-Hooks akzeptieren optionale `loaderFns`-Parameter (z.B. `ModelLoaderFunctions` in `useModelLoader`), über die im Test Stub-Implementierungen injiziert werden. Nie reale TF.js-Aufrufe in Tests verwenden.
+
+**`TrainingPageModals.tsx`:** Extrakt-Komponente, die alle `useModalState`-gesteuerten Dialoge kapselt. Consent- und Loading-Modals bleiben in `TrainingPage.tsx`, da sie an den Consent-Flow gebunden sind.
 
 **Build-Output:**
 - `dist/` — Client-Build (Vite), mit separaten Chunks für React, TensorFlow, Framer Motion, Lucide
