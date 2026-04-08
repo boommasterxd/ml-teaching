@@ -53,7 +53,7 @@ export const SERVER = {
  */
 export const CSP_DIRECTIVES = {
   "default-src": ["'none'"],
-  "script-src": ["'self'"],
+  "script-src": ["'self'", "'wasm-unsafe-eval'"],
   "style-src": ["'self'"],
   "img-src": ["'self'", "data:"],
   "connect-src": ["'self'", "https://storage.googleapis.com", "https://*.gstatic.com", "https://tfhub.dev", "https://www.kaggle.com"],
