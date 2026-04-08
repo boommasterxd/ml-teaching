@@ -38,8 +38,14 @@ export const SERVER = {
  * are identical, so they are centralized here to avoid duplication.
  *
  * - `default-src 'none'`: deny-by-default; every unlisted resource type is blocked.
- * - `script-src 'self'`: wasm-unsafe-eval is intentionally omitted — the app forces
- *   the WebGL backend of TensorFlow.js, not the WASM backend.
+ * - `script-src 'self' 'wasm-unsafe-eval'`: allows the browser to compile and execute
+ *   WebAssembly modules, which TensorFlow.js requires even when the WebGL backend is
+ *   used (TF.js internally compiles WASM regardless of the active backend). This is
+ *   less permissive than `'unsafe-eval'` (which would allow arbitrary JS via eval/new
+ *   Function) — WASM execution is the only additional capability granted. The risk is
+ *   low here because: (a) WASM files are bundled with the app, not fetched from external
+ *   sources at runtime, and (b) `connect-src` is scoped to trusted Google/TF origins,
+ *   preventing arbitrary WASM from being loaded.
  * - `img-src data:`: required for camera captures (canvas.toDataURL).
  * - `connect-src`: scoped to Google Storage, TensorFlow Hub, and Kaggle for MobileNet
  *   model downloads.
