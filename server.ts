@@ -51,8 +51,9 @@ app.set('trust proxy', 1);
  *   violations (inline scripts, HMR WebSocket) are expected noise in this mode.
  *
  * Additional headers:
- * - `Cross-Origin-Embedder-Policy` is disabled because TF.js loads model weights
- *   cross-origin (Google Storage, TF Hub), which COEP would block.
+ * - `Cross-Origin-Embedder-Policy` is set to `credentialless`, which allows cross-origin
+ *   resources without CORS headers (required for TF.js model downloads from Google Storage
+ *   and TF Hub) while still providing better isolation than disabling COEP entirely.
  * - `Cross-Origin-Opener-Policy` is set to `same-origin` to isolate the browsing context.
  * - `X-Frame-Options` is set to `DENY` to prevent clickjacking.
  * - HSTS is enabled with a 1-year max-age, subdomain inclusion, and preload.
@@ -61,8 +62,8 @@ app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production'
     ? { directives: CSP_DIRECTIVES }
     : { reportOnly: true, directives: CSP_DIRECTIVES },
-  // COEP is disabled because TensorFlow.js loads model weights cross-origin (Google Storage, TF Hub)
-  crossOriginEmbedderPolicy: false,
+  // COEP: credentialless allows cross-origin resources without CORS headers (needed for TF.js model downloads)
+  crossOriginEmbedderPolicy: { policy: 'credentialless' },
   // COOP: isolates the browsing context to prevent cross-origin window access
   crossOriginOpenerPolicy: { policy: 'same-origin' },
   xFrameOptions: { action: 'deny' },

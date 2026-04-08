@@ -82,7 +82,7 @@ describe('useModelTraining', () => {
   describe('canTrain', () => {
     it('is false when fewer than MIN_CLASSES classes are provided', () => {
       const { result } = renderHook(() =>
-        useModelTraining([makeClasses(1)[0]], null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining([makeClasses(1)[0]], null, { setClassifier, setHasTrainedModel, onError }, false)
       );
       expect(result.current.canTrain).toBe(false);
     });
@@ -90,7 +90,7 @@ describe('useModelTraining', () => {
     it('is false when classes have fewer than the minimum number of images', () => {
       const classes = makeClasses(2, 0);
       const { result } = renderHook(() =>
-        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError }, false)
       );
       expect(result.current.canTrain).toBe(false);
     });
@@ -99,24 +99,22 @@ describe('useModelTraining', () => {
       const classes = makeClasses(2);
       classes[0].name = '';
       const { result } = renderHook(() =>
-        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError }, false)
       );
       expect(result.current.canTrain).toBe(false);
     });
 
-    it('is false when class names are duplicates', () => {
+    it('is false when hasDuplicateNames is true', () => {
       const classes = makeClasses(2);
-      classes[0].name = 'Gleich';
-      classes[1].name = 'Gleich';
       const { result } = renderHook(() =>
-        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError }, true)
       );
       expect(result.current.canTrain).toBe(false);
     });
 
     it('is true when enough classes, images, and unique names are provided', () => {
       const { result } = renderHook(() =>
-        useModelTraining(makeClasses(2), null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(makeClasses(2), null, { setClassifier, setHasTrainedModel, onError }, false)
       );
       expect(result.current.canTrain).toBe(true);
     });
@@ -127,7 +125,7 @@ describe('useModelTraining', () => {
       const classes = makeClasses(2);
       classes[0].name = '';
       const { result } = renderHook(() =>
-        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError }, false)
       );
       expect(result.current.hasInvalidNames).toBe(true);
     });
@@ -136,35 +134,34 @@ describe('useModelTraining', () => {
       const classes = makeClasses(2);
       classes[0].name = '   ';
       const { result } = renderHook(() =>
-        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError }, false)
       );
       expect(result.current.hasInvalidNames).toBe(true);
     });
 
     it('is false when all names are valid', () => {
       const { result } = renderHook(() =>
-        useModelTraining(makeClasses(2), null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(makeClasses(2), null, { setClassifier, setHasTrainedModel, onError }, false)
       );
       expect(result.current.hasInvalidNames).toBe(false);
     });
   });
 
-  describe('hasDuplicateNames', () => {
-    it('detects duplicate class names after trimming whitespace', () => {
-      const classes = makeClasses(2);
-      classes[0].name = ' Gleich ';
-      classes[1].name = 'Gleich';
+  describe('hasDuplicateNames parameter', () => {
+    it('canTrain is false when hasDuplicateNames=true is passed', () => {
       const { result } = renderHook(() =>
-        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(makeClasses(2), null, { setClassifier, setHasTrainedModel, onError }, true)
       );
-      expect(result.current.hasDuplicateNames).toBe(true);
+      expect(result.current.canTrain).toBe(false);
     });
 
-    it('is false when all names are unique', () => {
+    it('trainModel calls onError with validation when hasDuplicateNames=true is passed', async () => {
       const { result } = renderHook(() =>
-        useModelTraining(makeClasses(3), null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(makeClasses(2), null, { setClassifier, setHasTrainedModel, onError }, true)
       );
-      expect(result.current.hasDuplicateNames).toBe(false);
+      await act(async () => { await result.current.trainModel(); });
+      expect(onError).toHaveBeenCalledWith('validation', expect.stringContaining('eindeutigen'));
+      expect(setClassifier).not.toHaveBeenCalled();
     });
   });
 
@@ -172,7 +169,7 @@ describe('useModelTraining', () => {
     it('calls onError when the minimum class count is not reached', async () => {
       const classes = makeClasses(1);
       const { result } = renderHook(() =>
-        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError }, false)
       );
 
       await act(async () => { await result.current.trainModel(); });
@@ -184,7 +181,7 @@ describe('useModelTraining', () => {
     it('calls onError when classes have too few images', async () => {
       const classes = makeClasses(2, 0);
       const { result } = renderHook(() =>
-        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError }, false)
       );
 
       await act(async () => { await result.current.trainModel(); });
@@ -195,7 +192,7 @@ describe('useModelTraining', () => {
     it('creates a new classifier and calls setClassifier on successful training', async () => {
       const classes = makeClasses(2);
       const { result } = renderHook(() =>
-        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError }, false)
       );
 
       await act(async () => { await result.current.trainModel(); });
@@ -216,7 +213,7 @@ describe('useModelTraining', () => {
       };
       const classes = makeClasses(2);
       const { result } = renderHook(() =>
-        useModelTraining(classes, oldClassifier, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(classes, oldClassifier, { setClassifier, setHasTrainedModel, onError }, false)
       );
 
       await act(async () => { await result.current.trainModel(); });
@@ -227,7 +224,7 @@ describe('useModelTraining', () => {
     it('isTraining is false after training completes', async () => {
       const classes = makeClasses(2);
       const { result } = renderHook(() =>
-        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError }, false)
       );
 
       expect(result.current.isTraining).toBe(false);
@@ -241,7 +238,7 @@ describe('useModelTraining', () => {
 
       const classes = makeClasses(2);
       const { result } = renderHook(() =>
-        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError })
+        useModelTraining(classes, null, { setClassifier, setHasTrainedModel, onError }, false)
       );
 
       await act(async () => { await result.current.trainModel(); });
