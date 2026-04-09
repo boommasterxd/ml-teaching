@@ -168,6 +168,11 @@ app.post(
  * server alive in that state risks silent data corruption or inconsistent
  * behaviour, so a clean exit and a process-supervisor restart is preferable.
  */
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
   process.exit(1);
@@ -232,4 +237,7 @@ async function setupServer() {
   });
 }
 
-setupServer();
+setupServer().catch((err) => {
+  console.error('Fatal startup error:', err);
+  process.exit(1);
+});
