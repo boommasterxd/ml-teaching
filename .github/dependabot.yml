@@ -13,9 +13,6 @@ updates:
         dependency-type: "production"
       development-dependencies:
         dependency-type: "development"
-    ignore:
-      - dependency-name: "@tensorflow/*"
-        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "docker"
     directory: "/"
