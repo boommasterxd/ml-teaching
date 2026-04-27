@@ -16,7 +16,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.2.2",
+    "@tailwindcss/vite": "^4.2.4",
     "@tanstack/react-virtual": "^3.13.24",
     "@tensorflow-models/knn-classifier": "^1.2.6",
     "@tensorflow-models/mobilenet": "^2.1.1",
@@ -29,14 +29,14 @@
     "compression": "^1.8.1",
     "dotenv": "^17.4.2",
     "express": "5.2.1",
-    "express-rate-limit": "^8.3.1",
+    "express-rate-limit": "^8.4.1",
     "express-static-gzip": "^3.0.0",
     "helmet": "^8.1.0",
-    "lucide-react": "^1.8.0",
+    "lucide-react": "^1.11.0",
     "motion": "^12.38.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-router-dom": "^7.14.1",
+    "react-router-dom": "^7.14.2",
     "tailwind-merge": "^3.5.0",
     "vite-plugin-compression2": "^2.5.3",
     "vite-plugin-image-optimizer": "^2.0.3"
