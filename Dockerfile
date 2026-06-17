@@ -12,6 +12,9 @@ FROM node:lts-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 
+# curl für Coolify-Healthcheck (node:lts-alpine bringt es nicht mit)
+RUN apk add --no-cache curl
+
 # Verzeichnis für die Datenbank erstellen und Berechtigungen setzen
 RUN mkdir -p /app/database && chown -R node:node /app/database
 
