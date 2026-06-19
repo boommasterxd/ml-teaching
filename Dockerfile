@@ -1,6 +1,10 @@
 # Stage 1: Build & Dependencies
-FROM node:lts-alpine AS builder
-RUN apk add --no-cache python3 make g++ 
+# glibc-Basis (Debian slim) statt Alpine/musl: Vite 8 nutzt den nativen
+# Rolldown-Bundler, dessen musl-Binding beim Chunk-Rendering crasht (silent
+# exit 255). Auf glibc läuft der Build stabil durch.
+FROM node:lts-slim AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
@@ -8,12 +12,13 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production
-FROM node:lts-alpine
+FROM node:lts-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
-# curl für Coolify-Healthcheck (node:lts-alpine bringt es nicht mit)
-RUN apk add --no-cache curl
+# curl für Coolify-Healthcheck (node:lts-slim bringt es nicht mit)
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Verzeichnis für die Datenbank erstellen und Berechtigungen setzen
 RUN mkdir -p /app/database && chown -R node:node /app/database
