@@ -8,11 +8,13 @@ updates:
       time: "08:00"
       timezone: "Europe/Berlin"
     open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
     groups:
-      production-dependencies:
-        dependency-type: "production"
-      development-dependencies:
-        dependency-type: "development"
+      minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "docker"
     directory: "/"
@@ -21,3 +23,28 @@ updates:
       day: "monday"
       time: "08:00"
       timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    groups:
+      minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github-actions"
+    groups:
+      minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
