@@ -85,7 +85,7 @@ npm test -- --reporter=verbose      # Ausführliche Ausgabe
 ## Deployment
 
 ```bash
-docker build -t teachable-machine .
+docker build --pull -t teachable-machine .
 docker run -p 3000:3000 --env-file .env teachable-machine
 ```
 
