@@ -57,7 +57,7 @@ Die Anwendung nutzt **Tailwind CSS 4** für ein konsistentes und modernes Ersche
 
 ### Voraussetzungen
 
-*   **Node.js** (Version 18 oder neuer)
+*   **Node.js** (neueste Version innerhalb von 24.x)
 *   **npm** oder **yarn**
 
 ### Installation
@@ -87,7 +87,7 @@ Die Anwendung nutzt **Tailwind CSS 4** für ein konsistentes und modernes Ersche
 
 5.  **Alternativ mit Docker:**
     ```bash
-    docker build -t teachable-machine .
+    docker build --pull -t teachable-machine .
     docker run -p 3000:3000 --env-file .env teachable-machine
     ```
 
@@ -172,7 +172,7 @@ The application uses **Tailwind CSS 4** for a consistent and modern appearance.
 
 ### Prerequisites
 
-*   **Node.js** (Version 18 or newer)
+*   **Node.js** (latest version within 24.x)
 *   **npm** or **yarn**
 
 ### Installation
@@ -202,7 +202,7 @@ The application uses **Tailwind CSS 4** for a consistent and modern appearance.
 
 5.  **Alternatively with Docker:**
     ```bash
-    docker build -t teachable-machine .
+    docker build --pull -t teachable-machine .
     docker run -p 3000:3000 --env-file .env teachable-machine
     ```
 
