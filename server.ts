@@ -222,7 +222,7 @@ async function setupServer() {
     // SPA fallback with no-cache headers for index.html
     app.get('*path', (_req, res) => {
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-      res.sendFile(path.join(distPath, 'index.html'));
+      res.sendFile('index.html', { root: distPath });
     });
   }
 

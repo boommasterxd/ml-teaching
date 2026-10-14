@@ -25,7 +25,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
       <nav aria-label="Hauptnavigation" className="bg-white border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-        <a href="/" aria-label="Zur Startseite" className="flex items-center gap-3 hover:opacity-80 transition-opacity rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2">
+        <a href="/" aria-label="KI Bilderkennung: Zur Startseite" className="flex items-center gap-3 hover:opacity-80 transition-opacity rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2">
           <img
             src="/brain.webp"
             srcSet="/brain-48.webp 48w, /brain-96.webp 96w"
