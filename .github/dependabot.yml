@@ -10,7 +10,7 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
-    # Match Node.js declarations to the supported 24.x runtime API.
+    # Match Node.js declarations to the supported 26.x runtime API.
     # Reassess this major restriction with each reviewed Node.js LTS upgrade.
     ignore:
       - dependency-name: "@types/node"
@@ -23,7 +23,7 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/"
-    # Keep Docker aligned with the supported Node.js 24.x runtime baseline.
+    # Keep Docker aligned with the supported Node.js 26.x runtime baseline.
     ignore:
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
