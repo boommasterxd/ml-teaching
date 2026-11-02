@@ -1,5 +1,5 @@
 # Stage 1: Build & Dependencies
-FROM node:24-alpine AS builder
+FROM node:26-alpine AS builder
 RUN apk add --no-cache python3 make g++ 
 WORKDIR /app
 COPY package*.json ./
@@ -8,11 +8,11 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production
-FROM node:24-alpine
+FROM node:26-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 
-# curl für Coolify-Healthcheck (node:24-alpine bringt es nicht mit)
+# curl für Coolify-Healthcheck (node:26-alpine bringt es nicht mit)
 RUN apk add --no-cache curl
 
 # Verzeichnis für die Datenbank erstellen und Berechtigungen setzen

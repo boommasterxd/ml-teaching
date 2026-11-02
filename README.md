@@ -57,7 +57,7 @@ Die Anwendung nutzt **Tailwind CSS 4** für ein konsistentes und modernes Ersche
 
 ### Voraussetzungen
 
-*   **Node.js** (neueste Version innerhalb von 24.x)
+*   **Node.js** (neueste Version innerhalb von 26.x)
 *   **npm** oder **yarn**
 
 ### Installation
@@ -172,7 +172,7 @@ The application uses **Tailwind CSS 4** for a consistent and modern appearance.
 
 ### Prerequisites
 
-*   **Node.js** (latest version within 24.x)
+*   **Node.js** (latest version within 26.x)
 *   **npm** or **yarn**
 
 ### Installation

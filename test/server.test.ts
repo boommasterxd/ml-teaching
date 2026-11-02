@@ -65,7 +65,8 @@ test('serves SPA routes from a hidden deployment directory without exposing hidd
   await writeFile(path.join(dist, '.secret'), 'PRIVATE_FIXTURE');
   const port = await availablePort();
   const child = spawn(process.execPath, [
-    fileURLToPath(new URL('../node_modules/tsx/dist/cli.mjs', import.meta.url)),
+    '--import',
+    new URL('../node_modules/tsx/dist/loader.mjs', import.meta.url).href,
     fileURLToPath(new URL('../server.ts', import.meta.url)),
   ], { cwd: root, env: { ...process.env, NODE_ENV: 'production', PORT: String(port) } });
   try {
