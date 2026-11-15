@@ -1,17 +1,12 @@
 name: Secret scan
 
-# Scans the working tree for committed secrets using the free gitleaks CLI.
-# Version + SHA256 live in .gitleaks-version (so the monthly update workflow can
-# bump them without touching a workflow file). The binary is verified against
-# the pinned checksum before it runs.
 on:
   pull_request:
-  push:
     branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: gitleaks-${{ github.ref }}
+  group: gitleaks-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -20,14 +15,43 @@ permissions:
 jobs:
   gitleaks:
     name: gitleaks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - name: Run gitleaks
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          ver=$(jq -r '.version' .gitleaks-version)
-          sum=$(jq -r '.sha256' .gitleaks-version)
-          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${ver}/gitleaks_${ver}_linux_x64.tar.gz" -o gitleaks.tar.gz
-          echo "${sum}  gitleaks.tar.gz" | sha256sum -c -
-          tar -xzf gitleaks.tar.gz gitleaks
-          ./gitleaks dir --no-banner --redact --exit-code 1 --verbose .
+          set -euo pipefail
+          manifest="$RUNNER_TEMP/gitleaks-version.json"
+          policy="$RUNNER_TEMP/gitleaks.toml"
+          if [ -n "$BASE_SHA" ]; then
+            git show "$BASE_SHA:.github/gitleaks-version.json" > "$manifest" 2>/dev/null \
+              || git show "$BASE_SHA:.gitleaks-version" > "$manifest"
+            git show "$BASE_SHA:.github/gitleaks.toml" > "$policy" 2>/dev/null \
+              || printf '[extend]\nuseDefault = true\n' > "$policy"
+          else
+            cp .github/gitleaks-version.json "$manifest"
+            cp .github/gitleaks.toml "$policy"
+          fi
+          ver=$(jq -er '.version | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))' "$manifest")
+          sum=$(jq -er '.sha256 | select(test("^[a-f0-9]{64}$"))' "$manifest")
+          archive="$RUNNER_TEMP/gitleaks.tar.gz"
+          curl --fail --silent --show-error --location --max-time 60 \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${ver}/gitleaks_${ver}_linux_x64.tar.gz" -o "$archive"
+          printf '%s  %s\n' "$sum" "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
+          # Gitleaks also reads source/.gitleaksignore independently of its flag.
+          # There are no reviewed fingerprints; the Git range still scans this path.
+          rm -f .gitleaksignore
+          "$RUNNER_TEMP/gitleaks" dir --config "$policy" --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow --timeout 180 --no-banner --redact --exit-code 1 .
+          if [ -n "$BASE_SHA" ]; then
+            "$RUNNER_TEMP/gitleaks" git --config "$policy" --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow --timeout 180 --no-banner --redact --exit-code 1 --log-opts="$BASE_SHA..$HEAD_SHA" .
+          else
+            "$RUNNER_TEMP/gitleaks" git --config "$policy" --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow --timeout 180 --no-banner --redact --exit-code 1 .
+          fi

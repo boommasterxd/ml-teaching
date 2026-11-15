@@ -6,11 +6,14 @@
  * All state and callbacks are passed in from TrainingPage.
  */
 import type React from 'react';
-import { Plus, RotateCcw } from 'lucide-react';
+import { Plus, RotateCcw } from './icons';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import ClassCard from './ClassCard';
 import type { ClassCardActions } from './ClassCard';
+import Button from './Button';
+import { Empty, EmptyDescription, EmptyHeader } from './ui/empty';
+import { AnimatedList, AnimatedListItem } from './ui/animated-list';
 
 /**
  * Props for the TrainingClassesPanel component.
@@ -50,50 +53,72 @@ export default function TrainingClassesPanel({
   onShowClearConfirm,
 }: TrainingClassesPanelProps) {
   return (
-    <div className="lg:col-span-7 space-y-6 min-w-0">
+    <div className="lg:col-span-7 flex min-w-0 flex-col gap-6">
       <div className="flex justify-between items-center">
-        <h1 ref={mainHeadingRef} tabIndex={-1} className="text-lg font-bold text-zinc-800 focus-visible:outline-none">1. Klassen ({classes.length})</h1>
+        <h1
+          ref={mainHeadingRef}
+          tabIndex={-1}
+          className="text-lg font-bold text-foreground focus-visible:outline-none"
+        >
+          1. Klassen ({classes.length})
+        </h1>
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="outline-destructive"
+            size="toolbar"
             onClick={onShowClearConfirm}
-            className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-400 text-red-600 hover:bg-red-50 hover:border-red-400 rounded-xl text-sm font-medium transition-colors shadow-sm"
             title="Alles zurücksetzen"
             aria-label="Alle Klassen und Bilder zurücksetzen"
           >
-            <RotateCcw className="w-4 h-4 sm:mr-2" aria-hidden="true" />
+            <RotateCcw data-icon="inline-start" aria-hidden="true" />
             <span className="hidden sm:inline">Zurücksetzen</span>
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="toolbar"
             onClick={onAddClass}
             disabled={classes.length >= ML.MAX_CLASSES}
-            className="flex items-center px-3 sm:px-4 py-2 bg-white border border-zinc-400 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl text-sm font-medium transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-zinc-700"
-            title={classes.length >= ML.MAX_CLASSES ? `Maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht` : 'Neue Klasse hinzufügen'}
-            aria-label={classes.length >= ML.MAX_CLASSES ? `Hinzufügen deaktiviert — maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht` : 'Neue Klasse hinzufügen'}
+            title={
+              classes.length >= ML.MAX_CLASSES
+                ? `Maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht`
+                : 'Neue Klasse hinzufügen'
+            }
+            aria-label={
+              classes.length >= ML.MAX_CLASSES
+                ? `Hinzufügen deaktiviert, maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht`
+                : 'Neue Klasse hinzufügen'
+            }
           >
-            <Plus className="w-4 h-4 sm:mr-2" aria-hidden="true" />
+            <Plus data-icon="inline-start" aria-hidden="true" />
             <span className="hidden sm:inline">Hinzufügen</span>
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="space-y-6">
+      <AnimatedList>
         {classes.length === 0 ? (
-          <div className="text-center p-12 bg-white rounded-2xl border border-zinc-200 border-dashed">
-            <p className="text-zinc-600 text-sm">Keine Klassen vorhanden. Füge Klassen hinzu, um zu starten.</p>
-          </div>
+          <Empty key="empty">
+            <EmptyHeader>
+              <EmptyDescription>
+                Keine Klassen vorhanden. Füge Klassen hinzu, um zu starten.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
-          classes.map((cls: MLClass) => (
-            <ClassCard
-              key={cls.id}
-              cls={cls}
-              isDuplicate={duplicateClassNames.has(cls.name.trim())}
-              stream={stream}
-              facingMode={facingMode}
-              actions={cardActions}
-            />
+          classes.map((cls: MLClass, index) => (
+            <AnimatedListItem key={cls.id} emptyFocus={mainHeadingRef}>
+              <ClassCard
+                cls={cls}
+                position={index + 1}
+                isDuplicate={duplicateClassNames.has(cls.name.trim())}
+                stream={stream}
+                facingMode={facingMode}
+                actions={cardActions}
+              />
+            </AnimatedListItem>
           ))
         )}
-      </div>
+      </AnimatedList>
     </div>
   );
 }

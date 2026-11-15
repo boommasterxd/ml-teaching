@@ -1,15 +1,118 @@
 /*
  * index.css
  *
- * Global stylesheet for the Teachable Machine application.
+ * Global stylesheet for the ML Teaching application.
  * Imports Tailwind CSS, defines base resets (scrollbar, focus indicators),
  * custom animation utilities, and reduced-motion overrides.
  */
 
-@import "tailwindcss";
+@import 'tailwindcss';
+
+.gallery-region {
+  --gallery-columns: 4;
+  @variant sm {
+    --gallery-columns: 5;
+  }
+  @variant md {
+    --gallery-columns: 6;
+  }
+  @variant lg {
+    --gallery-columns: 5;
+  }
+  @variant xl {
+    --gallery-columns: 6;
+  }
+}
+
+@theme inline {
+  --font-sans: Arial, Helvetica, sans-serif;
+  --color-background: #fafafa;
+  --color-foreground: #18181b;
+  --color-primary: #4f46e5;
+  --color-primary-foreground: #ffffff;
+  --color-primary-hover: #4338ca;
+  --color-primary-soft: #eef2ff;
+  --color-secondary: #f4f4f5;
+  --color-secondary-foreground: #3f3f46;
+  --color-secondary-hover: #e4e4e7;
+  --color-muted: #f4f4f5;
+  --color-muted-foreground: #52525b;
+  --color-border: #e4e4e7;
+  --color-input: #d4d4d8;
+  --color-control: #a1a1aa;
+  --color-ring: #4f46e5;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #18181b;
+  --color-card: #ffffff;
+  --color-card-foreground: #18181b;
+  --color-accent: #f4f4f5;
+  --color-accent-foreground: #18181b;
+  --color-accent-soft: #f3e8ff;
+  --color-accent-strong: #7c3aed;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-destructive-hover: #b91c1c;
+  --color-destructive-soft: #fef2f2;
+  --color-destructive-soft-hover: #fee2e2;
+  --color-destructive-strong: #b91c1c;
+  --color-success: #047857;
+  --color-success-soft: #ecfdf5;
+  --color-success-border: #d1fae5;
+  --color-warning: #92400e;
+  --color-warning-soft: #fef3c7;
+  --color-diagram-surface: var(--color-zinc-800);
+  --color-diagram-border: var(--color-zinc-700);
+  --color-diagram-control: var(--color-zinc-700);
+  --color-diagram-control-border: var(--color-zinc-600);
+  --color-diagram-control-border-hover: var(--color-zinc-500);
+  --color-diagram-foreground: #ffffff;
+  --color-signal-dog: var(--color-red-400);
+  --color-signal-dog-active: var(--color-red-500);
+  --color-signal-cat: var(--color-blue-400);
+  --color-signal-cat-active: var(--color-blue-500);
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  background: white;
+  color: #18181b;
+  border-radius: 0.5rem;
+  transform: translateY(-200%);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+.dot-pattern {
+  background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0);
+  background-size: 32px 32px;
+}
+
+::view-transition-group(*) {
+  animation-duration: 180ms;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
 
 @layer base {
-  html, body {
+  html,
+  body {
     /* Clip any horizontal overflow to prevent layout widening on mobile
        (e.g. from elements with minimum intrinsic widths exceeding the viewport). */
     overflow-x: clip;
@@ -23,7 +126,8 @@
      Applying scrollbar-width: thin on mobile can force a non-overlay scrollbar
      that steals width from the content area and causes asymmetric margins. */
   @media (hover: hover) and (pointer: fine) {
-    html, body {
+    html,
+    body {
       scrollbar-width: thin;
       scrollbar-color: #a1a1aa transparent;
     }
@@ -60,36 +164,10 @@
   }
 }
 
-
-/* Custom utility class that triggers the node-glow animation. */
-@layer utilities {
-  .animate-node-glow {
-    animation: node-glow 1s ease-in-out forwards;
-  }
-}
-
-/* Pulse-and-scale animation used by the neural-network node visualization on the landing page. */
-@keyframes node-glow {
-  0% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.5);
-    opacity: 1;
-    box-shadow: 0 0 20px currentColor;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-}
-
 /* Respects the OS-level "reduce motion" preference (WCAG 2.3.3 / 2.2.2).
    Disables all Tailwind animation helpers and cuts all transition durations to
    near-zero so no motion occurs, while preserving layout and interaction. */
 @media (prefers-reduced-motion: reduce) {
-  .animate-node-glow,
   .animate-spin,
   .animate-pulse,
   .animate-bounce,
@@ -97,7 +175,9 @@
     animation: none;
   }
   /* Disable all CSS transitions for users who prefer reduced motion (WCAG 2.2.2) */
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }

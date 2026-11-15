@@ -2,10 +2,10 @@ name: Update gitleaks version
 
 # Monthly check for a new gitleaks release. gitleaks is a pinned CLI binary
 # (not an action or manifest dependency), so Dependabot cannot update it.
-# This bumps version + SHA256 in .gitleaks-version and opens a PR.
+# This bumps the reviewed scanner manifest and opens a normal PR.
 on:
   schedule:
-    - cron: "0 6 1 * *"
+    - cron: '0 6 1 * *'
   workflow_dispatch:
 
 permissions:
@@ -14,29 +14,49 @@ permissions:
 
 jobs:
   update:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Check for new release and open PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          latest=$(curl -sSfL https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-          current=$(jq -r '.version' .gitleaks-version)
+          set -euo pipefail
+          latest=$(curl -sSfL --max-time 60 https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+          [[ "$latest" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid upstream version"; exit 1; }
+          current=$(jq -r '.version' .github/gitleaks-version.json)
           echo "Current: $current | Latest: $latest"
           if [ -z "$latest" ] || [ "$latest" = "$current" ]; then echo "Up to date."; exit 0; fi
           branch="chore/gitleaks-${latest}"
           if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then echo "Branch exists."; exit 0; fi
-          checksum=$(curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${latest}/gitleaks_${latest}_checksums.txt" | grep "linux_x64.tar.gz" | awk '{print $1}')
-          if [ -z "$checksum" ]; then echo "Could not fetch checksum"; exit 1; fi
+          checksum=$(curl -sSfL --max-time 60 "https://github.com/gitleaks/gitleaks/releases/download/v${latest}/gitleaks_${latest}_checksums.txt" | grep "linux_x64.tar.gz" | awk '{print $1}')
+          [[ "$checksum" =~ ^[a-f0-9]{64}$ ]] || { echo "Invalid upstream checksum"; exit 1; }
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          jq --arg v "$latest" --arg s "$checksum" '.version=$v | .sha256=$s' .gitleaks-version > .gitleaks-version.tmp && mv .gitleaks-version.tmp .gitleaks-version
-          git add .gitleaks-version
+          jq --arg v "$latest" --arg s "$checksum" '.version=$v | .sha256=$s' .github/gitleaks-version.json > "$RUNNER_TEMP/gitleaks-version.json"
+          mv "$RUNNER_TEMP/gitleaks-version.json" .github/gitleaks-version.json
+          git add .github/gitleaks-version.json
           git commit -m "ci: bump gitleaks ${current} -> ${latest}"
+          gh auth setup-git
           git push -u origin "$branch"
+          cat > "$RUNNER_TEMP/pr-body.md" <<'BODY'
+          ## Problem
+
+          The pinned secret scanner has a newer upstream release.
+
+          ## Solution
+
+          Update only the scanner version and its published Linux archive checksum. Required checks still gate integration.
+
+          ## Verification
+
+          The updater validated the version and checksum format. The PR must pass the normal scanner and CI checks.
+          BODY
           gh pr create --title "ci: bump gitleaks ${current} -> ${latest}" \
-            --body "Updates the pinned gitleaks CLI version and its SHA256 checksum in .gitleaks-version." \
+            --body-file "$RUNNER_TEMP/pr-body.md" \
             --label dependencies \
             --base "$(gh api /repos/${GITHUB_REPOSITORY} --jq .default_branch)" --head "$branch"

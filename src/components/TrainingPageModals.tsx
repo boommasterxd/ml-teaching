@@ -7,8 +7,8 @@
  * as they are tied to the consent flow, not to modal state.
  */
 import { useCallback } from 'react';
-import { AlertCircle, RotateCcw, Trash2 } from 'lucide-react';
-import type { MLClass, MLImage } from '../types/ml';
+import { AlertCircle, RotateCcw, Trash2 } from './icons';
+import type { MLClass } from '../types/ml';
 import type { ModalState } from '../hooks/useModalState';
 import type { Classifier } from '../types/ml-models';
 import { ConfirmDialog, ImagePreviewModal } from './modals';
@@ -44,6 +44,86 @@ interface TrainingPageModalsProps {
  * Manages the handler callbacks internally so TrainingPage does not need to
  * declare them at the top level.
  */
+interface ConfirmationsProps extends Pick<
+  TrainingPageModalsProps,
+  'modal' | 'classes' | 'closeModal'
+> {
+  clearAll: () => void;
+  handleClearClassConfirm: () => void;
+  handleRemoveClassConfirm: () => void;
+}
+
+function Confirmations({
+  modal,
+  classes,
+  closeModal,
+  clearAll,
+  handleClearClassConfirm,
+  handleRemoveClassConfirm,
+}: ConfirmationsProps) {
+  return (
+    <>
+      <ConfirmDialog
+        isOpen={modal.type === 'clearConfirm'}
+        onClose={closeModal}
+        onConfirm={clearAll}
+        titleId="clear-modal-title"
+        descId="clear-modal-desc"
+        title="Daten unwiderruflich löschen?"
+        description="Möchten Sie wirklich alle erfassten Klassen und Bilddaten löschen? Das aktuell trainierte Modell wird dabei unwiderruflich entfernt und der Vorgang kann nicht rückgängig gemacht werden."
+        confirmLabel="Unwiderruflich löschen"
+        icon={<AlertCircle className="w-6 h-6" />}
+      />
+
+      <ConfirmDialog
+        isOpen={modal.type === 'clearClass'}
+        onClose={closeModal}
+        onConfirm={handleClearClassConfirm}
+        titleId="class-clear-modal-title"
+        descId="class-clear-modal-description"
+        title="Bilder dieser Klasse löschen?"
+        description={
+          <>
+            Möchten Sie wirklich alle Bilder der Klasse{' '}
+            <strong>
+              „
+              {modal.type === 'clearClass' ? classes.find((c) => c.id === modal.classId)?.name : ''}
+              “
+            </strong>{' '}
+            unwiderruflich löschen?
+          </>
+        }
+        confirmLabel="Zurücksetzen"
+        icon={<RotateCcw className="w-6 h-6" />}
+      />
+
+      <ConfirmDialog
+        isOpen={modal.type === 'removeClass'}
+        onClose={closeModal}
+        onConfirm={handleRemoveClassConfirm}
+        titleId="class-remove-modal-title"
+        descId="class-remove-modal-description"
+        title="Klasse löschen?"
+        description={
+          <>
+            Möchten Sie die Klasse{' '}
+            <strong>
+              „
+              {modal.type === 'removeClass'
+                ? classes.find((c) => c.id === modal.classId)?.name
+                : ''}
+              “
+            </strong>{' '}
+            und alle zugehörigen Bilder wirklich entfernen?
+          </>
+        }
+        confirmLabel="Löschen"
+        icon={<Trash2 className="w-6 h-6" />}
+      />
+    </>
+  );
+}
+
 export default function TrainingPageModals({
   modal,
   classes,
@@ -56,7 +136,6 @@ export default function TrainingPageModals({
   setHasTrainedModel,
   stopPredicting,
 }: TrainingPageModalsProps) {
-
   // Resets all classes, the trained model, and prediction state.
   const clearAll = useCallback(() => {
     resetClasses();
@@ -67,18 +146,24 @@ export default function TrainingPageModals({
   }, [classifier, stopPredicting, resetClasses, closeModal, setHasTrainedModel]);
 
   // Removes a single image and closes the preview modal.
-  const handleRemoveImage = useCallback((classId: string, imageId: string) => {
-    removeImage(classId, imageId);
-    closeModal();
-  }, [removeImage, closeModal]);
+  const handleRemoveImage = useCallback(
+    (classId: string, imageId: string) => {
+      removeImage(classId, imageId);
+      closeModal();
+    },
+    [removeImage, closeModal],
+  );
 
   // Clears all images from a class; closes the preview modal if it currently shows the same class.
-  const handleClearClass = useCallback((id: string) => {
-    clearClass(id);
-    if (modal.type === 'imagePreview' && modal.classId === id) {
-      closeModal();
-    }
-  }, [clearClass, modal, closeModal]);
+  const handleClearClass = useCallback(
+    (id: string) => {
+      clearClass(id);
+      if (modal.type === 'imagePreview' && modal.classId === id) {
+        closeModal();
+      }
+    },
+    [clearClass, modal, closeModal],
+  );
 
   // Confirms clearing all images from the class referenced in the modal.
   const handleClearClassConfirm = useCallback(() => {
@@ -102,51 +187,18 @@ export default function TrainingPageModals({
         isOpen={modal.type === 'imagePreview'}
         onClose={closeModal}
         image={modal.type === 'imagePreview' ? modal.image : null}
-        onDelete={() => modal.type === 'imagePreview' && handleRemoveImage(modal.classId, modal.image.id)}
-      />
-
-      <ConfirmDialog
-        isOpen={modal.type === 'clearConfirm'}
-        onClose={closeModal}
-        onConfirm={clearAll}
-        titleId="clear-modal-title"
-        descId="clear-modal-desc"
-        title="Daten unwiderruflich löschen?"
-        description="Möchten Sie wirklich alle erfassten Klassen und Bilddaten löschen? Das aktuell trainierte Modell wird dabei unwiderruflich entfernt und der Vorgang kann nicht rückgängig gemacht werden."
-        confirmLabel="Unwiderruflich löschen"
-        icon={<AlertCircle className="w-6 h-6" />}
-      />
-
-      <ConfirmDialog
-        isOpen={modal.type === 'clearClass'}
-        onClose={closeModal}
-        onConfirm={handleClearClassConfirm}
-        titleId="class-clear-modal-title"
-        descId="class-clear-modal-description"
-        title="Bilder dieser Klasse löschen?"
-        description={
-          <>Möchten Sie wirklich alle Bilder der Klasse{' '}
-            <strong>"{modal.type === 'clearClass' ? classes.find(c => c.id === modal.classId)?.name : ''}"</strong>{' '}
-            unwiderruflich löschen?</>
+        onDelete={() =>
+          modal.type === 'imagePreview' && handleRemoveImage(modal.classId, modal.image.id)
         }
-        confirmLabel="Zurücksetzen"
-        icon={<RotateCcw className="w-6 h-6" />}
       />
 
-      <ConfirmDialog
-        isOpen={modal.type === 'removeClass'}
-        onClose={closeModal}
-        onConfirm={handleRemoveClassConfirm}
-        titleId="class-remove-modal-title"
-        descId="class-remove-modal-description"
-        title="Klasse löschen?"
-        description={
-          <>Möchten Sie die Klasse{' '}
-            <strong>"{modal.type === 'removeClass' ? classes.find(c => c.id === modal.classId)?.name : ''}"</strong>{' '}
-            und alle zugehörigen Bilder wirklich entfernen?</>
-        }
-        confirmLabel="Löschen"
-        icon={<Trash2 className="w-6 h-6" />}
+      <Confirmations
+        modal={modal}
+        classes={classes}
+        closeModal={closeModal}
+        clearAll={clearAll}
+        handleClearClassConfirm={handleClearClassConfirm}
+        handleRemoveClassConfirm={handleRemoveClassConfirm}
       />
     </>
   );

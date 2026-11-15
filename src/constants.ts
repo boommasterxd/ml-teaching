@@ -63,7 +63,7 @@ export const CAMERA = {
 } as const;
 
 /**
- * Timing values for UI animations (Framer Motion step transitions).
+ * Timing for the educational forward-propagation sequence.
  */
 export const ANIMATION = {
   /** Duration in milliseconds for each animated step transition. */

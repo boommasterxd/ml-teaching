@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * NeuralNetViz.tsx
  *
@@ -7,13 +9,39 @@
  * during forward propagation. Users trigger the animation by clicking
  * the dog or cat button.
  */
-import { useMemo } from 'react';
-import { Dog, Cat } from 'lucide-react';
+import { useMemo, useSyncExternalStore, type ReactNode } from 'react';
+import { AnimatePresence } from 'motion/react';
+import { Effect } from '@animate-ui/react/primitives/effects/effect';
+import Button from './Button';
+import { buttonVariants } from './button-variants';
+import { Dog, Cat } from './icons';
 import { cn } from '../lib/utils';
 import { useNeuralNetAnimation } from '../hooks/useNeuralNetAnimation';
 import { NEURAL_NET_VIZ } from '../constants';
 import { LAYERS, STATIC_CONNECTIONS, getNodeY } from './neuralNetViz.utils';
 import type { Signal, SvgConnection } from './neuralNetViz.utils';
+
+const DEMO_SIGNALS = [
+  { signal: 'dog', Icon: Dog, label: 'Hundebild zeigen' },
+  { signal: 'cat', Icon: Cat, label: 'Katzenbild zeigen' },
+] as const;
+
+function DiagramSurface({
+  children,
+  isPreparing = false,
+}: {
+  children: ReactNode;
+  isPreparing?: boolean;
+}) {
+  return (
+    <div
+      className="bg-diagram-surface p-8 rounded-3xl border border-diagram-border relative overflow-hidden"
+      aria-busy={isPreparing || undefined}
+    >
+      {children}
+    </div>
+  );
+}
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -38,30 +66,21 @@ interface InputButtonsProps {
 function InputButtons({ activeSignal, animating, onTrigger }: InputButtonsProps) {
   return (
     <div className="flex justify-center gap-6 mb-12 relative z-10">
-      <button
-        onClick={() => onTrigger('dog')}
-        disabled={animating}
-        className={cn(
-          "flex flex-col items-center p-4 rounded-2xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-800",
-          activeSignal === 'dog' ? "border-red-500 bg-red-500/20" : "border-zinc-600 hover:border-zinc-500 bg-zinc-700/50",
-          animating && activeSignal !== 'dog' ? "opacity-50" : ""
-        )}
-      >
-        <Dog className="w-12 h-12 mb-2 text-red-400" aria-hidden="true" />
-        <span className="font-medium">Hundebild zeigen</span>
-      </button>
-      <button
-        onClick={() => onTrigger('cat')}
-        disabled={animating}
-        className={cn(
-          "flex flex-col items-center p-4 rounded-2xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-800",
-          activeSignal === 'cat' ? "border-blue-500 bg-blue-500/20" : "border-zinc-600 hover:border-zinc-500 bg-zinc-700/50",
-          animating && activeSignal !== 'cat' ? "opacity-50" : ""
-        )}
-      >
-        <Cat className="w-12 h-12 mb-2 text-blue-400" aria-hidden="true" />
-        <span className="font-medium">Katzenbild zeigen</span>
-      </button>
+      {DEMO_SIGNALS.map(({ signal, Icon, label }) => (
+        <Button
+          key={signal}
+          variant="demonstration"
+          size="demonstration"
+          data-signal={signal}
+          data-active={activeSignal === signal}
+          data-muted={animating && activeSignal !== signal}
+          onClick={() => onTrigger(signal)}
+          disabled={animating}
+        >
+          <Icon data-icon="inline-start" aria-hidden="true" />
+          <span>{label}</span>
+        </Button>
+      ))}
     </div>
   );
 }
@@ -84,14 +103,17 @@ function SvgConnections({ connections }: SvgConnectionsProps) {
     <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
       <svg width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">
         {connections.map(({ key, x1, y1, x2, y2, color, opacity }) => (
-          <line
-            key={key}
-            x1={x1} y1={y1}
-            x2={x2} y2={y2}
-            stroke={color} strokeWidth="2"
-            opacity={opacity}
-            style={{ transition: 'opacity 0.4s ease' }}
-          />
+          <Effect asChild initial={false} animate={{ stroke: color, opacity }} key={key}>
+            <line
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke={color}
+              strokeWidth="2"
+              opacity={opacity}
+            />
+          </Effect>
         ))}
       </svg>
     </div>
@@ -115,6 +137,7 @@ interface LayerNodesProps {
  * at reduced opacity; active nodes scale up and glow in the signal color.
  */
 function LayerNodes({ activeSignal, animStep }: LayerNodesProps) {
+  const activationStep = { input: 0, hidden1: 2, hidden2: 4, output: 6 };
   return (
     <>
       {LAYERS.map((layer, layerIdx) => (
@@ -126,23 +149,26 @@ function LayerNodes({ activeSignal, animStep }: LayerNodesProps) {
             width: `${NEURAL_NET_VIZ.LAYER_WIDTH_PERCENT}%`,
           }}
         >
-          <div className="text-[10px] sm:text-xs font-mono text-zinc-300 mt-2 uppercase tracking-wider absolute -top-8 whitespace-nowrap">{layer.label}</div>
+          <div className="text-[10px] sm:text-xs font-mono text-zinc-300 mt-2 uppercase tracking-wider absolute -top-8 whitespace-nowrap">
+            {layer.label}
+          </div>
 
           {Array.from({ length: layer.nodes }).map((_, nodeIdx) => {
             const isOutput = layer.id === 'output';
             // KNN returns a single winning class, so only the output node matching
             // that class lights up — not all outputs simultaneously.
-            const isTargetNode = isOutput && ((activeSignal === 'dog' && nodeIdx === 0) || (activeSignal === 'cat' && nodeIdx === 1));
+            const isTargetNode =
+              isOutput &&
+              ((activeSignal === 'dog' && nodeIdx === 0) ||
+                (activeSignal === 'cat' && nodeIdx === 1));
 
-            // Each layer lights up at a different animation step to simulate
-            // sequential forward propagation through the network.
-            let isNodeActive = false;
-            if (layer.id === 'input' && animStep >= 0) isNodeActive = true;
-            if (layer.id === 'hidden1' && animStep >= 2) isNodeActive = true;
-            if (layer.id === 'hidden2' && animStep >= 4) isNodeActive = true;
-            if (layer.id === 'output' && animStep >= 6 && isTargetNode) isNodeActive = true;
+            const isNodeActive =
+              animStep >= activationStep[layer.id] && (!isOutput || isTargetNode);
 
-            const glowColor = activeSignal === 'dog' ? 'shadow-red-500/80 bg-red-400' : 'shadow-blue-500/80 bg-blue-400';
+            const glowColor =
+              activeSignal === 'dog'
+                ? 'shadow-red-500/80 bg-red-400'
+                : 'shadow-blue-500/80 bg-blue-400';
             const yPos = getNodeY(layer.nodes, nodeIdx);
 
             return (
@@ -151,21 +177,28 @@ function LayerNodes({ activeSignal, animStep }: LayerNodesProps) {
                 className="absolute w-6 h-6"
                 style={{ top: yPos - 12, left: 'calc(50% - 12px)' }}
               >
-                <div
+                <Effect
+                  initial={false}
+                  fade={{ initialOpacity: 0.6, opacity: isNodeActive ? 1 : 0.6 }}
+                  zoom={{ initialScale: 1, scale: isNodeActive ? 1.1 : 1 }}
                   className={cn(
-                    "w-full h-full rounded-full transition-[opacity,transform] duration-500",
+                    'w-full h-full rounded-full',
                     isNodeActive
-                      ? glowColor + " shadow-[0_0_15px_rgba(0,0,0,0.5)] border-transparent scale-110 opacity-100"
-                      : "bg-zinc-500 border-2 border-zinc-400 opacity-60"
+                      ? glowColor + ' shadow-[0_0_15px_rgba(0,0,0,0.5)] border-transparent'
+                      : 'bg-zinc-500 border-2 border-zinc-400',
                   )}
                 />
                 {isOutput && (
-                  <span className={cn(
-                    "absolute left-full ml-4 top-1/2 -translate-y-1/2 whitespace-nowrap font-medium transition-all duration-500",
-                    animStep >= 7 && isTargetNode
-                      ? (activeSignal === 'dog' ? "text-red-400 opacity-100 translate-x-0" : "text-blue-300 opacity-100 translate-x-0")
-                      : "text-zinc-400 opacity-100 translate-x-0"
-                  )}>
+                  <span
+                    className={cn(
+                      'absolute left-full ml-4 top-1/2 -translate-y-1/2 whitespace-nowrap font-medium',
+                      animStep >= 7 && isTargetNode
+                        ? activeSignal === 'dog'
+                          ? 'text-red-400 opacity-100 translate-x-0'
+                          : 'text-blue-300 opacity-100 translate-x-0'
+                        : 'text-zinc-400 opacity-100 translate-x-0',
+                    )}
+                  >
                     {nodeIdx === 0 ? 'Hund' : 'Katze'}
                   </span>
                 )}
@@ -200,19 +233,32 @@ interface AnimationResultProps {
  */
 function AnimationResult({ result, animating, activeSignal }: AnimationResultProps) {
   return (
-    <div className="mt-12 text-center h-16" aria-live="polite">
-      {result ? (
-        <div className={cn(
-          "inline-block px-6 py-3 rounded-xl text-xl font-bold animate-in fade-in slide-in-from-bottom-4",
-          activeSignal === 'dog' ? "bg-red-500/20 text-red-300 border border-red-500/30" : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-        )}>
-          {result}
-        </div>
-      ) : animating ? (
-        <div className="text-zinc-300 animate-pulse">Verarbeite Signal...</div>
-      ) : (
-        <div className="text-zinc-300">Klicke auf ein Icon, um den Prozess zu starten</div>
-      )}
+    <div className="mt-12 text-center h-16 relative" aria-live="polite">
+      <AnimatePresence initial={false}>
+        {result ? (
+          <Effect
+            key={result}
+            fade
+            slide={{ direction: 'up', offset: 16 }}
+            className={cn(
+              'absolute inset-x-0 mx-auto w-fit px-6 py-3 rounded-xl text-xl font-bold',
+              activeSignal === 'dog'
+                ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                : 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
+            )}
+          >
+            {result}
+          </Effect>
+        ) : animating ? (
+          <Effect key="processing" fade className="absolute inset-x-0 text-zinc-300">
+            Verarbeite Signal...
+          </Effect>
+        ) : (
+          <Effect key="idle" fade className="absolute inset-x-0 text-zinc-300">
+            Klicke auf ein Icon, um den Prozess zu starten
+          </Effect>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -226,7 +272,7 @@ function AnimationResult({ result, animating, activeSignal }: AnimationResultPro
  * SVG connection lines and node circles activate sequentially as `animStep`
  * advances through the forward-propagation stages.
  */
-export default function NeuralNetViz() {
+function InteractiveNeuralNetViz() {
   const { activeSignal, animStep, animating, result, triggerAnimation } = useNeuralNetAnimation();
 
   // Memoized list of SVG line descriptors for all inter-layer connections.
@@ -238,13 +284,23 @@ export default function NeuralNetViz() {
   //   - hidden2 → output: step >= 5 (only for the target output node)
   const svgConnections = useMemo(() => {
     // Red for dog signal, blue for cat signal; muted grey when inactive.
-    const activeColor = activeSignal === 'dog' ? NEURAL_NET_VIZ.COLORS.DOG : NEURAL_NET_VIZ.COLORS.CAT;
-    return STATIC_CONNECTIONS.map(conn => {
-      const isActive = conn.groupIndex === 0 ? animStep >= 1
-        : conn.groupIndex === 1 ? animStep >= 3
-        : animStep >= 5 && ((activeSignal === 'dog' && conn.targetNodeIndex === 0) || (activeSignal === 'cat' && conn.targetNodeIndex === 1));
+    const activeColor =
+      activeSignal === 'dog' ? NEURAL_NET_VIZ.COLORS.DOG : NEURAL_NET_VIZ.COLORS.CAT;
+    return STATIC_CONNECTIONS.map((conn) => {
+      const isActive =
+        conn.groupIndex === 0
+          ? animStep >= 1
+          : conn.groupIndex === 1
+            ? animStep >= 3
+            : animStep >= 5 &&
+              ((activeSignal === 'dog' && conn.targetNodeIndex === 0) ||
+                (activeSignal === 'cat' && conn.targetNodeIndex === 1));
       return {
-        key: conn.key, x1: conn.x1, y1: conn.y1, x2: conn.x2, y2: conn.y2,
+        key: conn.key,
+        x1: conn.x1,
+        y1: conn.y1,
+        x2: conn.x2,
+        y2: conn.y2,
         color: isActive ? activeColor : NEURAL_NET_VIZ.COLORS.INACTIVE,
         opacity: isActive ? NEURAL_NET_VIZ.OPACITY.ACTIVE : NEURAL_NET_VIZ.OPACITY.INACTIVE,
       };
@@ -252,13 +308,94 @@ export default function NeuralNetViz() {
   }, [animStep, activeSignal]);
 
   return (
-    <div className="bg-zinc-800 p-8 rounded-3xl border border-zinc-700 relative overflow-hidden">
-      <InputButtons activeSignal={activeSignal} animating={animating} onTrigger={triggerAnimation} />
+    <DiagramSurface>
+      <InputButtons
+        activeSignal={activeSignal}
+        animating={animating}
+        onTrigger={triggerAnimation}
+      />
       <div className="relative h-80 max-w-4xl mx-auto">
         <SvgConnections connections={svgConnections} />
         <LayerNodes activeSignal={activeSignal} animStep={animStep} />
       </div>
       <AnimationResult result={result} animating={animating} activeSignal={activeSignal} />
-    </div>
+    </DiagramSurface>
   );
+}
+
+/** Static illustration preserves the educational layout without inline style attributes. */
+function StaticNeuralNetViz() {
+  return (
+    <DiagramSurface isPreparing>
+      <div className="flex justify-center gap-6 mb-12 relative z-10" aria-hidden="true">
+        {DEMO_SIGNALS.map(({ signal, Icon, label }) => (
+          <div
+            key={signal}
+            className={buttonVariants({ variant: 'demonstration', size: 'demonstration' })}
+            data-signal={signal}
+            data-active={false}
+            data-muted={false}
+          >
+            <Icon data-icon="inline-start" />
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
+      <svg
+        width="100%"
+        height={NEURAL_NET_VIZ.CANVAS_HEIGHT}
+        className="max-w-4xl mx-auto overflow-visible"
+        role="img"
+        aria-label="Neuronales Netz: Input, zwei versteckte Schichten und die Ausgaben Hund und Katze"
+      >
+        {STATIC_CONNECTIONS.map(({ key, x1, y1, x2, y2 }) => (
+          <line
+            key={key}
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            stroke={NEURAL_NET_VIZ.COLORS.INACTIVE}
+            strokeWidth="2"
+            opacity={NEURAL_NET_VIZ.OPACITY.INACTIVE}
+          />
+        ))}
+        {LAYERS.map((layer, layerIndex) => (
+          <g key={layer.id}>
+            <text
+              x={NEURAL_NET_VIZ.LAYER_X_POSITIONS[layerIndex]}
+              y="-10"
+              textAnchor="middle"
+              className="text-[10px] sm:text-xs font-mono uppercase tracking-wider fill-zinc-300"
+            >
+              {layer.label}
+            </text>
+            {Array.from({ length: layer.nodes }, (_, index) => (
+              <circle
+                key={index}
+                cx={NEURAL_NET_VIZ.LAYER_X_POSITIONS[layerIndex]}
+                cy={getNodeY(layer.nodes, index)}
+                r="11"
+                className="fill-zinc-500 stroke-zinc-400"
+                strokeWidth="2"
+                opacity="0.6"
+              />
+            ))}
+          </g>
+        ))}
+      </svg>
+      <div className="mt-12 text-center h-16 text-zinc-300">
+        Interaktive Darstellung wird vorbereitet.
+      </div>
+    </DiagramSurface>
+  );
+}
+
+const subscribe = () => () => {};
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
+
+export default function NeuralNetViz() {
+  const isClient = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
+  return isClient ? <InteractiveNeuralNetViz /> : <StaticNeuralNetViz />;
 }

@@ -1,59 +1,39 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "08:00"
-      timezone: "Europe/Berlin"
+      interval: 'weekly'
+      day: 'monday'
+      time: '08:00'
+      timezone: 'Europe/Berlin'
     open-pull-requests-limit: 10
     labels:
-      - "dependencies"
+      - 'dependencies'
     # Match Node.js declarations to the supported 26.x runtime API.
     # Reassess this major restriction with each reviewed Node.js LTS upgrade.
     ignore:
-      - dependency-name: "@types/node"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       minor-patch:
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
 
-  - package-ecosystem: "docker"
-    directory: "/"
-    # Keep Docker aligned with the supported Node.js 26.x runtime baseline.
-    ignore:
-      - dependency-name: "node"
-        update-types: ["version-update:semver-major"]
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "08:00"
-      timezone: "Europe/Berlin"
+      interval: 'weekly'
+      day: 'monday'
+      time: '08:00'
+      timezone: 'Europe/Berlin'
     open-pull-requests-limit: 10
     labels:
-      - "dependencies"
+      - 'dependencies'
+      - 'github-actions'
     groups:
       minor-patch:
         update-types:
-          - "minor"
-          - "patch"
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "08:00"
-      timezone: "Europe/Berlin"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "github-actions"
-    groups:
-      minor-patch:
-        update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'

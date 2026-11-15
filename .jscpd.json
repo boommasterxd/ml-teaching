@@ -1,0 +1,19 @@
+{
+  "threshold": 5,
+  "minTokens": 50,
+  "reporters": ["console"],
+  "path": [
+    "src",
+    "test",
+    "scripts",
+    ".github/scripts",
+    "next.config.mjs",
+    "csp.config.mjs",
+    "eslint.config.mjs",
+    "postcss.config.mjs",
+    "playwright.config.ts",
+    "vitest.config.ts"
+  ],
+  "ignore": ["**/src/components/animate-ui/icons/**"],
+  "gitignore": true
+}

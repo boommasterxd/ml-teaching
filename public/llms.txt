@@ -1,0 +1,14 @@
+# ML Teaching
+
+> Ein deutschsprachiges Lernprojekt für maschinelles Lernen. Eigene Bildbeispiele trainieren einen Bildklassifikator direkt im Browser.
+
+## Anwendung
+
+- [Startseite](https://mlteaching.boomapps.de/): Einführung und Ablauf des Lernprojekts.
+- [Maschine trainieren](https://mlteaching.boomapps.de/lernen): Interaktive Bildklassifikation mit Kamera oder eigenen Bildern. Das vortrainierte MobileNet-Modell wird nach Zustimmung von Google geladen; Training und Bilderkennung erfolgen im Browser.
+
+## Kontakt und rechtliche Informationen
+
+- [Impressum](https://mlteaching.boomapps.de/impressum): Betreiber und Kontakt.
+- [Datenschutzerklärung](https://mlteaching.boomapps.de/datenschutz): Hinweise zur Verarbeitung von Zugriffsdaten, zum Modell-Download und zur lokalen Bildverarbeitung.
+- [Barrierefreiheit](https://mlteaching.boomapps.de/barrierefreiheit): Maßnahmen und Kontakt für Rückmeldungen zur Zugänglichkeit.

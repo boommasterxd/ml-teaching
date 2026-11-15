@@ -1,17 +1,27 @@
 name: Dependabot auto-merge
 
 on:
-  pull_request:
+  pull_request_target:
+    branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
 
 jobs:
-  auto-merge:
-    runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+  inspect:
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    if: >-
+      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.base.repo.full_name == github.repository &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !github.event.pull_request.head.repo.fork
+    outputs:
+      ecosystem: ${{ steps.metadata.outputs.package-ecosystem }}
+      update: ${{ steps.metadata.outputs.update-type }}
     steps:
       - name: Fetch Dependabot metadata
         id: metadata
@@ -19,13 +29,27 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Auto-merge minor and patch updates
-        if: >-
-          steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-patch'
+  auto-merge:
+    needs: inspect
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    if: >-
+      needs.inspect.result == 'success' &&
+      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.base.repo.full_name == github.repository &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !github.event.pull_request.head.repo.fork &&
+      needs.inspect.outputs.ecosystem == 'npm_and_yarn' &&
+      (needs.inspect.outputs.update == 'version-update:semver-minor' ||
+      needs.inspect.outputs.update == 'version-update:semver-patch')
+    steps:
+      - name: Enable protected squash auto-merge
         run: |
-          gh pr merge --auto --squash "$PR_URL" 2>/dev/null \
-            || gh pr merge --squash "$PR_URL"
+          gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

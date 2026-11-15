@@ -8,6 +8,7 @@ import type React from 'react';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import Button from '../Button';
+import { DialogTitle } from '../ui/dialog';
 
 /**
  * Props for the ConfirmDialog component.
@@ -52,12 +53,21 @@ export default function ConfirmDialog({
     <Dialog isOpen={isOpen} onClose={onClose} labelledBy={titleId} describedBy={descId}>
       <ModalContent maxWidth="md" className="p-6">
         {icon && (
-          <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4" aria-hidden="true">
+          <div
+            className="size-12 bg-destructive-soft-hover text-destructive rounded-full flex items-center justify-center mb-4 [&_svg]:size-6"
+            aria-hidden="true"
+          >
             {icon}
           </div>
         )}
-        <h3 id={titleId} className="text-xl font-bold text-zinc-900 mb-2">{title}</h3>
-        <p id={descId} className="text-zinc-600 mb-6 text-sm">{description}</p>
+        <DialogTitle asChild>
+          <h3 id={titleId} className="mb-2">
+            {title}
+          </h3>
+        </DialogTitle>
+        <p id={descId} className="text-muted-foreground mb-6 text-sm">
+          {description}
+        </p>
         <div className="flex gap-3">
           <Button variant="secondary" onClick={onClose} className="flex-1">
             {cancelLabel}

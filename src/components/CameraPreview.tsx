@@ -1,81 +1,107 @@
-/**
- * CameraPreview.tsx
- *
- * Live camera feed with hold-to-record and file-upload controls for a single ML training class.
- * Supports mouse, touch, and keyboard (Space/Enter) interaction for capturing training images.
- */
 import type React from 'react';
 import { useEffect, useRef } from 'react';
-import { Camera, Upload } from 'lucide-react';
+import { Camera, Upload } from './icons';
+import Button from './Button';
 import { cn } from '../lib/utils';
+import { IMAGE_INPUT_ACCEPT } from '../lib/image-input-policy';
+import { classColorClasses } from '../lib/class-colors';
 
-/**
- * Props for the CameraPreview component.
- */
 export interface CameraPreviewProps {
-  /** The active WebRTC camera stream, or null when no camera is available. */
+  disabled: boolean;
   stream: MediaStream | null;
-  /** Camera facing direction — 'user' for front camera (mirrored), 'environment' for back camera. */
   facingMode: 'user' | 'environment';
-  /** Accent color applied to the record button, matching the parent ML class color. */
   color: string;
-  /** Whether recording is currently active (images are being captured). */
   isRecording: boolean;
-  /** Called when the user begins holding the record button. */
   onStartRecording: () => void;
-  /** Called when the user releases the record button. */
   onStopRecording: () => void;
-  /** Called when the user selects image files via the file input. */
-  onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  /** Ref to the underlying video element, shared with the parent for feature extraction. */
+  onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   videoRef: React.RefObject<HTMLVideoElement | null>;
 }
 
-/**
- * Renders a live camera feed alongside hold-to-record and file-upload controls
- * for capturing training images for a single ML class.
- *
- * Recording works as a hold gesture: press and hold to record, release to stop.
- * Keyboard users (Space/Enter) get a toggle instead — press once to start, press again to stop.
- */
-export default function CameraPreview({
-  stream,
-  facingMode,
+type RecordButtonProps = Pick<
+  CameraPreviewProps,
+  'color' | 'isRecording' | 'onStartRecording' | 'onStopRecording' | 'disabled'
+>;
+
+function RecordButton({
+  disabled,
   color,
   isRecording,
   onStartRecording,
   onStopRecording,
-  onFileUpload,
-  videoRef,
-}: CameraPreviewProps) {
+}: RecordButtonProps) {
+  const keyboardRecording = useRef(false);
+  const stopPointerRecording = () => {
+    if (!keyboardRecording.current) onStopRecording();
+  };
+  return (
+    <Button
+      variant="capture"
+      disabled={disabled}
+      className={cn(
+        'flex-1 py-2.5 touch-none select-none [-webkit-touch-callout:none]',
+        classColorClasses(color),
+      )}
+      aria-pressed={isRecording}
+      onPointerDown={(event) => {
+        // Motion's Enter feedback dispatches pointer events without a pointer device.
+        if (!event.pointerType) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        keyboardRecording.current = false;
+        onStartRecording();
+      }}
+      onPointerUp={stopPointerRecording}
+      onPointerCancel={stopPointerRecording}
+      onLostPointerCapture={stopPointerRecording}
+      onContextMenu={(event) => event.preventDefault()}
+      onBlur={() => {
+        keyboardRecording.current = false;
+        onStopRecording();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== ' ' && event.key !== 'Enter') return;
+        event.preventDefault();
+        if (event.repeat) return;
+        if (!isRecording) {
+          keyboardRecording.current = true;
+          onStartRecording();
+        } else if (keyboardRecording.current) {
+          keyboardRecording.current = false;
+          onStopRecording();
+        }
+      }}
+      onKeyUp={(event) => {
+        if (event.key === ' ' || event.key === 'Enter') event.preventDefault();
+      }}
+    >
+      <Camera data-icon="inline-start" animate={isRecording} loop aria-hidden="true" />
+      {isRecording ? 'Aufnahme...' : 'Aufnehmen'}
+    </Button>
+  );
+}
+
+/** Hold with pointer or toggle with keyboard; camera attachment is browser-effect only. */
+export default function CameraPreview(props: CameraPreviewProps) {
+  const {
+    stream,
+    facingMode,
+    color,
+    isRecording,
+    onStartRecording,
+    onStopRecording,
+    onFileUpload,
+    videoRef,
+    disabled,
+  } = props;
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // Tracks whether the current recording session was started via keyboard,
-  // so Space/Enter acts as a toggle rather than requiring hold-and-release.
-  const keyboardRecordingRef = useRef(false);
-
-  // Assign or clear the camera stream on the video element whenever the stream changes.
-  // The cleanup only nulls srcObject if it still points to the same stream,
-  // preventing a race condition when the stream is swapped while unmounting.
   useEffect(() => {
-    const videoElement = videoRef.current;
-
-    if (!videoElement) {
-      return;
-    }
-
-    if (stream) {
-      videoElement.srcObject = stream;
-    } else {
-      videoElement.srcObject = null;
-    }
-
+    const video = videoRef.current;
+    if (!video) return;
+    video.srcObject = stream;
     return () => {
-      if (videoElement.srcObject === stream) {
-        videoElement.srcObject = null;
-      }
+      if (video.srcObject === stream) video.srcObject = null;
     };
   }, [stream, videoRef]);
-
   return (
     <div className="w-full sm:w-56 flex flex-col gap-3 flex-shrink-0">
       <div className="relative aspect-[4/3] bg-zinc-900 rounded-xl overflow-hidden shadow-inner">
@@ -87,74 +113,34 @@ export default function CameraPreview({
           aria-label="Kameravorschau für Trainingsaufnahme"
           className={cn(
             'w-full h-full object-cover',
-            facingMode === 'user' ? 'transform scale-x-[-1]' : ''
+            facingMode === 'user' && 'transform scale-x-[-1]',
           )}
         />
       </div>
       <div className="flex gap-2">
-        <button
-          onMouseDown={() => {
-            keyboardRecordingRef.current = false;
-            onStartRecording();
-          }}
-          onMouseUp={onStopRecording}
-          onMouseLeave={onStopRecording}
-          onTouchStart={() => {
-            keyboardRecordingRef.current = false;
-            onStartRecording();
-          }}
-          onTouchEnd={onStopRecording}
-          onTouchCancel={onStopRecording}
-          onContextMenu={(e) => e.preventDefault()}
-          onKeyDown={(e) => {
-            if (e.key === ' ' || e.key === 'Enter') {
-              e.preventDefault();
-              if (!isRecording) {
-                keyboardRecordingRef.current = true;
-                onStartRecording();
-              } else if (keyboardRecordingRef.current) {
-                keyboardRecordingRef.current = false;
-                onStopRecording();
-              }
-            }
-          }}
-          onKeyUp={(e) => {
-            if (e.key === ' ' || e.key === 'Enter') {
-              e.preventDefault();
-            }
-          }}
-          className={cn(
-            'flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center select-none touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--btn-color)] focus-visible:ring-offset-2',
-            isRecording
-              ? 'scale-95 shadow-inner opacity-90'
-              : 'shadow-sm hover:-translate-y-0.5 hover:shadow-md'
-          )}
-          style={{
-            backgroundColor: color,
-            ['--btn-color' as string]: color,
-            WebkitUserSelect: 'none',
-            WebkitTouchCallout: 'none',
-          } as React.CSSProperties}
-        >
-          <Camera
-            className={cn('w-4 h-4 mr-2', isRecording && 'animate-pulse')}
-            aria-hidden="true"
-          />
-          {isRecording ? 'Aufnahme...' : 'Aufnehmen'}
-        </button>
-        <button
+        <RecordButton
+          disabled={disabled}
+          color={color}
+          isRecording={isRecording}
+          onStartRecording={onStartRecording}
+          onStopRecording={onStopRecording}
+        />
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => fileInputRef.current?.click()}
-          className="px-3 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-xl transition-colors flex items-center justify-center shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2"
           title="Bilder hochladen"
+          disabled={disabled}
           aria-label="Bilder hochladen"
         >
-          <Upload className="w-4 h-4" aria-hidden="true" />
-        </button>
+          <Upload data-icon="inline-start" aria-hidden="true" />
+        </Button>
         <input
           type="file"
+          disabled={disabled}
           ref={fileInputRef}
           onChange={onFileUpload}
-          accept="image/*"
+          accept={IMAGE_INPUT_ACCEPT}
           multiple
           className="hidden"
           aria-hidden="true"

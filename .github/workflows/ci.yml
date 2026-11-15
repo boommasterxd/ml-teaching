@@ -1,33 +1,116 @@
 name: CI
 
-# Quality gate: type-check, tests and build on every PR and on pushes to the
-# default branch. Required status check for the branch ruleset.
 on:
-  push:
-    branches: [main]
   pull_request:
-  workflow_dispatch:
+    branches: [main]
+
+permissions:
+  contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
 jobs:
-  CI:
-    name: CI
-    runs-on: ubuntu-latest
+  plan:
+    name: Select checks
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    outputs:
+      plan: ${{ steps.plan.outputs.plan }}
+      quality: ${{ steps.plan.outputs.quality }}
+      browser: ${{ steps.plan.outputs.browser }}
+      merge: ${{ steps.plan.outputs.merge }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "26.x"
+          node-version: '26.x'
+          check-latest: true
+      - id: plan
+        run: node .github/scripts/plan-ci.ts
+        env:
+          CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+  quality:
+    name: Quality and unit coverage
+    needs: plan
+    if: needs.plan.outputs.quality == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26.x'
           check-latest: true
           cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Type-check
-        run: npm run lint
-      - name: Test
-        run: npm test -- --passWithNoTests
-      - name: Build
-        run: npm run build
+      - name: Validate source revision
+        run: node .github/scripts/validate-ci.ts
+        env:
+          CI_PLAN: ${{ needs.plan.outputs.plan }}
+          CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CHANGE_MERGE_SHA: ${{ github.sha }}
+      - run: npm ci --no-audit
+      - run: npm run ci
+
+  browser:
+    name: Production browser checks
+    needs: plan
+    if: needs.plan.outputs.browser == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26.x'
+          check-latest: true
+          cache: npm
+      - name: Validate source revision
+        run: node .github/scripts/validate-ci.ts
+        env:
+          CI_PLAN: ${{ needs.plan.outputs.plan }}
+          CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CHANGE_MERGE_SHA: ${{ github.sha }}
+      - run: npm ci --no-audit
+      - run: npm run build
+      - name: Install the locked Chromium headless shell
+        run: npx --no-install playwright install --only-shell chromium
+      - run: npm run test:e2e
+
+  CI:
+    name: CI
+    if: always()
+    needs: [plan, quality, browser]
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26.x'
+          check-latest: true
+      - name: Require every selected check
+        run: node .github/scripts/validate-ci.ts
+        env:
+          CI_PLAN: ${{ needs.plan.outputs.plan }}
+          CI_RESULTS: '{"plan":"${{ needs.plan.result }}","quality":"${{ needs.quality.result }}","browser":"${{ needs.browser.result }}"}'
+          CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CHANGE_MERGE_SHA: ${{ github.sha }}

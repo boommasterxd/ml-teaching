@@ -1,7 +1,0 @@
-{
-  "name": "ML Browser Trainer",
-  "description": "Interactive Machine Learning platform to train image recognition models locally in the browser.",
-  "requestFramePermissions": [
-    "camera"
-  ]
-}

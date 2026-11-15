@@ -1,37 +1,19 @@
-/**
- * Dialog.tsx
- *
- * Generic base dialog component that wraps overlay, focus trap, and scroll lock
- * for all modal dialogs in the application. Provides WCAG-compliant ARIA attributes.
- */
-import type React from 'react';
-import { useFocusTrap } from '../hooks/useFocusTrap';
-import useScrollLock from '../hooks/useScrollLock';
+'use client';
 
-/**
- * Props for the Dialog component.
- */
+import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { Dialog as RadixDialog } from 'radix-ui';
+import { Dialog as DialogRoot, DialogContent, DialogOverlay } from './ui/dialog';
+import { canReturnFocus, getReturnFocusCandidates } from './dialog-state';
+
 interface DialogProps {
-  /** Whether the dialog is currently visible. */
   isOpen: boolean;
-  /** Called when the user dismisses the dialog. Omit for non-dismissible dialogs (e.g. loading screen). */
   onClose?: () => void;
-  /** ID of the element that contains the dialog title (aria-labelledby). */
   labelledBy: string;
-  /** ID of the element that describes the dialog (aria-describedby). */
   describedBy?: string;
-  /** Content rendered inside the dialog overlay. */
-  children: React.ReactNode;
+  children: ReactElement;
 }
 
-/**
- * Renders a modal overlay with focus trapping, scroll lock, and ARIA roles.
- *
- * Activates `useFocusTrap` and `useScrollLock` while open. Returns null when
- * `isOpen` is false so the DOM node is fully unmounted between uses.
- *
- * @param props - See {@link DialogProps}.
- */
+/** Animate UI owns animation; Radix owns modal focus and RemoveScroll contains scrolling. */
 export default function Dialog({
   isOpen,
   onClose,
@@ -39,21 +21,50 @@ export default function Dialog({
   describedBy,
   children,
 }: DialogProps) {
-  const dialogRef = useFocusTrap(isOpen, true, onClose);
-  useScrollLock(isOpen);
+  const returnFocus = useRef<(HTMLElement | null)[]>([]);
+  const [content, setContent] = useState<HTMLDivElement | null>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (!isOpen && !content && returnFocus.current.length > 0) {
+      const nextDialog = document.querySelector('[role="dialog"][data-state="open"]');
+      if (!nextDialog && document.activeElement === document.body) {
+        const target = returnFocus.current.find(canReturnFocus);
+        if (target) target.focus({ preventScroll: true });
+      }
+      returnFocus.current = [];
+    }
+  }, [isOpen, content]);
 
   return (
-    <div
-      ref={dialogRef}
-      className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-zinc-900/80 backdrop-blur-sm overflow-y-auto overscroll-contain"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={labelledBy}
-      aria-describedby={describedBy}
+    <DialogRoot
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose?.();
+      }}
     >
-      {children}
-    </div>
+      {/* The native portal releases modality immediately; Animate UI retains entry motion. */}
+      <RadixDialog.Portal>
+        <DialogOverlay>
+          <DialogContent
+            ref={setContent}
+            asChild
+            aria-labelledby={labelledBy}
+            aria-describedby={describedBy}
+            onOpenAutoFocus={() => {
+              returnFocus.current = getReturnFocusCandidates(document.activeElement as HTMLElement);
+            }}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+            }}
+            onEscapeKeyDown={(event) => {
+              if (!onClose) event.preventDefault();
+            }}
+            onInteractOutside={(event) => event.preventDefault()}
+          >
+            {children}
+          </DialogContent>
+        </DialogOverlay>
+      </RadixDialog.Portal>
+    </DialogRoot>
   );
 }

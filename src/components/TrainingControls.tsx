@@ -4,10 +4,14 @@
  * Training section panel showing class readiness, total image count,
  * and the train/retrain button with contextual status messages.
  */
-import { Brain, CheckCircle2, Loader2 } from 'lucide-react';
+import { Brain, CheckCircle2, Loader2 } from './icons';
 import { cn } from '../lib/utils';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
+import Button from './Button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
+import { Separator } from './ui/separator';
 
 /**
  * Props for the TrainingControls component.
@@ -17,6 +21,7 @@ interface TrainingControlsProps {
   classes: MLClass[];
   /** Whether the minimum training requirements are met across all classes. */
   canTrain: boolean;
+  hasPendingUploads: boolean;
   /** Whether a training run is currently in progress. */
   isTraining: boolean;
   /** Whether a trained KNN model already exists and can be used for prediction. */
@@ -41,6 +46,7 @@ interface TrainingControlsProps {
 export default function TrainingControls({
   classes,
   canTrain,
+  hasPendingUploads,
   isTraining,
   hasTrainedModel,
   hasInvalidNames,
@@ -48,65 +54,66 @@ export default function TrainingControls({
   onTrain,
 }: TrainingControlsProps) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col">
-      <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
-        <h2 className="text-base font-bold text-zinc-800 flex items-center">
-          <Brain className="w-4 h-4 mr-2 text-indigo-500" aria-hidden="true" /> 2. Training
-        </h2>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <Brain aria-hidden="true" /> 2. Training
+        </CardTitle>
         {hasTrainedModel && (
-          <span role="status" className="flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
-            <CheckCircle2 className="w-3 h-3 mr-1" aria-hidden="true" /> Bereit
-          </span>
+          <Badge variant="success" role="status">
+            <CheckCircle2 data-icon="inline-start" aria-hidden="true" /> Bereit
+          </Badge>
         )}
-      </div>
-      <div className="p-5">
+      </CardHeader>
+      <Separator />
+      <CardContent>
         <div className="flex justify-between text-sm mb-2">
-          <span className="text-zinc-600">Klassen bereit:</span>
-          <span className={cn('font-semibold', canTrain ? 'text-emerald-700' : 'text-red-600')}>
-            {classes.filter(c => c.images.length >= ML.MIN_IMAGES_PER_CLASS).length} / {Math.max(ML.MIN_CLASSES, classes.length)}
+          <span className="text-muted-foreground">Klassen bereit:</span>
+          <span className={cn('font-semibold', canTrain ? 'text-success' : 'text-destructive')}>
+            {classes.filter((c) => c.images.length >= ML.MIN_IMAGES_PER_CLASS).length} /{' '}
+            {Math.max(ML.MIN_CLASSES, classes.length)}
           </span>
         </div>
         <div className="flex justify-between text-sm mb-5">
-          <span className="text-zinc-600">Gesammelte Bilder:</span>
-          <span className="font-semibold text-zinc-800">
+          <span className="text-muted-foreground">Gesammelte Bilder:</span>
+          <span className="font-semibold text-foreground">
             {classes.reduce((acc, c) => acc + c.images.length, 0)}
           </span>
         </div>
 
-        <button
+        <Button
           onClick={onTrain}
+          variant="primary"
           disabled={isTraining || !canTrain}
-          aria-disabled={isTraining || !canTrain}
-          className={cn(
-            'w-full py-3 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
-            isTraining || !canTrain
-              ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
-              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5'
-          )}
+          className="w-full"
         >
           {isTraining ? (
-            <><Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" /> Trainiere...</>
+            <>
+              <Loader2 data-icon="inline-start" animate loop aria-hidden="true" /> Trainiere...
+            </>
           ) : hasTrainedModel ? (
             'Modell neu trainieren'
           ) : (
             'Modell trainieren'
           )}
-        </button>
+        </Button>
 
-        <p className="text-xs text-zinc-600 mt-3 text-center" aria-live="polite">
+        <p className="text-xs text-muted-foreground mt-3 text-center" aria-live="polite">
           {isTraining
             ? 'Bitte warten, das Modell wird trainiert...'
-            : hasInvalidNames
-            ? 'Bitte gib allen Klassen einen Namen.'
-            : hasDuplicateNames
-            ? 'Bitte gib allen Klassen einen eindeutigen Namen.'
-            : !canTrain
-            ? `Sammle mind. ${ML.MIN_IMAGES_PER_CLASS} Bilder in ALLEN Klassen (mind. ${ML.MIN_CLASSES}).`
-            : hasTrainedModel
-            ? 'Modell ist bereit. Du kannst es jederzeit neu trainieren.'
-            : 'Genug Bilder gesammelt! Du kannst das Modell jetzt trainieren.'}
+            : hasPendingUploads
+              ? 'Bitte warte, bis alle ausgewählten Bilder vollständig verarbeitet sind.'
+              : hasInvalidNames
+                ? 'Bitte gib allen Klassen einen Namen.'
+                : hasDuplicateNames
+                  ? 'Bitte gib allen Klassen einen eindeutigen Namen.'
+                  : !canTrain
+                    ? `Sammle mind. ${ML.MIN_IMAGES_PER_CLASS} Bilder in ALLEN Klassen (mind. ${ML.MIN_CLASSES}).`
+                    : hasTrainedModel
+                      ? 'Modell ist bereit. Du kannst es jederzeit neu trainieren.'
+                      : 'Genug Bilder gesammelt! Du kannst das Modell jetzt trainieren.'}
         </p>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

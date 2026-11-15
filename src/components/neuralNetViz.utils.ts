@@ -23,9 +23,14 @@ export const LAYERS = [
  * @returns Y coordinate (in pixels) of the node's center, centered vertically in the canvas.
  */
 export function getNodeY(totalNodes: number, index: number): number {
-  const totalHeight = totalNodes * NEURAL_NET_VIZ.NODE_HEIGHT + (totalNodes - 1) * NEURAL_NET_VIZ.NODE_GAP;
+  const totalHeight =
+    totalNodes * NEURAL_NET_VIZ.NODE_HEIGHT + (totalNodes - 1) * NEURAL_NET_VIZ.NODE_GAP;
   const startY = (NEURAL_NET_VIZ.CANVAS_HEIGHT - totalHeight) / 2;
-  return startY + index * (NEURAL_NET_VIZ.NODE_HEIGHT + NEURAL_NET_VIZ.NODE_GAP) + NEURAL_NET_VIZ.NODE_HEIGHT / 2;
+  return (
+    startY +
+    index * (NEURAL_NET_VIZ.NODE_HEIGHT + NEURAL_NET_VIZ.NODE_GAP) +
+    NEURAL_NET_VIZ.NODE_HEIGHT / 2
+  );
 }
 
 /** Represents which input class is currently being propagated through the network, or null before any animation has been triggered. */
@@ -37,8 +42,10 @@ export type Signal = 'dog' | 'cat' | null;
  */
 export interface StaticConnection {
   key: string;
-  x1: string; y1: number;
-  x2: string; y2: number;
+  x1: string;
+  y1: number;
+  x2: string;
+  y2: number;
   /** Layer pair: 0 = input→hidden1, 1 = hidden1→hidden2, 2 = hidden2→output */
   groupIndex: number;
   /** Output node index for group 2 (0=dog, 1=cat). -1 for other groups. */
@@ -51,13 +58,37 @@ export const STATIC_CONNECTIONS: StaticConnection[] = (() => {
   const conns: StaticConnection[] = [];
   for (let i = 0; i < 4; i++)
     for (let j = 0; j < 6; j++)
-      conns.push({ key: `l1-${i}-${j}`, x1: lx0, y1: getNodeY(4, i), x2: lx1, y2: getNodeY(6, j), groupIndex: 0, targetNodeIndex: -1 });
+      conns.push({
+        key: `l1-${i}-${j}`,
+        x1: lx0,
+        y1: getNodeY(4, i),
+        x2: lx1,
+        y2: getNodeY(6, j),
+        groupIndex: 0,
+        targetNodeIndex: -1,
+      });
   for (let i = 0; i < 6; i++)
     for (let j = 0; j < 6; j++)
-      conns.push({ key: `l2-${i}-${j}`, x1: lx1, y1: getNodeY(6, i), x2: lx2, y2: getNodeY(6, j), groupIndex: 1, targetNodeIndex: -1 });
+      conns.push({
+        key: `l2-${i}-${j}`,
+        x1: lx1,
+        y1: getNodeY(6, i),
+        x2: lx2,
+        y2: getNodeY(6, j),
+        groupIndex: 1,
+        targetNodeIndex: -1,
+      });
   for (let i = 0; i < 6; i++)
     for (let j = 0; j < 2; j++)
-      conns.push({ key: `l3-${i}-${j}`, x1: lx2, y1: getNodeY(6, i), x2: lx3, y2: getNodeY(2, j), groupIndex: 2, targetNodeIndex: j });
+      conns.push({
+        key: `l3-${i}-${j}`,
+        x1: lx2,
+        y1: getNodeY(6, i),
+        x2: lx3,
+        y2: getNodeY(2, j),
+        groupIndex: 2,
+        targetNodeIndex: j,
+      });
   return conns;
 })();
 
@@ -69,8 +100,10 @@ export const STATIC_CONNECTIONS: StaticConnection[] = (() => {
  */
 export type SvgConnection = {
   key: string;
-  x1: string; y1: number;
-  x2: string; y2: number;
+  x1: string;
+  y1: number;
+  x2: string;
+  y2: number;
   color: string;
   opacity: number;
 };

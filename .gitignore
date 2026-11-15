@@ -1,41 +1,26 @@
-# === Abhängigkeiten ===
+# Dependencies and native build output
 node_modules/
-
-# === Build-Ausgaben ===
-dist/
-dist-server/
-build/
+.next/
+out/
 *.tsbuildinfo
+next-env.d.ts
 
-# === Umgebungsvariablen ===
+# Local credentials and provider metadata
 .env
 .env.*
-!.env.example
-
-# === Tests & Coverage ===
-coverage/
-
-# === Logs ===
-*.log
-
-# === Zertifikate & Schlüssel ===
+.vercel/
 *.pem
 *.key
 
-# === Betriebssystem ===
+# Verification artifacts
+coverage/
+playwright-report/
+test-results/
+lighthouse-report*.json
+
+# Logs and workstation files
+*.log
 .DS_Store
 Thumbs.db
-
-# === IDE & Editor ===
 .vscode/
 .idea/
-
-# === Claude Code ===
-.claude/
-
-# === Automatisch generierte Berichte ===
-BFSG-BERICHT.md
-DSGVO-BERICHT.md
-PERFORMANCE-BERICHT.md
-SICHERHEITS-BERICHT.md
-QUALITAETS-BERICHT.md

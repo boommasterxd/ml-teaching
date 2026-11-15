@@ -17,7 +17,7 @@ const maxWidthClasses = {
 /**
  * Props for the ModalContent component.
  */
-interface ModalContentProps {
+interface ModalContentProps extends React.ComponentProps<'div'> {
   /** Controls the maximum width of the content card. Defaults to `'md'`. */
   maxWidth?: keyof typeof maxWidthClasses;
   /** Additional Tailwind classes merged onto the content card. */
@@ -33,13 +33,21 @@ interface ModalContentProps {
  * @param className - Optional additional classes applied to the card wrapper.
  * @param children - Content displayed inside the card.
  */
-export default function ModalContent({ maxWidth = 'md', className, children }: ModalContentProps) {
+export default function ModalContent({
+  maxWidth = 'md',
+  className,
+  children,
+  ...props
+}: ModalContentProps) {
   return (
-    <div className={cn(
-      'bg-white rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit w-full',
-      maxWidthClasses[maxWidth],
-      className
-    )}>
+    <div
+      className={cn(
+        'relative bg-card text-card-foreground rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit w-full outline-none',
+        maxWidthClasses[maxWidth],
+        className,
+      )}
+      {...props}
+    >
       {children}
     </div>
   );

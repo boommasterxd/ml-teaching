@@ -5,11 +5,43 @@
  * source and generates a square JPEG thumbnail. Encapsulates all canvas
  * and TensorFlow tensor operations, including proper tensor disposal.
  */
-import { useRef, useCallback } from 'react';
-import * as tf from '@tensorflow/tfjs-core';
+import { useRef, useCallback, useEffect } from 'react';
+import type * as tf from '@tensorflow/tfjs-core';
+import { loadTensorFlow } from '../lib/ml-runtime';
+import { drawFeatureFrame } from '../lib/feature-frame';
 import type { MLImage } from '../types/ml';
 import { ML } from '../constants';
 import type { FeatureExtractor } from '../types/ml-models';
+
+/** One active GPU extraction; uploads wait while disposable camera frames are dropped. */
+function useExtractionQueue() {
+  const busyRef = useRef(false);
+  const waitingRef = useRef<Array<(acquired: boolean) => void>>([]);
+  const acquire = useCallback(async (wait: boolean): Promise<boolean> => {
+    if (!busyRef.current) {
+      busyRef.current = true;
+      return true;
+    }
+    if (!wait) return false;
+    if (waitingRef.current.length >= ML.MAX_CLASSES)
+      throw new Error('Image extraction queue is full.');
+    return new Promise((resolve) => {
+      waitingRef.current.push(resolve);
+    });
+  }, []);
+  const release = useCallback(() => {
+    const next = waitingRef.current.shift();
+    if (next) next(true);
+    else busyRef.current = false;
+  }, []);
+  useEffect(
+    () => () => {
+      waitingRef.current.splice(0).forEach((resolve) => resolve(false));
+    },
+    [],
+  );
+  return { acquire, release };
+}
 
 /**
  * Provides an `extractFeatures` function that converts a video or image
@@ -21,6 +53,15 @@ import type { FeatureExtractor } from '../types/ml-models';
  */
 export function useImageFeatureExtraction(mobilenetModel: FeatureExtractor | null) {
   const thumbnailCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const { acquire, release } = useExtractionQueue();
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      thumbnailCanvasRef.current = null;
+    };
+  }, []);
 
   /**
    * Extracts a MobileNet embedding and generates a square thumbnail from
@@ -35,63 +76,50 @@ export function useImageFeatureExtraction(mobilenetModel: FeatureExtractor | nul
    *
    * @param source - The `HTMLVideoElement` or `HTMLImageElement` to process.
    * @param mirror - Whether to flip the thumbnail horizontally.
+   * @param waitForTurn - Queue selected uploads; camera frames use the default drop-if-busy mode.
    * @returns A resolved `MLImage` with a unique id, a JPEG data URL, and the
    *   raw feature array, or `null` if the model is not loaded or the source
    *   has zero dimensions.
    */
-  const extractFeatures = useCallback(async (
-    source: HTMLVideoElement | HTMLImageElement,
-    mirror: boolean
-  ): Promise<MLImage | null> => {
-    if (!mobilenetModel) return null;
+  const extractFeatures = useCallback(
+    async (
+      source: HTMLVideoElement | HTMLImageElement,
+      mirror: boolean,
+      waitForTurn = false,
+    ): Promise<MLImage | null> => {
+      if (!mobilenetModel || !mountedRef.current) return null;
 
-    const sourceWidth = source instanceof HTMLVideoElement ? source.videoWidth : source.width;
-    const sourceHeight = source instanceof HTMLVideoElement ? source.videoHeight : source.height;
-    if (sourceWidth === 0 || sourceHeight === 0) return null;
+      if (!(await acquire(waitForTurn))) return null;
+      let img: tf.Tensor | null = null;
+      let features: tf.Tensor | null = null;
 
-    const img = tf.browser.fromPixels(source);
-    let features: tf.Tensor | null = null;
+      try {
+        if (!mountedRef.current) return null;
+        const runtime = await loadTensorFlow();
+        if (!mountedRef.current) return null;
+        thumbnailCanvasRef.current ??= document.createElement('canvas');
+        const canvas = thumbnailCanvasRef.current;
+        if (!drawFeatureFrame(source, canvas, mirror)) return null;
+        img = runtime.browser.fromPixels(canvas);
+        features = mobilenetModel.infer(img, true) as tf.Tensor;
+        const featureArray = Array.from(await features.data()) as number[];
+        if (!mountedRef.current) return null;
 
-    try {
-      // `infer` with `true` returns the embedding from the penultimate layer.
-      features = mobilenetModel.infer(img, true) as tf.Tensor;
-      const featureArray = Array.from(await features.data()) as number[];
+        const dataUrl = canvas.toDataURL('image/jpeg', ML.THUMBNAIL_QUALITY);
 
-      // Lazily create the off-screen canvas and reuse it across calls.
-      if (!thumbnailCanvasRef.current) {
-        thumbnailCanvasRef.current = document.createElement('canvas');
-        thumbnailCanvasRef.current.width = ML.FEATURE_CANVAS_SIZE;
-        thumbnailCanvasRef.current.height = ML.FEATURE_CANVAS_SIZE;
+        return {
+          id: `img-${crypto.randomUUID()}`,
+          dataUrl,
+          featureArray,
+        };
+      } finally {
+        img?.dispose();
+        if (features) features.dispose();
+        release();
       }
-      const canvas = thumbnailCanvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        // Reset any transform from a previous call before applying a new one.
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-        // Center-crop the source to a square region.
-        const size = Math.min(sourceWidth, sourceHeight);
-        const startX = (sourceWidth - size) / 2;
-        const startY = (sourceHeight - size) / 2;
-
-        if (mirror) {
-          ctx.translate(canvas.width, 0);
-          ctx.scale(-1, 1);
-        }
-        ctx.drawImage(source, startX, startY, size, size, 0, 0, canvas.width, canvas.height);
-      }
-      const dataUrl = canvas.toDataURL('image/jpeg', ML.THUMBNAIL_QUALITY);
-
-      return {
-        id: `img-${crypto.randomUUID()}`,
-        dataUrl,
-        featureArray,
-      };
-    } finally {
-      img.dispose();
-      if (features) features.dispose();
-    }
-  }, [mobilenetModel]);
+    },
+    [mobilenetModel, acquire, release],
+  );
 
   return { extractFeatures };
 }

@@ -5,10 +5,11 @@
  * Informs the user that all captured image data is processed locally and never transmitted
  * to external servers. Exports the `CameraConsentModal` component as default.
  */
-import { Camera } from 'lucide-react';
+import { Camera } from '../icons';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import Button from '../Button';
+import { DialogTitle } from '../ui/dialog';
 
 /**
  * Props for the CameraConsentModal component.
@@ -29,32 +30,42 @@ interface CameraConsentModalProps {
  * @param onDecline - Handler invoked when the user cancels.
  * @param onConfirm - Handler invoked when the user grants camera access.
  */
-export default function CameraConsentModal({ isOpen, onDecline, onConfirm }: CameraConsentModalProps) {
+export default function CameraConsentModal({
+  isOpen,
+  onDecline,
+  onConfirm,
+}: CameraConsentModalProps) {
   return (
-    <Dialog isOpen={isOpen} onClose={onDecline} labelledBy="camera-modal-title" describedBy="camera-modal-desc">
+    <Dialog
+      isOpen={isOpen}
+      onClose={onDecline}
+      labelledBy="camera-modal-title"
+      describedBy="camera-modal-desc"
+    >
       <ModalContent maxWidth="md" className="p-8 text-center">
         <div
-          className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6"
+          className="size-16 bg-primary-soft text-primary rounded-full flex items-center justify-center mx-auto mb-6"
           aria-hidden="true"
         >
-          <Camera className="w-8 h-8" />
+          <Camera className="size-8" />
         </div>
-        <h2 id="camera-modal-title" className="text-2xl font-bold text-zinc-900 mb-4">
+        <DialogTitle id="camera-modal-title" variant="large" className="mb-4">
           Berechtigung zur Kameranutzung
-        </h2>
-        <p id="camera-modal-desc" className="text-zinc-600 mb-8 text-sm leading-relaxed">
-          Für die Erfassung von Trainingsdaten benötigt diese Anwendung Zugriff auf die Kamera Ihres Endgeräts.{' '}
+        </DialogTitle>
+        <p id="camera-modal-desc" className="text-muted-foreground mb-8 text-sm leading-relaxed">
+          Die Kamera ist optional. Sie können Trainingsbilder mit der Kamera aufnehmen oder ohne
+          Kamerazugriff vorhandene Bilder von Ihrem Gerät auswählen.{' '}
           <strong>
-            Die erfassten Bilddaten werden ausschließlich lokal im Browser verarbeitet und zu keinem Zeitpunkt an externe
-            Server übermittelt oder dort gespeichert.
+            Die erfassten Bilddaten werden ausschließlich lokal im Browser verarbeitet und zu keinem
+            Zeitpunkt an externe Server übermittelt oder dort gespeichert.
           </strong>
         </p>
         <div className="flex gap-3">
           <Button variant="secondary" onClick={onDecline} className="flex-1">
-            Abbrechen
+            Ohne Kamera fortfahren
           </Button>
           <Button variant="primary" onClick={onConfirm} className="flex-1">
-            <Camera className="w-5 h-5 mr-2" aria-hidden="true" /> Erlauben
+            <Camera data-icon="inline-start" aria-hidden="true" /> Erlauben
           </Button>
         </div>
       </ModalContent>

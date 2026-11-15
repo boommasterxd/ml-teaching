@@ -15,12 +15,14 @@ import type * as tf from '@tensorflow/tfjs-core';
 export interface FeatureExtractor {
   /** Returns a feature tensor for the given input. Pass `true` for embedding output. */
   infer(input: tf.Tensor, embedding: boolean): tf.Tensor;
+  /** Releases downloaded weights when leaving the training page. */
+  dispose?(): void;
 }
 
 /**
  * Result shape returned by a classifier's `predictClass` method.
  */
-export interface ClassificationResult {
+interface ClassificationResult {
   /** The class label with the highest confidence score. */
   label: string;
   /** Map of class label to confidence score in the range [0, 1]. */

@@ -5,10 +5,20 @@
  * and acknowledge external model loading before the app can proceed.
  */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import Button from '../Button';
+import { Checkbox } from '../ui/checkbox';
+import { DialogTitle } from '../ui/dialog';
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '../ui/field';
 
 /**
  * Props for the ConsentModal component.
@@ -23,7 +33,7 @@ interface ConsentModalProps {
 }
 
 /**
- * Two-checkbox consent dialog for GDPR compliance.
+ * Explicit consent for local image processing and external model loading.
  *
  * Renders a modal with two required checkboxes: one for the privacy policy
  * and one for acknowledging that the MobileNet model is loaded from Google
@@ -41,56 +51,63 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
   const canConfirm = privacyChecked && modelChecked;
 
   return (
-    <Dialog isOpen={isOpen} onClose={onDecline} labelledBy="consent-modal-title" describedBy="consent-modal-desc">
+    <Dialog
+      isOpen={isOpen}
+      onClose={onDecline}
+      labelledBy="consent-modal-title"
+      describedBy="consent-modal-desc"
+    >
       <ModalContent maxWidth="lg" className="p-8">
-        <h2 id="consent-modal-title" className="text-2xl font-bold text-zinc-900 mb-6">
+        <DialogTitle id="consent-modal-title" variant="large" className="mb-6">
           Einwilligung zur Datenverarbeitung
-        </h2>
+        </DialogTitle>
 
-        <div className="space-y-5 mb-8">
-          <label className="block cursor-pointer">
-            <input
-              type="checkbox"
-              checked={privacyChecked}
-              onChange={(e) => setPrivacyChecked(e.target.checked)}
-              className="inline-block align-top mt-0.5 mr-3 w-5 h-5 rounded border-zinc-500 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-            />
-            <span className="text-zinc-700 text-sm leading-relaxed">
-              Ich habe die{' '}
-              <Link to="/datenschutz" className="text-indigo-600 hover:underline font-medium">
-                Datenschutzerklärung
-              </Link>{' '}
-              zur Kenntnis genommen und stimme der Verarbeitung meiner Daten gemäß den dort beschriebenen Bedingungen zu.
-            </span>
-          </label>
+        <FieldSet className="mb-8">
+          <FieldLegend className="sr-only">Einwilligungen</FieldLegend>
+          <FieldGroup className="gap-5">
+            <Field orientation="horizontal" className="items-start">
+              <Checkbox
+                id="privacy-consent"
+                checked={privacyChecked}
+                onCheckedChange={(checked) => setPrivacyChecked(checked === true)}
+                className="mt-0.5"
+              />
+              <FieldLabel htmlFor="privacy-consent" variant="consent">
+                Ich willige ein, dass ML Teaching meine ausgewählten Bilder, Kamerabilder und daraus
+                berechneten Merkmale lokal in meinem Browser zum Training und Testen eigener
+                Bildklassen verarbeitet. Weitere Informationen stehen in der{' '}
+                <Link href="/datenschutz">Datenschutzerklärung</Link>.
+              </FieldLabel>
+            </Field>
 
-          <label className="block cursor-pointer">
-            <input
-              type="checkbox"
-              checked={modelChecked}
-              onChange={(e) => setModelChecked(e.target.checked)}
-              className="inline-block align-top mt-0.5 mr-3 w-5 h-5 rounded border-zinc-500 text-indigo-600 focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-            />
-            <span className="text-zinc-700 text-sm leading-relaxed">
-              Ich willige ein, dass für die Ausführung der Anwendung notwendige KI-Modelle (MobileNet) von Google-Servern
-              geladen werden. Mir ist bewusst, dass hierbei meine IP-Adresse an Google übertragen wird (siehe{' '}
-              <a
-                href="https://policies.google.com/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 hover:underline font-medium"
-              >
-                Google Datenschutzerklärung<span className="sr-only"> (öffnet in neuem Tab)</span>
-              </a>
-              ). Die Verarbeitung der aufgenommenen Bilddaten erfolgt dabei ausschließlich lokal auf meinem Endgerät; es
-              findet kein Upload von Bildmaterial statt.
-            </span>
-          </label>
-        </div>
+            <Field orientation="horizontal" className="items-start">
+              <Checkbox
+                id="model-consent"
+                checked={modelChecked}
+                onCheckedChange={(checked) => setModelChecked(checked === true)}
+                className="mt-0.5"
+              />
+              <FieldLabel htmlFor="model-consent" variant="consent">
+                Ich willige ein, dass für die Ausführung der Anwendung notwendige KI-Modelle
+                (MobileNet) von Google-Servern geladen werden. Mir ist bewusst, dass hierbei meine
+                IP-Adresse an Google übertragen wird (siehe{' '}
+                <a
+                  href="https://policies.google.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Google Datenschutzerklärung<span className="sr-only"> (öffnet in neuem Tab)</span>
+                </a>
+                ). Die Verarbeitung der aufgenommenen Bilddaten erfolgt dabei ausschließlich lokal
+                auf meinem Endgerät; es findet kein Upload von Bildmaterial statt.
+              </FieldLabel>
+            </Field>
+          </FieldGroup>
+        </FieldSet>
 
-        <p id="consent-modal-desc" className="text-sm text-zinc-500 mb-6" role="note">
+        <FieldDescription id="consent-modal-desc" className="mb-6" role="note">
           Sie können Ihre Einwilligung jederzeit widerrufen. Ein Neuladen der Seite genügt.
-        </p>
+        </FieldDescription>
 
         <div className="flex gap-3">
           <Button variant="secondary" onClick={onDecline} className="flex-1">

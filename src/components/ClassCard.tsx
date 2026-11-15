@@ -5,22 +5,31 @@
  * Orchestrates camera recording, image upload, and thumbnail gallery via subcomponents.
  */
 import type React from 'react';
-import { memo, useState, useRef, useEffect, useCallback } from 'react';
-import { Trash2, RotateCcw } from 'lucide-react';
+import { memo, useCallback } from 'react';
+import { Trash2, RotateCcw } from './icons';
 import { cn } from '../lib/utils';
-import { CAMERA, ML } from '../constants';
+import { classColorClasses } from '../lib/class-colors';
+import { useClassCapture } from '../hooks/useClassCapture';
+import type { CaptureActions } from '../hooks/useClassCapture';
+import { ML } from '../constants';
 import type { MLClass, MLImage } from '../types/ml';
 import CameraPreview from './CameraPreview';
 import ImageGallery from './ImageGallery';
+import Button from './Button';
+import { Input } from './ui/input';
+import { Card, CardContent, CardHeader } from './ui/card';
+import { Badge } from './ui/badge';
+import { Field, FieldError, FieldLabel } from './ui/field';
+import { Separator } from './ui/separator';
 
 /**
  * Callback actions for the ClassCard component, grouped to reduce prop count.
  */
-export interface ClassCardActions {
+export interface ClassCardActions extends CaptureActions {
   /** Called when a new training frame is captured from the video element. */
   onAddExample: (classId: string, video: HTMLVideoElement) => void;
   /** Called when a training image is added via file upload. */
-  onAddImageExample: (classId: string, img: HTMLImageElement) => void;
+  onAddImageExample: (classId: string, img: HTMLImageElement) => void | Promise<void>;
   /** Called to request removal of the entire class. */
   onRemove: (classId: string) => void;
   /** Called to clear all images from the class without removing it. */
@@ -38,7 +47,8 @@ export interface ClassCardActions {
 /**
  * Props for the ClassCard component.
  */
-export interface ClassCardProps {
+interface ClassCardProps {
+  position: number;
   /** The ML class data to display and manage. */
   cls: MLClass;
   /** Whether the class name conflicts with another class name. */
@@ -55,163 +65,129 @@ export interface ClassCardProps {
  * Displays a class card with its editable name, camera preview, recording controls, and image gallery.
  * Uses `memo` to prevent unnecessary re-renders when sibling class cards update.
  */
+function ClassHeader({
+  cls,
+  position,
+  isDuplicate,
+  actions,
+}: Pick<ClassCardProps, 'cls' | 'position' | 'isDuplicate' | 'actions'>) {
+  const { onClear, onRemove, onUpdateName } = actions;
+  const isEmpty = cls.name.trim() === '';
+  const errorMsg = isEmpty
+    ? 'Name darf nicht leer sein'
+    : isDuplicate
+      ? 'Name muss eindeutig sein'
+      : null;
+  return (
+    <CardHeader variant="classification" className="items-start sm:items-center">
+      <Field data-invalid={!!errorMsg} className="w-auto gap-1">
+        <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              'size-2.5 rounded-full shadow-sm bg-[var(--btn-color)]',
+              classColorClasses(cls.color),
+            )}
+            aria-hidden="true"
+          />
+          <FieldLabel htmlFor={`class-name-${cls.id}`} className="sr-only">
+            Name für Klasse {position}: {cls.name.trim() || 'ohne Namen'}
+          </FieldLabel>
+          <Input
+            variant="class-name"
+            id={`class-name-${cls.id}`}
+            type="text"
+            autoComplete="off"
+            value={cls.name}
+            maxLength={ML.MAX_CLASS_NAME_LENGTH}
+            onChange={(e) => onUpdateName(cls.id, e.target.value)}
+            className="w-[120px] sm:w-[160px]"
+            onPointerDown={(e) => {
+              e.currentTarget.dataset.mouseFocused = '1';
+            }}
+            onBlur={(e) => {
+              delete e.currentTarget.dataset.mouseFocused;
+            }}
+            aria-invalid={!!errorMsg}
+            aria-errormessage={errorMsg ? `error-${cls.id}` : undefined}
+            aria-describedby={errorMsg ? `error-${cls.id}` : undefined}
+          />
+        </div>
+        {errorMsg && (
+          <FieldError id={`error-${cls.id}`} className="ml-[22px]">
+            {errorMsg}
+          </FieldError>
+        )}
+      </Field>
+      <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-0 ml-auto flex-shrink-0 min-w-0">
+        <Badge
+          variant={cls.images.length >= ML.MAX_IMAGES_PER_CLASS ? 'warning' : 'count'}
+          title={
+            cls.images.length >= ML.MAX_IMAGES_PER_CLASS
+              ? `Limit von ${ML.MAX_IMAGES_PER_CLASS} Bildern erreicht`
+              : undefined
+          }
+        >
+          {cls.images.length} / {ML.MAX_IMAGES_PER_CLASS} Bilder
+        </Badge>
+        <Button
+          variant="ghost-primary"
+          size="icon"
+          onClick={() => onClear(cls.id)}
+          title="Bilder dieser Klasse zurücksetzen"
+          aria-label={`Bilder der Klasse ${position}: ${cls.name.trim() || 'ohne Namen'} zurücksetzen`}
+        >
+          <RotateCcw data-icon="inline-start" aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost-destructive"
+          size="icon"
+          onClick={() => onRemove(cls.id)}
+          title="Klasse löschen"
+          aria-label={`Klasse ${position}: ${cls.name.trim() || 'ohne Namen'} löschen`}
+        >
+          <Trash2 data-icon="inline-start" aria-hidden="true" />
+        </Button>
+      </div>
+    </CardHeader>
+  );
+}
+
 const ClassCard = memo(function ClassCard({
   cls,
+  position,
   isDuplicate,
   stream,
   facingMode,
   actions,
 }: ClassCardProps) {
-  const { onAddExample, onAddImageExample, onRemove, onClear, onRemoveImages, onUpdateName, onImageClick, onError } = actions;
-  const [isRecording, setIsRecording] = useState(false);
-  const recordIntervalRef = useRef<number | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  /** Begins continuous frame capture at a fixed interval. */
-  const startRecording = () => {
-    if (!videoRef.current || isRecording) return;
-    setIsRecording(true);
-
-    if (recordIntervalRef.current) {
-      clearInterval(recordIntervalRef.current);
-    }
-
-    onAddExample(cls.id, videoRef.current);
-
-    recordIntervalRef.current = window.setInterval(() => {
-      if (videoRef.current) {
-        onAddExample(cls.id, videoRef.current);
-      }
-    }, CAMERA.CAPTURE_INTERVAL_MS);
-  };
-
-  /** Stops continuous frame capture. */
-  const stopRecording = () => {
-    setIsRecording(false);
-    if (recordIntervalRef.current) {
-      clearInterval(recordIntervalRef.current);
-      recordIntervalRef.current = null;
-    }
-  };
-
-  // Clear the capture interval on unmount to prevent state updates on an unmounted component.
-  useEffect(() => {
-    return () => {
-      if (recordIntervalRef.current) {
-        clearInterval(recordIntervalRef.current);
-      }
-    };
-  }, []);
-
-  /** Reads uploaded image files and passes each to the feature extractor. */
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    Array.from(files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result;
-        if (typeof result !== 'string') return;
-        const img = new Image();
-        img.onload = () => {
-          onAddImageExample(cls.id, img);
-        };
-        img.onerror = () => {
-          onError(`"${file.name}" konnte nicht als Bild geladen werden.`);
-        };
-        img.src = result;
-      };
-      reader.onerror = () => {
-        onError(`"${file.name}" konnte nicht gelesen werden.`);
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // Reset the input value so the same file can be re-selected after upload.
-    if (e.target) {
-      e.target.value = '';
-    }
-  };
+  const { onRemoveImages, onImageClick } = actions;
+  const { videoRef, isRecording, startRecording, stopRecording, handleFileUpload } =
+    useClassCapture(cls, actions);
 
   /** Forwards an image click to the parent with the current class ID. */
-  const handleImageClick = useCallback((img: MLImage) => {
-    onImageClick(cls.id, img);
-  }, [onImageClick, cls.id]);
+  const handleImageClick = useCallback(
+    (img: MLImage) => {
+      onImageClick(cls.id, img);
+    },
+    [onImageClick, cls.id],
+  );
 
   /** Forwards a bulk image removal request to the parent with the current class ID. */
-  const handleRemoveImages = useCallback((ids: string[]) => {
-    onRemoveImages(cls.id, ids);
-  }, [onRemoveImages, cls.id]);
-
-  const isEmpty = cls.name.trim() === '';
-  const errorMsg = isEmpty ? 'Name darf nicht leer sein' : isDuplicate ? 'Name muss eindeutig sein' : null;
+  const handleRemoveImages = useCallback(
+    (ids: string[]) => {
+      onRemoveImages(cls.id, ids);
+    },
+    [onRemoveImages, cls.id],
+  );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-zinc-300 overflow-hidden flex flex-col transition-all hover:shadow-md">
+    <Card variant="classification">
+      <ClassHeader cls={cls} position={position} isDuplicate={isDuplicate} actions={actions} />
+      <Separator />
 
-      <div className="px-4 py-3 border-b border-zinc-100 flex justify-between items-start sm:items-center bg-zinc-50/50">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: cls.color }} aria-hidden="true" />
-            <input
-              id={`class-name-${cls.id}`}
-              type="text"
-              autoComplete="off"
-              value={cls.name}
-              maxLength={ML.MAX_CLASS_NAME_LENGTH}
-              onChange={(e) => onUpdateName(cls.id, e.target.value)}
-              className={cn(
-                'font-semibold bg-transparent border-b border-transparent focus:ring-0 focus:ring-offset-0 p-0 w-[120px] sm:w-[160px] text-sm transition-colors',
-                errorMsg ? 'border-red-500 text-red-600' : 'text-zinc-800 focus:border-zinc-500'
-              )}
-              onPointerDown={(e) => { e.currentTarget.dataset.mouseFocused = '1'; }}
-              onBlur={(e) => { delete e.currentTarget.dataset.mouseFocused; }}
-              aria-label={`Name für Klasse ${cls.name || 'ohne Namen'}`}
-              aria-invalid={!!errorMsg}
-              aria-errormessage={errorMsg ? `error-${cls.id}` : undefined}
-              aria-describedby={errorMsg ? `error-${cls.id}` : undefined}
-            />
-          </div>
-          {errorMsg && (
-            <span id={`error-${cls.id}`} className="text-[10px] text-red-500 mt-1 ml-[22px]">
-              {errorMsg}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-0 flex-shrink-0 min-w-0">
-          <span
-            className={cn(
-              'text-xs font-mono px-2 py-1 rounded-md whitespace-nowrap',
-              cls.images.length >= ML.MAX_IMAGES_PER_CLASS
-                ? 'bg-amber-100 text-amber-700 font-semibold'
-                : 'bg-zinc-100 text-zinc-600'
-            )}
-            title={cls.images.length >= ML.MAX_IMAGES_PER_CLASS ? `Limit von ${ML.MAX_IMAGES_PER_CLASS} Bildern erreicht` : undefined}
-          >
-            {cls.images.length} / {ML.MAX_IMAGES_PER_CLASS} Bilder
-          </span>
-          <button
-            onClick={() => onClear(cls.id)}
-            className="p-2 rounded-md text-zinc-500 hover:text-indigo-500 transition-colors"
-            title="Bilder dieser Klasse zurücksetzen"
-            aria-label={`Bilder der Klasse ${cls.name || 'ohne Namen'} zurücksetzen`}
-          >
-            <RotateCcw className="w-4 h-4" aria-hidden="true" />
-          </button>
-          <button
-            onClick={() => onRemove(cls.id)}
-            className="p-2 rounded-md text-zinc-500 hover:text-red-500 transition-colors"
-            title="Klasse löschen"
-            aria-label={`Klasse ${cls.name || 'ohne Namen'} löschen`}
-          >
-            <Trash2 className="w-4 h-4" aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-
-      <div className="p-4 flex flex-col sm:flex-row gap-4">
+      <CardContent variant="classification" className="flex flex-col sm:flex-row gap-4">
         <CameraPreview
+          disabled={actions.captureDisabled}
           stream={stream}
           facingMode={facingMode}
           color={cls.color}
@@ -223,13 +199,14 @@ const ClassCard = memo(function ClassCard({
         />
 
         <ImageGallery
+          label={`Trainingsbilder von Klasse ${position}: ${cls.name.trim() || 'ohne Namen'}, scrollbar`}
           images={cls.images}
           color={cls.color}
           onImageClick={handleImageClick}
           onRemoveImages={handleRemoveImages}
         />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 });
 

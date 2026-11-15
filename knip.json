@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["src/app/**/*.{ts,tsx}", "scripts/*.{ts,mjs}", ".github/scripts/*.{ts,mjs}"],
+  "project": [
+    "src/**/*.{ts,tsx,css}",
+    "test/**/*.{ts,tsx,mjs}",
+    "scripts/**/*.{ts,mjs}",
+    ".github/scripts/**/*.{ts,mjs}",
+    "csp/**/*.mjs"
+  ],
+  "ignoreIssues": {
+    "csp/runtime/policy.mjs": ["exports"]
+  }
+}
