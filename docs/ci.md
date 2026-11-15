@@ -106,11 +106,13 @@ enables ordinary protected squash auto-merge only for same-repository npm minor 
 patch updates authored and triggered by Dependabot. Major and GitHub Actions updates
 require manual integration.
 
-The provider must require `CI`, `gitleaks` and `Validate PR Title`, enforce an up-to-date
-branch, and allow only squash integration. Workflow files do not activate provider
-rules. Existing protection requires the three checks but does not enforce an
-up-to-date branch. That provider control must be corrected before authorized
-integration; this migration leaves provider settings unchanged.
+The active GitHub rules require `CI`, `gitleaks` and `Validate PR Title`, enforce an
+up-to-date branch and allow only squash integration. Actions policy requires full
+commit-SHA pinning. Workflows from private-repository fork pull requests require
+administrator approval and receive neither write tokens nor secrets or variables.
+Repository Projects are disabled. These are saved provider controls; workflow
+files alone do not activate them. Merging and publication still require explicit
+authorization.
 GitHub does not deploy or repeat application CI automatically after merging.
 Vercel's native Git integration owns Preview and Production builds; deployment,
 promotion and provider configuration require their own authorization.
