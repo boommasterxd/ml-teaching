@@ -79,10 +79,10 @@ describe('development-only CSP transport', () => {
     }
     for (const path of [
       '/_next/static/runtime.js',
-      '/_next/image?url=%2Fbrain-192.webp&w=64&q=75',
-      '/_next/webpack-hmr',
+      '/_next/image?url=%2Fapple-icon.png&w=64&q=75',
+      '/_next/pngack-hmr',
       '/favicon.svg',
-      '/brain-192.webp',
+      '/apple-icon.png',
       '/robots.txt',
     ]) {
       expect(unstable_doesMiddlewareMatch({ config, nextConfig, url: origin + path })).toBe(false);

@@ -6,12 +6,17 @@ import {
   expectCancelledResetKeepsImages,
   expectGalleryFocusAcrossResize,
   expectPreviewDeletion,
+  expectThemeKeepsTraining,
+  openThemeMenu,
+  settleLandingReveals,
 } from './training-keyboard';
 
 async function expectAccessible(page: Page) {
   await expect(page.locator('[role="dialog"][data-state="closed"]')).toHaveCount(0);
-  for (const dialog of await page.locator('[role="dialog"][data-state="open"]').all()) {
-    await expect(dialog).toHaveCSS('opacity', '1');
+  for (const surface of await page
+    .locator('[role="dialog"][data-state="open"], [role="menu"][data-state="open"]')
+    .all()) {
+    await expect(surface).toHaveCSS('opacity', '1');
   }
   const result = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
@@ -62,8 +67,8 @@ test('static documents, native navigation and strict CSP preserve visible conten
   request,
 }) => {
   const failures = diagnostics(page);
-  const routes = [
-    ['/', 'Entdecke Künstliche Intelligenz'],
+  const routes: [string, string | RegExp][] = [
+    ['/', /Du zeigst\.\s*Deine KI lernt\./],
     ['/impressum', 'Impressum'],
     ['/datenschutz', 'Datenschutzerklärung'],
     ['/barrierefreiheit', 'Barrierefreiheit'],
@@ -82,6 +87,7 @@ test('static documents, native navigation and strict CSP preserve visible conten
     expect(html).not.toMatch(/\sstyle="/);
     await page.goto(path);
     await expect(page.getByRole('heading', { name: heading, exact: true }).first()).toBeVisible();
+    if (path === '/') await settleLandingReveals(page);
     await expectAccessible(page);
   }
   await page.goto('/');
@@ -92,9 +98,7 @@ test('static documents, native navigation and strict CSP preserve visible conten
   await expect(page).toHaveURL(/\/datenschutz$/);
   expect(await page.locator('html').getAttribute('data-navigation-probe')).toBe('preserved');
   await page.goBack();
-  await expect(
-    page.getByRole('heading', { name: 'Entdecke Künstliche Intelligenz' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Du zeigst\.\s*Deine KI lernt\./ })).toBeVisible();
   const missing = await request.get('/this-page-does-not-exist');
   expect(missing.status()).toBe(404);
   expect(missing.headers()['content-security-policy']).toBeTruthy();
@@ -146,7 +150,11 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/lernen');
+  await page.goto('/');
+  await page.getByRole('switch', { name: 'Dunkle Darstellung' }).focus();
+  await page.keyboard.press('Space');
+  await expect(page.getByRole('switch', { name: 'Dunkle Darstellung' })).toBeChecked();
+  await page.getByRole('link', { name: 'Lernlabor öffnen', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Zustimmen', exact: true })).toBeDisabled();
@@ -200,6 +208,100 @@ test('model download is consent-gated and a failed download leaves an accessible
   await expectAccessible(page);
   await page.getByRole('button', { name: 'Zur Startseite', exact: true }).click();
   await expect(page).toHaveURL('http://127.0.0.1:3100/');
+});
+
+test('theme changes preserve navigation and require explicit remembering across visits and tabs', async ({
+  page,
+  context,
+}) => {
+  const failures = diagnostics(page);
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+  await page.goto('/');
+  const theme = page.getByRole('switch', { name: 'Dunkle Darstellung' });
+  await expect(theme).not.toBeChecked();
+  await theme.focus();
+  await page.keyboard.press('Space');
+  await expect(theme).toBeChecked();
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+  await page.reload();
+  await expect(theme).not.toBeChecked();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'system');
+
+  await theme.focus();
+  await page.keyboard.press('Space');
+  await expect(theme).toBeChecked();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        document
+          .getAnimations()
+          .some(
+            (animation) =>
+              animation.effect instanceof KeyframeEffect &&
+              animation.effect.pseudoElement === '::view-transition-new(root)',
+          ),
+      ),
+    )
+    .toBe(true);
+  await page.keyboard.press('Space');
+  await expect(theme).not.toBeChecked();
+  await page.getByRole('link', { name: 'Datenschutz', exact: true }).click();
+  await expect(page).toHaveURL(/\/datenschutz$/);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+  await page
+    .getByRole('navigation', { name: 'Hauptnavigation' })
+    .getByRole('link', { name: 'ML Teaching – Startseite', exact: true })
+    .click();
+  await expect(page).toHaveURL('http://127.0.0.1:3100/');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await theme.focus();
+  await page.keyboard.press('Space');
+  await expect(theme).toBeChecked();
+  await settleLandingReveals(page);
+  const menu = await openThemeMenu(page);
+  await expectAccessible(page);
+  const remember = menu.getByRole('menuitemcheckbox', {
+    name: 'Auswahl für weitere Besuche auf diesem Gerät merken',
+  });
+  await remember.focus();
+  await page.keyboard.press('Space');
+  await expect(remember).toBeChecked();
+  expect(await page.evaluate(() => localStorage.getItem('ml-teaching-theme'))).toBe('dark');
+  await page.keyboard.press('Escape');
+  await expect(
+    page.getByRole('button', { name: 'Darstellung einstellen', exact: true }),
+  ).toBeFocused();
+  await page.reload();
+  await expect(theme).toBeChecked();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+  const other = await context.newPage();
+  const otherFailures = diagnostics(other);
+  try {
+    await other.emulateMedia({ colorScheme: 'light' });
+    await other.goto('/impressum');
+    const otherTheme = other.getByRole('switch', { name: 'Dunkle Darstellung' });
+    await expect(otherTheme).toBeChecked();
+    await expectAccessible(other);
+    const otherMenu = await openThemeMenu(other);
+    const otherRemember = otherMenu.getByRole('menuitemcheckbox', {
+      name: 'Auswahl für weitere Besuche auf diesem Gerät merken',
+    });
+    await otherRemember.focus();
+    await other.keyboard.press('Space');
+    await expect(otherRemember).not.toBeChecked();
+    await expect(otherTheme).toBeChecked();
+    await expect(theme).not.toBeChecked();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'system');
+    expect(await page.evaluate(() => localStorage.length)).toBe(0);
+    await other.reload();
+    await expect(otherTheme).not.toBeChecked();
+    expect(otherFailures).toEqual([]);
+  } finally {
+    await other.close();
+  }
+  expect(failures).toEqual([]);
 });
 
 test('local images train a real browser classifier, predict and reset without uploads', async ({
@@ -256,6 +358,7 @@ test('local images train a real browser classifier, predict and reset without up
   await expect(page.getByRole('button', { name: 'Modell trainieren', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Modell trainieren', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Bereit' })).toBeVisible();
+  await expectThemeKeepsTraining(page);
   await expect(page.getByRole('button', { name: 'Starten', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Kamera aktivieren', exact: true }).click();
   await expect(camera).toBeVisible();

@@ -28,6 +28,27 @@ production security claims must use the production build.
 development startup. Consult the installed version's framework documentation under
 `node_modules/next/dist/docs/` before changing Next.js behavior.
 
+## Appearance and optional clients
+
+Neural Field's shared light/dark tokens live in `src/index.css`, with landing rules
+in `src/components/hero/hero.css`. `src/lib/fonts.ts` loads committed local WOFF2
+fonts; no font account, key or runtime font service is required. Their notices
+are in [third-party notices](third-party-notices.md).
+
+Without a saved choice, appearance follows the operating system. The theme menu
+offers an explicit remember control; ordinary toggles do not create a storage key.
+Disabling remembering removes that enum preference. Browser-denied storage has
+visible recovery feedback, and it never affects ML consent or workspace lifetime.
+Keep ThemeProvider outside the route boundary and preserve the static trusted
+bootstrap and upstream wipe style in CSP-verified HTML, including native errors.
+
+Optional theme settings load on intent and mount their portal on opening. The
+network demo can prepare a hidden React Activity after intent; it starts effects
+only after activation. The decorative hero enhancement is visibility, pause and
+reduced-motion gated and retains its static poster without WebGL. Initial model
+consent and its small shared dialog compositions stay eager; no ML resource is
+prefetched before consent. See the [design system](design-system.md) for ownership.
+
 ## Checks
 
 | Command                     | Purpose                                                           |

@@ -29,7 +29,7 @@ interface LoadingModalProps {
 export default function LoadingModal({ isOpen, loadingText }: LoadingModalProps) {
   return (
     <Dialog isOpen={isOpen} labelledBy="loading-modal-title">
-      <ModalContent maxWidth="sm" className="p-8 flex flex-col items-center text-center">
+      <ModalContent maxWidth="sm" className="p-6 sm:p-8 flex flex-col items-center text-center">
         <Loader2 animate loop className="size-12 text-primary mb-4" aria-hidden="true" />
         <DialogTitle id="loading-modal-title" className="mb-2">
           Lade KI-Modelle...

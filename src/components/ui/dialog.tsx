@@ -28,7 +28,13 @@ export function DialogTitle({
   );
 }
 
-export function DialogOverlay({ className, children, ...props }: ComponentProps<'div'>) {
+export function DialogOverlay({
+  className,
+  children,
+  animateEntry = true,
+  ...props
+}: ComponentProps<'div'> & { animateEntry?: boolean }) {
+  const scrimClasses = 'pointer-events-none fixed inset-0 bg-media-overlay';
   return (
     <RemoveScroll forwardProps removeScrollBar={false} inert={false} allowPinchZoom>
       <div
@@ -39,11 +45,11 @@ export function DialogOverlay({ className, children, ...props }: ComponentProps<
         )}
         {...props}
       >
-        <Effect
-          fade
-          className="pointer-events-none fixed inset-0 bg-zinc-900/80"
-          aria-hidden="true"
-        />
+        {animateEntry ? (
+          <Effect fade className={scrimClasses} aria-hidden="true" />
+        ) : (
+          <div className={scrimClasses} aria-hidden="true" />
+        )}
         {children}
       </div>
     </RemoveScroll>

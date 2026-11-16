@@ -56,9 +56,11 @@ injected scripts. Destination RSC responses do not replace the current document'
 CSP. All pages share the trusted runtime/script producers; browser verification
 must cover direct entry, in-app legal/learning navigation and back/forward.
 
-SiteLogo uses native getImageProps and omits its initial placeholder style to avoid
-a forbidden attribute while preserving native optimization. Local user images remain in the
-browser and bypass server optimization. Animate UI runtime styles and generated
+SiteLogo uses an original inline SVG with shared theme colors; favicon and Apple
+assets use the icon-format exception. Local user images remain in the browser and
+bypass server optimization. The trusted, build-known theme bootstrap and upstream
+wipe stylesheet are included in static output so their exact bytes receive CSP
+hashes; no user-supplied script or style is authorized. Animate UI runtime styles and generated
 icon/illustration markup must pass the same policy; library origin never permits
 relaxing CSP. Document concrete supported integration boundaries in the
 [design system](../design-system.md).

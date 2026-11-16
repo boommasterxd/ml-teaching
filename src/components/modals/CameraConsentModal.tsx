@@ -42,12 +42,12 @@ export default function CameraConsentModal({
       labelledBy="camera-modal-title"
       describedBy="camera-modal-desc"
     >
-      <ModalContent maxWidth="md" className="p-8 text-center">
+      <ModalContent maxWidth="md" className="p-6 sm:p-8">
         <div
-          className="size-16 bg-primary-soft text-primary rounded-full flex items-center justify-center mx-auto mb-6"
+          className="size-12 bg-primary-soft text-primary rounded-xl flex items-center justify-center mb-6"
           aria-hidden="true"
         >
-          <Camera className="size-8" />
+          <Camera className="size-6" />
         </div>
         <DialogTitle id="camera-modal-title" variant="large" className="mb-4">
           Berechtigung zur Kameranutzung
@@ -60,7 +60,7 @@ export default function CameraConsentModal({
             Zeitpunkt an externe Server übermittelt oder dort gespeichert.
           </strong>
         </p>
-        <div className="flex gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Button variant="secondary" onClick={onDecline} className="flex-1">
             Ohne Kamera fortfahren
           </Button>

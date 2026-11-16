@@ -86,7 +86,7 @@ const ImageThumbnail = memo(function ImageThumbnail({
       {isSelectionMode && (
         <div
           className={cn(
-            'absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center ',
+            'absolute top-1 right-1 size-4 rounded-full border flex items-center justify-center ',
             isSelected
               ? 'text-primary-foreground bg-[var(--btn-color)] border-[var(--btn-color)]'
               : 'bg-background/80 border-input',
@@ -145,8 +145,8 @@ function GalleryToolbar({
   onSelect,
 }: GalleryToolbarProps) {
   return (
-    <div className="flex justify-between items-center mb-2 px-1">
-      <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
+    <div className="flex min-h-11 flex-wrap justify-between items-center gap-x-2 mb-2">
+      <span className="eyebrow">
         {isSelectionMode ? `${selectedCount} ausgewählt` : 'Gesammelte Bilder'}
       </span>
       <div className="flex gap-2 min-h-[2rem]">
@@ -371,7 +371,7 @@ const ImageGallery = memo(function ImageGallery({
         aria-label={label}
         onFocusCapture={focus.onFocusCapture}
         onBlurCapture={focus.onBlurCapture}
-        className="gallery-region flex-1 min-h-0 bg-zinc-50/50 rounded-xl border border-zinc-300 p-2 overflow-y-auto overflow-x-hidden"
+        className="gallery-region flex-1 min-h-0 bg-muted/40 rounded-xl border border-border p-2 overflow-y-auto overflow-x-hidden"
       >
         {images.length > 0 ? (
           <div

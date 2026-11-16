@@ -52,12 +52,13 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
 
   return (
     <Dialog
+      initialContent
       isOpen={isOpen}
       onClose={onDecline}
       labelledBy="consent-modal-title"
       describedBy="consent-modal-desc"
     >
-      <ModalContent maxWidth="lg" className="p-8">
+      <ModalContent maxWidth="lg" className="p-6 sm:p-8">
         <DialogTitle id="consent-modal-title" variant="large" className="mb-6">
           Einwilligung zur Datenverarbeitung
         </DialogTitle>
@@ -109,7 +110,7 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
           Sie können Ihre Einwilligung jederzeit widerrufen. Ein Neuladen der Seite genügt.
         </FieldDescription>
 
-        <div className="flex gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Button variant="secondary" onClick={onDecline} className="flex-1">
             Abbrechen
           </Button>

@@ -11,6 +11,49 @@ import PredictionPanel from '../components/PredictionPanel';
 import TrainingPageModals from '../components/TrainingPageModals';
 import TrainingError from '../components/TrainingError';
 import { ConsentModal, CameraConsentModal, LoadingModal } from '../components/modals';
+import { Badge } from '../components/ui/badge';
+import { cn } from '../lib/utils';
+
+function TrainingPipeline({
+  canTrain,
+  hasTrainedModel,
+}: {
+  canTrain: boolean;
+  hasTrainedModel: boolean;
+}) {
+  const currentStep = hasTrainedModel ? 2 : canTrain ? 1 : 0;
+  return (
+    <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 sm:pt-12 lg:px-8">
+      <div className="flex flex-col gap-5 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:pb-8">
+        <p className="eyebrow">Lernlabor</p>
+        <ol aria-label="Trainingsablauf" className="grid grid-cols-3 gap-2 sm:gap-6">
+          {['Bilder sammeln', 'Training', 'Vorhersage'].map((label, index) => {
+            const state =
+              index < currentStep ? 'complete' : index === currentStep ? 'active' : 'idle';
+            return (
+              <li
+                key={label}
+                data-state={state}
+                aria-current={state === 'active' ? 'step' : undefined}
+                className={cn(
+                  'flex items-center gap-2 sm:gap-3',
+                  state === 'idle' ? 'text-muted-foreground' : 'text-foreground',
+                )}
+              >
+                <Badge
+                  variant="pipeline"
+                  data-state={state}
+                  aria-hidden="true"
+                >{`0${index + 1}`}</Badge>
+                <span className="text-xs sm:text-sm">{label}</span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </div>
+  );
+}
 
 /** Browser-only ML workspace inside a build-rendered App Router page. */
 export default function TrainingPage() {
@@ -20,7 +63,7 @@ export default function TrainingPage() {
   const { classes } = data;
   const declineConsent = () => router.push('/');
   return (
-    <div className="bg-zinc-50 text-zinc-900 font-sans pb-20">
+    <div className="bg-background text-foreground pb-16 sm:pb-24">
       <PageHeader
         title="Modell trainieren"
         rightSlot={
@@ -40,10 +83,11 @@ export default function TrainingPage() {
           </Button>
         }
       />
+      <TrainingPipeline canTrain={data.canTrain} hasTrainedModel={resources.hasTrainedModel} />
       {errors.error && <TrainingError error={errors.error} onReturn={declineConsent} />}
       <div
         inert={!models.mobilenetModel}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid lg:grid-cols-12 gap-6 items-start"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid lg:grid-cols-12 gap-8 items-start lg:gap-10"
       >
         <TrainingClassesPanel
           classes={classes.classes}

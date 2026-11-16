@@ -1,5 +1,18 @@
 # Third-party notices
 
+## Local fonts
+
+Geist is copyright 2024 The Geist Project Authors
+([upstream](https://github.com/vercel/geist-font)). Space Grotesk is copyright 2020
+The Space Grotesk Project Authors
+([upstream](https://github.com/floriankarsten/space-grotesk)). The unmodified Latin
+WOFF2 subsets are distributed under the SIL Open Font License 1.1. The complete
+copyright notices and license are included in `public/font-licenses.txt`, served
+as `/font-licenses.txt`. Visitors load both fonts locally, without a font-provider
+request. Official distribution sources are
+[Geist](https://fonts.google.com/specimen/Geist) and
+[Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk).
+
 The application is licensed under [LICENSE.txt](../LICENSE.txt). Dependencies and
 bundled upstream code retain their own licenses. This project distributes an
 application, not a component library.

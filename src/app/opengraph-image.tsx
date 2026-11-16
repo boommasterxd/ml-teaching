@@ -14,16 +14,16 @@ export default function OpenGraphImage() {
         flexDirection: 'column',
         justifyContent: 'center',
         padding: 90,
-        background: '#18181b',
-        color: '#fafafa',
+        background: '#151417',
+        color: '#f4eee8',
       }}
     >
-      <div style={{ fontSize: 34, color: '#fca5a5', marginBottom: 32 }}>
+      <div style={{ fontSize: 34, color: '#ff7786', marginBottom: 32 }}>
         Entdecke maschinelles Lernen
       </div>
       <div style={{ fontSize: 100, fontWeight: 700 }}>ML Teaching</div>
       <div style={{ fontSize: 38, marginTop: 32 }}>
-        Dein eigenes Bilderkennungsmodell. Direkt im Browser.
+        Du zeigst. Deine KI lernt. Direkt im Browser.
       </div>
     </div>,
     size,

@@ -70,7 +70,7 @@ export default function ImagePreviewModal({
               height={192}
               unoptimized
               alt="Vergrößerte Bildvorschau"
-              className="size-48 object-cover rounded-2xl shadow-sm border border-input mb-6"
+              className="size-48 object-cover rounded-xl border border-input mb-6"
             />
             <Button variant="destructive-soft" onClick={onDelete} className="w-full">
               <Trash2 data-icon="inline-start" aria-hidden="true" /> Bild löschen

@@ -11,6 +11,7 @@ predictions directly in your browser. The interface is in German.
 | Workflow                                              | Result                                                                                         |
 | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | Explore the neural-network demonstration              | Follow an illustrated classification step by step.                                             |
+| Choose light, dark or system appearance               | Use a temporary choice, or explicitly remember it for later visits.                            |
 | Collect webcam images or select local files           | Build named training classes without uploading images.                                         |
 | Extract MobileNet features and train a KNN classifier | Compare examples locally using TensorFlow.js and WebGL.                                        |
 | Test live predictions                                 | See class confidence and revise your training data.                                            |
@@ -47,6 +48,8 @@ independent of Google Teachable Machine.
 Training images, class names, extracted features and the trained KNN classifier stay
 in browser memory. The app has no database, account system or image-upload API.
 Consent is not persisted. Reloading discards the workspace and asks again.
+Appearance follows the system by default. Its separate light/dark/system preference
+is saved locally only when you explicitly enable remembering for future visits.
 
 After explicit consent, the browser downloads pretrained MobileNet weights from
 Google. Google receives connection metadata during those downloads; the app sends
@@ -58,7 +61,7 @@ The proposed Vercel host processes website connection data. See the in-app
 There are no application API keys or paid model APIs to configure. Hosting bandwidth
 and native image optimization can incur provider costs. No billing estimates or
 provider plan guarantees are implied. The app has no analytics, advertising or
-external fonts.
+externally hosted fonts. Space Grotesk and Geist are served from local assets.
 
 ## Development
 

@@ -1,0 +1,126 @@
+'use client';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  applyTheme,
+  parseTheme,
+  readRememberedTheme,
+  rememberTheme,
+  resolveTheme,
+  systemPrefersDark,
+  THEME_STORAGE_KEY,
+  type ResolvedTheme,
+  type ThemeSelection,
+} from '@/lib/theme';
+
+export interface ThemePreference {
+  selection: ThemeSelection;
+  resolved: ResolvedTheme;
+  applied: ResolvedTheme;
+  remember: boolean;
+  notice: string;
+  revision: number;
+  animate: boolean;
+}
+
+const initial: ThemePreference = {
+  selection: 'system',
+  resolved: 'light',
+  applied: 'light',
+  remember: false,
+  notice: '',
+  revision: 0,
+  animate: false,
+};
+
+export function useThemePreference() {
+  const [preference, setPreference] = useState(initial);
+  const current = useRef(initial);
+  const update = useCallback((next: ThemePreference) => {
+    current.current = next;
+    setPreference(next);
+  }, []);
+  const select = useCallback(
+    (selection: ThemeSelection) => {
+      const previous = current.current;
+      const saved = !previous.remember || rememberTheme(selection);
+      update({
+        ...previous,
+        selection,
+        resolved: resolveTheme(selection, systemPrefersDark()),
+        remember: previous.remember && saved,
+        notice: saved
+          ? ''
+          : 'Dein Browser erlaubt das Merken nicht. Die Auswahl gilt für diesen Aufruf.',
+        revision: previous.revision + 1,
+        animate: true,
+      });
+    },
+    [update],
+  );
+  const setRemember = useCallback(
+    (remember: boolean) => {
+      const previous = current.current;
+      const saved = rememberTheme(remember ? previous.selection : null);
+      update({
+        ...previous,
+        remember: remember && saved,
+        notice: saved
+          ? ''
+          : remember
+            ? 'Dein Browser erlaubt das Merken nicht. Die Auswahl gilt für diesen Aufruf.'
+            : 'Die gespeicherte Auswahl konnte nicht gelöscht werden. Bitte lösche die Website-Daten in deinem Browser.',
+      });
+    },
+    [update],
+  );
+  const animationFailed = useCallback(() => {
+    update({ ...current.current, notice: 'Die Darstellung wurde ohne Animation geändert.' });
+  }, [update]);
+  const captureAppearance = useCallback(
+    (applied: ResolvedTheme) => {
+      update({ ...current.current, applied });
+    },
+    [update],
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const applyExternal = (selection: ThemeSelection, remember: boolean) => {
+      const resolved = resolveTheme(selection, media.matches);
+      update({
+        selection,
+        resolved,
+        applied: resolved,
+        remember,
+        notice: '',
+        revision: current.current.revision + 1,
+        animate: false,
+      });
+      applyTheme(selection, resolved);
+    };
+    const stored = readRememberedTheme();
+    applyExternal(stored ?? 'system', stored !== null);
+    const changedSystem = () => {
+      if (current.current.selection === 'system') applyExternal('system', current.current.remember);
+    };
+    const changedStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== THEME_STORAGE_KEY) return;
+      try {
+        if (event.storageArea && event.storageArea !== window.localStorage) return;
+      } catch {
+        return;
+      }
+      const selection = event.key === null ? null : parseTheme(event.newValue);
+      applyExternal(selection ?? 'system', selection !== null);
+    };
+    media.addEventListener('change', changedSystem);
+    window.addEventListener('storage', changedStorage);
+    return () => {
+      media.removeEventListener('change', changedSystem);
+      window.removeEventListener('storage', changedStorage);
+    };
+  }, [update]);
+
+  return { preference, current, select, setRemember, animationFailed, captureAppearance };
+}

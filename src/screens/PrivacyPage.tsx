@@ -11,12 +11,7 @@ export default function PrivacyPage() {
     <PageLayout>
       <PageHeader title="Datenschutzerklärung" />
       <PageContent labelledBy="privacy-title">
-        <h1
-          id="privacy-title"
-          className="text-2xl sm:text-3xl font-extrabold text-zinc-900 mb-8 border-b border-zinc-100 pb-4"
-        >
-          Datenschutzerklärung
-        </h1>
+        <h1 id="privacy-title">Datenschutzerklärung</h1>
         {PrivacyOverview}
         {PrivacyHosting}
         {PrivacyInformation}

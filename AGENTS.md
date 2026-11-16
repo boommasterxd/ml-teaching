@@ -39,9 +39,14 @@
 - Preserve authorized initial content at build/server boundaries. New private flows
   would require a separately assessed SSR/auth/cache design; do not turn them into
   mount-fetch shells or add auth merely because the existing learning UI is interactive.
-- TensorFlow, WebGL and models load only after consent, in the browser. Never upload
+- TensorFlow, ML WebGL and models load only after consent, in the browser. Never upload
   training images/features. Stop camera tracks and dispose model/classifier resources
   on teardown. Bound training, uploads, retries and one-frame prediction work.
+  The complete initial consent is SSG content. Preserve its shared inline native
+  Radix variant and style-free Checkbox hydration without a portal remount or entry replay.
+  The decorative local hero WebGL is separate: start only while visible, without
+  ML, user-data processing or external requests; retain a static fallback and
+  respect reduced motion, pause and resource cleanup.
 - TanStack Virtual owns thumbnail windowing. Local training data and one-time model
   assets do not justify server Query/Table/DB layers; reassess if actual server data
   or substantial shared-entity mutation is introduced.
@@ -69,8 +74,16 @@
 
 ## UI and accessibility
 
-- Preserve the established zinc/red/indigo educational design. Tailwind 4,
-  shadcn/ui Radix/new-york and Animate UI form the selected bundle.
+- Apply the Neural Field educational brief: red primary actions, warm ivory light
+  surfaces and graphite dark surfaces, locally hosted Space Grotesk headings and
+  Geist interface text. Tailwind 4, shadcn/ui Radix/new-york and Animate UI remain
+  the selected bundle. Keep the genuine official Topography renderer adaptation
+  bounded to the hero with a static fallback; use at most two decorative parallax
+  layers with pause, offscreen and reduced-motion handling.
+- Follow the OS theme unless the user selects another appearance. Persist only the
+  light/dark/system enum after explicit remembering; keep it independent of ML
+  consent/data. ThemeProvider stays outside the route boundary. Preserve trusted
+  static theme bootstrap and wipe-style hashes, including native error output.
 - Reuse shared wrappers in `src/components/ui/`, product Button/Dialog interfaces,
   central variants/tokens and native framework navigation. Consult official
   catalogs before introducing components or custom substitutes.

@@ -54,11 +54,11 @@ export default function TrainingClassesPanel({
 }: TrainingClassesPanelProps) {
   return (
     <div className="lg:col-span-7 flex min-w-0 flex-col gap-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h1
           ref={mainHeadingRef}
           tabIndex={-1}
-          className="text-lg font-bold text-foreground focus-visible:outline-none"
+          className="workspace-heading focus-visible:outline-none"
         >
           1. Klassen ({classes.length})
         </h1>
@@ -74,7 +74,7 @@ export default function TrainingClassesPanel({
             <span className="hidden sm:inline">Zurücksetzen</span>
           </Button>
           <Button
-            variant="outline"
+            variant="primary"
             size="toolbar"
             onClick={onAddClass}
             disabled={classes.length >= ML.MAX_CLASSES}

@@ -7,6 +7,7 @@ import type { MLClass, Prediction } from '../types/ml';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import { classColorClasses } from '../lib/class-colors';
 
 interface PredictionPanelProps {
   hasCamera: boolean;
@@ -32,10 +33,10 @@ function ConfidenceResults({
   return (
     <div className="flex flex-col gap-4">
       <div className="text-center mb-2" role="status" aria-live="polite">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-1">
-          Erkannt
+        <div className="eyebrow mb-2">Erkannt</div>
+        <div className="font-display text-3xl tracking-tight text-foreground">
+          {predictedClassName}
         </div>
-        <div className="text-2xl font-black text-foreground">{predictedClassName}</div>
       </div>
       <div className="flex flex-col gap-2.5">
         {classes.map((cls) => {
@@ -44,7 +45,10 @@ function ConfidenceResults({
             ? Math.round(Math.max(0, Math.min(1, confidence)) * 100)
             : 0;
           return (
-            <div key={cls.id} className="flex items-center text-xs">
+            <div
+              key={cls.id}
+              className={cn('flex items-center text-xs', classColorClasses(cls.color))}
+            >
               <span className="w-20 truncate font-semibold text-muted-foreground">{cls.name}</span>
               <Progress.Root
                 value={percentage}
@@ -54,7 +58,7 @@ function ConfidenceResults({
                 <Progress.Indicator
                   className="h-full w-full rounded-full"
                   style={{
-                    backgroundColor: cls.color,
+                    backgroundColor: 'var(--class-on-surface)',
                     transform: `translateX(-${100 - percentage}%)`,
                   }}
                 />
@@ -87,10 +91,7 @@ export default function PredictionPanel(props: PredictionPanelProps) {
     onStopPredicting,
   } = props;
   return (
-    <Card
-      className={cn('flex-1', !hasTrainedModel && 'opacity-80 pointer-events-none')}
-      inert={!hasTrainedModel}
-    >
+    <Card className="flex-1" inert={!hasTrainedModel}>
       <CardHeader>
         <CardTitle>
           <Camera aria-hidden="true" /> 3. Vorhersage
@@ -104,7 +105,7 @@ export default function PredictionPanel(props: PredictionPanelProps) {
       </CardHeader>
       <Separator />
       <CardContent className="flex flex-col flex-1">
-        <div className="relative aspect-[16/10.25] bg-zinc-900 rounded-xl overflow-hidden mb-5 flex-shrink-0">
+        <div className="relative aspect-[16/10.25] bg-media-surface rounded-xl overflow-hidden mb-5 flex-shrink-0">
           <video
             ref={predictVideoRef}
             autoPlay
@@ -117,7 +118,7 @@ export default function PredictionPanel(props: PredictionPanelProps) {
             )}
           />
           {!isPredicting && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-xl">
+            <div className="absolute inset-0 flex items-center justify-center bg-media-overlay rounded-xl">
               <Button
                 variant="prediction"
                 onClick={onStartPredicting}

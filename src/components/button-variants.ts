@@ -6,6 +6,8 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
+        brand:
+          'font-display font-bold tracking-tight text-foreground [&_svg]:size-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md',
         primary:
           'bg-primary hover:bg-primary-hover disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-primary-foreground rounded-xl font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         secondary:
@@ -20,7 +22,7 @@ export const buttonVariants = cva(
         navigation:
           'rounded text-muted-foreground hover:text-foreground font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         gallery:
-          'rounded text-[var(--btn-color)] font-bold hover:bg-secondary hover:text-foreground disabled:text-muted-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          'rounded text-[var(--class-on-surface)] font-bold hover:bg-secondary hover:text-foreground disabled:text-muted-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         thumbnail:
           'relative block aspect-square overflow-hidden rounded-lg border border-input hover:shadow-sm cursor-pointer data-[selection-mode]:opacity-60 data-[selection-mode]:aria-pressed:opacity-100 data-[selection-mode]:hover:opacity-100 aria-pressed:border-[var(--btn-color)] aria-pressed:ring-2 aria-pressed:ring-[var(--btn-color)] [&_svg]:size-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         outline:
@@ -39,11 +41,13 @@ export const buttonVariants = cva(
           'flex-col gap-4 rounded-2xl border-2 border-diagram-control-border bg-diagram-control/50 text-diagram-foreground font-medium [&_svg]:size-12 data-[active=false]:hover:border-diagram-control-border-hover data-[muted=true]:opacity-50 data-[signal=dog]:[&_svg]:text-signal-dog data-[signal=cat]:[&_svg]:text-signal-cat data-[signal=dog]:data-[active=true]:border-signal-dog-active data-[signal=dog]:data-[active=true]:bg-signal-dog-active/20 data-[signal=cat]:data-[active=true]:border-signal-cat-active data-[signal=cat]:data-[active=true]:bg-signal-cat-active/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-diagram-surface data-[signal=dog]:focus-visible:ring-signal-dog data-[signal=cat]:focus-visible:ring-signal-cat',
       },
       size: {
+        brand: 'min-h-11 p-0 text-base',
         sm: 'py-2 px-3 text-sm',
         md: 'py-3 px-4 text-sm',
         lg: 'py-4 px-8 text-lg',
         xl: 'py-5 px-10 text-xl',
         icon: 'size-11 p-2',
+        'icon-sm': 'size-9 p-2',
         toolbar: 'py-2 px-3 sm:px-4 text-sm',
         text: 'p-0 text-sm',
         gallery: 'min-h-11 min-w-11 py-1.5 px-3 text-[10px]',

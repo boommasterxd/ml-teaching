@@ -27,7 +27,7 @@ interface ModalContentProps extends React.ComponentProps<'div'> {
 }
 
 /**
- * Renders the white content card inside a Dialog overlay.
+ * Renders the shared themed content surface inside a Dialog overlay.
  *
  * @param maxWidth - Maximum width variant of the card (`'sm'`, `'md'`, or `'lg'`). Defaults to `'md'`.
  * @param className - Optional additional classes applied to the card wrapper.
@@ -42,7 +42,7 @@ export default function ModalContent({
   return (
     <div
       className={cn(
-        'relative bg-card text-card-foreground rounded-3xl shadow-2xl overflow-hidden my-auto max-h-fit w-full outline-none',
+        'relative bg-card text-card-foreground rounded-2xl border border-border shadow-xl overflow-hidden my-auto max-h-fit w-full outline-none',
         maxWidthClasses[maxWidth],
         className,
       )}

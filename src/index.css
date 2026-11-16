@@ -1,13 +1,384 @@
-/*
- * index.css
- *
- * Global stylesheet for the ML Teaching application.
- * Imports Tailwind CSS, defines base resets (scrollbar, focus indicators),
- * custom animation utilities, and reduced-motion overrides.
- */
-
 @import 'tailwindcss';
+@import './components/hero/hero.css';
+@custom-variant dark (&:where(.dark, .dark *));
 
+:root {
+  color-scheme: light;
+  --background: #f8f6f2;
+  --foreground: #242226;
+  --card: #fffdfa;
+  --muted: #eeebe6;
+  --muted-foreground: #625e65;
+  --primary: #c92337;
+  --primary-foreground: #ffffff;
+  --primary-hover: #ad182d;
+  --primary-soft: #fce5e7;
+  --secondary: #ede9e3;
+  --secondary-foreground: #38323b;
+  --secondary-hover: #e3ddd5;
+  --border: #d9d2cb;
+  --input: #938780;
+  --control: #8c817d;
+  --destructive: #ba2034;
+  --destructive-foreground: #ffffff;
+  --destructive-hover: #9c1528;
+  --destructive-soft: #fbe5e8;
+  --destructive-soft-hover: #f7d4da;
+  --destructive-strong: #a3172c;
+  --success: #076846;
+  --success-soft: #e0f1e7;
+  --success-border: #a7cdb7;
+  --warning: #875015;
+  --warning-soft: #f7ead0;
+  --media-surface: #1b1a1e;
+  --media-overlay: #111014cc;
+  --media-foreground: #ffffff;
+  --hero-line-color: 201 35 55;
+  --class-red-on-surface: #b51c2e;
+  --class-blue-on-surface: #1d4ed8;
+  --class-green-on-surface: #047052;
+  --class-orange-on-surface: #9b4708;
+  --class-purple-on-surface: #6d28d9;
+  --class-pink-on-surface: #bd185e;
+  --header-height: 4.5rem;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #151417;
+  --foreground: #f4eee8;
+  --card: #1c1b1e;
+  --muted: #29262c;
+  --muted-foreground: #b4aeb7;
+  --primary: #ff7786;
+  --primary-foreground: #320711;
+  --primary-hover: #ff98a3;
+  --primary-soft: #3b1e28;
+  --secondary: #302c33;
+  --secondary-foreground: #e6dfe9;
+  --secondary-hover: #403942;
+  --border: #423a45;
+  --input: #75697c;
+  --control: #8c7b91;
+  --destructive: #ff8391;
+  --destructive-foreground: #320711;
+  --destructive-hover: #ffa1aa;
+  --destructive-soft: #3c202a;
+  --destructive-soft-hover: #4e2733;
+  --destructive-strong: #ffa1ad;
+  --success: #88dfb8;
+  --success-soft: #172f26;
+  --success-border: #396c55;
+  --warning: #f2c884;
+  --warning-soft: #352a1b;
+  --hero-line-color: 255 119 134;
+  --class-red-on-surface: #ff8995;
+  --class-blue-on-surface: #94b8ff;
+  --class-green-on-surface: #62ddb2;
+  --class-orange-on-surface: #ffc37b;
+  --class-purple-on-surface: #c0a7ff;
+  --class-pink-on-surface: #ffa0d4;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist), Arial, Helvetica, sans-serif;
+  --font-display: var(--font-space-grotesk), Arial, Helvetica, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-control: var(--control);
+  --color-ring: var(--primary);
+  --color-accent: var(--muted);
+  --color-accent-foreground: var(--foreground);
+  --color-accent-soft: var(--primary-soft);
+  --color-accent-strong: var(--primary);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-destructive-soft-hover: var(--destructive-soft-hover);
+  --color-destructive-strong: var(--destructive-strong);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-border: var(--success-border);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-media-surface: var(--media-surface);
+  --color-media-overlay: var(--media-overlay);
+  --color-media-foreground: var(--media-foreground);
+  --color-diagram-surface: #242226;
+  --color-diagram-border: #4c454e;
+  --color-diagram-foreground: #f4eee8;
+  --color-diagram-control: #39333c;
+  --color-diagram-control-border: #746a77;
+  --color-diagram-control-border-hover: #b4aeb7;
+  --color-diagram-text: #f4eee8;
+  --color-diagram-muted: #c1b8c4;
+  --color-signal-dog: #fb7185;
+  --color-signal-dog-active: #f43f5e;
+  --color-signal-dog-soft: #fb718533;
+  --color-signal-cat: #93c5fd;
+  --color-signal-cat-active: #60a5fa;
+  --color-signal-cat-soft: #93c5fd33;
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    background: var(--background);
+    scroll-padding-top: calc(var(--header-height) + 1rem);
+  }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+  }
+  button,
+  a,
+  input,
+  [role='switch'],
+  [role='checkbox'] {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:not(:disabled),
+  [role='switch']:not(:disabled) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 4px;
+  }
+  ::selection {
+    background: var(--primary-soft);
+    color: var(--foreground);
+  }
+}
+
+.app-body {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+.app-main {
+  flex: 1;
+  min-width: 0;
+  outline: none;
+}
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  transform: translateY(-200%);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  min-height: var(--header-height);
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+.site-header-inner {
+  max-width: 90rem;
+  min-height: var(--header-height);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 4rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+}
+.brand-mark {
+  color: var(--primary);
+  flex: none;
+}
+.site-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 3rem clamp(1rem, 4vw, 4rem) 1.75rem;
+  color: var(--muted-foreground);
+}
+.site-footer-inner {
+  max-width: 82rem;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.footer-top,
+.footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: start;
+  gap: 1.5rem;
+}
+.footer-local {
+  max-width: 32rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  font-size: 0.875rem;
+}
+.footer-link {
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+.footer-link:hover {
+  color: var(--primary);
+}
+.footer-bottom {
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+  font-size: 0.75rem;
+}
+.eyebrow {
+  display: block;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.display-heading,
+.section-heading,
+.workspace-heading {
+  font-family: var(--font-display);
+  color: var(--foreground);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+}
+.workspace-heading {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  line-height: 1.25;
+}
+.page-layout {
+  min-width: 0;
+  padding-bottom: 5rem;
+}
+.page-header {
+  max-width: 82rem;
+  margin-inline: auto;
+  padding: 1.5rem clamp(1.25rem, 5vw, 4rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.legal-section {
+  max-width: 54rem;
+  margin-inline: auto;
+  padding: clamp(2.5rem, 6vw, 5rem) clamp(1.25rem, 5vw, 3rem);
+}
+.legal-content {
+  color: var(--muted-foreground);
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.legal-content h1,
+.legal-content h2,
+.legal-content h3,
+.legal-content h4 {
+  font-family: var(--font-display);
+  color: var(--foreground);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.legal-content h1 {
+  font-size: clamp(2.2rem, 6vw, 3.75rem);
+  margin-bottom: 2rem;
+}
+.legal-content h2 {
+  font-size: clamp(1.65rem, 4vw, 2.1rem);
+  margin-top: 3.5rem;
+  margin-bottom: 1.25rem;
+}
+.legal-content h3 {
+  font-size: 1.3rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+.legal-content h4 {
+  font-size: 1.1rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+.legal-content p,
+.legal-content ul {
+  margin-bottom: 1rem;
+}
+.legal-content ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.legal-content a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.legal-content a:hover {
+  color: var(--foreground);
+}
 .gallery-region {
   --gallery-columns: 4;
   @variant sm {
@@ -24,76 +395,6 @@
   }
 }
 
-@theme inline {
-  --font-sans: Arial, Helvetica, sans-serif;
-  --color-background: #fafafa;
-  --color-foreground: #18181b;
-  --color-primary: #4f46e5;
-  --color-primary-foreground: #ffffff;
-  --color-primary-hover: #4338ca;
-  --color-primary-soft: #eef2ff;
-  --color-secondary: #f4f4f5;
-  --color-secondary-foreground: #3f3f46;
-  --color-secondary-hover: #e4e4e7;
-  --color-muted: #f4f4f5;
-  --color-muted-foreground: #52525b;
-  --color-border: #e4e4e7;
-  --color-input: #d4d4d8;
-  --color-control: #a1a1aa;
-  --color-ring: #4f46e5;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #18181b;
-  --color-card: #ffffff;
-  --color-card-foreground: #18181b;
-  --color-accent: #f4f4f5;
-  --color-accent-foreground: #18181b;
-  --color-accent-soft: #f3e8ff;
-  --color-accent-strong: #7c3aed;
-  --color-destructive: #dc2626;
-  --color-destructive-foreground: #ffffff;
-  --color-destructive-hover: #b91c1c;
-  --color-destructive-soft: #fef2f2;
-  --color-destructive-soft-hover: #fee2e2;
-  --color-destructive-strong: #b91c1c;
-  --color-success: #047857;
-  --color-success-soft: #ecfdf5;
-  --color-success-border: #d1fae5;
-  --color-warning: #92400e;
-  --color-warning-soft: #fef3c7;
-  --color-diagram-surface: var(--color-zinc-800);
-  --color-diagram-border: var(--color-zinc-700);
-  --color-diagram-control: var(--color-zinc-700);
-  --color-diagram-control-border: var(--color-zinc-600);
-  --color-diagram-control-border-hover: var(--color-zinc-500);
-  --color-diagram-foreground: #ffffff;
-  --color-signal-dog: var(--color-red-400);
-  --color-signal-dog-active: var(--color-red-500);
-  --color-signal-cat: var(--color-blue-400);
-  --color-signal-cat-active: var(--color-blue-500);
-  --radius-lg: 0.75rem;
-  --radius-md: 0.5rem;
-  --radius-sm: 0.25rem;
-}
-
-.skip-link {
-  position: fixed;
-  top: 0.5rem;
-  left: 0.5rem;
-  z-index: 100;
-  padding: 0.75rem 1rem;
-  background: white;
-  color: #18181b;
-  border-radius: 0.5rem;
-  transform: translateY(-200%);
-}
-.skip-link:focus {
-  transform: translateY(0);
-}
-.dot-pattern {
-  background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0);
-  background-size: 32px 32px;
-}
-
 ::view-transition-group(*) {
   animation-duration: 180ms;
 }
@@ -101,84 +402,10 @@
 ::view-transition-new(root) {
   animation: none;
 }
-
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation: none !important;
-  }
-}
-
-@layer base {
-  html,
-  body {
-    /* Clip any horizontal overflow to prevent layout widening on mobile
-       (e.g. from elements with minimum intrinsic widths exceeding the viewport). */
-    overflow-x: clip;
-    /* Scroll padding compensates for the sticky header (h-16 = 64px) so
-       keyboard-focused elements are never hidden behind it (WCAG 2.4.11) */
-    scroll-padding-top: 4.5rem;
-  }
-
-  /* Custom scrollbar styling only for pointer devices (desktop).
-     On mobile (touch), browsers use overlay scrollbars that don't affect layout.
-     Applying scrollbar-width: thin on mobile can force a non-overlay scrollbar
-     that steals width from the content area and causes asymmetric margins. */
-  @media (hover: hover) and (pointer: fine) {
-    html,
-    body {
-      scrollbar-width: thin;
-      scrollbar-color: #a1a1aa transparent;
-    }
-    html::-webkit-scrollbar {
-      width: 6px;
-    }
-    html::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    html::-webkit-scrollbar-thumb {
-      background: #a1a1aa;
-      border-radius: 3px;
-    }
-  }
-}
-
-@layer base {
-  /* Only show focus outlines for keyboard navigation. */
-  :focus:not(:focus-visible) {
-    outline: none !important;
-    box-shadow: none !important;
-  }
-
-  /* Global fallback focus indicator for keyboard navigation (WCAG 2.4.7) */
-  :focus-visible {
-    outline: 3px solid #2563eb;
-    outline-offset: 2px;
-  }
-
-  /* Suppress outline for inputs focused via pointer (mouse/touch) */
-  input[data-mouse-focused]:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
-}
-
-/* Respects the OS-level "reduce motion" preference (WCAG 2.3.3 / 2.2.2).
-   Disables all Tailwind animation helpers and cuts all transition durations to
-   near-zero so no motion occurs, while preserving layout and interaction. */
-@media (prefers-reduced-motion: reduce) {
-  .animate-spin,
-  .animate-pulse,
-  .animate-bounce,
-  .animate-ping {
-    animation: none;
-  }
-  /* Disable all CSS transitions for users who prefer reduced motion (WCAG 2.2.2) */
-  *,
-  *::before,
-  *::after {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
   }
 }

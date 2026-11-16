@@ -67,19 +67,26 @@ export default function TrainingControls({
       </CardHeader>
       <Separator />
       <CardContent>
-        <div className="flex justify-between text-sm mb-2">
-          <span className="text-muted-foreground">Klassen bereit:</span>
-          <span className={cn('font-semibold', canTrain ? 'text-success' : 'text-destructive')}>
-            {classes.filter((c) => c.images.length >= ML.MIN_IMAGES_PER_CLASS).length} /{' '}
-            {Math.max(ML.MIN_CLASSES, classes.length)}
-          </span>
-        </div>
-        <div className="flex justify-between text-sm mb-5">
-          <span className="text-muted-foreground">Gesammelte Bilder:</span>
-          <span className="font-semibold text-foreground">
-            {classes.reduce((acc, c) => acc + c.images.length, 0)}
-          </span>
-        </div>
+        <dl className="grid grid-cols-2 gap-5 mb-6">
+          <div className="flex flex-col gap-2">
+            <dt className="eyebrow">Klassen bereit</dt>
+            <dd
+              className={cn(
+                'font-display text-3xl tracking-tight',
+                canTrain ? 'text-success' : 'text-foreground',
+              )}
+            >
+              {classes.filter((c) => c.images.length >= ML.MIN_IMAGES_PER_CLASS).length} /{' '}
+              {Math.max(ML.MIN_CLASSES, classes.length)}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-2">
+            <dt className="eyebrow">Gesammelte Bilder</dt>
+            <dd className="font-display text-3xl tracking-tight text-foreground">
+              {classes.reduce((acc, c) => acc + c.images.length, 0)}
+            </dd>
+          </div>
+        </dl>
 
         <Button
           onClick={onTrain}
@@ -98,7 +105,7 @@ export default function TrainingControls({
           )}
         </Button>
 
-        <p className="text-xs text-muted-foreground mt-3 text-center" aria-live="polite">
+        <p className="text-xs leading-relaxed text-muted-foreground mt-4" aria-live="polite">
           {isTraining
             ? 'Bitte warten, das Modell wird trainiert...'
             : hasPendingUploads

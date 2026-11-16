@@ -1,5 +1,41 @@
 import { expect, type Page } from '@playwright/test';
 
+export async function settleLandingReveals(page: Page) {
+  const position = await page.evaluate(() => ({ x: scrollX, y: scrollY }));
+  for (const card of await page.locator('[data-slot="card"]').all()) {
+    await card.scrollIntoViewIfNeeded();
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }),
+    );
+    await expect(card).toHaveCSS('opacity', '1');
+  }
+  await page.evaluate(({ x, y }) => scrollTo({ left: x, top: y, behavior: 'instant' }), position);
+}
+
+export async function openThemeMenu(page: Page) {
+  const trigger = page.getByRole('button', { name: 'Darstellung einstellen', exact: true });
+  await trigger.focus();
+  await page.keyboard.press('ArrowDown');
+  const menu = page.getByRole('menu', { name: 'Darstellung einstellen' });
+  await expect(menu).toBeVisible();
+  return menu;
+}
+
+export async function expectThemeKeepsTraining(page: Page) {
+  const theme = page.getByRole('switch', { name: 'Dunkle Darstellung' });
+  await theme.focus();
+  await page.keyboard.press('Space');
+  await expect(theme).toBeChecked();
+  await expect(page.getByText('10 / 200 Bilder', { exact: true })).toHaveCount(2);
+  await expect(page.getByRole('status').filter({ hasText: 'Bereit' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Modell neu trainieren', exact: true }),
+  ).toBeEnabled();
+}
+
 export async function expectPreviewDeletion(
   page: Page,
   expectAccessible: (page: Page) => Promise<void>,

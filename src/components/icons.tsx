@@ -23,6 +23,20 @@ import { Upload as AnimatedUpload } from './animate-ui/icons/upload';
 import { Users as AnimatedUsers } from './animate-ui/icons/users';
 import { X as AnimatedX } from './animate-ui/icons/x';
 import { Zap as AnimatedZap } from './animate-ui/icons/zap';
+import { Sun as AnimatedSun } from './animated-sun';
+import { Moon as AnimatedMoon } from './animate-ui/icons/moon';
+import { ChevronDown as AnimatedChevronDown } from './animate-ui/icons/chevron-down';
+import { Pause as AnimatedPause } from './animate-ui/icons/pause';
+import {
+  Brain as AnimatedBrain,
+  Car as AnimatedCar,
+  Cat as AnimatedCat,
+  Dog as AnimatedDog,
+  ImagePlus as AnimatedImagePlus,
+  Square as AnimatedSquare,
+  Stethoscope as AnimatedStethoscope,
+  SwitchCamera as AnimatedSwitchCamera,
+} from './animated-icon-fallbacks';
 
 const subscribe = () => () => {};
 const clientSnapshot = () => true;
@@ -76,6 +90,17 @@ export const Upload = clientIcon(AnimatedUpload, Static.Upload);
 export const Users = clientIcon(AnimatedUsers, Static.Users);
 export const X = clientIcon(AnimatedX, Static.X);
 export const Zap = clientIcon(AnimatedZap, Static.Zap);
+export const Sun = clientIcon(AnimatedSun, Static.Sun);
+export const Moon = clientIcon(AnimatedMoon, Static.Moon);
+export const ChevronDown = clientIcon(AnimatedChevronDown, Static.ChevronDown);
+export const Pause = clientIcon(AnimatedPause, Static.Pause);
 
-// These original glyphs have no matching Animate UI Lucide catalog entry.
-export { Brain, Car, Cat, Dog, ImagePlus, Square, Stethoscope, SwitchCamera } from 'lucide-react';
+// Catalog gaps retain the original glyphs through the public Animate UI icon core.
+export const Brain = clientIcon(AnimatedBrain, Static.Brain);
+export const Car = clientIcon(AnimatedCar, Static.Car);
+export const Cat = clientIcon(AnimatedCat, Static.Cat);
+export const Dog = clientIcon(AnimatedDog, Static.Dog);
+export const ImagePlus = clientIcon(AnimatedImagePlus, Static.ImagePlus);
+export const Square = clientIcon(AnimatedSquare, Static.Square);
+export const Stethoscope = clientIcon(AnimatedStethoscope, Static.Stethoscope);
+export const SwitchCamera = clientIcon(AnimatedSwitchCamera, Static.SwitchCamera);

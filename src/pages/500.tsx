@@ -9,7 +9,7 @@ export default function ServerError() {
       </Head>
       <main
         lang="de"
-        className="min-h-screen flex flex-col items-center justify-center p-6 text-center"
+        className="flex flex-1 min-h-[60svh] flex-col items-center justify-center gap-6 p-6 text-center"
       >
         <h1 className="text-3xl font-bold">Diese Seite konnte nicht geladen werden</h1>
         <p className="mt-4">Bitte versuche es später erneut.</p>

@@ -1,0 +1,238 @@
+.section-heading {
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1.08;
+  text-wrap: balance;
+}
+.section-lead {
+  font-size: clamp(1rem, 1.6vw, 1.125rem);
+  line-height: 1.75;
+  color: var(--muted-foreground);
+  max-width: 44rem;
+}
+.landing-container {
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 5vw, 5rem);
+}
+.landing-section {
+  padding-block: clamp(4.5rem, 8vw, 8rem);
+}
+.landing-band {
+  border-block: 1px solid var(--border);
+  background: var(--card);
+}
+.landing-cta {
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  padding-block: clamp(5rem, 10vw, 9rem);
+  text-align: center;
+}
+.landing-section-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 1.25rem;
+  margin-bottom: 3rem;
+  max-width: 48rem;
+}
+.landing-network-key {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.75;
+}
+.landing-network-key strong {
+  display: block;
+  color: var(--foreground);
+  font-weight: 600;
+}
+.landing-insight {
+  display: flex;
+  align-items: start;
+  gap: 1.25rem;
+  margin-top: 3rem;
+  max-width: 48rem;
+  color: var(--muted-foreground);
+  line-height: 1.75;
+}
+.landing-insight > svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  color: var(--primary);
+  margin-top: 0.25rem;
+}
+.landing-insight h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+.landing-demo {
+  position: relative;
+  overflow: hidden;
+  min-height: 24rem;
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  background: var(--background);
+}
+.landing-demo-launch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.landing-cta .section-heading,
+.landing-cta .section-lead {
+  margin-inline: auto;
+}
+.landing-cta .eyebrow {
+  margin-bottom: 1.5rem;
+}
+.landing-cta .section-lead {
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+.hero-layout {
+  display: grid;
+  align-items: center;
+  gap: 2rem;
+  min-height: calc(100svh - var(--header-height));
+  padding-block: 3rem 4rem;
+}
+.hero-copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 1.75rem;
+}
+.hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.hero-kicker::before {
+  content: '';
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(3.75rem, 8.5vw, 8.5rem);
+  line-height: 0.98;
+  font-weight: 600;
+  letter-spacing: -0.075em;
+  text-wrap: balance;
+}
+.hero-description {
+  max-width: 31rem;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  line-height: 1.7;
+  color: var(--muted-foreground);
+}
+.hero-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.hero-field {
+  --hero-parallax-depth: 16;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  max-width: 45rem;
+  height: clamp(20rem, 68vw, 26rem);
+  border-radius: 2rem;
+  background: var(--primary-soft);
+}
+.hero-field-art {
+  position: absolute;
+  inset: -1.5rem;
+}
+.hero-field-glow {
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgb(var(--hero-line-color) / 0.12), transparent 70%);
+}
+.hero-field-poster {
+  width: 100%;
+  height: 100%;
+  color: rgb(var(--hero-line-color));
+  opacity: 0.75;
+}
+.hero-field[data-enhanced='true'] .hero-field-poster {
+  opacity: 0;
+}
+.hero-field-canvas {
+  position: absolute;
+  inset: 0;
+}
+.hero-field-canvas > *,
+.hero-field-canvas canvas {
+  width: 100%;
+  height: 100%;
+}
+.hero-field-caption {
+  position: absolute;
+  inset: 1.5rem 1.5rem auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--foreground);
+}
+.hero-field-controls {
+  position: absolute;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 2;
+}
+@variant lg {
+  .hero-layout {
+    grid-template-columns: 1.05fr 1fr;
+    gap: 1.5rem;
+  }
+  .landing-network-key {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .hero-field {
+    --hero-parallax-depth: 48;
+    height: min(44vw, 38.75rem);
+    border-radius: 3rem 1rem 3rem 1rem;
+  }
+}
+@variant max-sm {
+  .hero-layout {
+    padding-top: 2.5rem;
+  }
+  .hero-title {
+    font-size: clamp(3.4rem, 15vw, 5rem);
+  }
+  .hero-actions {
+    width: 100%;
+  }
+  .hero-actions > .contents {
+    flex: 1;
+  }
+  .hero-actions a {
+    width: 100%;
+  }
+  .hero-field-caption {
+    inset: 1.1rem 1.1rem auto;
+    font-size: 0.6rem;
+  }
+}

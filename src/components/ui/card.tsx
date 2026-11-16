@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { AnimateIcon } from '@animate-ui/react/icons';
 
 const cardVariants = cva(
   'flex flex-col gap-0 overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm',
@@ -8,6 +9,7 @@ const cardVariants = cva(
     variants: {
       variant: {
         default: 'border-border/80',
+        open: 'rounded-none border-0 bg-transparent p-0 shadow-none',
         classification: 'border-input hover:shadow-md',
         feature: 'rounded-3xl border-border p-8',
         explanation: 'relative group rounded-3xl border-border bg-muted/50 p-8 hover:shadow-md',
@@ -22,7 +24,11 @@ function Card({
   variant,
   ...props
 }: React.ComponentProps<'div'> & VariantProps<typeof cardVariants>) {
-  return <div data-slot="card" className={cn(cardVariants({ variant }), className)} {...props} />;
+  return (
+    <AnimateIcon animateOnHover animateOnTap className="contents">
+      <div data-slot="card" className={cn(cardVariants({ variant }), className)} {...props} />
+    </AnimateIcon>
+  );
 }
 
 function CardHeader({

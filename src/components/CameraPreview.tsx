@@ -39,7 +39,7 @@ function RecordButton({
       variant="capture"
       disabled={disabled}
       className={cn(
-        'flex-1 py-2.5 touch-none select-none [-webkit-touch-callout:none]',
+        'flex-1 touch-none select-none [-webkit-touch-callout:none]',
         classColorClasses(color),
       )}
       aria-pressed={isRecording}
@@ -104,7 +104,7 @@ export default function CameraPreview(props: CameraPreviewProps) {
   }, [stream, videoRef]);
   return (
     <div className="w-full sm:w-56 flex flex-col gap-3 flex-shrink-0">
-      <div className="relative aspect-[4/3] bg-zinc-900 rounded-xl overflow-hidden shadow-inner">
+      <div className="relative aspect-[4/3] bg-media-surface rounded-xl overflow-hidden">
         <video
           ref={videoRef}
           autoPlay
@@ -116,6 +116,12 @@ export default function CameraPreview(props: CameraPreviewProps) {
             facingMode === 'user' && 'transform scale-x-[-1]',
           )}
         />
+        {!stream && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-media-foreground">
+            <Camera className="size-6" aria-hidden="true" />
+            <span className="text-xs">Kamera ist aus</span>
+          </div>
+        )}
       </div>
       <div className="flex gap-2">
         <RecordButton

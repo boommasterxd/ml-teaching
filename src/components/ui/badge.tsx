@@ -8,6 +8,8 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
+        pipeline:
+          'size-8 rounded-full p-0 font-mono text-xs bg-muted text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=complete]:bg-success-soft data-[state=complete]:text-success',
         'step-neutral': 'bg-muted text-muted-foreground',
         'step-primary': 'bg-primary-soft text-primary',
         'step-destructive': 'bg-destructive-soft text-destructive',

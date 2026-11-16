@@ -51,10 +51,10 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} labelledBy={titleId} describedBy={descId}>
-      <ModalContent maxWidth="md" className="p-6">
+      <ModalContent maxWidth="md" className="p-6 sm:p-8">
         {icon && (
           <div
-            className="size-12 bg-destructive-soft-hover text-destructive rounded-full flex items-center justify-center mb-4 [&_svg]:size-6"
+            className="size-12 bg-destructive-soft text-destructive rounded-xl flex items-center justify-center mb-5 [&_svg]:size-6"
             aria-hidden="true"
           >
             {icon}
@@ -68,7 +68,7 @@ export default function ConfirmDialog({
         <p id={descId} className="text-muted-foreground mb-6 text-sm">
           {description}
         </p>
-        <div className="flex gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Button variant="secondary" onClick={onClose} className="flex-1">
             {cancelLabel}
           </Button>

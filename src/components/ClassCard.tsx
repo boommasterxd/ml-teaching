@@ -79,12 +79,15 @@ function ClassHeader({
       ? 'Name muss eindeutig sein'
       : null;
   return (
-    <CardHeader variant="classification" className="items-start sm:items-center">
-      <Field data-invalid={!!errorMsg} className="w-auto gap-1">
-        <div className="flex items-center gap-3">
+    <CardHeader
+      variant="classification"
+      className="items-start gap-4 sm:items-center sm:flex-nowrap"
+    >
+      <Field data-invalid={!!errorMsg} className="min-w-0 flex-1 gap-2">
+        <div className="flex min-w-0 items-center gap-3">
           <div
             className={cn(
-              'size-2.5 rounded-full shadow-sm bg-[var(--btn-color)]',
+              'size-2.5 shrink-0 rounded-full bg-[var(--btn-color)]',
               classColorClasses(cls.color),
             )}
             aria-hidden="true"
@@ -100,7 +103,7 @@ function ClassHeader({
             value={cls.name}
             maxLength={ML.MAX_CLASS_NAME_LENGTH}
             onChange={(e) => onUpdateName(cls.id, e.target.value)}
-            className="w-[120px] sm:w-[160px]"
+            className="w-full"
             onPointerDown={(e) => {
               e.currentTarget.dataset.mouseFocused = '1';
             }}
@@ -118,9 +121,10 @@ function ClassHeader({
           </FieldError>
         )}
       </Field>
-      <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-0 ml-auto flex-shrink-0 min-w-0">
+      <div className="flex w-full min-w-0 shrink-0 items-center gap-2 sm:w-auto sm:gap-3">
         <Badge
           variant={cls.images.length >= ML.MAX_IMAGES_PER_CLASS ? 'warning' : 'count'}
+          className="mr-auto sm:mr-0"
           title={
             cls.images.length >= ML.MAX_IMAGES_PER_CLASS
               ? `Limit von ${ML.MAX_IMAGES_PER_CLASS} Bildern erreicht`
@@ -185,7 +189,7 @@ const ClassCard = memo(function ClassCard({
       <ClassHeader cls={cls} position={position} isDuplicate={isDuplicate} actions={actions} />
       <Separator />
 
-      <CardContent variant="classification" className="flex flex-col sm:flex-row gap-4">
+      <CardContent variant="classification" className="flex flex-col sm:flex-row gap-5">
         <CameraPreview
           disabled={actions.captureDisabled}
           stream={stream}

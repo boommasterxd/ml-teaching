@@ -10,6 +10,7 @@ interface DialogProps {
   onClose?: () => void;
   labelledBy: string;
   describedBy?: string;
+  initialContent?: boolean;
   children: ReactElement;
 }
 
@@ -19,6 +20,7 @@ export default function Dialog({
   onClose,
   labelledBy,
   describedBy,
+  initialContent = false,
   children,
 }: DialogProps) {
   const returnFocus = useRef<(HTMLElement | null)[]>([]);
@@ -35,6 +37,30 @@ export default function Dialog({
     }
   }, [isOpen, content]);
 
+  const Content = initialContent ? RadixDialog.Content : DialogContent;
+  const surface = (
+    <DialogOverlay animateEntry={!initialContent}>
+      <Content
+        ref={setContent}
+        asChild
+        aria-modal="true"
+        aria-labelledby={labelledBy}
+        aria-describedby={describedBy}
+        onOpenAutoFocus={() => {
+          returnFocus.current = getReturnFocusCandidates(document.activeElement as HTMLElement);
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+        }}
+        onEscapeKeyDown={(event) => {
+          if (!onClose) event.preventDefault();
+        }}
+        onInteractOutside={(event) => event.preventDefault()}
+      >
+        {children}
+      </Content>
+    </DialogOverlay>
+  );
   return (
     <DialogRoot
       open={isOpen}
@@ -42,29 +68,7 @@ export default function Dialog({
         if (!open) onClose?.();
       }}
     >
-      {/* The native portal releases modality immediately; Animate UI retains entry motion. */}
-      <RadixDialog.Portal>
-        <DialogOverlay>
-          <DialogContent
-            ref={setContent}
-            asChild
-            aria-labelledby={labelledBy}
-            aria-describedby={describedBy}
-            onOpenAutoFocus={() => {
-              returnFocus.current = getReturnFocusCandidates(document.activeElement as HTMLElement);
-            }}
-            onCloseAutoFocus={(event) => {
-              event.preventDefault();
-            }}
-            onEscapeKeyDown={(event) => {
-              if (!onClose) event.preventDefault();
-            }}
-            onInteractOutside={(event) => event.preventDefault()}
-          >
-            {children}
-          </DialogContent>
-        </DialogOverlay>
-      </RadixDialog.Portal>
+      {initialContent ? isOpen && surface : <RadixDialog.Portal>{surface}</RadixDialog.Portal>}
     </DialogRoot>
   );
 }
