@@ -13,7 +13,7 @@ export default function SiteHeader() {
           <AnimatedLink
             href="/lernen"
             variant="outline"
-            size="toolbar"
+            size="default"
             aria-label="Lernlabor öffnen"
           >
             <span className="hidden sm:inline">Lernlabor</span>

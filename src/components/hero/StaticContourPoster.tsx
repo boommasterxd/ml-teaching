@@ -1,7 +1,13 @@
 /** Build-time contour artwork is also the reduced-motion and unavailable-GPU view. */
 export default function StaticContourPoster() {
   return (
-    <svg className="hero-field-poster" viewBox="0 0 720 620" fill="none" aria-hidden="true">
+    <svg
+      className="hero-field-poster"
+      viewBox="0 0 720 620"
+      preserveAspectRatio="xMidYMid slice"
+      fill="none"
+      aria-hidden="true"
+    >
       {Array.from({ length: 19 }, (_, level) => {
         const radius = 32 + level * 17;
         const points = Array.from({ length: 64 }, (_, point) => {

@@ -31,9 +31,7 @@ export function ThemeMenu({ trigger }: ThemeMenuProps) {
       onCloseAutoFocus={(event) => event.preventDefault()}
     >
       <DropdownMenuGroup>
-        <DropdownMenuLabel className="block px-2 py-1.5 text-sm font-semibold">
-          Darstellung
-        </DropdownMenuLabel>
+        <DropdownMenuLabel>Darstellung</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={preference.selection}
           onValueChange={(value) => {
@@ -55,7 +53,7 @@ export function ThemeMenu({ trigger }: ThemeMenuProps) {
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuGroup>
-      <DropdownMenuSeparator className="my-2 h-px bg-border" />
+      <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <DropdownMenuCheckboxItem
           checked={preference.remember}

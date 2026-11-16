@@ -54,13 +54,20 @@ describe('development-only CSP transport', () => {
   });
 
   it('exposes the compound Proxy extension only to the native development phase', () => {
+    vi.stubEnv('NEXT_DEV_ALLOWED_ORIGIN', '');
     expect(configureNext(PHASE_DEVELOPMENT_SERVER, defaults).pageExtensions).toEqual([
       'dev.ts',
       ...defaults.defaultConfig.pageExtensions,
     ]);
+    expect(configureNext(PHASE_DEVELOPMENT_SERVER, defaults).allowedDevOrigins).toEqual([]);
+    vi.stubEnv('NEXT_DEV_ALLOWED_ORIGIN', 'machine.example.ts.net');
+    expect(configureNext(PHASE_DEVELOPMENT_SERVER, defaults).allowedDevOrigins).toEqual([
+      'machine.example.ts.net',
+    ]);
     for (const phase of [PHASE_PRODUCTION_BUILD, PHASE_PRODUCTION_SERVER, 'unknown']) {
       const production = configureNext(phase, defaults);
       expect(production.pageExtensions).toBeUndefined();
+      expect(production.allowedDevOrigins).toBeUndefined();
       expect(production.adapterPath).toContain('/csp/adapter.mjs');
     }
   });
@@ -82,6 +89,8 @@ describe('development-only CSP transport', () => {
       '/_next/image?url=%2Fapple-icon.png&w=64&q=75',
       '/_next/pngack-hmr',
       '/favicon.svg',
+      '/favicon-light.svg',
+      '/favicon-dark.svg',
       '/apple-icon.png',
       '/robots.txt',
     ]) {

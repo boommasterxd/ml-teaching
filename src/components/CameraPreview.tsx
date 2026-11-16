@@ -4,13 +4,11 @@ import { Camera, Upload } from './icons';
 import Button from './Button';
 import { cn } from '../lib/utils';
 import { IMAGE_INPUT_ACCEPT } from '../lib/image-input-policy';
-import { classColorClasses } from '../lib/class-colors';
 
 export interface CameraPreviewProps {
   disabled: boolean;
   stream: MediaStream | null;
   facingMode: 'user' | 'environment';
-  color: string;
   isRecording: boolean;
   onStartRecording: () => void;
   onStopRecording: () => void;
@@ -20,12 +18,11 @@ export interface CameraPreviewProps {
 
 type RecordButtonProps = Pick<
   CameraPreviewProps,
-  'color' | 'isRecording' | 'onStartRecording' | 'onStopRecording' | 'disabled'
+  'isRecording' | 'onStartRecording' | 'onStopRecording' | 'disabled'
 >;
 
 function RecordButton({
   disabled,
-  color,
   isRecording,
   onStartRecording,
   onStopRecording,
@@ -36,12 +33,10 @@ function RecordButton({
   };
   return (
     <Button
-      variant="capture"
+      variant={isRecording ? 'destructive' : 'default'}
+      size="lg"
       disabled={disabled}
-      className={cn(
-        'flex-1 touch-none select-none [-webkit-touch-callout:none]',
-        classColorClasses(color),
-      )}
+      className="flex-1 touch-none select-none [-webkit-touch-callout:none]"
       aria-pressed={isRecording}
       onPointerDown={(event) => {
         // Motion's Enter feedback dispatches pointer events without a pointer device.
@@ -85,7 +80,6 @@ export default function CameraPreview(props: CameraPreviewProps) {
   const {
     stream,
     facingMode,
-    color,
     isRecording,
     onStartRecording,
     onStopRecording,
@@ -126,7 +120,6 @@ export default function CameraPreview(props: CameraPreviewProps) {
       <div className="flex gap-2">
         <RecordButton
           disabled={disabled}
-          color={color}
           isRecording={isRecording}
           onStartRecording={onStartRecording}
           onStopRecording={onStopRecording}

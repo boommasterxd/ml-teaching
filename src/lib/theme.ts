@@ -18,6 +18,7 @@ export function systemPrefersDark(): boolean {
 export function applyTheme(selection: ThemeSelection, resolved: ResolvedTheme): void {
   document.documentElement.classList.toggle('dark', resolved === 'dark');
   document.documentElement.dataset.theme = selection;
+  document.getElementById('site-favicon')?.setAttribute('href', `/favicon-${resolved}.svg`);
 }
 
 export function readRememberedTheme(): ThemeSelection | null {
@@ -41,4 +42,4 @@ export function rememberTheme(selection: ThemeSelection | null): boolean {
 }
 
 /** Trusted build-known script, shared by App Router and the native static error document. */
-export const THEME_BOOTSTRAP_SCRIPT = `(()=>{let t="system";try{const v=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});if(${JSON.stringify(THEME_SELECTIONS)}.includes(v))t=v}catch{}const d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.dataset.theme=t})()`;
+export const THEME_BOOTSTRAP_SCRIPT = `(()=>{let t="system";try{const v=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});if(${JSON.stringify(THEME_SELECTIONS)}.includes(v))t=v}catch{}const d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.dataset.theme=t;document.getElementById("site-favicon")?.setAttribute("href",d?"/favicon-dark.svg":"/favicon-light.svg")})()`;

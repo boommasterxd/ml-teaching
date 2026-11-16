@@ -1,8 +1,46 @@
 import { expect, type Page } from '@playwright/test';
 
+export async function expectHeaderLayout(page: Page) {
+  const navigation = page.getByRole('navigation', { name: 'Hauptnavigation', exact: true });
+  const brand = navigation.getByRole('link', { name: 'ML Teaching – Startseite', exact: true });
+  const lab = navigation.getByRole('link', { name: 'Lernlabor öffnen', exact: true });
+  await expect(brand).toBeVisible();
+  await expect(lab).toBeVisible();
+  const [brandBox, labBox, navBox] = await Promise.all([
+    brand.boundingBox(),
+    lab.boundingBox(),
+    navigation.boundingBox(),
+  ]);
+  if (!brandBox || !labBox || !navBox) throw new Error('Header controls have no visible geometry.');
+  const padding = await navigation.evaluate((node) =>
+    Number.parseFloat(getComputedStyle(node).paddingRight),
+  );
+  expect(brandBox.x + brandBox.width).toBeLessThan(labBox.x);
+  expect(
+    Math.abs(labBox.x + labBox.width - (navBox.x + navBox.width - padding)),
+  ).toBeLessThanOrEqual(1);
+}
+
+/** The current control must remain visible above the old page while the theme wipe runs. */
+export async function expectImmediateThemeFeedback(page: Page) {
+  await expect
+    .poll(() =>
+      page.getByRole('switch', { name: 'Dunkle Darstellung' }).evaluate((control) => {
+        const name = getComputedStyle(control).viewTransitionName;
+        if (name === 'none') return false;
+        const root = document.documentElement;
+        return (
+          getComputedStyle(root, `::view-transition-old(${name})`).opacity === '0' &&
+          getComputedStyle(root, `::view-transition-new(${name})`).opacity === '1'
+        );
+      }),
+    )
+    .toBe(true);
+}
+
 export async function settleLandingReveals(page: Page) {
   const position = await page.evaluate(() => ({ x: scrollX, y: scrollY }));
-  for (const card of await page.locator('[data-slot="card"]').all()) {
+  for (const card of await page.locator('[data-scroll-reveal]').all()) {
     await card.scrollIntoViewIfNeeded();
     await page.evaluate(
       () =>

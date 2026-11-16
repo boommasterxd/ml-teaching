@@ -2,7 +2,8 @@ import { createElement, type ComponentType } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import * as Icons from '@/components/icons';
-import NeuralNetViz from '@/components/NeuralNetViz';
+import DeferredNetworkDemo from '@/components/hero/DeferredNetworkDemo';
+import { NetworkScene } from '@/components/network/NetworkScene';
 import Button from '@/components/Button';
 import AnimatedLink from '@/components/AnimatedLink';
 import { AnimatedList, AnimatedListItem } from '@/components/ui/animated-list';
@@ -37,8 +38,16 @@ describe('strict-CSP static UI', () => {
       'Jetzt ausprobieren',
     );
     expect(document.querySelector('#so-funktionierts')).not.toBeNull();
-    expect(document.querySelector('.landing-demo svg[role="img"]')).not.toBeNull();
-    expect(document.body.textContent).toContain('Demo starten');
+    const quiz = document.querySelector('section[aria-labelledby="section-examples"]');
+    expect(quiz?.querySelectorAll('button[aria-label^="Auswählen: "]')).toHaveLength(6);
+    expect(document.querySelector('.landing-demo img')).toBeNull();
+    expect(document.querySelector('.landing-demo [data-slot="empty"]')?.textContent).toBe('Input');
+    expect(document.querySelector('button[data-signal=dog]')?.getAttribute('aria-label')).toContain(
+      'Hundebild zeigen',
+    );
+    expect(document.querySelector('button[data-signal=cat]')?.getAttribute('aria-label')).toContain(
+      'Katzenbild zeigen',
+    );
     expect(document.body.textContent).toContain('MobileNet');
   });
   it('renders shared action buttons without Motion initial style attributes', () => {
@@ -50,7 +59,7 @@ describe('strict-CSP static UI', () => {
 
   it('keeps native action-link semantics in strict-CSP static HTML', () => {
     const markup = renderToStaticMarkup(
-      <AnimatedLink href="/lernen" variant="cta" size="lg">
+      <AnimatedLink href="/lernen" variant="default" size="lg">
         Jetzt ausprobieren
       </AnimatedLink>,
     );
@@ -88,13 +97,32 @@ describe('strict-CSP static UI', () => {
   });
 
   it('includes the educational network in static HTML without inline styles', () => {
-    const markup = renderToStaticMarkup(createElement(NeuralNetViz));
+    const markup = renderToStaticMarkup(createElement(DeferredNetworkDemo));
     const document = new DOMParser().parseFromString(markup, 'text/html');
     expect(document.querySelector('[style], style, script')).toBeNull();
-    expect(document.querySelector('svg[role="img"]')?.getAttribute('aria-label')).toContain(
-      'Neuronales Netz',
+    expect(document.querySelector('img')).toBeNull();
+    expect(document.querySelector('[data-slot="empty"]')?.textContent).toBe('Input');
+    const selectedMarkup = renderToStaticMarkup(<NetworkScene signal="dog" />);
+    const selected = new DOMParser().parseFromString(selectedMarkup, 'text/html');
+    expect(selected.querySelector('[style], style, script')).toBeNull();
+    const image = selected.querySelector('img[alt="Generiertes Beispielbild eines Hundes"]');
+    expect(image?.getAttribute('src')).toContain('/_next/image');
+    expect(image?.getAttribute('srcset')).toContain('/_next/image');
+    for (const label of [
+      '01 / Eingabe',
+      '02 / Merkmale',
+      '03 / Vergleich',
+      '04 / Ausgabe',
+      'MobileNet',
+      'KNN',
+    ]) {
+      expect(document.body.textContent).toContain(label);
+    }
+    expect(document.querySelector('button[data-signal="dog"]')?.getAttribute('aria-label')).toBe(
+      'Hundebild zeigen',
     );
-    expect(document.body.textContent).toContain('Hundebild zeigen');
-    expect(document.body.textContent).toContain('Katzenbild zeigen');
+    expect(document.querySelector('button[data-signal="cat"]')?.getAttribute('aria-label')).toBe(
+      'Katzenbild zeigen',
+    );
   });
 });

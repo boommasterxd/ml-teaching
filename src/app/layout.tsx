@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 import SiteHeader from '@/components/SiteHeader';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
-import { geist, spaceGrotesk } from '@/lib/fonts';
+import { geist } from '@/lib/fonts';
 import { siteConfig } from '@/lib/site';
 import '../index.css';
 
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
   },
-  icons: { icon: '/favicon.svg', apple: '/apple-icon.png' },
+  icons: { apple: '/apple-icon.png' },
   robots: { index: true, follow: true },
 };
 
@@ -38,8 +38,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f8f6f2' },
-    { media: '(prefers-color-scheme: dark)', color: '#151417' },
+    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
   ],
 };
 
@@ -47,9 +47,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
+        <link
+          id="site-favicon"
+          rel="icon"
+          href="/favicon.svg"
+          type="image/svg+xml"
+          suppressHydrationWarning
+        />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
       </head>
-      <body className={[geist.variable, spaceGrotesk.variable, 'app-body'].join(' ')}>
+      <body className={[geist.variable, 'app-body'].join(' ')}>
         <ThemeProvider>
           <a href="#main-content" className="skip-link">
             Zum Inhalt springen

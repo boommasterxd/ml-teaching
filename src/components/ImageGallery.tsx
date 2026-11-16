@@ -153,31 +153,21 @@ function GalleryToolbar({
         {isSelectionMode ? (
           <>
             <Button
-              variant="gallery"
-              size="gallery"
+              variant="ghost"
+              size="sm"
               onClick={onDelete}
               disabled={selectedCount === 0}
               aria-label={`${selectedCount} ausgewählte Bilder löschen`}
             >
               Löschen
             </Button>
-            <Button
-              variant="ghost"
-              size="gallery"
-              onClick={onCancel}
-              aria-label="Auswahl abbrechen"
-            >
+            <Button variant="ghost" size="sm" onClick={onCancel} aria-label="Auswahl abbrechen">
               Abbrechen
             </Button>
           </>
         ) : (
           hasImages && (
-            <Button
-              variant="gallery"
-              size="gallery"
-              onClick={onSelect}
-              aria-label="Bilder auswählen"
-            >
+            <Button variant="ghost" size="sm" onClick={onSelect} aria-label="Bilder auswählen">
               Auswählen
             </Button>
           )
@@ -283,14 +273,12 @@ function useFocusedRowVisibility(
 
 function GalleryEmpty() {
   return (
-    <Empty variant="gallery">
+    <Empty className="h-full p-3 md:p-3">
       <EmptyHeader>
-        <EmptyMedia>
+        <EmptyMedia variant="icon">
           <ImageIcon aria-hidden="true" />
         </EmptyMedia>
-        <EmptyDescription variant="compact">
-          Halte „Aufnehmen“ gedrückt, um Bilder zu sammeln.
-        </EmptyDescription>
+        <EmptyDescription>Halte „Aufnehmen“ gedrückt, um Bilder zu sammeln.</EmptyDescription>
       </EmptyHeader>
     </Empty>
   );

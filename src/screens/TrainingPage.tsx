@@ -13,6 +13,7 @@ import TrainingError from '../components/TrainingError';
 import { ConsentModal, CameraConsentModal, LoadingModal } from '../components/modals';
 import { Badge } from '../components/ui/badge';
 import { cn } from '../lib/utils';
+import { Separator } from '../components/ui/separator';
 
 function TrainingPipeline({
   canTrain,
@@ -24,7 +25,7 @@ function TrainingPipeline({
   const currentStep = hasTrainedModel ? 2 : canTrain ? 1 : 0;
   return (
     <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 sm:pt-12 lg:px-8">
-      <div className="flex flex-col gap-5 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:pb-8">
+      <div className="flex flex-col gap-5 pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:pb-8">
         <p className="eyebrow">Lernlabor</p>
         <ol aria-label="Trainingsablauf" className="grid grid-cols-3 gap-2 sm:gap-6">
           {['Bilder sammeln', 'Training', 'Vorhersage'].map((label, index) => {
@@ -41,7 +42,7 @@ function TrainingPipeline({
                 )}
               >
                 <Badge
-                  variant="pipeline"
+                  variant={state === 'active' ? 'default' : 'secondary'}
                   data-state={state}
                   aria-hidden="true"
                 >{`0${index + 1}`}</Badge>
@@ -51,6 +52,7 @@ function TrainingPipeline({
           })}
         </ol>
       </div>
+      <Separator />
     </div>
   );
 }

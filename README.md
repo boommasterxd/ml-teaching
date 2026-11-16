@@ -10,7 +10,8 @@ predictions directly in your browser. The interface is in German.
 
 | Workflow                                              | Result                                                                                         |
 | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Explore the neural-network demonstration              | Follow an illustrated classification step by step.                                             |
+| Explore the image-classification demonstration        | Follow an illustrated classification step by step.                                             |
+| Play the everyday image-recognition quiz              | Find three matching uses, reveal explanations and start another round.                         |
 | Choose light, dark or system appearance               | Use a temporary choice, or explicitly remember it for later visits.                            |
 | Collect webcam images or select local files           | Build named training classes without uploading images.                                         |
 | Extract MobileNet features and train a KNN classifier | Compare examples locally using TensorFlow.js and WebGL.                                        |
@@ -48,6 +49,7 @@ independent of Google Teachable Machine.
 Training images, class names, extracted features and the trained KNN classifier stay
 in browser memory. The app has no database, account system or image-upload API.
 Consent is not persisted. Reloading discards the workspace and asks again.
+Quiz answers and progress also stay in memory and are discarded by reset or reload.
 Appearance follows the system by default. Its separate light/dark/system preference
 is saved locally only when you explicitly enable remembering for future visits.
 
@@ -61,7 +63,7 @@ The proposed Vercel host processes website connection data. See the in-app
 There are no application API keys or paid model APIs to configure. Hosting bandwidth
 and native image optimization can incur provider costs. No billing estimates or
 provider plan guarantees are implied. The app has no analytics, advertising or
-externally hosted fonts. Space Grotesk and Geist are served from local assets.
+externally hosted fonts. Geist is served from a local asset.
 
 ## Development
 

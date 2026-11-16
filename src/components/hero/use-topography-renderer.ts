@@ -5,6 +5,26 @@ import { cancelFrame, frame, type MotionValue } from 'motion/react';
 import { createTopographyRenderer } from './topography-renderer';
 
 const MAX_RENDER_DPR = 1.5;
+const MAX_RASTER_PIXELS = 8_294_400;
+
+function resolveRasterDensity(width: number, height: number, maxDimension: number) {
+  return Math.min(
+    devicePixelRatio || 1,
+    MAX_RENDER_DPR,
+    Math.sqrt(MAX_RASTER_PIXELS / Math.max(1, width * height)),
+    maxDimension / Math.max(1, width, height),
+  );
+}
+
+function resizeRaster(canvas: HTMLCanvasElement, maxDimension: number) {
+  const { width, height } = canvas.getBoundingClientRect();
+  const dpr = resolveRasterDensity(width, height, maxDimension);
+  const rasterWidth = Math.max(1, Math.floor(width * dpr));
+  const rasterHeight = Math.max(1, Math.floor(height * dpr));
+  if (canvas.width !== rasterWidth) canvas.width = rasterWidth;
+  if (canvas.height !== rasterHeight) canvas.height = rasterHeight;
+  return { width, height, dpr };
+}
 
 export interface FieldRipple {
   x: number;
@@ -60,17 +80,12 @@ export function useTopographyRenderer(
     let painted = false;
     let color = readLineColor(canvas);
     const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      size.width = rect.width;
-      size.height = rect.height;
-      size.dpr = Math.max(1, Math.min(devicePixelRatio || 1, MAX_RENDER_DPR));
-      canvas.width = Math.max(1, Math.round(size.width * size.dpr));
-      canvas.height = Math.max(1, Math.round(size.height * size.dpr));
+      Object.assign(size, resizeRaster(canvas, renderer.maxRasterDimension));
       if (lift.get() === 0) {
         x.jump(size.width / 2);
         y.jump(size.height / 2);
       }
-      if (painted && !running.get()) tick({ delta: 0 });
+      if (painted) tick({ delta: 0 });
     };
     const tick = ({ delta }: { delta: number }) => {
       if (delta && !running.get()) return true;
@@ -80,7 +95,7 @@ export function useTopographyRenderer(
       ripples.current.forEach((ripple, index) => {
         rippleData.set([ripple.x, ripple.y, ripple.progress.get(), 1], index * 4);
       });
-      return renderer.draw({
+      const drawn = renderer.draw({
         ...size,
         time,
         color,
@@ -88,6 +103,11 @@ export function useTopographyRenderer(
         hill: [x.get(), y.get()],
         ripples: rippleData,
       });
+      if (!drawn && painted) {
+        stop();
+        onUnavailable();
+      }
+      return drawn;
     };
     resize();
     if (!tick({ delta: 0 })) {

@@ -32,5 +32,11 @@ const nextConfig = {
 /** @param {string} phase @param {{defaultConfig: {pageExtensions: string[]}}} context */
 export default function configureNext(phase, { defaultConfig }) {
   if (phase !== PHASE_DEVELOPMENT_SERVER) return nextConfig;
-  return { ...nextConfig, pageExtensions: ['dev.ts', ...defaultConfig.pageExtensions] };
+  return {
+    ...nextConfig,
+    pageExtensions: ['dev.ts', ...defaultConfig.pageExtensions],
+    allowedDevOrigins: process.env.NEXT_DEV_ALLOWED_ORIGIN
+      ? [process.env.NEXT_DEV_ALLOWED_ORIGIN]
+      : [],
+  };
 }

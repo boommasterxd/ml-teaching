@@ -5,13 +5,13 @@
  * and the train/retrain button with contextual status messages.
  */
 import { Brain, CheckCircle2, Loader2 } from './icons';
-import { cn } from '../lib/utils';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import Button from './Button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import { Text } from './ui/typography';
 
 /**
  * Props for the TrainingControls component.
@@ -56,41 +56,38 @@ export default function TrainingControls({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
-          <Brain aria-hidden="true" /> 2. Training
-        </CardTitle>
-        {hasTrainedModel && (
-          <Badge variant="success" role="status">
-            <CheckCircle2 data-icon="inline-start" aria-hidden="true" /> Bereit
-          </Badge>
-        )}
+        <CardTitle>2. Training</CardTitle>
+        <CardAction className="flex items-center gap-2">
+          <Brain aria-hidden="true" />
+          {hasTrainedModel && (
+            <Badge variant="secondary" role="status">
+              <CheckCircle2 data-icon="inline-start" aria-hidden="true" /> Bereit
+            </Badge>
+          )}
+        </CardAction>
       </CardHeader>
       <Separator />
       <CardContent>
-        <dl className="grid grid-cols-2 gap-5 mb-6">
+        <dl className="grid grid-cols-2 gap-5">
           <div className="flex flex-col gap-2">
-            <dt className="eyebrow">Klassen bereit</dt>
-            <dd
-              className={cn(
-                'font-display text-3xl tracking-tight',
-                canTrain ? 'text-success' : 'text-foreground',
-              )}
-            >
+            <dt className="text-sm text-muted-foreground">Klassen bereit</dt>
+            <dd className="text-2xl font-bold">
               {classes.filter((c) => c.images.length >= ML.MIN_IMAGES_PER_CLASS).length} /{' '}
               {Math.max(ML.MIN_CLASSES, classes.length)}
             </dd>
           </div>
           <div className="flex flex-col gap-2">
-            <dt className="eyebrow">Gesammelte Bilder</dt>
-            <dd className="font-display text-3xl tracking-tight text-foreground">
+            <dt className="text-sm text-muted-foreground">Gesammelte Bilder</dt>
+            <dd className="text-2xl font-bold">
               {classes.reduce((acc, c) => acc + c.images.length, 0)}
             </dd>
           </div>
         </dl>
-
+      </CardContent>
+      <CardFooter className="flex-col gap-4">
         <Button
           onClick={onTrain}
-          variant="primary"
+          variant="default"
           disabled={isTraining || !canTrain}
           className="w-full"
         >
@@ -105,7 +102,7 @@ export default function TrainingControls({
           )}
         </Button>
 
-        <p className="text-xs leading-relaxed text-muted-foreground mt-4" aria-live="polite">
+        <Text variant="muted" aria-live="polite">
           {isTraining
             ? 'Bitte warten, das Modell wird trainiert...'
             : hasPendingUploads
@@ -119,8 +116,8 @@ export default function TrainingControls({
                     : hasTrainedModel
                       ? 'Modell ist bereit. Du kannst es jederzeit neu trainieren.'
                       : 'Genug Bilder gesammelt! Du kannst das Modell jetzt trainieren.'}
-        </p>
-      </CardContent>
+        </Text>
+      </CardFooter>
     </Card>
   );
 }

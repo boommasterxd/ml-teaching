@@ -75,6 +75,7 @@ const travel: Variants = {
 };
 
 export const Brain = projectIcon(glyphs.Brain, pulse);
+export const Calculator = projectIcon(glyphs.Calculator, pulse);
 export const Car = projectIcon(glyphs.Car, travel);
 export const Cat = projectIcon(glyphs.Cat, acknowledge);
 export const Dog = projectIcon(glyphs.Dog, acknowledge);

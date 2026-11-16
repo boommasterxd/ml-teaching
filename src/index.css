@@ -1,39 +1,44 @@
 @import 'tailwindcss';
 @import './components/hero/hero.css';
+@import './components/network/network.css';
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   color-scheme: light;
-  --background: #f8f6f2;
-  --foreground: #242226;
-  --card: #fffdfa;
-  --muted: #eeebe6;
-  --muted-foreground: #625e65;
-  --primary: #c92337;
+  --background: #fafafa;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --muted: #f4f4f5;
+  --muted-foreground: #52525b;
+  --primary: #b91c1c;
   --primary-foreground: #ffffff;
-  --primary-hover: #ad182d;
-  --primary-soft: #fce5e7;
-  --secondary: #ede9e3;
-  --secondary-foreground: #38323b;
-  --secondary-hover: #e3ddd5;
-  --border: #d9d2cb;
-  --input: #938780;
-  --control: #8c817d;
+  --primary-hover: #991b1b;
+  --primary-soft: #fee2e2;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --secondary-hover: #e4e4e7;
+  --border: #e4e4e7;
+  --input: #71717a;
+  --control: #71717a;
   --destructive: #ba2034;
+  --destructive-on-scrim: #ffa1ad;
   --destructive-foreground: #ffffff;
   --destructive-hover: #9c1528;
   --destructive-soft: #fbe5e8;
   --destructive-soft-hover: #f7d4da;
   --destructive-strong: #a3172c;
   --success: #076846;
+  --success-on-scrim: #88dfb8;
   --success-soft: #e0f1e7;
   --success-border: #a7cdb7;
   --warning: #875015;
   --warning-soft: #f7ead0;
-  --media-surface: #1b1a1e;
-  --media-overlay: #111014cc;
+  --media-surface: #09090b;
+  --media-overlay: #09090bcc;
   --media-foreground: #ffffff;
-  --hero-line-color: 201 35 55;
+  --hero-line-color: 185 28 28;
+  --hero-veil: 250 250 250;
+  --hero-glow: 220 38 38;
   --class-red-on-surface: #b51c2e;
   --class-blue-on-surface: #1d4ed8;
   --class-green-on-surface: #047052;
@@ -41,27 +46,28 @@
   --class-purple-on-surface: #6d28d9;
   --class-pink-on-surface: #bd185e;
   --header-height: 4.5rem;
+  --radius: 0.625rem;
 }
 
 .dark {
   color-scheme: dark;
-  --background: #151417;
-  --foreground: #f4eee8;
-  --card: #1c1b1e;
-  --muted: #29262c;
-  --muted-foreground: #b4aeb7;
-  --primary: #ff7786;
-  --primary-foreground: #320711;
-  --primary-hover: #ff98a3;
-  --primary-soft: #3b1e28;
-  --secondary: #302c33;
-  --secondary-foreground: #e6dfe9;
-  --secondary-hover: #403942;
-  --border: #423a45;
-  --input: #75697c;
-  --control: #8c7b91;
-  --destructive: #ff8391;
-  --destructive-foreground: #320711;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #111113;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --primary: #f87171;
+  --primary-foreground: #09090b;
+  --primary-hover: #fca5a5;
+  --primary-soft: #301012;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --secondary-hover: #3f3f46;
+  --border: #27272a;
+  --input: #71717a;
+  --control: #71717a;
+  --destructive: #f87171;
+  --destructive-foreground: #09090b;
   --destructive-hover: #ffa1aa;
   --destructive-soft: #3c202a;
   --destructive-soft-hover: #4e2733;
@@ -71,7 +77,9 @@
   --success-border: #396c55;
   --warning: #f2c884;
   --warning-soft: #352a1b;
-  --hero-line-color: 255 119 134;
+  --hero-line-color: 239 68 68;
+  --hero-veil: 9 9 11;
+  --hero-glow: 239 68 68;
   --class-red-on-surface: #ff8995;
   --class-blue-on-surface: #94b8ff;
   --class-green-on-surface: #62ddb2;
@@ -82,7 +90,7 @@
 
 @theme inline {
   --font-sans: var(--font-geist), Arial, Helvetica, sans-serif;
-  --font-display: var(--font-space-grotesk), Arial, Helvetica, sans-serif;
+  --font-display: var(--font-geist), Arial, Helvetica, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -107,12 +115,14 @@
   --color-accent-soft: var(--primary-soft);
   --color-accent-strong: var(--primary);
   --color-destructive: var(--destructive);
+  --color-destructive-on-scrim: var(--destructive-on-scrim);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-destructive-hover: var(--destructive-hover);
   --color-destructive-soft: var(--destructive-soft);
   --color-destructive-soft-hover: var(--destructive-soft-hover);
   --color-destructive-strong: var(--destructive-strong);
   --color-success: var(--success);
+  --color-success-on-scrim: var(--success-on-scrim);
   --color-success-soft: var(--success-soft);
   --color-success-border: var(--success-border);
   --color-warning: var(--warning);
@@ -129,14 +139,17 @@
   --color-diagram-text: #f4eee8;
   --color-diagram-muted: #c1b8c4;
   --color-signal-dog: #fb7185;
-  --color-signal-dog-active: #f43f5e;
+  --color-signal-dog-active: #dc2626;
   --color-signal-dog-soft: #fb718533;
   --color-signal-cat: #93c5fd;
-  --color-signal-cat-active: #60a5fa;
+  --color-signal-cat-active: #2563eb;
   --color-signal-cat-soft: #93c5fd33;
-  --radius-lg: 1rem;
-  --radius-md: 0.75rem;
-  --radius-sm: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
 }
 
 @layer base {
@@ -174,6 +187,8 @@
 }
 
 .app-body {
+  --font-sans: var(--font-geist), Arial, Helvetica, sans-serif;
+  --font-display: var(--font-sans);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -221,10 +236,10 @@
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: 1.05rem;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.025em;
   white-space: nowrap;
 }
 .brand-mark {
@@ -232,6 +247,7 @@
   flex: none;
 }
 .site-header-actions {
+  margin-inline-start: auto;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -261,6 +277,13 @@
   font-size: 0.875rem;
   line-height: 1.7;
 }
+.footer-withdrawal {
+  align-self: center;
+  max-width: 48rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  text-align: center;
+}
 .footer-links {
   display: flex;
   flex-wrap: wrap;
@@ -275,8 +298,6 @@
   color: var(--primary);
 }
 .footer-bottom {
-  border-top: 1px solid var(--border);
-  padding-top: 1.5rem;
   font-size: 0.75rem;
 }
 .eyebrow {
@@ -326,8 +347,8 @@
   padding: clamp(2.5rem, 6vw, 5rem) clamp(1.25rem, 5vw, 3rem);
 }
 .legal-content {
-  color: var(--muted-foreground);
-  line-height: 1.8;
+  color: var(--foreground);
+  line-height: 1.75;
   overflow-wrap: anywhere;
 }
 .legal-content h1,
@@ -337,26 +358,26 @@
   font-family: var(--font-display);
   color: var(--foreground);
   font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.03em;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
   text-wrap: balance;
 }
 .legal-content h1 {
-  font-size: clamp(2.2rem, 6vw, 3.75rem);
+  @apply scroll-m-20 text-4xl font-extrabold tracking-tight text-balance;
   margin-bottom: 2rem;
 }
 .legal-content h2 {
-  font-size: clamp(1.65rem, 4vw, 2.1rem);
+  @apply scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight;
   margin-top: 3.5rem;
   margin-bottom: 1.25rem;
 }
 .legal-content h3 {
-  font-size: 1.3rem;
+  @apply scroll-m-20 text-2xl font-semibold tracking-tight;
   margin-top: 2.5rem;
   margin-bottom: 1rem;
 }
 .legal-content h4 {
-  font-size: 1.1rem;
+  @apply scroll-m-20 text-xl font-semibold tracking-tight;
   margin-top: 1.75rem;
   margin-bottom: 0.75rem;
 }
@@ -401,6 +422,23 @@
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
+}
+
+/* Keep immediate switch feedback above the page-wide Animate UI theme wipe. */
+:root:active-view-transition-type(animate-ui-theme) body [data-theme-switch] {
+  view-transition-name: theme-switch !important;
+}
+:root:active-view-transition-type(animate-ui-theme)::view-transition-group(theme-switch) {
+  animation: none;
+  z-index: 1;
+}
+:root:active-view-transition-type(animate-ui-theme)::view-transition-old(theme-switch) {
+  animation: none;
+  opacity: 0;
+}
+:root:active-view-transition-type(animate-ui-theme)::view-transition-new(theme-switch) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),

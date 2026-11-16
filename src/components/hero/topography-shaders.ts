@@ -6,24 +6,19 @@ void main() {
 }
 `;
 
-export const FRAGMENT = `
-#extension GL_OES_standard_derivatives : enable
+export const FIELD_FRAGMENT = `
 precision highp float;
-uniform sampler2D permutation;
+uniform highp sampler2D permutation;
 uniform vec2 size;
-uniform float dpr;
+uniform vec2 cssSize;
 uniform float feature;
 uniform float z;
-uniform float step;
-uniform float range;
-uniform float amount;
 uniform float lift;
 uniform float hillRadius;
 uniform vec2 hill;
 uniform vec4 ripples[4];
 uniform float reach;
 uniform float rippleWidth;
-uniform vec3 color;
 
 float perm(float i) {
   return floor(texture2D(permutation, vec2((mod(i, 256.0) + 0.5) / 256.0, 0.5)).r * 255.0 + 0.5);
@@ -68,7 +63,7 @@ float noise(vec3 p) {
 }
 
 void main() {
-  vec2 point = vec2(gl_FragCoord.x, size.y - gl_FragCoord.y) / dpr;
+  vec2 point = vec2(gl_FragCoord.x, size.y - gl_FragCoord.y) / size * cssSize;
   vec2 n = point / feature;
   float value = noise(vec3(n, z)) * 1.1 + noise(vec3(n * 2.1, z * 1.7)) * 0.45;
   if (lift > 0.0) value += lift * exp(-length(point - hill) / hillRadius);
@@ -79,7 +74,39 @@ void main() {
       value += 0.9 * (1.0 - ripple.z) * cos(d / rippleWidth * 1.8) * exp(-(d * d) / (2.0 * rippleWidth * rippleWidth));
     }
   }
-  value *= amount;
+  // Signed scalar range includes both noise octaves, the pointer hill and four ripples.
+  float encodedValue = floor(clamp((value + 8.0) / 16.0, 0.0, 1.0) * 65535.0 + 0.5);
+  gl_FragColor = vec4(floor(encodedValue / 256.0), mod(encodedValue, 256.0), 0.0, 255.0) / 255.0;
+}
+`;
+
+export const CONTOUR_FRAGMENT = `
+#extension GL_OES_standard_derivatives : enable
+precision highp float;
+uniform highp sampler2D field;
+uniform vec2 size;
+uniform vec2 fieldSize;
+uniform float dpr;
+uniform float step;
+uniform float range;
+uniform vec3 color;
+
+float sampleField(vec2 texel) {
+  vec2 uv = (clamp(texel, vec2(0.0), fieldSize - 1.0) + 0.5) / fieldSize;
+  vec2 encoded = floor(texture2D(field, uv).rg * 255.0 + 0.5);
+  return (encoded.r * 256.0 + encoded.g) / 65535.0 * 16.0 - 8.0;
+}
+
+void main() {
+  // Decode before interpolation: filtering packed bytes introduces contour banding.
+  vec2 position = gl_FragCoord.xy / size * fieldSize - 0.5;
+  vec2 cell = floor(position);
+  vec2 blend = fract(position);
+  float value = mix(
+    mix(sampleField(cell), sampleField(cell + vec2(1.0, 0.0)), blend.x),
+    mix(sampleField(cell + vec2(0.0, 1.0)), sampleField(cell + vec2(1.0, 1.0)), blend.x),
+    blend.y
+  );
   float level = (value + range) / step;
   float nearest = floor(level + 0.5);
   float slope = length(vec2(dFdx(level), dFdy(level)));

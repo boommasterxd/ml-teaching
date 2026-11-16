@@ -1,37 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+import { diagnostics, expectAccessible } from './browser-checks';
 import sharp from 'sharp';
 import { syntheticModel } from './synthetic-model';
 import {
+  expectHeaderLayout,
   expectCancelledResetKeepsImages,
   expectGalleryFocusAcrossResize,
   expectPreviewDeletion,
   expectThemeKeepsTraining,
+  expectImmediateThemeFeedback,
   openThemeMenu,
   settleLandingReveals,
 } from './training-keyboard';
-
-async function expectAccessible(page: Page) {
-  await expect(page.locator('[role="dialog"][data-state="closed"]')).toHaveCount(0);
-  for (const surface of await page
-    .locator('[role="dialog"][data-state="open"], [role="menu"][data-state="open"]')
-    .all()) {
-    await expect(surface).toHaveCSS('opacity', '1');
-  }
-  const result = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-    .analyze();
-  expect(result.violations).toEqual([]);
-}
-
-function diagnostics(page: Page) {
-  const failures: string[] = [];
-  page.on('pageerror', (error) => failures.push(error.message));
-  page.on('console', (message) => {
-    if (message.type() === 'error') failures.push(message.text());
-  });
-  return failures;
-}
 
 async function grantModelConsent(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
@@ -87,7 +67,10 @@ test('static documents, native navigation and strict CSP preserve visible conten
     expect(html).not.toMatch(/\sstyle="/);
     await page.goto(path);
     await expect(page.getByRole('heading', { name: heading, exact: true }).first()).toBeVisible();
-    if (path === '/') await settleLandingReveals(page);
+    if (path === '/') {
+      await expectHeaderLayout(page);
+      await settleLandingReveals(page);
+    }
     await expectAccessible(page);
   }
   await page.goto('/');
@@ -139,6 +122,43 @@ test('static documents, native navigation and strict CSP preserve visible conten
   ).toEqual([]);
 });
 
+test('educational examples start directly and keep the selected control focused', async ({
+  page,
+}) => {
+  const failures = diagnostics(page);
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.goto('/');
+  await settleLandingReveals(page);
+  const stages = page.getByRole('list', { name: 'Vom Beispielbild zur Ausgabe' });
+  for (const name of ['Beispielbild', 'MobileNet', 'KNN', 'Mehrheit gewinnt']) {
+    await expect(stages.getByRole('heading', { name, exact: true })).toBeVisible();
+  }
+  const cat = page.getByRole('button', { name: 'Katzenbild zeigen', exact: true });
+  await expect(stages.getByText('Input', { exact: true })).toBeVisible();
+  await expect(stages.getByRole('img')).toHaveCount(0);
+  await cat.focus();
+  await expect(stages.getByText('Input', { exact: true })).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Katze erkannt', { exact: true })).toBeVisible();
+  await expect(page.locator('.landing-demo').getByRole('status')).toContainText(
+    '2 von 3 Nachbarn stimmen für Katze.',
+  );
+  await expect(
+    stages.getByRole('img', { name: 'Generiertes Beispielbild einer Katze' }),
+  ).toBeVisible();
+  await expect(cat).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await expectAccessible(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole('button', { name: 'Hundebild zeigen', exact: true }).click();
+  await expect(page.getByText('Hund erkannt', { exact: true })).toBeVisible();
+  await expect(page.locator('.landing-demo').getByRole('status')).toContainText(
+    '2 von 3 Nachbarn stimmen für Hund.',
+  );
+  await expectAccessible(page);
+  expect(failures).toEqual([]);
+});
+
 test('mobile consent is keyboard accessible, rejects safely and makes no external requests', async ({
   page,
   context,
@@ -149,7 +169,7 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
     if (new URL(request.url()).origin !== 'http://127.0.0.1:3100') external.push(request.url());
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
   await page.goto('/');
   await page.getByRole('switch', { name: 'Dunkle Darstellung' }).focus();
   await page.keyboard.press('Space');
@@ -243,8 +263,10 @@ test('theme changes preserve navigation and require explicit remembering across 
       ),
     )
     .toBe(true);
+  await expectImmediateThemeFeedback(page);
   await page.keyboard.press('Space');
   await expect(theme).not.toBeChecked();
+  await expectImmediateThemeFeedback(page);
   await page.getByRole('link', { name: 'Datenschutz', exact: true }).click();
   await expect(page).toHaveURL(/\/datenschutz$/);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');

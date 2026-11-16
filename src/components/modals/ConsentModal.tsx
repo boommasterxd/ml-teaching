@@ -58,8 +58,8 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
       labelledBy="consent-modal-title"
       describedBy="consent-modal-desc"
     >
-      <ModalContent maxWidth="lg" className="p-6 sm:p-8">
-        <DialogTitle id="consent-modal-title" variant="large" className="mb-6">
+      <ModalContent maxWidth="lg">
+        <DialogTitle id="consent-modal-title" className="mb-6">
           Einwilligung zur Datenverarbeitung
         </DialogTitle>
 
@@ -73,11 +73,13 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
                 onCheckedChange={(checked) => setPrivacyChecked(checked === true)}
                 className="mt-0.5"
               />
-              <FieldLabel htmlFor="privacy-consent" variant="consent">
-                Ich willige ein, dass ML Teaching meine ausgewählten Bilder, Kamerabilder und daraus
-                berechneten Merkmale lokal in meinem Browser zum Training und Testen eigener
-                Bildklassen verarbeitet. Weitere Informationen stehen in der{' '}
-                <Link href="/datenschutz">Datenschutzerklärung</Link>.
+              <FieldLabel htmlFor="privacy-consent">
+                <span>
+                  Ich willige ein, dass ML Teaching meine ausgewählten Bilder, Kamerabilder und
+                  daraus berechneten Merkmale lokal in meinem Browser zum Training und Testen
+                  eigener Bildklassen verarbeitet. Weitere Informationen stehen in der{' '}
+                  <Link href="/datenschutz">Datenschutzerklärung</Link>.
+                </span>
               </FieldLabel>
             </Field>
 
@@ -88,19 +90,22 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
                 onCheckedChange={(checked) => setModelChecked(checked === true)}
                 className="mt-0.5"
               />
-              <FieldLabel htmlFor="model-consent" variant="consent">
-                Ich willige ein, dass für die Ausführung der Anwendung notwendige KI-Modelle
-                (MobileNet) von Google-Servern geladen werden. Mir ist bewusst, dass hierbei meine
-                IP-Adresse an Google übertragen wird (siehe{' '}
-                <a
-                  href="https://policies.google.com/privacy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Google Datenschutzerklärung<span className="sr-only"> (öffnet in neuem Tab)</span>
-                </a>
-                ). Die Verarbeitung der aufgenommenen Bilddaten erfolgt dabei ausschließlich lokal
-                auf meinem Endgerät; es findet kein Upload von Bildmaterial statt.
+              <FieldLabel htmlFor="model-consent">
+                <span>
+                  Ich willige ein, dass für die Ausführung der Anwendung notwendige KI-Modelle
+                  (MobileNet) von Google-Servern geladen werden. Mir ist bewusst, dass hierbei meine
+                  IP-Adresse an Google übertragen wird (siehe{' '}
+                  <a
+                    href="https://policies.google.com/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Google Datenschutzerklärung
+                    <span className="sr-only"> (öffnet in neuem Tab)</span>
+                  </a>
+                  ). Die Verarbeitung der aufgenommenen Bilddaten erfolgt dabei ausschließlich lokal
+                  auf meinem Endgerät; es findet kein Upload von Bildmaterial statt.
+                </span>
               </FieldLabel>
             </Field>
           </FieldGroup>
@@ -114,7 +119,7 @@ export default function ConsentModal({ isOpen, onDecline, onConfirm }: ConsentMo
           <Button variant="secondary" onClick={onDecline} className="flex-1">
             Abbrechen
           </Button>
-          <Button variant="primary" onClick={onConfirm} disabled={!canConfirm} className="flex-1">
+          <Button variant="default" onClick={onConfirm} disabled={!canConfirm} className="flex-1">
             Zustimmen
           </Button>
         </div>

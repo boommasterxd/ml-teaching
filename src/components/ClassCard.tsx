@@ -17,7 +17,7 @@ import CameraPreview from './CameraPreview';
 import ImageGallery from './ImageGallery';
 import Button from './Button';
 import { Input } from './ui/input';
-import { Card, CardContent, CardHeader } from './ui/card';
+import { Card, CardAction, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
 import { Field, FieldError, FieldLabel } from './ui/field';
 import { Separator } from './ui/separator';
@@ -79,11 +79,8 @@ function ClassHeader({
       ? 'Name muss eindeutig sein'
       : null;
   return (
-    <CardHeader
-      variant="classification"
-      className="items-start gap-4 sm:items-center sm:flex-nowrap"
-    >
-      <Field data-invalid={!!errorMsg} className="min-w-0 flex-1 gap-2">
+    <CardHeader>
+      <Field data-invalid={!!errorMsg} className="col-span-full min-w-0 gap-2 sm:col-span-1">
         <div className="flex min-w-0 items-center gap-3">
           <div
             className={cn(
@@ -96,7 +93,6 @@ function ClassHeader({
             Name für Klasse {position}: {cls.name.trim() || 'ohne Namen'}
           </FieldLabel>
           <Input
-            variant="class-name"
             id={`class-name-${cls.id}`}
             type="text"
             autoComplete="off"
@@ -121,37 +117,39 @@ function ClassHeader({
           </FieldError>
         )}
       </Field>
-      <div className="flex w-full min-w-0 shrink-0 items-center gap-2 sm:w-auto sm:gap-3">
-        <Badge
-          variant={cls.images.length >= ML.MAX_IMAGES_PER_CLASS ? 'warning' : 'count'}
-          className="mr-auto sm:mr-0"
-          title={
-            cls.images.length >= ML.MAX_IMAGES_PER_CLASS
-              ? `Limit von ${ML.MAX_IMAGES_PER_CLASS} Bildern erreicht`
-              : undefined
-          }
-        >
-          {cls.images.length} / {ML.MAX_IMAGES_PER_CLASS} Bilder
-        </Badge>
-        <Button
-          variant="ghost-primary"
-          size="icon"
-          onClick={() => onClear(cls.id)}
-          title="Bilder dieser Klasse zurücksetzen"
-          aria-label={`Bilder der Klasse ${position}: ${cls.name.trim() || 'ohne Namen'} zurücksetzen`}
-        >
-          <RotateCcw data-icon="inline-start" aria-hidden="true" />
-        </Button>
-        <Button
-          variant="ghost-destructive"
-          size="icon"
-          onClick={() => onRemove(cls.id)}
-          title="Klasse löschen"
-          aria-label={`Klasse ${position}: ${cls.name.trim() || 'ohne Namen'} löschen`}
-        >
-          <Trash2 data-icon="inline-start" aria-hidden="true" />
-        </Button>
-      </div>
+      <CardAction className="col-span-full row-span-1 row-start-2 w-full sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:w-auto">
+        <div className="flex min-w-0 items-center gap-2">
+          <Badge
+            variant={cls.images.length >= ML.MAX_IMAGES_PER_CLASS ? 'destructive' : 'secondary'}
+            className="mr-auto sm:mr-0"
+            title={
+              cls.images.length >= ML.MAX_IMAGES_PER_CLASS
+                ? `Limit von ${ML.MAX_IMAGES_PER_CLASS} Bildern erreicht`
+                : undefined
+            }
+          >
+            {cls.images.length} / {ML.MAX_IMAGES_PER_CLASS} Bilder
+          </Badge>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onClear(cls.id)}
+            title="Bilder dieser Klasse zurücksetzen"
+            aria-label={`Bilder der Klasse ${position}: ${cls.name.trim() || 'ohne Namen'} zurücksetzen`}
+          >
+            <RotateCcw data-icon="inline-start" aria-hidden="true" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onRemove(cls.id)}
+            title="Klasse löschen"
+            aria-label={`Klasse ${position}: ${cls.name.trim() || 'ohne Namen'} löschen`}
+          >
+            <Trash2 data-icon="inline-start" aria-hidden="true" />
+          </Button>
+        </div>
+      </CardAction>
     </CardHeader>
   );
 }
@@ -185,16 +183,15 @@ const ClassCard = memo(function ClassCard({
   );
 
   return (
-    <Card variant="classification">
+    <Card>
       <ClassHeader cls={cls} position={position} isDuplicate={isDuplicate} actions={actions} />
       <Separator />
 
-      <CardContent variant="classification" className="flex flex-col sm:flex-row gap-5">
+      <CardContent className="flex flex-col gap-5 sm:flex-row">
         <CameraPreview
           disabled={actions.captureDisabled}
           stream={stream}
           facingMode={facingMode}
-          color={cls.color}
           isRecording={isRecording}
           onStartRecording={startRecording}
           onStopRecording={stopRecording}

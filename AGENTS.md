@@ -74,12 +74,15 @@
 
 ## UI and accessibility
 
-- Apply the Neural Field educational brief: red primary actions, warm ivory light
-  surfaces and graphite dark surfaces, locally hosted Space Grotesk headings and
-  Geist interface text. Tailwind 4, shadcn/ui Radix/new-york and Animate UI remain
-  the selected bundle. Keep the genuine official Topography renderer adaptation
-  bounded to the hero with a static fallback; use at most two decorative parallax
-  layers with pause, offscreen and reduced-motion handling.
+- Apply the Redline educational brief: red primary actions, neutral light surfaces,
+  near-black dark surfaces and locally hosted Geist. Use official shadcn/ui
+  Radix/new-york components and Typography recipes with Tailwind 4 and Animate UI.
+  Prefer their standard variants and geometry; product Button variants cover
+  image-gallery thumbnails and the quiz card/result controls. The official Topography adaptation fills the
+  hero behind readable content. Keep its two-pass field/contour rendering, bounded
+  to 600,000 field texels and 8,294,400 output pixels with GPU dimension limits.
+  Preserve its static fallback and at most two decorative parallax layers with
+  pause, offscreen and reduced-motion handling.
 - Follow the OS theme unless the user selects another appearance. Persist only the
   light/dark/system enum after explicit remembering; keep it independent of ML
   consent/data. ThemeProvider stays outside the route boundary. Preserve trusted

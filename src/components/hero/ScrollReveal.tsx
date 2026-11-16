@@ -14,7 +14,8 @@ export default function ScrollReveal({ children }: { children: ReactElement }) {
   return (
     <AnimateIcon animateOnHover className="contents">
       <Effect
-        asChild
+        data-scroll-reveal=""
+        className="h-full"
         initial={false}
         fade={hydrated}
         slide={hydrated ? { offset: 16 } : false}

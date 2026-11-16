@@ -57,6 +57,18 @@ export const glyphs = {
       },
     ],
   ],
+  Calculator: [
+    ['rect', { width: '16', height: '20', x: '4', y: '2', rx: '2', key: '1nb95v' }],
+    ['path', { d: 'M8 6h8', key: 'x4nwl0' }],
+    ['path', { d: 'M16 14v4', key: 'wjye3r' }],
+    ['path', { d: 'M16 10h.01', key: '1m94wz' }],
+    ['path', { d: 'M12 10h.01', key: '1nrarc' }],
+    ['path', { d: 'M8 10h.01', key: '19clt8' }],
+    ['path', { d: 'M12 14h.01', key: '1etili' }],
+    ['path', { d: 'M8 14h.01', key: '6423bh' }],
+    ['path', { d: 'M12 18h.01', key: 'mhygvu' }],
+    ['path', { d: 'M8 18h.01', key: 'lrp35t' }],
+  ],
   Car: [
     [
       'path',

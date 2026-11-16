@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type ComponentType } from 'react';
-import { DropdownMenu as Primitive } from '@animate-ui/react/primitives/radix-ui/dropdown-menu';
 import { ChevronDown, Loader2, Moon, Sun } from '../icons';
 import Button from '../Button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Switch } from '../ui/switch';
+import { DropdownMenu, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { loadThemeMenu } from './theme-menu-loader';
 import type { ThemeMenuProps } from './ThemeMenu';
 import { useTheme } from './ThemeProvider';
@@ -68,18 +68,19 @@ export function ThemeControl() {
 
   return (
     <div ref={area} className="relative flex shrink-0 items-center gap-2">
-      <span id={label} className="sr-only md:not-sr-only md:text-sm md:font-medium">
+      <span id={label} className="sr-only">
         Dunkle Darstellung
       </span>
       <Switch
+        data-theme-switch=""
         aria-labelledby={label}
         checked={preference.resolved === 'dark'}
         onCheckedChange={(dark) => select(dark ? 'dark' : 'light')}
       >
         {preference.resolved === 'dark' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
       </Switch>
-      <Primitive.Root modal={false} open={open} onOpenChange={changeOpen}>
-        <Primitive.Trigger asChild ref={trigger}>
+      <DropdownMenu modal={false} open={open} onOpenChange={changeOpen}>
+        <DropdownMenuTrigger asChild ref={trigger}>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -95,9 +96,9 @@ export function ThemeControl() {
               <ChevronDown aria-hidden="true" />
             )}
           </Button>
-        </Primitive.Trigger>
+        </DropdownMenuTrigger>
         {Menu && <Menu trigger={trigger} />}
-      </Primitive.Root>
+      </DropdownMenu>
       {open && !Menu && !failed && (
         <span role="status" className="sr-only">
           Darstellungsmenü wird geladen.

@@ -40,6 +40,7 @@ describe('initial consent hydration', () => {
       expect(container.querySelector('[role="dialog"]')).toBe(initialDialog);
       await waitFor(() => expect(initialDialog.contains(document.activeElement)).toBe(true));
       const choices = within(initialDialog).getAllByRole('checkbox');
+      expect(choices[0]).toBe(initialChoice);
       expect(document.activeElement).toBe(choices[0]);
       const confirm = within(initialDialog).getByRole('button', { name: 'Zustimmen' });
       expect((confirm as HTMLButtonElement).disabled).toBe(true);

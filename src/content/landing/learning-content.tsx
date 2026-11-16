@@ -1,130 +1,87 @@
 import AnimatedLink from '@/components/AnimatedLink';
 import ScrollReveal from '@/components/hero/ScrollReveal';
-import { Card, CardContent, CardHeader, CardIcon, CardTitle } from '@/components/ui/card';
-import {
-  ImagePlus,
-  Lightbulb,
-  Camera,
-  Smartphone,
-  Car,
-  Stethoscope,
-  ArrowRight,
-} from '@/components/icons';
+import EverydayQuiz from '@/components/quiz/EverydayQuiz';
+import { Separator } from '@/components/ui/separator';
+import { Heading, Text } from '@/components/ui/typography';
+import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from '@/components/ui/item';
+import { ImagePlus, Lightbulb, Camera, ArrowRight } from '@/components/icons';
 
 const tips = [
   {
     Icon: ImagePlus,
-    title: 'Mehr Perspektiven.',
+    title: 'Mehr Ansichten',
     text: 'Sammle mindestens 15–20 Bilder pro Klasse. Zeige dein Objekt von vorne, von oben und von der Seite.',
   },
   {
     Icon: Lightbulb,
-    title: 'Weniger Zufall.',
+    title: 'Andere Hintergründe',
     text: 'Wechsle Licht und Hintergrund. Sonst erkennt dein Modell vielleicht dein Zimmer statt deiner Tasse.',
   },
   {
     Icon: Camera,
-    title: 'Ehrlich testen.',
+    title: 'Neue Bilder testen',
     text: 'Teste mit neuen Bildern. Wird etwas verwechselt? Ergänze Beispiele und trainiere noch einmal.',
-  },
-];
-const examples = [
-  {
-    Icon: Smartphone,
-    title: 'Auf deinem Handy',
-    text: 'Gesichtserkennung und Filter finden Muster in Bildern. Manche Anwendungen verarbeiten dabei sensible Daten.',
-  },
-  {
-    Icon: Car,
-    title: 'Unterwegs',
-    text: 'Kamerasysteme erkennen Verkehrsschilder und Hindernisse. Ein einzelnes Modell ersetzt dabei keine verlässliche Sicherheitsentscheidung.',
-  },
-  {
-    Icon: Stethoscope,
-    title: 'In der Medizin',
-    text: 'Bilderkennung unterstützt die Auswertung medizinischer Aufnahmen. Die Beurteilung bleibt Aufgabe von Fachleuten.',
   },
 ];
 
 export const learningContent = (
   <>
-    <section className="landing-section landing-container" aria-labelledby="section-tips">
-      <div className="landing-section-heading">
-        <p className="eyebrow">04 / BESSERE BEISPIELE. BESSERES LERNEN.</p>
-        <h2 id="section-tips" className="section-heading">
-          Eine gute KI
-          <br />
-          beginnt bei deinen Daten.
-        </h2>
-        <p className="section-lead">
-          Wenn das Ergebnis überrascht, ist das kein Ende. Es ist der Anfang deines nächsten
-          Experiments.
-        </p>
-      </div>
-      <div className="grid gap-5 md:grid-cols-3">
-        {tips.map(({ Icon, title, text }) => (
-          <ScrollReveal key={title}>
-            <Card variant="feature">
-              <CardHeader variant="explanation">
-                <CardIcon tone="primary" className="mb-6">
-                  <Icon />
-                </CardIcon>
-                <CardTitle as="h3" variant="feature" className="mb-3">
-                  {title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent variant="explanation">
-                <p>{text}</p>
-              </CardContent>
-            </Card>
-          </ScrollReveal>
-        ))}
-      </div>
-    </section>
-
-    <section className="landing-section landing-container" aria-labelledby="section-examples">
-      <div className="landing-section-heading">
-        <p className="eyebrow">05 / NICHT NUR IM LABOR</p>
-        <h2 id="section-examples" className="section-heading">
-          Muster sind überall.
-        </h2>
-        <p className="section-lead">
-          Bilderkennung begegnet dir längst im Alltag. Hier erforschst du das Prinzip dahinter.
-        </p>
-      </div>
-      <div className="grid gap-5 md:grid-cols-3">
-        {examples.map(({ Icon, title, text }) => (
-          <ScrollReveal key={title}>
-            <Card variant="open">
-              <CardHeader variant="explanation">
-                <CardIcon tone="primary" className="mb-6">
-                  <Icon />
-                </CardIcon>
-                <CardTitle as="h3" variant="feature" className="mb-3">
-                  {title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent variant="explanation">
-                <p>{text}</p>
-              </CardContent>
-            </Card>
-          </ScrollReveal>
-        ))}
+    <section className="landing-guidance" aria-labelledby="section-tips">
+      <div className="landing-section landing-container">
+        <ScrollReveal>
+          <div className="landing-section-heading">
+            <Text variant="muted">04 / Bessere Beispiele</Text>
+            <Heading id="section-tips">Bessere Trainingsbilder</Heading>
+            <Text variant="lead">
+              Unterschiedliche Aufnahmen helfen dem Modell, das Objekt statt des Hintergrunds zu
+              erkennen.
+            </Text>
+          </div>
+        </ScrollReveal>
+        <ItemGroup aria-label="Tipps für Trainingsbilder">
+          {tips.map(({ Icon, title, text }, index) => (
+            <ScrollReveal key={title}>
+              <div role="listitem">
+                <Separator />
+                <Item>
+                  <ItemContent className="landing-tip-content">
+                    <ItemTitle>
+                      <Text variant="lead" className="shrink-0 font-mono tabular-nums">
+                        {String(index + 1).padStart(2, '0')}
+                      </Text>
+                      <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                      <h3>{title}</h3>
+                    </ItemTitle>
+                    <ItemDescription className="line-clamp-none">{text}</ItemDescription>
+                  </ItemContent>
+                </Item>
+              </div>
+            </ScrollReveal>
+          ))}
+        </ItemGroup>
       </div>
     </section>
-
-    <section className="landing-cta landing-section" aria-labelledby="section-cta">
-      <div className="landing-container">
-        <p className="eyebrow">DEIN NÄCHSTES AHA WARTET.</p>
-        <h2 id="section-cta" className="section-heading">
-          Was bringst du
-          <br />
-          deiner KI bei?
-        </h2>
-        <p className="section-lead">
-          Nimm deine Idee mit ins Labor. Alles, was du brauchst, ist ein Browser und etwas Neugier.
-        </p>
-        <AnimatedLink href="/lernen" variant="primary" size="xl">
+    <section className="landing-band" aria-labelledby="section-examples">
+      <div className="landing-container landing-section">
+        <ScrollReveal>
+          <div className="landing-section-heading">
+            <Text variant="muted">05 / Im Alltag</Text>
+            <Heading id="section-examples">Wo steckt Bilderkennung drin?</Heading>
+            <Text variant="lead">
+              Wähle die drei Beispiele aus, bei denen Bilderkennung zum Einsatz kommt.
+            </Text>
+          </div>
+        </ScrollReveal>
+        <EverydayQuiz />
+      </div>
+    </section>
+    <section className="landing-cta" aria-labelledby="section-cta">
+      <div className="landing-container flex flex-col items-center gap-6">
+        <Heading id="section-cta">Trainiere deine eigenen Klassen.</Heading>
+        <Text variant="lead" className="max-w-xl">
+          Öffne das Lernlabor und füge deine ersten Bilder hinzu.
+        </Text>
+        <AnimatedLink href="/lernen" size="lg">
           Jetzt ausprobieren <ArrowRight data-icon="inline-end" aria-hidden="true" />
         </AnimatedLink>
       </div>

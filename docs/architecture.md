@@ -40,10 +40,27 @@ parallax layers. Explicit pause retains the last GPU image and stops frame, poin
 spring and ripple playback; resuming continues the same animation time. Hidden,
 offscreen and reduced-motion states release the enhancement and its resources.
 This renderer is independent of consent-gated ML WebGL and processes no training
-data. The educational network demo likewise starts with server-rendered geometry;
-intent loads its module and prepares a hidden React Activity, while explicit
-activation enables effects and focus. Theme-menu intent loads the module only;
+data. The educational illustration starts with a server-rendered Input placeholder,
+labeled feature maps, neighbor points and class labels. Intent loads its animation module, prepares a
+hidden React Activity and warms the selected native optimized image. Persistent
+dog/cat Buttons record the choice; the sequence starts after image decoding and
+the visible commit, without moving focus or consuming steps during loading. Public
+image preparation is deduplicated, bounded to two assets and an eight-second
+failure deadline, with explicit retry. The four-stage illustration uses synthetic
+two-dimensional coordinates from `src/lib/network-demo.ts`. It computes both sets
+of three nearest neighbors once and derives the highlighted points, votes and
+output from the same examples. Its Euclidean plot is a simplified teaching schema;
+the live classifier uses the installed library's normalized feature similarity.
+The illustration never invokes the actual model or processes user images.
+Theme-menu intent loads the module only;
 its public portal mounts on opening.
+
+The everyday recognition quiz uses six fixed examples from
+`src/content/recognition-quiz.ts`. Its required choices are rendered during SSG.
+Small local React state tracks unique attempts and correct selections; explanations
+mount only after an answer. It does not invoke ML, request a camera, send answers,
+persist state or create a learning profile. Reset and document reload discard the
+quiz state independently of model consent, theme preferences and the learning lab.
 
 ## Browser ML flow
 

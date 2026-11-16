@@ -14,6 +14,7 @@ import type { ClassCardActions } from './ClassCard';
 import Button from './Button';
 import { Empty, EmptyDescription, EmptyHeader } from './ui/empty';
 import { AnimatedList, AnimatedListItem } from './ui/animated-list';
+import { Heading } from './ui/typography';
 
 /**
  * Props for the TrainingClassesPanel component.
@@ -55,17 +56,13 @@ export default function TrainingClassesPanel({
   return (
     <div className="lg:col-span-7 flex min-w-0 flex-col gap-6">
       <div className="flex flex-wrap justify-between items-center gap-3">
-        <h1
-          ref={mainHeadingRef}
-          tabIndex={-1}
-          className="workspace-heading focus-visible:outline-none"
-        >
+        <Heading as="h1" ref={mainHeadingRef} tabIndex={-1} className="focus-visible:outline-none">
           1. Klassen ({classes.length})
-        </h1>
+        </Heading>
         <div className="flex gap-2">
           <Button
-            variant="outline-destructive"
-            size="toolbar"
+            variant="outline"
+            size="default"
             onClick={onShowClearConfirm}
             title="Alles zurücksetzen"
             aria-label="Alle Klassen und Bilder zurücksetzen"
@@ -74,8 +71,8 @@ export default function TrainingClassesPanel({
             <span className="hidden sm:inline">Zurücksetzen</span>
           </Button>
           <Button
-            variant="primary"
-            size="toolbar"
+            variant="default"
+            size="default"
             onClick={onAddClass}
             disabled={classes.length >= ML.MAX_CLASSES}
             title={

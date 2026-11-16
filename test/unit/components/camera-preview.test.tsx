@@ -23,7 +23,6 @@ function CameraControls({
       disabled={disabled}
       stream={stream}
       facingMode="user"
-      color="#dc2626"
       isRecording={recording}
       onStartRecording={() => setRecording(true)}
       onStopRecording={() => setRecording(false)}

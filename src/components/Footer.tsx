@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import SiteBrand from './SiteBrand';
+import { Separator } from './ui/separator';
 
 /** Keeps local processing, withdrawal and legal navigation available on every route. */
 export default function Footer() {
@@ -13,19 +14,20 @@ export default function Footer() {
               Deine Trainingsbilder und Vorhersagen bleiben im Browser. Es werden keine Bilder auf
               Server hochgeladen.
             </p>
-            <p className="mt-3">
-              Einwilligung widerrufen und lokale Trainingsdaten verwerfen:{' '}
-              <a
-                href="/lernen"
-                aria-label="Lernseite neu laden und Einwilligung widerrufen"
-                className="footer-link"
-              >
-                Lernseite neu laden
-              </a>
-              .
-            </p>
           </div>
         </div>
+        <p className="footer-withdrawal">
+          Einwilligung widerrufen und lokale Trainingsdaten verwerfen:{' '}
+          <a
+            href="/lernen"
+            aria-label="Lernseite neu laden und Einwilligung widerrufen"
+            className="footer-link"
+          >
+            Lernseite neu laden
+          </a>
+          .
+        </p>
+        <Separator />
         <div className="footer-bottom">
           <p>&copy; {new Date().getFullYear()} Yannick Schäfer &amp; Mara Tesche</p>
           <nav aria-label="Rechtliche Links">

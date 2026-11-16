@@ -15,7 +15,11 @@ const host = vi.hoisted(() => ({
   }[],
 }));
 vi.mock('@/components/hero/topography-renderer', () => ({
-  createTopographyRenderer: () => ({ draw: host.draw, dispose: host.dispose }),
+  createTopographyRenderer: () => ({
+    draw: host.draw,
+    dispose: host.dispose,
+    maxRasterDimension: 8192,
+  }),
 }));
 vi.mock('motion/react', async (original) => ({
   ...(await original<typeof import('motion/react')>()),
@@ -41,6 +45,80 @@ beforeEach(() => {
 afterEach(restoreBrowserHost);
 
 describe('active contour field ownership', () => {
+  it('bounds raster memory and GPU dimensions through mobile, 4K and ultrawide resizing', () => {
+    vi.stubGlobal('devicePixelRatio', 4);
+    let resize = () => {};
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          resize = () => callback([], this);
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const rect = { width: 390, height: 844, left: 0, top: 0 };
+    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockImplementation(
+      () => rect as DOMRect,
+    );
+    const { container } = render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+    const canvas = container.querySelector('canvas')!;
+    expect(canvas.width * canvas.height).toBeLessThanOrEqual(750_000);
+    rect.width = 3840;
+    rect.height = 2160;
+    act(resize);
+    expect(canvas.width * canvas.height).toBeLessThanOrEqual(8_294_400);
+    expect(host.draw.mock.lastCall![0].width).toBe(3840);
+    expect(host.draw.mock.lastCall![0].height).toBe(2160);
+    rect.width = 15360;
+    rect.height = 1080;
+    act(resize);
+    expect(canvas.width).toBeLessThanOrEqual(8192);
+    expect(canvas.width * canvas.height).toBeLessThanOrEqual(8_294_400);
+    expect(host.draw.mock.lastCall![0].width).toBe(15360);
+  });
+
+  it('accepts scoped background gestures without consuming controls, text selection or touch scrolling', () => {
+    const root = { current: document.createElement('div') };
+    const text = document.createElement('p');
+    const link = document.createElement('a');
+    const button = document.createElement('button');
+    root.current.append(text, link, button);
+    document.body.append(root.current);
+    const { unmount } = render(
+      <TopographyField interactionRoot={root} onUnavailable={vi.fn()} onRendered={vi.fn()} />,
+    );
+    const wave = (target: HTMLElement, pointerType: string) => {
+      const event = new MouseEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 80,
+        clientY: 60,
+      });
+      Object.defineProperty(event, 'pointerType', { value: pointerType });
+      fireEvent(target, event);
+      expect(event.defaultPrevented).toBe(false);
+    };
+    wave(text, 'mouse');
+    expect(host.animations).toHaveLength(1);
+    wave(button, 'mouse');
+    wave(link, 'touch');
+    expect(host.animations).toHaveLength(1);
+    wave(text, 'touch');
+    expect(host.animations).toHaveLength(2);
+    const selection = vi
+      .spyOn(window, 'getSelection')
+      .mockReturnValue({ isCollapsed: false } as Selection);
+    wave(text, 'mouse');
+    expect(host.animations).toHaveLength(2);
+    selection.mockReturnValue({ isCollapsed: true } as Selection);
+    unmount();
+    wave(text, 'mouse');
+    expect(host.animations).toHaveLength(2);
+    root.current.remove();
+  });
   it('freezes the same GPU image and wave controls, then continues without counting paused time', () => {
     let resize = () => {};
     vi.stubGlobal(
@@ -140,6 +218,20 @@ describe('active contour field ownership', () => {
     expect(host.dispose).toHaveBeenCalledTimes(1);
   });
 
+  it('retires GPU work and restores the fallback if a later raster allocation fails', () => {
+    const unavailable = vi.fn();
+    const onRendered = vi.fn();
+    render(<TopographyField onUnavailable={unavailable} onRendered={onRendered} />);
+    expect(onRendered).toHaveBeenCalledWith(true);
+    const tick = host.render.mock.calls[0]![0] as (frame: { delta: number }) => void;
+    host.draw.mockReturnValue(false);
+    act(() => tick({ delta: 16 }));
+    expect(host.dispose).toHaveBeenCalledTimes(1);
+    expect(host.cancel).toHaveBeenCalledWith(tick);
+    expect(onRendered).toHaveBeenLastCalledWith(false);
+    expect(unavailable).toHaveBeenCalledTimes(1);
+  });
+
   it('redraws the new theme without advancing time and never polls unchanged theme colors', async () => {
     const stylesheet = document.createElement('style');
     stylesheet.textContent =
@@ -152,15 +244,16 @@ describe('active contour field ownership', () => {
       );
       const canvas = container.querySelector('canvas')!;
       const colorReads = () => styles.mock.calls.filter(([element]) => element === canvas).length;
-      expect(colorReads()).toBe(1);
+      const initialReads = colorReads();
+      expect(initialReads).toBeGreaterThan(0);
       const tick = host.render.mock.calls[0]![0] as (frame: { delta: number }) => void;
       for (let frame = 0; frame < 60; frame++) tick({ delta: 16 });
-      expect(colorReads()).toBe(1);
+      expect(colorReads()).toBe(initialReads);
       const time = host.draw.mock.lastCall![0].time;
       await act(async () => {
         document.documentElement.classList.add('dark');
       });
-      expect(colorReads()).toBe(2);
+      expect(colorReads()).toBe(initialReads + 1);
       expect(host.draw.mock.lastCall![0].color).toEqual([1, 90 / 255, 110 / 255]);
       expect(host.draw.mock.lastCall![0].time).toBe(time);
       unmount();

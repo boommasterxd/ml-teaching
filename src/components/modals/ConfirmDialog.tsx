@@ -51,7 +51,7 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} labelledBy={titleId} describedBy={descId}>
-      <ModalContent maxWidth="md" className="p-6 sm:p-8">
+      <ModalContent maxWidth="md">
         {icon && (
           <div
             className="size-12 bg-destructive-soft text-destructive rounded-xl flex items-center justify-center mb-5 [&_svg]:size-6"

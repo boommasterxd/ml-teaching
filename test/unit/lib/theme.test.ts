@@ -1,12 +1,26 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { THEME_BOOTSTRAP_SCRIPT, THEME_STORAGE_KEY, parseTheme, rememberTheme } from '@/lib/theme';
+import {
+  THEME_BOOTSTRAP_SCRIPT,
+  THEME_STORAGE_KEY,
+  applyTheme,
+  parseTheme,
+  rememberTheme,
+} from '@/lib/theme';
 import { installThemeHost, restoreThemeHost } from '../helpers/theme-host';
 
 let host: ReturnType<typeof installThemeHost>;
 beforeEach(() => {
   host = installThemeHost();
+  const favicon = document.createElement('link');
+  favicon.id = 'site-favicon';
+  favicon.rel = 'icon';
+  favicon.href = '/favicon.svg';
+  document.head.append(favicon);
 });
-afterEach(restoreThemeHost);
+afterEach(() => {
+  document.getElementById('site-favicon')?.remove();
+  restoreThemeHost();
+});
 
 function boot() {
   // Execute the exact trusted public entry script against the isolated browser host.
@@ -32,14 +46,36 @@ describe('theme preference and prepaint contract', () => {
     boot();
     expect(document.documentElement.classList.contains('dark')).toBe(true);
     expect(document.documentElement.dataset.theme).toBe('system');
+    expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe('/favicon-dark.svg');
     expect(writes).not.toHaveBeenCalled();
     window.localStorage.setItem(THEME_STORAGE_KEY, 'light');
     writes.mockClear();
     boot();
     expect(document.documentElement.classList.contains('dark')).toBe(false);
     expect(document.documentElement.dataset.theme).toBe('light');
+    expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe(
+      '/favicon-light.svg',
+    );
     expect(writes).not.toHaveBeenCalled();
     expect(document.documentElement.hasAttribute('style')).toBe(false);
+  });
+
+  it('updates the favicon with the applied choice and system changes without remembering them', () => {
+    host.setSystemDark(true);
+    boot();
+    const writes = vi.spyOn(Storage.prototype, 'setItem');
+    applyTheme('light', 'light');
+    expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe(
+      '/favicon-light.svg',
+    );
+    applyTheme('system', 'dark');
+    expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe('/favicon-dark.svg');
+    host.setSystemDark(false);
+    applyTheme('system', 'light');
+    expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe(
+      '/favicon-light.svg',
+    );
+    expect(writes).not.toHaveBeenCalled();
   });
 
   it('ignores an invalid stored value and follows the OS when storage access is blocked', () => {

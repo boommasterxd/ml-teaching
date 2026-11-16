@@ -24,15 +24,28 @@ for the development-server phase; production does not discover this Proxy and
 retains SSG with enforced hash CSP. Report-Only does not block development scripts;
 production security claims must use the production build.
 
+Local interactive previews, including Tailscale browser tooling, use `npm run dev`.
+`npm start` always serves a production build with enforcing CSP, even on localhost
+or behind a private tunnel. Report-Only violations in development remain observable
+but do not block injected tooling scripts or styles; production retains enforcement.
+For a tunnel, set `NEXT_DEV_ALLOWED_ORIGIN` to its exact hostname, without a scheme
+or port. This server-only optional setting configures Next.js `allowedDevOrigins`
+only during development, permitting that host's dev assets and Hot Reload socket.
+Unlisted origins remain blocked; no production origin or CSP allowance is added.
+
+```bash
+NEXT_DEV_ALLOWED_ORIGIN=machine.example.ts.net npm run dev -- --hostname 127.0.0.1 --port 3100
+```
+
 `agentRules: false` preserves the maintained repository instructions during native
 development startup. Consult the installed version's framework documentation under
 `node_modules/next/dist/docs/` before changing Next.js behavior.
 
 ## Appearance and optional clients
 
-Neural Field's shared light/dark tokens live in `src/index.css`, with landing rules
-in `src/components/hero/hero.css`. `src/lib/fonts.ts` loads committed local WOFF2
-fonts; no font account, key or runtime font service is required. Their notices
+Redline's shared light/dark tokens live in `src/index.css`, with landing rules
+in `src/components/hero/hero.css`. `src/lib/fonts.ts` loads the committed local Geist
+WOFF2 asset; no font account, key or runtime font service is required. Its notices
 are in [third-party notices](third-party-notices.md).
 
 Without a saved choice, appearance follows the operating system. The theme menu
@@ -43,8 +56,9 @@ Keep ThemeProvider outside the route boundary and preserve the static trusted
 bootstrap and upstream wipe style in CSP-verified HTML, including native errors.
 
 Optional theme settings load on intent and mount their portal on opening. The
-network demo can prepare a hidden React Activity after intent; it starts effects
-only after activation. The decorative hero enhancement is visibility, pause and
+network demo can prepare a hidden React Activity after intent. Its persistent dog/cat
+Buttons start the selected example once its diagram is visibly ready; there is no
+separate activation step. The decorative hero enhancement is visibility, pause and
 reduced-motion gated and retains its static poster without WebGL. Initial model
 consent and its small shared dialog compositions stay eager; no ML resource is
 prefetched before consent. See the [design system](design-system.md) for ownership.

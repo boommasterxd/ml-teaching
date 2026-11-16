@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, useInView, useMotionValue, useScroll, useTransform } from 'motion/react';
 import { ReducedMotionConfig, useShouldReduceMotion } from '@animate-ui/react/utils/motion';
@@ -46,7 +46,7 @@ function useParallax(root: RefObject<HTMLDivElement | null>, paused: boolean) {
   return { fieldY, glowY, capturePause: () => pauseProgress.set(scrollYProgress.get()) };
 }
 
-function Scene() {
+function Scene({ children }: { children?: ReactNode }) {
   const root = useRef<HTMLDivElement>(null);
   const inView = useInView(root, { amount: 0.1 });
   const visible = usePageVisible();
@@ -99,13 +99,15 @@ function Scene() {
       >
         <StaticContourPoster />
         {available && prepared && (
-          <TopographyField paused={paused} onUnavailable={unavailable} onRendered={onRendered} />
+          <TopographyField
+            interactionRoot={root}
+            paused={paused}
+            onUnavailable={unavailable}
+            onRendered={onRendered}
+          />
         )}
       </motion.div>
-      <div className="hero-field-caption" aria-hidden="true">
-        <span>MUSTERFELD / 01</span>
-        <span>BEWEGEN. ENTDECKEN.</span>
-      </div>
+      {children}
       <div className="hero-field-controls" onPointerEnter={prepare} onFocus={prepare}>
         <Button
           variant="secondary"
@@ -135,10 +137,10 @@ function Scene() {
   );
 }
 
-export default function HeroScene() {
+export default function HeroScene({ children }: { children?: ReactNode }) {
   return (
     <ReducedMotionConfig>
-      <Scene />
+      <Scene>{children}</Scene>
     </ReducedMotionConfig>
   );
 }

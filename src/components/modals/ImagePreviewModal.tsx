@@ -50,8 +50,8 @@ export default function ImagePreviewModal({
       describedBy="image-modal-desc"
     >
       <ModalContent maxWidth="sm">
-        <div className="p-4 flex justify-between items-center">
-          <DialogTitle asChild variant="compact">
+        <div className="flex justify-between items-center">
+          <DialogTitle asChild>
             <h3 id="image-modal-title">Bild Vorschau</h3>
           </DialogTitle>
           <p id="image-modal-desc" className="sr-only">
@@ -63,7 +63,7 @@ export default function ImagePreviewModal({
         </div>
         <Separator />
         {image && (
-          <div className="p-6 flex flex-col items-center">
+          <div className="flex flex-col items-center">
             <Image
               src={image.dataUrl}
               width={192}
@@ -72,7 +72,7 @@ export default function ImagePreviewModal({
               alt="Vergrößerte Bildvorschau"
               className="size-48 object-cover rounded-xl border border-input mb-6"
             />
-            <Button variant="destructive-soft" onClick={onDelete} className="w-full">
+            <Button variant="destructive" onClick={onDelete} className="w-full">
               <Trash2 data-icon="inline-start" aria-hidden="true" /> Bild löschen
             </Button>
           </div>

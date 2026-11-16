@@ -96,38 +96,16 @@ export const PREDICTION = {
   MAX_CONSECUTIVE_ERRORS: 10,
 } as const;
 
-/**
- * Layout and styling constants for the neural network visualization on the
- * landing page. Centralises all magic numbers used in NeuralNetViz.tsx and
- * useNeuralNetAnimation.ts so visual parameters are easy to adjust.
- */
-export const NEURAL_NET_VIZ = {
-  /** Height in pixels of the SVG canvas that holds the node circles. */
-  CANVAS_HEIGHT: 320,
-  /** Diameter in pixels of each node circle. */
-  NODE_HEIGHT: 24,
-  /** Vertical gap in pixels between consecutive nodes in the same layer. */
-  NODE_GAP: 16,
-  /** Left offset in percent for the first layer column. */
-  LAYER_OFFSET_PERCENT: 5,
-  /** Width in percent of each layer column (also the step between columns). */
-  LAYER_WIDTH_PERCENT: 20,
-  /** Horizontal center positions of the four network layers as CSS percent strings. */
-  LAYER_X_POSITIONS: ['15%', '35%', '55%', '75%'] as const,
-  /** Stroke colours for SVG connection lines and active node glow. */
-  COLORS: {
-    DOG: '#ef4444',
-    CAT: '#3b82f6',
-    INACTIVE: '#a1a1aa',
-  },
-  /** Opacity values for active vs. inactive SVG connection lines. */
-  OPACITY: {
-    ACTIVE: 0.6,
-    INACTIVE: 0.35,
-  },
-  /** Human-readable demo result labels shown after the animation completes. */
-  DEMO_RESULTS: {
-    DOG: 'Hund erkannt (98%)',
-    CAT: 'Katze erkannt (95%)',
-  },
+/** Finite educational stages; Animate UI owns interpolation between them. */
+export const NETWORK_STAGES = {
+  SCAN: 0,
+  INBOUND: 1,
+  EDGES: 2,
+  PATTERNS: 3,
+  VECTOR: 4,
+  MATCHING: 5,
+  NEIGHBORS: 6,
+  OUTBOUND: 7,
+  OUTPUT: 8,
+  COMPLETE: 9,
 } as const;

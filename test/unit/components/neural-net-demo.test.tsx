@@ -1,8 +1,12 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import NeuralNetViz from '@/components/NeuralNetViz';
-import { ANIMATION } from '@/constants';
+import DeferredNetworkDemo from '@/components/hero/DeferredNetworkDemo';
+import { ANIMATION, NETWORK_STAGES } from '@/constants';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
+
+vi.mock('@/components/network/prepare-example', () => ({
+  prepareExample: vi.fn(() => Promise.resolve()),
+}));
 
 beforeEach(() => {
   installBrowserHost();
@@ -15,23 +19,48 @@ afterEach(() => {
 
 describe('educational network demo', () => {
   it('runs one user-selected example at a time and can demonstrate both output classes', async () => {
-    render(<NeuralNetViz />);
+    render(<DeferredNetworkDemo />);
     const dog = screen.getByRole('button', { name: 'Hundebild zeigen' });
     const cat = screen.getByRole('button', { name: 'Katzenbild zeigen' });
-    fireEvent.click(dog);
-    expect((dog as HTMLButtonElement).disabled).toBe(true);
-    expect((cat as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByText('Verarbeite Signal...')).toBeTruthy();
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(ANIMATION.STEP_DURATION_MS * 7);
+      fireEvent.click(dog);
+      await vi.dynamicImportSettled();
     });
-    expect(screen.getByText('Hund erkannt (98%)')).toBeTruthy();
-    expect((cat as HTMLButtonElement).disabled).toBe(false);
+    expect(dog.getAttribute('aria-disabled')).toBe('true');
+    expect(cat.getAttribute('aria-disabled')).toBe('true');
+    expect(screen.getByText('Signal wird verarbeitet…')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ANIMATION.STEP_DURATION_MS * NETWORK_STAGES.COMPLETE);
+    });
+    expect(screen.getByText('Hund erkannt')).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain('2 von 3 Nachbarn stimmen für Hund.');
+    expect(
+      screen
+        .getByRole('progressbar', { name: 'Nachbarstimmen Hund' })
+        .getAttribute('aria-valuetext'),
+    ).toBe('2 von 3 Stimmen');
+    expect(
+      screen
+        .getByRole('progressbar', { name: 'Nachbarstimmen Katze' })
+        .getAttribute('aria-valuetext'),
+    ).toBe('1 von 3 Stimmen');
+    expect(cat.getAttribute('aria-disabled')).toBeNull();
     fireEvent.click(cat);
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(ANIMATION.STEP_DURATION_MS * 7);
+      await vi.advanceTimersByTimeAsync(ANIMATION.STEP_DURATION_MS * NETWORK_STAGES.COMPLETE);
     });
-    expect(screen.getByText('Katze erkannt (95%)')).toBeTruthy();
-    expect((dog as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByText('Katze erkannt')).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain('2 von 3 Nachbarn stimmen für Katze.');
+    expect(
+      screen
+        .getByRole('progressbar', { name: 'Nachbarstimmen Hund' })
+        .getAttribute('aria-valuetext'),
+    ).toBe('1 von 3 Stimmen');
+    expect(
+      screen
+        .getByRole('progressbar', { name: 'Nachbarstimmen Katze' })
+        .getAttribute('aria-valuetext'),
+    ).toBe('2 von 3 Stimmen');
+    expect(dog.getAttribute('aria-disabled')).toBeNull();
   });
 });

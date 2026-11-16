@@ -1,13 +1,11 @@
 'use client';
 
 import type { ComponentProps } from 'react';
-import type { VariantProps } from 'class-variance-authority';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
-import { buttonVariants } from './button-variants';
-import { ActionFeedback } from './ui/action-feedback';
+import { Button } from './ui/button';
 
-type AnimatedLinkProps = ComponentProps<typeof Link> & VariantProps<typeof buttonVariants>;
+type AnimatedLinkProps = ComponentProps<typeof Link> &
+  Pick<ComponentProps<typeof Button>, 'variant' | 'size'>;
 
 /** Native Next navigation with the same press and icon feedback as shared buttons. */
 export default function AnimatedLink({
@@ -18,10 +16,8 @@ export default function AnimatedLink({
   ...props
 }: AnimatedLinkProps) {
   return (
-    <ActionFeedback>
-      <Link className={cn(buttonVariants({ variant, size }), className)} {...props}>
-        {children}
-      </Link>
-    </ActionFeedback>
+    <Button asChild variant={variant} size={size} className={className}>
+      <Link {...props}>{children}</Link>
+    </Button>
   );
 }

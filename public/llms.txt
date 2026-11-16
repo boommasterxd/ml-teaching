@@ -4,7 +4,7 @@
 
 ## Anwendung
 
-- [Startseite](https://mlteaching.boomapps.de/): Einführung und Ablauf des Lernprojekts.
+- [Startseite](https://mlteaching.boomapps.de/): Einführung, Bildverarbeitung als Animation und ein Quiz zur Bilderkennung im Alltag.
 - [Maschine trainieren](https://mlteaching.boomapps.de/lernen): Interaktive Bildklassifikation mit Kamera oder eigenen Bildern. Das vortrainierte MobileNet-Modell wird nach Zustimmung von Google geladen; Training und Bilderkennung erfolgen im Browser.
 
 ## Kontakt und rechtliche Informationen

@@ -1,30 +1,33 @@
 import AnimatedLink from '@/components/AnimatedLink';
-import { ArrowRight, Camera, Zap, Users } from '@/components/icons';
+import { ArrowRight, Camera, Zap, Users, Check } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardIcon, CardTitle } from '@/components/ui/card';
+import LearningCard from '@/components/LearningCard';
+import { Heading, Text } from '@/components/ui/typography';
 import HeroScene from '@/components/hero/HeroScene';
+import HeroAccent from '@/components/hero/HeroAccent';
 import ScrollReveal from '@/components/hero/ScrollReveal';
 import { neuralNetworkContent } from '@/content/landing/neural-network-content';
 import { learningContent } from '@/content/landing/learning-content';
+import { AnimateIcon } from '@animate-ui/react/icons';
 
 const steps = [
   {
     number: '01',
     Icon: Camera,
-    title: 'Zeig ihr deine Welt.',
-    text: 'Lege Klassen an. Sammle mit der Kamera oder per Upload verschiedene Bilder von deinen Objekten.',
+    title: 'Bilder sammeln',
+    text: 'Lege Klassen an und füge für jede Klasse Bilder hinzu: mit der Kamera oder per Upload.',
   },
   {
     number: '02',
     Icon: Users,
-    title: 'Mach Muster sichtbar.',
-    text: 'Trainiere dein eigenes Modell. Ein vortrainiertes Netz erkennt Merkmale, deine Beispiele geben ihnen Bedeutung.',
+    title: 'Modell trainieren',
+    text: 'Starte das Training. Das Modell lernt, deine Klassen anhand der Bildmerkmale zu unterscheiden.',
   },
   {
     number: '03',
     Icon: Zap,
-    title: 'Stell sie auf die Probe.',
-    text: 'Halte etwas Neues vor die Kamera. Beobachte, was deine KI erkennt, und verbessere sie mit weiteren Beispielen.',
+    title: 'Ergebnis testen',
+    text: 'Zeige der Kamera ein neues Bild. Bei Verwechslungen helfen zusätzliche Trainingsbilder.',
   },
 ];
 
@@ -32,29 +35,38 @@ const steps = [
 export default function LandingPage() {
   return (
     <div className="landing-page">
-      <section className="landing-container hero-layout" aria-labelledby="hero-title">
-        <div className="hero-copy">
-          <Badge variant="outline">DEIN KI-LABOR. DIREKT IM BROWSER.</Badge>
-          <h1 id="hero-title" className="hero-title">
-            Du zeigst.
-            <br />
-            <span>Deine KI lernt.</span>
-          </h1>
-          <p className="hero-description">
-            Eine Tasse. Deine Hand. Eine neue Idee. Bring deinem Computer bei, Bilder zu
-            unterscheiden. Ohne Code, mit deinen eigenen Beispielen.
-          </p>
-          <div className="hero-actions">
-            <AnimatedLink href="/lernen" variant="primary" size="lg">
-              Jetzt ausprobieren <ArrowRight data-icon="inline-end" aria-hidden="true" />
-            </AnimatedLink>
-            <AnimatedLink href="/#so-funktionierts" variant="secondary" size="lg">
-              So funktioniert’s
-            </AnimatedLink>
+      <section className="hero-section" aria-labelledby="hero-title">
+        <HeroScene>
+          <div className="hero-copy landing-container">
+            <AnimateIcon animateOnHover className="contents">
+              <Badge variant="outline">
+                <Zap aria-hidden="true" /> Dein KI-Labor im Browser
+              </Badge>
+            </AnimateIcon>
+            <Heading as="h1" variant="hero" id="hero-title">
+              Du zeigst.
+              <br />
+              <HeroAccent text="Deine KI lernt." />
+            </Heading>
+            <Text variant="lead" className="hero-description">
+              Eine Tasse. Deine Hand. Eine neue Idee. Bring deinem Computer bei, Bilder zu
+              unterscheiden. Ohne Code, mit deinen eigenen Beispielen.
+            </Text>
+            <div className="hero-actions">
+              <AnimatedLink href="/lernen" size="lg">
+                Jetzt ausprobieren <ArrowRight data-icon="inline-end" aria-hidden="true" />
+              </AnimatedLink>
+              <AnimatedLink href="/#so-funktionierts" variant="outline" size="lg">
+                So funktioniert’s
+              </AnimatedLink>
+            </div>
+            <AnimateIcon animateOnHover className="contents">
+              <Text variant="muted" className="hero-kicker">
+                <Check aria-hidden="true" /> Kein Konto. Deine Bilder bleiben auf diesem Gerät.
+              </Text>
+            </AnimateIcon>
           </div>
-          <p className="hero-kicker">Kein Konto. Deine Bilder bleiben auf diesem Gerät.</p>
-        </div>
-        <HeroScene />
+        </HeroScene>
       </section>
 
       <section
@@ -62,36 +74,19 @@ export default function LandingPage() {
         className="landing-section landing-container"
         aria-labelledby="section-steps"
       >
-        <div className="landing-section-heading">
-          <p className="eyebrow">01 / SELBST AUSPROBIEREN</p>
-          <h2 id="section-steps" className="section-heading">
-            Von deiner Idee
-            <br />
-            zur eigenen KI.
-          </h2>
-          <p className="section-lead">
-            Drei Schritte. Unzählige Aha-Momente. Du entscheidest, was dein Modell lernen soll.
-          </p>
-        </div>
+        <ScrollReveal>
+          <div className="landing-section-heading">
+            <Badge variant="secondary">01 / Selbst ausprobieren</Badge>
+            <Heading id="section-steps">So trainierst du dein Modell.</Heading>
+            <Text variant="lead">
+              Sammle Bilder, trainiere das Modell und teste es mit neuen Aufnahmen.
+            </Text>
+          </div>
+        </ScrollReveal>
         <div className="grid gap-5 md:grid-cols-3">
           {steps.map(({ number, Icon, title, text }) => (
             <ScrollReveal key={number}>
-              <Card variant="open">
-                <CardHeader variant="explanation">
-                  <div className="mb-8 flex items-start justify-between">
-                    <Badge variant="count">{number}</Badge>
-                    <CardIcon tone="primary">
-                      <Icon />
-                    </CardIcon>
-                  </div>
-                  <CardTitle as="h3" variant="explanation" className="mb-4">
-                    {title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent variant="explanation">
-                  <p>{text}</p>
-                </CardContent>
-              </Card>
+              <LearningCard title={title} description={text} icon={Icon} marker={number} />
             </ScrollReveal>
           ))}
         </div>

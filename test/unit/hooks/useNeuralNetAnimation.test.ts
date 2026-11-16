@@ -2,7 +2,7 @@
  * useNeuralNetAnimation.test.ts
  *
  * Unit tests for the useNeuralNetAnimation hook. Covers initial state,
- * the 7-step animation sequence driven by fake timers, signal/result
+ * the finite animation sequence driven by fake timers, signal/result
  * assignment for both animation types, guard against concurrent animations,
  * and timeout cleanup on unmount.
  */
@@ -10,7 +10,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useNeuralNetAnimation } from '@/hooks/useNeuralNetAnimation';
-import { ANIMATION, NEURAL_NET_VIZ } from '@/constants';
+import { ANIMATION, NETWORK_STAGES } from '@/constants';
 
 /** Shorthand for the configured step duration to keep timer advances readable. */
 const STEP = ANIMATION.STEP_DURATION_MS;
@@ -61,24 +61,24 @@ describe('useNeuralNetAnimation', () => {
       expect(result.current.animStep).toBe(0);
     });
 
-    it('advances through all 7 steps', () => {
+    it('advances through all stages', () => {
       const { result } = renderHook(() => useNeuralNetAnimation());
 
       act(() => {
         result.current.triggerAnimation('dog');
       });
 
-      // Each timer tick advances one step; after step 7 the animation finishes.
-      for (let step = 1; step <= 7; step++) {
+      // Each timer tick advances the demo towards its final result.
+      for (let step = 1; step <= NETWORK_STAGES.COMPLETE; step++) {
         act(() => {
           vi.advanceTimersByTime(STEP);
         });
-        if (step < 7) {
+        if (step < NETWORK_STAGES.COMPLETE) {
           expect(result.current.animStep).toBe(step);
         }
       }
 
-      expect(result.current.animStep).toBe(7);
+      expect(result.current.animStep).toBe(NETWORK_STAGES.COMPLETE);
     });
 
     it('sets the correct result after completion', () => {
@@ -88,10 +88,10 @@ describe('useNeuralNetAnimation', () => {
         result.current.triggerAnimation('dog');
       });
       act(() => {
-        vi.advanceTimersByTime(STEP * 7);
+        vi.advanceTimersByTime(STEP * NETWORK_STAGES.COMPLETE);
       });
 
-      expect(result.current.result).toBe(NEURAL_NET_VIZ.DEMO_RESULTS.DOG);
+      expect(result.current.result).toBe('Hund erkannt (2 von 3 Stimmen)');
     });
 
     it('sets animating to false after completion', () => {
@@ -101,7 +101,7 @@ describe('useNeuralNetAnimation', () => {
         result.current.triggerAnimation('dog');
       });
       act(() => {
-        vi.advanceTimersByTime(STEP * 7);
+        vi.advanceTimersByTime(STEP * NETWORK_STAGES.COMPLETE);
       });
 
       expect(result.current.animating).toBe(false);
@@ -116,10 +116,10 @@ describe('useNeuralNetAnimation', () => {
         result.current.triggerAnimation('cat');
       });
       act(() => {
-        vi.advanceTimersByTime(STEP * 7);
+        vi.advanceTimersByTime(STEP * NETWORK_STAGES.COMPLETE);
       });
 
-      expect(result.current.result).toBe(NEURAL_NET_VIZ.DEMO_RESULTS.CAT);
+      expect(result.current.result).toBe('Katze erkannt (2 von 3 Stimmen)');
       expect(result.current.activeSignal).toBe('cat');
     });
   });

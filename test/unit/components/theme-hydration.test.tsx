@@ -19,7 +19,7 @@ function Appearance() {
   );
 }
 
-function ForwardedSwitch() {
+function ForwardedSwitch({ show = true }: { show?: boolean }) {
   const following = useRef<HTMLButtonElement>(null);
   const [checked, setChecked] = useState(false);
   const ref = useCallback((node: HTMLButtonElement | null) => {
@@ -27,14 +27,16 @@ function ForwardedSwitch() {
   }, []);
   return (
     <>
-      <Switch ref={ref} checked={checked} onCheckedChange={setChecked} aria-label="Darstellung" />
+      {show && (
+        <Switch ref={ref} checked={checked} onCheckedChange={setChecked} aria-label="Darstellung" />
+      )}
       <button ref={following}>Weiterarbeiten</button>
     </>
   );
 }
 
 describe('appearance hydration', () => {
-  it('honors forwarded-ref cleanup and never takes focus back from a following control', async () => {
+  it('keeps the hydrated trigger stable and honors forwarded-ref cleanup when removed', async () => {
     installThemeHost();
     const container = document.createElement('div');
     container.innerHTML = renderToString(<ForwardedSwitch />);
@@ -47,6 +49,9 @@ describe('appearance hydration', () => {
       fireEvent.click(initialSwitch);
       await act(async () => {});
       expect(container.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('true');
+      expect(container.querySelector('[role="switch"]')).toBe(initialSwitch);
+      expect(document.activeElement).toBe(initialSwitch);
+      await act(async () => root.render(<ForwardedSwitch show={false} />));
       expect(document.activeElement).toBe(following);
     } finally {
       await act(async () => root.unmount());

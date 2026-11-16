@@ -9,20 +9,10 @@ import { cn } from '@/lib/utils';
 // Adapted from shadcn/ui's Radix Dialog; the overlay supports tall mobile content.
 export const Dialog = DialogPrimitive.Root;
 export const DialogContent = DialogPrimitive.Content;
-const titleClasses = {
-  default: 'text-xl',
-  compact: 'text-sm',
-  large: 'text-2xl',
-} as const;
-
-export function DialogTitle({
-  variant = 'default',
-  className,
-  ...props
-}: ComponentProps<typeof DialogPrimitive.Title> & { variant?: keyof typeof titleClasses }) {
+export function DialogTitle({ className, ...props }: ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      className={cn('font-bold text-foreground', titleClasses[variant], className)}
+      className={cn('text-lg leading-none font-semibold', className)}
       {...props}
     />
   );

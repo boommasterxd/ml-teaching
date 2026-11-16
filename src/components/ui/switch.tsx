@@ -1,15 +1,15 @@
 'use client';
 
-import { startTransition, useEffect, useState, type ComponentProps } from 'react';
+import type { ComponentProps } from 'react';
 import { Switch as SwitchPrimitive } from '@animate-ui/react/primitives/radix-ui/switch';
 import { cn } from '@/lib/utils';
 import { ActionFeedback } from './action-feedback';
-import { useControlRef } from './use-control-ref';
+import { useControlHydrated, useControlRef } from './use-control-hydration';
 
 const thumbClass =
-  'pointer-events-none grid size-5 place-items-center rounded-full bg-background text-foreground shadow-sm data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0 [&_svg]:size-3.5';
+  'pointer-events-none grid place-items-center rounded-full bg-background ring-0 group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0 dark:data-[state=checked]:bg-primary-foreground dark:data-[state=unchecked]:bg-foreground [&_svg]:size-3';
 
-/** shadcn Switch composition; Animate UI owns thumb movement and whole-control feedback. */
+/** Public Radix parts keep the trigger stable and omit the inline-styled SSR form bridge. */
 export function Switch({
   className,
   children,
@@ -17,66 +17,46 @@ export function Switch({
   checked,
   defaultChecked,
   onCheckedChange,
+  name,
+  form,
+  required,
+  value,
   asChild,
   ref,
+  size = 'default',
   ...props
-}: ComponentProps<typeof SwitchPrimitive.Root>) {
-  const [client, setClient] = useState(false);
-  const controlRef = useControlRef(ref, client);
-  const [initialChecked, setInitialChecked] = useState(defaultChecked ?? false);
-  // Replay pending input before upgrading the static control to its animated primitive.
-  useEffect(() => {
-    startTransition(() => setClient(true));
-  }, []);
-  const classes = cn(
-    'peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-input p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary',
-    className,
-  );
-  const value = checked ?? initialChecked;
-  const state = value ? 'checked' : 'unchecked';
-  // Radix assumes a form before its ref mounts and emits an inline-styled BubbleInput during SSR.
-  if (!client)
-    return (
-      <button
-        {...props}
-        ref={controlRef}
-        type="button"
-        role="switch"
-        data-slot="switch"
-        disabled={disabled}
-        aria-checked={value}
-        data-state={state}
-        className={classes}
-        onClick={(event) => {
-          props.onClick?.(event);
-          if (event.defaultPrevented) return;
-          const next = !value;
-          if (checked === undefined) setInitialChecked(next);
-          onCheckedChange?.(next);
-        }}
-      >
-        <span data-slot="switch-thumb" data-state={state} className={thumbClass}>
-          {children}
-        </span>
-      </button>
-    );
+}: ComponentProps<typeof SwitchPrimitive.Root> & { size?: 'default' | 'sm' }) {
+  const client = useControlHydrated();
+  const controlRef = useControlRef(ref);
   return (
-    <ActionFeedback disabled={disabled}>
-      <SwitchPrimitive.Root
-        ref={controlRef}
-        data-slot="switch"
-        disabled={disabled}
-        checked={checked}
-        defaultChecked={initialChecked}
-        onCheckedChange={onCheckedChange}
-        asChild={asChild}
-        className={classes}
-        {...props}
-      >
-        <SwitchPrimitive.Thumb data-slot="switch-thumb" className={thumbClass}>
-          {children}
-        </SwitchPrimitive.Thumb>
-      </SwitchPrimitive.Root>
-    </ActionFeedback>
+    <SwitchPrimitive.unstable_Provider
+      checked={checked}
+      defaultChecked={defaultChecked}
+      onCheckedChange={onCheckedChange}
+      disabled={disabled}
+      name={name}
+      form={form}
+      required={required}
+      value={value}
+    >
+      <ActionFeedback disabled={disabled}>
+        <SwitchPrimitive.unstable_Trigger
+          ref={controlRef}
+          data-slot="switch"
+          data-size={size}
+          asChild={asChild}
+          className={cn(
+            'peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80',
+            className,
+          )}
+          {...props}
+        >
+          <SwitchPrimitive.Thumb data-slot="switch-thumb" className={thumbClass}>
+            {children}
+          </SwitchPrimitive.Thumb>
+        </SwitchPrimitive.unstable_Trigger>
+      </ActionFeedback>
+      {client && Boolean(name || form || required) && <SwitchPrimitive.unstable_BubbleInput />}
+    </SwitchPrimitive.unstable_Provider>
   );
 }

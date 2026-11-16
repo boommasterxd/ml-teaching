@@ -1,13 +1,13 @@
 import type React from 'react';
-import * as Progress from '@animate-ui/react/primitives/radix-ui/progress';
 import { Camera, Play, Square } from './icons';
 import Button from './Button';
 import { cn } from '../lib/utils';
 import type { MLClass, Prediction } from '../types/ml';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import { classColorClasses } from '../lib/class-colors';
+import { Progress } from './ui/progress';
+import { Heading, Text } from './ui/typography';
 
 interface PredictionPanelProps {
   hasCamera: boolean;
@@ -27,16 +27,20 @@ function ConfidenceResults({
   onStopPredicting,
 }: Pick<PredictionPanelProps, 'classes' | 'prediction' | 'onStopPredicting'>) {
   if (!prediction)
-    return <p className="text-foreground text-sm text-center">Die Vorhersage wird vorbereitet.</p>;
+    return (
+      <Text variant="muted" className="text-center">
+        Die Vorhersage wird vorbereitet.
+      </Text>
+    );
   const predictedClassName =
     classes.find((cls) => cls.id === prediction.label)?.name ?? 'Unbekannt';
   return (
     <div className="flex flex-col gap-4">
       <div className="text-center mb-2" role="status" aria-live="polite">
-        <div className="eyebrow mb-2">Erkannt</div>
-        <div className="font-display text-3xl tracking-tight text-foreground">
-          {predictedClassName}
-        </div>
+        <Text variant="muted" className="mb-2">
+          Erkannt
+        </Text>
+        <Heading as="h3">{predictedClassName}</Heading>
       </div>
       <div className="flex flex-col gap-2.5">
         {classes.map((cls) => {
@@ -45,24 +49,13 @@ function ConfidenceResults({
             ? Math.round(Math.max(0, Math.min(1, confidence)) * 100)
             : 0;
           return (
-            <div
-              key={cls.id}
-              className={cn('flex items-center text-xs', classColorClasses(cls.color))}
-            >
+            <div key={cls.id} className="flex items-center text-xs">
               <span className="w-20 truncate font-semibold text-muted-foreground">{cls.name}</span>
-              <Progress.Root
+              <Progress
                 value={percentage}
                 aria-label={`Konfidenz für ${cls.name}`}
-                className="flex-1 h-2 bg-muted rounded-full overflow-hidden mx-3"
-              >
-                <Progress.Indicator
-                  className="h-full w-full rounded-full"
-                  style={{
-                    backgroundColor: 'var(--class-on-surface)',
-                    transform: `translateX(-${100 - percentage}%)`,
-                  }}
-                />
-              </Progress.Root>
+                className="mx-3 flex-1"
+              />
               <span className="w-10 text-right font-mono font-medium text-muted-foreground">
                 {percentage}%
               </span>
@@ -93,15 +86,16 @@ export default function PredictionPanel(props: PredictionPanelProps) {
   return (
     <Card className="flex-1" inert={!hasTrainedModel}>
       <CardHeader>
-        <CardTitle>
-          <Camera aria-hidden="true" /> 3. Vorhersage
-        </CardTitle>
-        {isPredicting && (
-          <Badge variant="success">
-            <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
-            Live
-          </Badge>
-        )}
+        <CardTitle>3. Vorhersage</CardTitle>
+        <CardAction className="flex items-center gap-2">
+          <Camera aria-hidden="true" />
+          {isPredicting && (
+            <Badge variant="secondary">
+              <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
+              Live
+            </Badge>
+          )}
+        </CardAction>
       </CardHeader>
       <Separator />
       <CardContent className="flex flex-col flex-1">
@@ -120,7 +114,7 @@ export default function PredictionPanel(props: PredictionPanelProps) {
           {!isPredicting && (
             <div className="absolute inset-0 flex items-center justify-center bg-media-overlay rounded-xl">
               <Button
-                variant="prediction"
+                variant="default"
                 onClick={onStartPredicting}
                 disabled={!hasCamera}
                 aria-describedby={!hasCamera ? 'prediction-camera-hint' : undefined}

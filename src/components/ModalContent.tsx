@@ -42,7 +42,7 @@ export default function ModalContent({
   return (
     <div
       className={cn(
-        'relative bg-card text-card-foreground rounded-2xl border border-border shadow-xl overflow-hidden my-auto max-h-fit w-full outline-none',
+        'relative grid w-full gap-4 rounded-lg border bg-background p-6 text-foreground shadow-lg outline-none my-auto max-h-fit',
         maxWidthClasses[maxWidth],
         className,
       )}
