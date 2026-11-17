@@ -33,8 +33,8 @@ const techniques = [
   },
 ];
 
-export const neuralNetworkContent = (
-  <>
+export function ImageAnimationSection() {
+  return (
     <section aria-labelledby="section-neural-net">
       <div className="landing-container landing-section">
         <ScrollReveal kind="text">
@@ -50,13 +50,13 @@ export const neuralNetworkContent = (
         <EntryReveal kind="surface">
           <DeferredNetworkDemo />
         </EntryReveal>
-        <EntryReveal kind="reading" index={1} asChild>
-          <Text variant="muted" className="mt-4">
-            Vereinfachtes Beispiel mit generierten Bildern und erfundenen Merkmalswerten.
-          </Text>
-        </EntryReveal>
       </div>
     </section>
+  );
+}
+
+export function ImageTechniqueSection() {
+  return (
     <section
       className="landing-container landing-section landing-technique-layout"
       aria-labelledby="section-explanation"
@@ -65,7 +65,7 @@ export const neuralNetworkContent = (
         <div className="landing-technique-copy">
           <EntryReveal kind="text" asChild>
             <div className="flex flex-col gap-5">
-              <Text variant="muted">03 / Die Technik</Text>
+              <Text variant="muted">01 / Die Technik</Text>
               <Heading id="section-explanation">MobileNet und KNN</Heading>
               <Text variant="lead">
                 Du zeigst ein neues Bild. MobileNet beschreibt, was darin zu sehen ist, mit Zahlen.
@@ -80,6 +80,16 @@ export const neuralNetworkContent = (
               Bildmerkmale und gibst eigene Beispiele für deine Gruppen hinzu. Eine solche Gruppe
               heißt Klasse, zum Beispiel „Hund“. Das Nutzen eines vortrainierten Netzes nennt man
               Transfer Learning. MobileNet selbst wird hier nicht neu trainiert.
+            </Text>
+          </EntryReveal>
+          <EntryReveal kind="reading" index={2} asChild>
+            <Text variant="muted">
+              Bilderkennung kennt viele Verfahren. Tiefe neuronale Netze können auch direkt lernen,
+              ein Bild einer Klasse zuzuordnen. MobileNet ist selbst ein solches Netz; hier nutzen
+              wir seine Bildmerkmale und lassen KNN die Klasse bestimmen. Wir wählen KNN, weil du
+              den Vergleich mit den nächsten Beispielen gut nachvollziehen kannst. Eine verwandte
+              Aufgabe ist Anomalieerkennung, auf Englisch „Anomaly Detection“: Sie sucht
+              Abweichungen vom Gewohnten, etwa einen Riss in einem Bauteil.
             </Text>
           </EntryReveal>
         </div>
@@ -111,5 +121,5 @@ export const neuralNetworkContent = (
         </ItemGroup>
       </div>
     </section>
-  </>
-);
+  );
+}

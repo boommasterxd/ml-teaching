@@ -1,0 +1,79 @@
+.reward-experiment {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.reward-experiment-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reward-experiment-board {
+  display: block;
+  width: 100%;
+  max-width: 28rem;
+  height: auto;
+  align-self: center;
+  overflow: visible;
+}
+
+.reward-experiment-cell {
+  fill: var(--muted);
+  stroke: var(--border);
+}
+
+.reward-experiment-wall {
+  fill: var(--border);
+  stroke: var(--muted-foreground);
+  stroke-dasharray: 3 5;
+}
+
+.reward-experiment-goal {
+  fill: none;
+  stroke: var(--foreground);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.reward-experiment-goal[data-rewarded='true'] {
+  stroke: var(--primary);
+}
+
+.reward-experiment-start {
+  fill: var(--background);
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+
+.reward-experiment-agent {
+  fill: var(--primary);
+}
+
+.reward-experiment-route,
+.reward-experiment-traveler {
+  fill: none;
+  stroke: var(--primary);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.reward-experiment-route {
+  stroke-width: 3;
+}
+
+.reward-experiment-traveler {
+  stroke-width: 16;
+}
+
+.reward-experiment-readout {
+  min-height: 1.25rem;
+}
+@variant max-sm {
+  .reward-experiment-reset {
+    grid-column: 1 / -1;
+  }
+}

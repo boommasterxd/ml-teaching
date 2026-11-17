@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import TrainingPage from '@/screens/TrainingPage';
+import { learningPaths } from '@/lib/learning-paths';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
 const boundary = vi.hoisted(() => {
@@ -224,7 +225,7 @@ describe('training page integration', () => {
     expect(boundary.stopTrack).toHaveBeenCalled();
   }, 15_000);
 
-  it('keeps model failures visible without a camera prompt and returns safely to the landing page', async () => {
+  it('keeps model failures visible without a camera prompt and returns safely to the image explanation', async () => {
     boundary.load.mockRejectedValue(new DOMException('Model network timeout', 'TimeoutError'));
     render(<TrainingPage />);
     confirmGeneralConsent();
@@ -234,8 +235,8 @@ describe('training page integration', () => {
     expect(document.activeElement).toBe(error);
     expect(boundary.getUserMedia).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Seite neu laden' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Zur Startseite' }));
-    expect(boundary.push).toHaveBeenCalledWith('/');
+    fireEvent.click(screen.getByRole('button', { name: 'Zur Bilderkennung' }));
+    expect(boundary.push).toHaveBeenCalledWith(learningPaths.images);
   });
 
   it('reports a failed file decode and accepts a later valid local image', async () => {
@@ -249,10 +250,10 @@ describe('training page integration', () => {
     expect(boundary.getUserMedia).not.toHaveBeenCalled();
   });
 
-  it('leaves the application when the general processing choice is declined', () => {
+  it('returns to the image explanation when the general processing choice is declined', () => {
     render(<TrainingPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));
-    expect(boundary.push).toHaveBeenCalledWith('/');
+    expect(boundary.push).toHaveBeenCalledWith(learningPaths.images);
     expect(boundary.load).not.toHaveBeenCalled();
   });
 });

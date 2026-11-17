@@ -3,6 +3,11 @@ import AxeBuilder from '@axe-core/playwright';
 
 export async function settleEntryAnimations(page: Page) {
   await page.evaluate(async () => {
+    const transition = (document as Document & { activeViewTransition?: ViewTransition })
+      .activeViewTransition;
+    await transition?.finished.catch((error: unknown) => {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) throw error;
+    });
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });

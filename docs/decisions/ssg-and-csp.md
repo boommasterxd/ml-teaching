@@ -2,8 +2,10 @@
 
 ## Decision
 
-The five public routes `/`, `/lernen`, `/impressum`, `/datenschutz` and
-`/barrierefreiheit` contain request-independent content and use complete SSG.
+All public routes contain request-independent content and use complete SSG: the
+homepage, the `/lernen` selection, the explanation/practice pairs under
+`/lernen/bilderkennung` and `/lernen/q-learning`, and the three legal pages.
+The empty Q-learning shells remain statically generated with `noindex` metadata.
 Static errors `/404` and `/500` are protected too. Metadata routes and the social
 image use native build-time conventions. Production has no ISR, PPR, private SSR
 or CSP-only Proxy. Learning interactivity does not require request-time rendering:
@@ -37,7 +39,7 @@ updates. The project uses Next.js 16.4.6 and React 19.3.1; a provider adapter is
 selected only from the actual deployment environment.
 
 The runtime modules preserve the template's behavior. Project adaptations are the
-five public route selections, actual static error UI, app-specific image and model
+public route selections, actual static error UI, app-specific image and model
 origins, local data-image sources and central security headers. No unsafe inline or
 eval directives are introduced. Model weights require only connect access to the
 specific Google/TF Hub/Kaggle origins. WebGL is selected, so no speculative WASM

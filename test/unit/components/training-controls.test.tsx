@@ -96,7 +96,7 @@ describe('training and prediction controls', () => {
     );
     expect(document.activeElement).toBe(screen.getByRole('alert'));
     expect(screen.getByRole('button', { name: 'Seite neu laden' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Zur Startseite' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zur Bilderkennung' }));
     expect(onReturn).toHaveBeenCalledOnce();
   });
 });

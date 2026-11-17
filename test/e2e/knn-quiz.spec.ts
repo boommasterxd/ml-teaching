@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { diagnostics, expectAccessible } from './browser-checks';
+import { learningPaths } from '../../src/lib/learning-paths';
 
 async function rankedTargets(exercise: Locator) {
   const query = await exercise
@@ -138,7 +139,7 @@ for (const [width, colorScheme] of [
     const failures = diagnostics(page);
     await page.setViewportSize({ width, height: 1000 });
     await page.emulateMedia({ colorScheme });
-    await page.goto('/');
+    await page.goto(learningPaths.images);
     const exercise = page.locator('section[aria-labelledby="section-knn-quiz"]');
     await exercise.scrollIntoViewIfNeeded();
     const slider = exercise.getByRole('slider');

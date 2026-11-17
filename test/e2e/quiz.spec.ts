@@ -1,6 +1,7 @@
 import { expect, test, type Locator } from '@playwright/test';
 import { QUIZ_EXAMPLES } from '../../src/content/recognition-examples';
 import { diagnostics, expectAccessible } from './browser-checks';
+import { learningPaths } from '../../src/lib/learning-paths';
 
 test.use({ hasTouch: true });
 
@@ -41,7 +42,7 @@ test('everyday quiz explains answers locally and resets keyboard focus', async (
   });
   await page.setViewportSize({ width: 320, height: 844 });
   await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/');
+  await page.goto(learningPaths.images);
   const quiz = page.locator('section[aria-labelledby="section-examples"]');
   const tooltip = page.getByRole('tooltip');
   await quiz.scrollIntoViewIfNeeded();

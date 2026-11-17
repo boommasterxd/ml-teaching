@@ -1,0 +1,98 @@
+import { expect, test } from '@playwright/test';
+import { diagnostics, expectAccessible } from './browser-checks';
+import { expectHeaderLayout, settleLandingReveals } from './training-keyboard';
+import { learningPaths } from '../../src/lib/learning-paths';
+
+test('static documents, native navigation and strict CSP preserve visible content', async ({
+  page,
+  request,
+}) => {
+  const failures = diagnostics(page);
+  const routes: [string, string | RegExp][] = [
+    ['/', /Du probierst\.\s*Deine KI lernt\./],
+    [learningPaths.hub, 'Dein Lernlabor'],
+    [learningPaths.images, /Du siehst eine Katze\.\s*Was sieht die KI\?/],
+    ['/impressum', 'Impressum'],
+    ['/datenschutz', 'Datenschutzerklärung'],
+    ['/barrierefreiheit', 'Barrierefreiheit'],
+  ];
+  for (const [path, heading] of routes) {
+    const response = await request.get(path);
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-security-policy']).not.toMatch(/unsafe-inline|unsafe-eval/);
+    expect(response.headers()['cache-control']).toBe('public, max-age=300, must-revalidate');
+    expect(response.headers()['strict-transport-security']).toBe(
+      'max-age=31536000; includeSubDomains; preload',
+    );
+    const html = await response.text();
+    expect(html).toContain('lang="de"');
+    expect(html).toContain('https://mlteaching.boomapps.de');
+    expect(html).not.toMatch(/\sstyle="/);
+    if (path === learningPaths.hub) {
+      expect(html).toContain(`href="${learningPaths.images}"`);
+      expect(html).toContain(`href="${learningPaths.qLearning}"`);
+      expect(html).not.toContain('Einwilligung zur Datenverarbeitung');
+    }
+    if (path === learningPaths.images) {
+      expect(html).toContain('section-examples');
+      expect(html).toContain('section-knn-quiz');
+      expect(html).toContain(`href="${learningPaths.imagePractice}"`);
+    }
+    await page.goto(path);
+    await expect(page.getByRole('heading', { name: heading, exact: true }).first()).toBeVisible();
+    if (path === '/') {
+      await expectHeaderLayout(page);
+      await settleLandingReveals(page);
+    }
+    await expectAccessible(page);
+  }
+  await page.goto('/');
+  await page.evaluate(() => {
+    document.documentElement.dataset.navigationProbe = 'preserved';
+  });
+  await page.getByRole('link', { name: 'Datenschutz', exact: true }).click();
+  await expect(page).toHaveURL(/\/datenschutz$/);
+  expect(await page.locator('html').getAttribute('data-navigation-probe')).toBe('preserved');
+  await page.goBack();
+  await expect(
+    page.getByRole('heading', { name: /Du probierst\.\s*Deine KI lernt\./ }),
+  ).toBeVisible();
+  const missing = await request.get('/this-page-does-not-exist');
+  expect(missing.status()).toBe(404);
+  expect(missing.headers()['content-security-policy']).toBeTruthy();
+  expect(await missing.text()).toContain('Seite nicht gefunden');
+  const serverError = await page.context().newPage();
+  try {
+    const response = await serverError.goto('/500');
+    expect(response?.status()).toBe(500);
+    const policy = response?.headers()['content-security-policy'];
+    expect(policy).toContain("default-src 'none'");
+    expect(policy).not.toMatch(/unsafe-inline|unsafe-eval/);
+    await expect(serverError).toHaveTitle('Seite konnte nicht geladen werden | ML Teaching');
+    await expect(
+      serverError.getByRole('heading', {
+        name: 'Diese Seite konnte nicht geladen werden',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expectAccessible(serverError);
+  } finally {
+    await serverError.close();
+  }
+  // Inject at the response boundary; DevTools evaluation has privileged CSP behavior.
+  await page.route('http://127.0.0.1:3100/', async (route) => {
+    const response = await route.fetch();
+    const html = (await response.text()).replace(
+      '</body>',
+      '<script>document.documentElement.dataset.injected = "executed"</script></body>',
+    );
+    await route.fulfill({ response, body: html });
+  });
+  await page.goto('/');
+  const injectedRan = await page.locator('html').getAttribute('data-injected');
+  expect(injectedRan).toBeNull();
+  // The intentionally injected script is expected to be rejected by CSP.
+  expect(
+    failures.filter((message) => !message.includes('Executing inline script violates')),
+  ).toEqual([]);
+});

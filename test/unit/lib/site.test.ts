@@ -12,7 +12,7 @@ describe('pageMetadata', () => {
       url: 'https://mlteaching.boomapps.de/opengraph-image',
       width: 1200,
       height: 630,
-      alt: 'ML Teaching – Bilderkennung im Browser lernen',
+      alt: 'ML Teaching – KI verstehen und ausprobieren',
     };
 
     expect(metadata).toMatchObject({

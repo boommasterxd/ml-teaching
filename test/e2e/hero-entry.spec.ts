@@ -61,7 +61,7 @@ for (const [width, colorScheme, height] of [
       await page.goto('/', { waitUntil: 'commit' });
       await expect(page.locator('.hero-copy')).toHaveCSS('display', 'flex');
       await page.evaluate(() => document.fonts.ready);
-      const selectors = ['.hero-description', '.hero-actions', '.hero-kicker'];
+      const selectors = ['.hero-description', '.hero-actions'];
       for (const selector of selectors) {
         await expect(page.locator(selector)).toHaveCSS('filter', 'blur(2px)');
       }

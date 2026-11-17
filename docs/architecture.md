@@ -1,6 +1,8 @@
 # Architecture
 
-ML Teaching is a German educational image-classification application. Next.js App
+ML Teaching is a German educational platform for learning about machine learning.
+Image classification is implemented; Q-learning currently has empty page shells.
+Next.js App
 Router renders public content and metadata at build time. It has no Express server,
 React Router, API routes, database or authentication layer.
 
@@ -26,6 +28,16 @@ not live in `src/pages/`, where Next.js would expose unintended routes.
 
 ## Shared shell and progressive enhancement
 
+The general homepage links to the learning-area selection at `/lernen`.
+`/lernen/bilderkennung` contains the image-learning explanation, demonstrations and
+quizzes; `/lernen/bilderkennung/ausprobieren` owns the existing browser training
+workspace and its consent flow. Back links and consent rejection return to the
+image explanation. Consent withdrawal reloads the practice URL as a new document.
+`src/lib/learning-paths.ts` centralizes these destinations for navigation.
+The reserved `/lernen/q-learning` and `/lernen/q-learning/ausprobieren` routes render
+no page content. They inherit the shared header, footer and page background, remain
+`noindex`, and are excluded from the sitemap until their content is implemented.
+
 The root Server Component renders the shared header, main content and footer.
 ThemeProvider encloses them outside Animate UI's shared Flow PageTransition,
 which uses React ViewTransition through Motion AnimateView. Public pages remain
@@ -44,6 +56,12 @@ there is no second cache or automatic invalidation loop. Viewport admission alon
 does not load another page. Caller event handlers, refs, modified clicks and route
 transition types remain native. Current path/search and fragment-only navigation
 do not prepare another route.
+
+The current complete static routes have no loading-only prefetch boundary. Native
+preparation includes their build-time initial content; no separate server-data
+warmer is needed. Next.js 16 restores native browser back/forward history
+synchronously outside React transitions, so that trigger currently has no Flow
+animation. In-page back links use native link navigation and the shared Flow owner.
 
 For App Router destinations, intent warms the build-rendered RSC payload and
 route assets, not a hidden mounted browser page. In particular, preparation does
@@ -134,7 +152,7 @@ small local field without a separate form submission or validation schema.
 
 ## Delivery
 
-All five public routes use SSG and fixed hash CSP, including the initially rendered
+All nine public routes use SSG and fixed hash CSP, including the initially rendered
 learning workspace and complete initial consent. Its native Radix content remains
 inline through hydration, with focus and modality provided by Radix and no portal
 remount or entrance replay. Runtime ML remains in the browser. The native production

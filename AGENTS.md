@@ -25,7 +25,7 @@
   production auditing is a separate blocking CI gate, full auditing a local gate.
   `.npmrc` enforces the declared engine range; full auditing explicitly includes dev dependencies.
 - Use native Next.js App Router with TypeScript and `src/`. Pages/layouts remain
-  Server Components. All five public pages are SSG; browser ML stays behind explicit
+  Server Components. All public pages are SSG; browser ML stays behind explicit
   client boundaries. No Express, Vite, React Router, Docker or custom server.
   Production has no Proxy. Only `src/proxy.dev.ts` provides nonce-based Report-Only
   CSP during `next dev`; native development-only extension discovery excludes it

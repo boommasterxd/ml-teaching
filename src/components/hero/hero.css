@@ -146,9 +146,6 @@
   padding-block: clamp(5rem, 12vh, 9rem) clamp(7rem, 15vh, 11rem);
   text-align: center;
 }
-.hero-copy > [data-slot='badge'] {
-  max-width: 100%;
-}
 .hero-title {
   max-width: 70rem;
   font-size: clamp(3.25rem, 8.7vw, 8rem);
@@ -173,18 +170,6 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-}
-.hero-kicker {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  max-width: 100%;
-}
-.hero-kicker > svg {
-  width: 1rem;
-  height: 1rem;
-  flex: none;
 }
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
   [data-entry-reveal='hero'][data-entry-initial='true'] {
@@ -233,7 +218,6 @@
   .hero-actions {
     flex-direction: column;
     width: 100%;
-    max-width: 21rem;
   }
   .hero-actions > *,
   .hero-actions a {

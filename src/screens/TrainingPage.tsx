@@ -15,6 +15,7 @@ import { cn } from '../lib/utils';
 import { Separator } from '../components/ui/separator';
 import TrainingWithdrawal from '../components/TrainingWithdrawal';
 import { EntryReveal } from '../components/ui/entry-reveal';
+import { learningPaths } from '@/lib/learning-paths';
 
 function TrainingPipeline({
   canTrain,
@@ -29,8 +30,7 @@ function TrainingPipeline({
   return (
     <EntryReveal kind="text" active={ready} activation asChild>
       <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 sm:pt-12 lg:px-8">
-        <div className="flex flex-col gap-5 pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:pb-8">
-          <p className="eyebrow">Lernlabor</p>
+        <div className="flex flex-col pb-6 sm:flex-row sm:justify-end sm:pb-8">
           <ol aria-label="Trainingsablauf" className="grid grid-cols-3 gap-2 sm:gap-6">
             {['Bilder sammeln', 'Training', 'Vorhersage'].map((label, index) => {
               const state =
@@ -70,11 +70,13 @@ export default function TrainingPage() {
   const { errors, consent, models, camera, prediction } = resources;
   const { classes } = data;
   const ready = Boolean(models.mobilenetModel) && !models.isModelLoading;
-  const declineConsent = () => router.push('/');
+  const declineConsent = () => router.push(learningPaths.images);
   return (
     <div className="bg-background text-foreground pb-16 sm:pb-24">
       <PageHeader
         title="Modell trainieren"
+        backHref={learningPaths.images}
+        backLabel="Zurück zur Bilderkennung"
         rightSlot={
           <Button
             variant="ghost"

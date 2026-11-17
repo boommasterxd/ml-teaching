@@ -89,7 +89,7 @@ export default defineConfig([
   },
   { files: ['src/components/SiteLogo.tsx'], rules: { '@next/next/no-img-element': 'off' } },
   {
-    files: ['src/components/network/NetworkScene.tsx'],
+    files: ['src/components/network/ExamplePhoto.tsx'],
     // Native getImageProps retains optimization while CSS replaces Image's CSP-blocked initial style.
     rules: { '@next/next/no-img-element': 'off' },
   },

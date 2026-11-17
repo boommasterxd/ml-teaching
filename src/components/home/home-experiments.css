@@ -1,0 +1,105 @@
+.home-input-experiment {
+  min-width: 0;
+  padding-block: 1rem;
+}
+.home-learning-layout {
+  align-items: center;
+  grid-template-areas: 'copy' 'experiment' 'action';
+  row-gap: 1.5rem;
+}
+.home-learning-copy {
+  grid-area: copy;
+}
+.home-learning-experiment {
+  grid-area: experiment;
+}
+.home-learning-action {
+  grid-area: action;
+}
+.home-signal-artwork {
+  display: block;
+  width: 100%;
+  margin-block: 1.5rem 0;
+  overflow: visible;
+}
+.home-signal-surface {
+  fill: var(--card);
+  stroke: var(--border);
+}
+.home-signal-label {
+  fill: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.home-signal-muted {
+  stroke: var(--border);
+}
+.home-signal-input {
+  color: var(--primary);
+}
+.home-example-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.home-signal-cells rect {
+  fill: var(--muted);
+}
+.home-signal-cells rect[data-on='true'] {
+  fill: var(--primary);
+  opacity: 0.75;
+}
+.home-signal-output {
+  fill: var(--foreground);
+  font-size: 19px;
+  font-weight: 600;
+}
+.home-signal-active {
+  stroke: var(--primary);
+}
+.learning-area-artwork {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--primary);
+}
+.learning-area-artwork .artwork-surface {
+  fill: var(--background);
+  stroke: var(--border);
+}
+.learning-area-artwork .artwork-detail {
+  stroke: var(--border);
+}
+.learning-area-artwork .artwork-accent {
+  stroke: currentColor;
+}
+@variant max-sm {
+  .home-signal-label {
+    font-size: 19px;
+  }
+  .home-signal-output {
+    font-size: 25px;
+  }
+}
+@variant max-lg {
+  .home-learning-layout {
+    row-gap: 1rem;
+  }
+  .home-input-experiment {
+    padding-block: 0;
+  }
+}
+@variant lg {
+  .home-learning-layout {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    grid-template-areas: 'copy experiment' 'action experiment';
+  }
+  .home-learning-copy {
+    align-self: end;
+  }
+  .home-learning-action {
+    align-self: start;
+  }
+}

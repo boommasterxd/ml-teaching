@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2 } from '@/components/icons/check-circle2';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 import { AnimatedFeedback } from '@/components/ui/animated-feedback';
 
 export default function QuizCompletion() {
@@ -12,9 +12,6 @@ export default function QuizCompletion() {
         <AlertTitle>
           <h3>Alle drei gefunden.</h3>
         </AlertTitle>
-        <AlertDescription>
-          Du kannst die übrigen Beispiele weiter prüfen oder neu starten.
-        </AlertDescription>
       </Alert>
     </AnimatedFeedback>
   );

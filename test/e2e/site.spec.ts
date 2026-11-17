@@ -1,10 +1,10 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { diagnostics, expectAccessible } from './browser-checks';
+import { learningPaths } from '../../src/lib/learning-paths';
 import sharp from 'sharp';
 import { syntheticModel } from './synthetic-model';
 import { expectNetworkLayout } from './network-layout';
 import {
-  expectHeaderLayout,
   expectCancelledResetKeepsImages,
   expectGalleryFocusAcrossResize,
   expectPreviewDeletion,
@@ -71,89 +71,10 @@ test('mobile information menu supports keyboard, focus return and native navigat
   await expect(
     page.getByRole('heading', { name: 'Datenschutzerklärung', exact: true }),
   ).toBeVisible();
+  await expect(page).toHaveTitle('Datenschutz | ML Teaching');
   expect(await page.locator('html').getAttribute('data-navigation-probe')).toBe('legal-menu');
   await expectAccessible(page);
   expect(failures).toEqual([]);
-});
-
-test('static documents, native navigation and strict CSP preserve visible content', async ({
-  page,
-  request,
-}) => {
-  const failures = diagnostics(page);
-  const routes: [string, string | RegExp][] = [
-    ['/', /Du zeigst\.\s*Deine KI lernt\./],
-    ['/impressum', 'Impressum'],
-    ['/datenschutz', 'Datenschutzerklärung'],
-    ['/barrierefreiheit', 'Barrierefreiheit'],
-  ];
-  for (const [path, heading] of routes) {
-    const response = await request.get(path);
-    expect(response.status()).toBe(200);
-    expect(response.headers()['content-security-policy']).not.toMatch(/unsafe-inline|unsafe-eval/);
-    expect(response.headers()['cache-control']).toBe('public, max-age=300, must-revalidate');
-    expect(response.headers()['strict-transport-security']).toBe(
-      'max-age=31536000; includeSubDomains; preload',
-    );
-    const html = await response.text();
-    expect(html).toContain('lang="de"');
-    expect(html).toContain('https://mlteaching.boomapps.de');
-    expect(html).not.toMatch(/\sstyle="/);
-    await page.goto(path);
-    await expect(page.getByRole('heading', { name: heading, exact: true }).first()).toBeVisible();
-    if (path === '/') {
-      await expectHeaderLayout(page);
-      await settleLandingReveals(page);
-    }
-    await expectAccessible(page);
-  }
-  await page.goto('/');
-  await page.evaluate(() => {
-    document.documentElement.dataset.navigationProbe = 'preserved';
-  });
-  await page.getByRole('link', { name: 'Datenschutz', exact: true }).click();
-  await expect(page).toHaveURL(/\/datenschutz$/);
-  expect(await page.locator('html').getAttribute('data-navigation-probe')).toBe('preserved');
-  await page.goBack();
-  await expect(page.getByRole('heading', { name: /Du zeigst\.\s*Deine KI lernt\./ })).toBeVisible();
-  const missing = await request.get('/this-page-does-not-exist');
-  expect(missing.status()).toBe(404);
-  expect(missing.headers()['content-security-policy']).toBeTruthy();
-  expect(await missing.text()).toContain('Seite nicht gefunden');
-  const serverError = await page.context().newPage();
-  try {
-    const response = await serverError.goto('/500');
-    expect(response?.status()).toBe(500);
-    const policy = response?.headers()['content-security-policy'];
-    expect(policy).toContain("default-src 'none'");
-    expect(policy).not.toMatch(/unsafe-inline|unsafe-eval/);
-    await expect(serverError).toHaveTitle('Seite konnte nicht geladen werden | ML Teaching');
-    await expect(
-      serverError.getByRole('heading', {
-        name: 'Diese Seite konnte nicht geladen werden',
-        exact: true,
-      }),
-    ).toBeVisible();
-    await expectAccessible(serverError);
-  } finally {
-    await serverError.close();
-  }
-  // Inject at the response boundary; DevTools evaluation has privileged CSP behavior.
-  await page.route('http://127.0.0.1:3100/', async (route) => {
-    const response = await route.fetch();
-    const html = (await response.text()).replace(
-      '</body>',
-      '<script>document.documentElement.dataset.injected = "executed"</script></body>',
-    );
-    await route.fulfill({ response, body: html });
-  });
-  await page.goto('/');
-  const injectedRan = await page.locator('html').getAttribute('data-injected');
-  expect(injectedRan).toBeNull();
-  // The intentionally injected script is expected to be rejected by CSP.
-  expect(
-    failures.filter((message) => !message.includes('Executing inline script violates')),
-  ).toEqual([]);
 });
 
 test('educational examples start directly and keep the selected control focused', async ({
@@ -161,7 +82,7 @@ test('educational examples start directly and keep the selected control focused'
 }) => {
   const failures = diagnostics(page);
   await page.setViewportSize({ width: 320, height: 740 });
-  await page.goto('/');
+  await page.goto(learningPaths.images);
   await settleLandingReveals(page);
   const stages = page.getByRole('list', { name: 'Vom Beispielbild zur Ausgabe' });
   for (const name of ['Beispielbild', 'MobileNet', 'KNN', 'Mehrheit gewinnt']) {
@@ -213,7 +134,16 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
   await page.getByRole('switch', { name: 'Dunkle Darstellung' }).focus();
   await page.keyboard.press('Space');
   await expect(page.getByRole('switch', { name: 'Dunkle Darstellung' })).toBeChecked();
-  await page.getByRole('link', { name: 'Lernlabor öffnen', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Hauptnavigation' })
+    .getByRole('link', { name: 'Lernlabor öffnen', exact: true })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`${learningPaths.hub}$`));
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('link', { name: /Bilderkennung selbst ausprobieren/ }).click();
+  await expect(page).toHaveURL(new RegExp(`${learningPaths.images}$`));
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('link', { name: 'Jetzt ausprobieren', exact: true }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Zustimmen', exact: true })).toBeDisabled();
@@ -221,9 +151,8 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
   await page.keyboard.press('Tab');
   expect(await dialog.evaluate((node) => node.contains(document.activeElement))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: 'test-results/learning-mobile.png', fullPage: true });
   await page.keyboard.press('Escape');
-  await expect(page).toHaveURL('http://127.0.0.1:3100/');
+  await expect(page).toHaveURL(`http://127.0.0.1:3100${learningPaths.images}`);
   await page.getByRole('link', { name: 'Jetzt ausprobieren' }).first().click();
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('checkbox').first()).not.toBeChecked();
@@ -251,7 +180,7 @@ test('model download is consent-gated and a failed download leaves an accessible
       });
     },
   );
-  await page.goto('/lernen');
+  await page.goto(learningPaths.imagePractice);
   await expect(
     page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' }),
   ).toBeVisible();
@@ -265,8 +194,8 @@ test('model download is consent-gated and a failed download leaves an accessible
     page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' }),
   ).not.toBeVisible();
   await expectAccessible(page);
-  await page.getByRole('button', { name: 'Zur Startseite', exact: true }).click();
-  await expect(page).toHaveURL('http://127.0.0.1:3100/');
+  await page.getByRole('button', { name: 'Zur Bilderkennung', exact: true }).click();
+  await expect(page).toHaveURL(`http://127.0.0.1:3100${learningPaths.images}`);
 });
 
 test('consent can be withdrawn while a model download is pending', async ({ page }) => {
@@ -278,7 +207,7 @@ test('consent can be withdrawn while a model download is pending', async ({ page
     },
   );
   try {
-    await page.goto('/lernen');
+    await page.goto(learningPaths.imagePractice);
     expect(pending).toHaveLength(0);
     await grantModelConsent(page);
     const loading = page.getByRole('dialog', { name: 'Lade KI-Modelle...' });
@@ -413,7 +342,7 @@ test('local images train a real browser classifier, predict and reset without up
       });
     },
   );
-  await page.goto('/lernen');
+  await page.goto(learningPaths.imagePractice);
   await grantModelConsent(page);
   const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
   await expect(camera).toBeVisible();

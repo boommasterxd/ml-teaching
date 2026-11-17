@@ -11,7 +11,7 @@ export default function HomePage() {
     url: siteConfig.url,
     description: siteConfig.description,
     applicationCategory: 'EducationalApplication',
-    operatingSystem: 'Web browser with WebGL and camera access',
+    operatingSystem: 'Web browser',
     inLanguage: 'de',
     isAccessibleForFree: true,
   };

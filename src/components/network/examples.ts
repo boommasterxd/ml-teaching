@@ -11,14 +11,14 @@ export const NETWORK_EXAMPLES = {
 } as const;
 
 /** Native responsive image URLs, with CSS owning the strict-CSP initial appearance. */
-export function exampleImageProps(signal: ExampleSignal) {
+export function exampleImageProps(signal: ExampleSignal, sizes = '112px') {
   const example = NETWORK_EXAMPLES[signal];
   const { props } = getImageProps({
     src: example.src,
     alt: example.alt,
     width: 512,
     height: 512,
-    sizes: '112px',
+    sizes,
   });
   return { ...props, style: undefined };
 }

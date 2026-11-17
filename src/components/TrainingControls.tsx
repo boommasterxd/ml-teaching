@@ -116,8 +116,8 @@ export default function TrainingControls({
                   : !canTrain
                     ? `Sammle mind. ${ML.MIN_IMAGES_PER_CLASS} Bilder in ALLEN Klassen (mind. ${ML.MIN_CLASSES}).`
                     : hasTrainedModel
-                      ? 'Modell ist bereit. Du kannst es jederzeit neu trainieren.'
-                      : 'Genug Bilder gesammelt! Du kannst das Modell jetzt trainieren.'}
+                      ? 'Modell bereit.'
+                      : 'Bereit zum Trainieren.'}
         </Text>
       </CardFooter>
     </Card>

@@ -1,8 +1,9 @@
 import { expect, test, type Locator, type Page, type Request } from '@playwright/test';
 import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-checks';
+import { learningPaths } from '../../src/lib/learning-paths';
 
 function isLearningPayload(request: Request) {
-  return new URL(request.url()).pathname === '/lernen' && request.headers().rsc === '1';
+  return new URL(request.url()).pathname === learningPaths.hub && request.headers().rsc === '1';
 }
 
 function resourceKey(request: Request) {
@@ -62,7 +63,9 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
       try {
         await page.goto('/');
         await settleEntryAnimations(page);
-        const link = page.getByRole('link', { name: 'Lernlabor öffnen', exact: true });
+        const link = page
+          .getByRole('navigation', { name: 'Hauptnavigation' })
+          .getByRole('link', { name: 'Lernlabor öffnen', exact: true });
         await expect(link).toBeInViewport();
         expect(network.payloads).toEqual([]);
         const original = await link.elementHandle();
@@ -83,9 +86,27 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
         }
         expect(network.documents()).toBe(1);
         network.release();
+        await expect(page).toHaveURL(new RegExp(`${learningPaths.hub}$`));
+        await expect(link).toHaveCount(0);
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        await expectAccessible(page);
+        const imageLink = page.getByRole('link', { name: /Bilderkennung selbst ausprobieren/ });
+        await imageLink.focus();
+        await page.keyboard.press('Enter');
+        await expect(page).toHaveURL(new RegExp(`${learningPaths.images}$`));
+        await expect(link).toHaveCount(0);
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        const practice = page.getByRole('link', {
+          name: intent === 'keyboard' ? 'Jetzt ausprobieren' : 'Eigenes Bildmodell trainieren',
+          exact: true,
+        });
+        await expect(practice).toHaveAttribute('href', learningPaths.imagePractice);
+        await practice.focus();
+        await page.keyboard.press('Enter');
         const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
         await expect(consent).toBeVisible();
-        await expect(page).toHaveURL(/\/lernen$/);
+        await expect(page).toHaveURL(new RegExp(`${learningPaths.imagePractice}$`));
+        await expect(link).toHaveCount(0);
         expect(await page.locator('html').getAttribute('data-navigation-probe')).toBe('intent');
         await expect(
           consent.getByRole('button', { name: 'Zustimmen', exact: true }),
@@ -105,3 +126,34 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
     });
   });
 }
+
+test('Q-learning routes keep blank bodies and keyboard-accessible shared navigation', async ({
+  page,
+}) => {
+  const failures = diagnostics(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  for (const path of [learningPaths.qLearning, learningPaths.qLearningPractice]) {
+    await page.goto(path);
+    expect(await page.getByRole('main').innerText()).toBe('');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('contentinfo')).toBeVisible();
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+    const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
+    await expect(
+      navigation.getByRole('link', { name: 'Lernlabor öffnen', exact: true }),
+    ).toHaveCount(0);
+    const home = navigation.getByRole('link', { name: 'ML Teaching – Startseite', exact: true });
+    await focusByKeyboard(page, home);
+    await expect(home).toBeFocused();
+    await expectAccessible(page);
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/$/);
+    const hub = navigation.getByRole('link', { name: 'Lernlabor öffnen', exact: true });
+    await focusByKeyboard(page, hub);
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${learningPaths.hub}$`));
+    await expect(page.getByRole('link', { name: /Q-Learning selbst ausprobieren/ })).toBeVisible();
+  }
+  expect(failures).toEqual([]);
+});

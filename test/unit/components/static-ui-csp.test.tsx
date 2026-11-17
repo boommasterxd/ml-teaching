@@ -8,6 +8,9 @@ import Button from '@/components/Button';
 import AnimatedLink from '@/components/AnimatedLink';
 import { AnimatedList, AnimatedListItem } from '@/components/ui/animated-list';
 import LandingPage from '@/screens/LandingPage';
+import ImageRecognitionPage from '@/screens/ImageRecognitionPage';
+import LearningHubPage from '@/screens/LearningHubPage';
+import { learningPaths } from '@/lib/learning-paths';
 import ConsentModal from '@/components/modals/ConsentModal';
 import ImprintPage from '@/screens/ImprintPage';
 import PrivacyPage from '@/screens/PrivacyPage';
@@ -56,14 +59,79 @@ describe('strict-CSP static UI', () => {
     expect(dialog?.querySelectorAll('button[disabled]')).toHaveLength(1);
   });
 
-  it('ships the full landing journey and a static hero without eager interactive surfaces', () => {
+  it('ships the general home with a static hero and native access to the learning hub', () => {
     const markup = renderToStaticMarkup(<LandingPage />);
     const document = new DOMParser().parseFromString(markup, 'text/html');
     expect(document.querySelector('[style], style, script, canvas')).toBeNull();
-    expect(document.querySelector('h1')?.textContent).toBe('Du zeigst.Deine KI lernt.');
-    expect(document.querySelector('a[href="/lernen"]')?.textContent).toContain(
-      'Jetzt ausprobieren',
+    expect(document.querySelectorAll('h1')).toHaveLength(1);
+    expect(document.querySelector('.hero-copy h1')).not.toBeNull();
+    expect(document.querySelector(`a[href="${learningPaths.hub}"]`)).not.toBeNull();
+    expect(document.querySelector('section[aria-labelledby="section-examples"]')).toBeNull();
+    expect(document.querySelector('.landing-demo')).toBeNull();
+    const journey = [
+      'hero-title',
+      'home-ai-title',
+      'home-images-title',
+      'home-q-learning-title',
+      'home-purpose-title',
+    ];
+    const readingOrder = Array.from(document.querySelectorAll('section[aria-labelledby]'))
+      .map((section) => section.getAttribute('aria-labelledby') ?? '')
+      .filter((title) => journey.includes(title));
+    expect(readingOrder).toEqual(journey);
+    const images = document.querySelector('#lernbereiche');
+    expect(images?.querySelector('#home-images-title')?.textContent).toBe('Bilderkennung');
+    expect(images?.textContent).toContain('Hundebild zeigen');
+    const reinforcement = document.querySelector('#reinforcement-learning');
+    expect(reinforcement?.querySelector('#home-q-learning-title')?.textContent).toBe(
+      'Reinforcement Learning',
     );
+    expect(reinforcement?.textContent).toContain('Stern belohnen');
+    expect(reinforcement?.textContent).toContain('Minecraft');
+  });
+
+  it('ships the learning choices and introductions without consent or client-only navigation', () => {
+    const markup = renderToStaticMarkup(<LearningHubPage />);
+    const document = new DOMParser().parseFromString(markup, 'text/html');
+    expect(document.querySelector('[style], style, script, canvas, [role="dialog"]')).toBeNull();
+    expect(document.querySelectorAll('h1')).toHaveLength(1);
+    for (const path of [learningPaths.images, learningPaths.qLearning]) {
+      const link = document.querySelector(`a[href="${path}"]`);
+      expect(link?.textContent?.trim()).toBeTruthy();
+    }
+    expect(document.body.textContent).toContain('Bilderkennung');
+    expect(document.body.textContent).toContain('Reinforcement Learning');
+  });
+
+  it('ships the complete image explanation and local exercises before hydration', () => {
+    const markup = renderToStaticMarkup(<ImageRecognitionPage />);
+    const document = new DOMParser().parseFromString(markup, 'text/html');
+    expect(document.querySelector('[style], style, script, canvas, [role="dialog"]')).toBeNull();
+    expect(document.querySelectorAll('h1')).toHaveLength(1);
+    const hero = document.querySelector('#image-learning-hero');
+    const readingOrder = Array.from(document.querySelectorAll('.landing-page > section'))
+      .map((section) => section.getAttribute('aria-labelledby'))
+      .slice(0, 4);
+    expect(readingOrder).toEqual([
+      'image-learning-title',
+      'section-explanation',
+      'section-neural-net',
+      'section-steps',
+    ]);
+    expect(hero?.querySelector('h1')?.textContent?.trim()).toBeTruthy();
+    expect(hero?.querySelector(`a[href="${learningPaths.hub}"]`)).not.toBeNull();
+    expect(hero?.querySelector(`a[href="${learningPaths.imagePractice}"]`)?.textContent).toContain(
+      'Eigenes Bildmodell trainieren',
+    );
+    const photos = hero?.querySelectorAll('img');
+    expect(photos).toHaveLength(2);
+    for (const photo of photos ?? []) {
+      expect(photo.getAttribute('src')).toContain('/_next/image');
+      expect(photo.getAttribute('srcset')).toContain('/_next/image');
+    }
+    expect(
+      document.querySelector(`.landing-cta a[href="${learningPaths.imagePractice}"]`)?.textContent,
+    ).toContain('Jetzt ausprobieren');
     expect(document.querySelector('#so-funktionierts')).not.toBeNull();
     const quiz = document.querySelector('section[aria-labelledby="section-examples"]');
     expect(quiz?.querySelectorAll('button[aria-label^="Auswählen: "]')).toHaveLength(6);
@@ -76,6 +144,7 @@ describe('strict-CSP static UI', () => {
       'Katzenbild zeigen',
     );
     expect(document.body.textContent).toContain('MobileNet');
+    expect(document.querySelector('section[aria-labelledby="section-knn-quiz"]')).not.toBeNull();
   });
   it('renders shared action buttons without Motion initial style attributes', () => {
     const markup = renderToStaticMarkup(createElement(Button, null, 'Modell trainieren'));

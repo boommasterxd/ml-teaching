@@ -1,7 +1,8 @@
 # ML Teaching
 
-Learn image classification by collecting examples, training a classifier and testing
-predictions directly in your browser. The interface is in German.
+Explore machine learning through a German interface for children. Choose a learning
+area, discover image classification, and train a model directly in your browser.
+Reinforcement learning with Q-learning has reserved page shells for future content.
 
 [Quick start](#quick-start) · [Architecture](docs/architecture.md) ·
 [Development](docs/development.md) · [Security](SECURITY.md)
@@ -10,6 +11,7 @@ predictions directly in your browser. The interface is in German.
 
 | Workflow                                              | Result                                                                                         |
 | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Choose a learning area                                | Open the image-learning explanation or the reserved Q-learning introduction.                   |
 | Explore the image-classification demonstration        | Follow an illustrated classification step by step.                                             |
 | Play the everyday image-recognition quiz              | Find three matching uses, reveal explanations and start another round.                         |
 | Choose light, dark or system appearance               | Use a temporary choice, or explicitly remember it for later visits.                            |
@@ -29,8 +31,9 @@ npm ci --no-audit
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000). Accept the optional model download
-before training, then separately allow camera access if you want to capture images.
+Open [localhost:3000](http://localhost:3000), enter the learning lab, choose image
+recognition and open its practice page. Accept the optional model download before
+training, then separately allow camera access if you want to capture images.
 
 For the native production server:
 

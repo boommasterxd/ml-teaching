@@ -4,6 +4,7 @@ import { Text } from './ui/typography';
 import { Separator } from './ui/separator';
 import { cn } from '@/lib/utils';
 import { EntryReveal } from './ui/entry-reveal';
+import { learningPaths } from '@/lib/learning-paths';
 
 /** A native document reload retires the complete in-memory workspace and renews consent. */
 export default function TrainingWithdrawal({
@@ -26,7 +27,7 @@ export default function TrainingWithdrawal({
         >
           <Button asChild variant="outline">
             <a
-              href="/lernen"
+              href={learningPaths.imagePractice}
               aria-label="Einwilligung widerrufen und lokale Trainingsdaten verwerfen"
             >
               <RotateCcw data-icon="inline-start" aria-hidden="true" />

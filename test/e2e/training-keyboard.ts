@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { learningPaths } from '../../src/lib/learning-paths';
 
 export async function withdrawTrainingConsent(page: Page) {
   await page.evaluate(() => {
@@ -13,6 +14,7 @@ export async function withdrawTrainingConsent(page: Page) {
   await expect(
     page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' }),
   ).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`${learningPaths.imagePractice}$`));
   expect(await page.locator('html').getAttribute('data-withdrawal-probe')).toBeNull();
 }
 

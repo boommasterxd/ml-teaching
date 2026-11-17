@@ -70,9 +70,7 @@ export default function DeferredKnnQuiz() {
             </EmptyMedia>
             <EmptyTitle>KNN selbst ausprobieren</EmptyTitle>
             <EmptyDescription>
-              {failed
-                ? 'Die Übung konnte nicht geladen werden.'
-                : 'Die Übung wird vorbereitet. Sie läuft vollständig in deinem Browser.'}
+              {failed ? 'Die Übung konnte nicht geladen werden.' : 'Die Übung wird vorbereitet.'}
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>

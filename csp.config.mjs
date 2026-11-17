@@ -1,5 +1,15 @@
 const config = {
-  routes: ['/', '/lernen', '/impressum', '/datenschutz', '/barrierefreiheit'],
+  routes: [
+    '/',
+    '/lernen',
+    '/lernen/bilderkennung',
+    '/lernen/bilderkennung/ausprobieren',
+    '/lernen/q-learning',
+    '/lernen/q-learning/ausprobieren',
+    '/impressum',
+    '/datenschutz',
+    '/barrierefreiheit',
+  ],
   errorRoutes: ['/404', '/500'],
   browserMaxAgeSeconds: 300,
   policies: {

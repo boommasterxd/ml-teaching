@@ -26,7 +26,7 @@ export default function TrainingError({
             <div className="mt-3 flex flex-wrap gap-3">
               <Button onClick={() => window.location.reload()}>Seite neu laden</Button>
               <Button variant="secondary" onClick={onReturn}>
-                Zur Startseite
+                Zur Bilderkennung
               </Button>
             </div>
           )}

@@ -4,7 +4,8 @@ import { Separator } from '../ui/separator';
 import { Empty, EmptyHeader } from '../ui/empty';
 import { FeatureArtwork } from './FeatureArtwork';
 import { KnnArtwork } from './KnnArtwork';
-import { exampleImageProps, NETWORK_EXAMPLES, type ExampleSignal } from './examples';
+import { NETWORK_EXAMPLES, type ExampleSignal } from './examples';
+import ExamplePhoto from './ExamplePhoto';
 
 export const FLOW_PATHS = ['M10 50H110'];
 export const FLOW_HEAD_PATHS = ['M110 50L90 30', 'M110 50L90 70'];
@@ -107,12 +108,7 @@ export function NetworkScene({
       >
         {signal ? (
           <div className="network-example-media rounded-xl border bg-muted shadow-sm">
-            {/* Native getImageProps keeps optimized delivery without an initial inline style. */}
-            <img
-              {...exampleImageProps(signal)}
-              alt={NETWORK_EXAMPLES[signal].alt}
-              className="network-example-photo"
-            />
+            <ExamplePhoto signal={signal} className="network-example-photo" />
             {effects.scan}
             <span className="network-image-corner network-image-corner-start" aria-hidden="true" />
             <span className="network-image-corner network-image-corner-end" aria-hidden="true" />

@@ -12,6 +12,66 @@ Font-role aliases also resolve on `.app-body`, where `next/font` exposes the loc
 font variable; resolving that body-scoped variable only on `:root` would fall back
 to the browser's inherited font.
 `src/components/hero/hero.css` extends these tokens for the landing composition.
+The general homepage retains the shader hero, followed by a short AI introduction
+covering everyday applications, learning, human choices and checking results.
+Two separate learning sections follow. Each places its explanation, hands-on steps and learning action on the
+left and the matching interactive illustration on the right at `lg`; below `lg`
+they stack in reading order. The image experiment uses the shared cat/dog photos
+and drawn signal paths, with coordinated red frame outlines following the same
+input-to-features-to-result sequence. Paths retain space from both adjoining frames.
+The reinforcement-learning experiment lets the reader
+change a goal and follow one of two fixed example routes. The educational purpose,
+opportunities and limitations, and common entry questions
+follow these sections. Both experiments retain complete style-free
+SSG scenes, stable native action Buttons and polite result text; only an explicit
+action starts a bounded Animate UI Effect. There are no background animation loops,
+model downloads or speculative simulation mounts. Their small fixed SVG scenes do
+not require virtualization. The homepage and learning hub share their descriptions,
+hands-on steps and action labels through `src/content/learning-areas.ts`.
+Photo actions warm the same bounded example-image loader on pointer, focus and touch
+intent before selecting the input; route actions retain the shared native intent links.
+Below `lg`, each learning-section action follows its experiment in both the document
+and keyboard order. At `lg`, shared grid areas
+place the same action under the left copy with the experiment spanning both rows
+on the right; resizing does not replace the link or experiment.
+Stacked learning sections use a 16px gap between content, experiment and action.
+The input result is labeled inside the diagram and announced through a concise
+screen-reader live region. It has no duplicate visible caption or reserved empty area.
+Reward feedback shows the selected goal, points and step count without a second
+explanatory subtitle. Removed supporting copy leaves no spacer or empty wrapper.
+Below `sm`, public learning CTAs use the shared `mobile-action` full-width rule.
+The `mobile-action-pair` rule gives related example actions equal-width columns
+across the available space, with wrapping labels and 44px minimum touch height.
+The reward experiment places its separate reset action across both columns.
+Open editorial grids and separated reading rows vary the remaining text layout.
+They reuse the central section spacing, theme background, Typography and ScrollReveal;
+the final learning action retains the red glow.
+The `/lernen` hub reuses `LearningAreas` with centered shared button links at the
+bottom of both Cards. These links preserve native navigation and intent preparation;
+their labels can wrap on narrow screens without extending beyond the Card padding.
+The hub Cards retain decorative method previews.
+Each area explains its learning method and lists three concrete hands-on actions,
+with a matching action label.
+From `md`, native nested row subgrids align the headers, illustrations, hands-on
+steps and footer actions across neighboring Cards without fixed content heights
+or JavaScript measurements. Below `md`, Cards stack at their natural heights.
+These text-rich cards use the reading reveal, retaining full text contrast while
+their entry position animates.
+The shared header shows its learning-hub action outside `/lernen`; the hub and all
+its descendants retain the brand and theme controls without that entry action.
+The image explanation opens with an editorial hero and the shared example photos.
+Its Animate UI scan loops while visible, stays within the illustration, and can be
+paused. It respects reduced motion and document visibility. The title, photos and example
+classification are static content. The hero action and final page action both lead
+directly to the image-practice route with native intent preparation.
+`ExamplePhoto` shares the existing generated cat/dog WebP assets and native
+responsive delivery between the image-learning diagram and homepage illustrations.
+Photographic inputs use these assets rather than animal glyphs; decorative SVG
+scenes embed the same style-free image through a fixed-size foreignObject.
+The image explanation keeps the original six-section learning journey below its
+hero, with technique before the explanatory animation and training steps. Its workspace
+lives on a separate practice route. Q-learning explanation and practice currently
+render only the shared site shell, with no placeholder copy or local controls.
 The shared Lucide Brain glyph defines the brand. Its red stroke follows the theme;
 the SVG favicon has light/dark variants and the PNG Apple icon uses the same glyph.
 
@@ -48,9 +108,10 @@ and blur. The installed primitive exposes no item-opacity option, so the shared
 content wrapper fixes enabled-item opacity with an important utility to preserve
 text contrast during entry. Disabled items retain their separate opacity state.
 `LearningCard` composes the standard CardHeader, CardTitle, CardAction and
-CardDescription for the three introductory steps. The badge aligns with the title row;
-the description follows within the same header grid. The landing page varies its
-reading rhythm: the technique section pairs an editorial introduction with an open
+CardDescription for the three training steps. The badge aligns with the title row;
+the description follows within the same header grid. The image explanation varies its
+reading rhythm: after the hero, the technique explanation precedes its interactive
+animation and the three training steps. The technique section pairs an editorial introduction with an open
 ItemGroup, training tips use numbered Item rows in a full-width section, and
 everyday examples form a quiz grid, followed by a KNN exercise. All six numbered section labels use the shared
 muted Text variant without Badges. The final action starts directly with its heading.

@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'ML Teaching – Bilderkennung im Browser lernen';
+export const alt = 'ML Teaching – KI verstehen und ausprobieren';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -23,7 +23,7 @@ export default function OpenGraphImage() {
       </div>
       <div style={{ fontSize: 100, fontWeight: 700 }}>ML Teaching</div>
       <div style={{ fontSize: 38, marginTop: 32 }}>
-        Du zeigst. Deine KI lernt. Direkt im Browser.
+        KI verstehen und ausprobieren. Direkt im Browser.
       </div>
     </div>,
     size,

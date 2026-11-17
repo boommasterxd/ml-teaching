@@ -11,7 +11,7 @@ import '../index.css';
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: 'ML Teaching – KI-Bilderkennung im Browser lernen',
+    default: 'ML Teaching – KI verstehen und ausprobieren',
     template: '%s | ML Teaching',
   },
   description: siteConfig.description,

@@ -100,8 +100,8 @@ export default function PredictionPanel(props: PredictionPanelProps) {
         </CardAction>
       </CardHeader>
       <Separator />
-      <CardContent className="flex flex-col flex-1">
-        <div className="relative aspect-[16/10.25] bg-media-surface rounded-xl overflow-hidden mb-5 flex-shrink-0">
+      <CardContent className="flex flex-col flex-1 gap-5">
+        <div className="relative aspect-[16/10.25] bg-media-surface rounded-xl overflow-hidden flex-shrink-0">
           <video
             ref={predictVideoRef}
             autoPlay
@@ -127,24 +127,24 @@ export default function PredictionPanel(props: PredictionPanelProps) {
             </div>
           )}
         </div>
-        <div className="flex-1 flex flex-col justify-center min-h-[2.25rem]">
-          {isPredicting ? (
-            <ConfidenceResults
-              classes={classes}
-              prediction={prediction}
-              onStopPredicting={onStopPredicting}
-            />
-          ) : (
-            <div
-              id="prediction-camera-hint"
-              className="h-full flex items-center justify-center text-foreground text-sm text-center"
-            >
-              {hasCamera
-                ? 'Starte die Vorhersage, um Ergebnisse zu sehen.'
-                : 'Aktiviere die Kamera, um die Live-Vorhersage zu starten.'}
-            </div>
-          )}
-        </div>
+        {(isPredicting || !hasCamera) && (
+          <div className="flex-1 flex flex-col justify-center min-h-[2.25rem]">
+            {isPredicting ? (
+              <ConfidenceResults
+                classes={classes}
+                prediction={prediction}
+                onStopPredicting={onStopPredicting}
+              />
+            ) : (
+              <div
+                id="prediction-camera-hint"
+                className="h-full flex items-center justify-center text-foreground text-sm text-center"
+              >
+                Aktiviere die Kamera, um die Live-Vorhersage zu starten.
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
