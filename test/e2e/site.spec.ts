@@ -9,6 +9,7 @@ import {
   expectGalleryFocusAcrossResize,
   expectPreviewDeletion,
   expectThemeKeepsTraining,
+  expectThemeMenuTriggers,
   expectImmediateThemeFeedback,
   openThemeMenu,
   settleLandingReveals,
@@ -274,6 +275,7 @@ test('theme changes preserve navigation and require explicit remembering across 
   await page.keyboard.press('Space');
   await expect(theme).toBeChecked();
   await settleLandingReveals(page);
+  await expectThemeMenuTriggers(page);
   const menu = await openThemeMenu(page);
   await expectAccessible(page);
   const remember = menu.getByRole('menuitemcheckbox', {

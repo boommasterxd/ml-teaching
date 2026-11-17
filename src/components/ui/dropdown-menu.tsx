@@ -111,7 +111,26 @@ export function DropdownMenuCheckboxItem({
 export const DropdownMenuGroup = Primitive.Group;
 export const DropdownMenuRadioGroup = Primitive.RadioGroup;
 export const DropdownMenu = Primitive.Root;
-export const DropdownMenuTrigger = Primitive.Trigger;
+
+/** Let Radix handle Enter once while Motion retains its keyboard press feedback. */
+export function DropdownMenuTrigger({
+  onPointerDown,
+  ...props
+}: ComponentProps<typeof Primitive.Trigger>) {
+  return (
+    <Primitive.Trigger
+      {...props}
+      onPointerDown={(event) => {
+        // Motion emits an untyped synthetic pointer before Radix receives the Enter key.
+        if (!event.pointerType && !event.nativeEvent.isTrusted) {
+          event.preventDefault();
+          return;
+        }
+        onPointerDown?.(event);
+      }}
+    />
+  );
+}
 
 export function DropdownMenuLabel({
   className,

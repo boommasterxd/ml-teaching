@@ -19,7 +19,7 @@ export function checkQualityLimits(root = process.cwd()) {
   for (const entry of readdirSync(root, { withFileTypes: true })) {
     if (entry.isFile()) checkFile(path.join(root, entry.name));
   }
-  for (const directory of ['src', 'scripts', '.github/scripts', 'test']) {
+  for (const directory of ['src', 'scripts', 'csp', '.github/scripts', 'test']) {
     try {
       visit(path.join(root, directory));
     } catch (error) {

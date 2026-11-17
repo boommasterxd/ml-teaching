@@ -13,6 +13,7 @@ import { KnnPoint as PointGlyph } from '@/components/network/KnnArtwork';
 
 export default function KnnQuizPoint({
   point,
+  distance,
   neighborOffset,
   selected,
   errorAttempt,
@@ -21,6 +22,7 @@ export default function KnnQuizPoint({
   onDismiss,
 }: {
   point: KnnPoint;
+  distance: number;
   neighborOffset?: KnnPosition;
   selected: boolean;
   errorAttempt: number;
@@ -47,7 +49,7 @@ export default function KnnQuizPoint({
           size="icon-lg"
           className="knn-point-control size-11"
           style={placement}
-          aria-label={`${point.signal === 'dog' ? 'Hund' : 'Katze'}, Punkt ${point.id.replace('point-', '')}`}
+          aria-label={`${point.signal === 'dog' ? 'Hund' : 'Katze'}, Punkt ${point.id.replace('point-', '')}, Abstand zur Raute: ${distance.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Einheiten`}
           aria-pressed={selected}
           aria-invalid={Boolean(errorAttempt) || undefined}
           onClick={() => onChoose(point.id)}

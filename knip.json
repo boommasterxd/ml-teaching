@@ -1,6 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["src/app/**/*.{ts,tsx}", "scripts/*.{ts,mjs}", ".github/scripts/*.{ts,mjs}"],
+  "entry": [
+    "src/app/**/*.{ts,tsx}",
+    "scripts/*.{ts,mjs}",
+    ".github/scripts/*.{ts,mjs}",
+    ".github/scripts/cache-lifecycle/types.d.ts"
+  ],
   "project": [
     "src/**/*.{ts,tsx,css}",
     "test/**/*.{ts,tsx,mjs}",

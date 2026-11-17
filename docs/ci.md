@@ -23,6 +23,46 @@ substantive jobs. Superseded runs for the same PR are cancelled. The uncondition
 final `CI` check accepts successful selected jobs and explicitly excluded skipped
 jobs only. Invalid plans, planning failures, cancellations and unexpected skips fail.
 
+## Dependency cache lifecycle
+
+PR quality and browser jobs restore only npm's `_cacache` content store. Cache
+identities include Linux x64, the approved Node.js major, the active npm major and
+a hash of dependency and cache configuration inputs. Compatible prefix restores
+can reuse downloaded packages; every job still runs `npm ci --no-audit`, including
+on a cold cache. PR jobs never save caches, and installed `node_modules`, build
+output and browser profiles are not cached.
+
+The separate `Dependency cache` workflow produces caches from trusted `main` when
+dependency, runtime or cache configuration inputs change. Its manual entry point
+also requires `main`. It installs locked dependencies and records the native
+producer identity; it does not repeat application quality, build or browser jobs.
+Cache availability does not establish a hit-rate or duration improvement.
+
+`.github/cache-policy.json` declares the managed family, producer and input
+boundaries. Cleanup runs from the current trusted `main` source after a successful
+cache producer, closed pull requests or declared workflow completion. It verifies
+replacement receipts and active runs before deleting eligible obsolete caches,
+rechecks the trusted branch identity and bounds deletion to 100 entries per run.
+Unknown legacy families have no automatic retirement mapping. The provider's
+existing seven-day inactivity eviction and 10 GB repository limit remain unchanged.
+
+PR cache configuration, restore and summary steps are optional; their failures
+never suppress `npm ci`. Per-job summaries distinguish exact and compatible
+restores, cold caches, errors and unknown outcomes. After trusted `main` seeding,
+the observation target is at least 95% confirmed restores over a rolling 30 days
+of eligible PR install opportunities with unchanged compatible inputs. Exact and
+compatible restores count as successes; cold, error and unknown outcomes remain
+in the denominator. Initial and dependency-changing installs are tracked separately.
+This is a target, not a measured hit rate; retention and capacity remain unchanged
+pending workload evidence, without periodic keepalive or a paid increase.
+
+The lifecycle engine in `.github/scripts/cache-lifecycle/` is the unchanged
+canonical JavaScript runtime from the GitHub plugin 1.5.0's
+`templates/cache-lifecycle/`, with its upstream type declarations. The local
+`.github/scripts/cache.ts` adapter uses TypeScript and the strict project
+typecheck. The runtime and adapter retain the same file, function, complexity and
+duplication gates; there is no separate custom cache-deletion engine.
+
 ## Local interfaces and limits
 
 `npm run ci` runs formatting, ESLint, Next.js route type generation and TypeScript,

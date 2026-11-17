@@ -53,7 +53,7 @@ jobs:
         with:
           node-version: '26.x'
           check-latest: true
-          cache: npm
+          package-manager-cache: false
       - name: Validate source revision
         run: node .github/scripts/validate-ci.ts
         env:
@@ -61,6 +61,27 @@ jobs:
           CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           CHANGE_MERGE_SHA: ${{ github.sha }}
+      - name: Resolve compatible npm cache
+        id: cache-config
+        continue-on-error: true
+        run: node .github/scripts/cache.ts configure
+        env:
+          CACHE_INPUT_HASH: ${{ hashFiles('package.json', 'package-lock.json', '.npmrc', '.github/scripts/cache.ts', '.github/workflows/ci.yml', '.github/workflows/dependency-cache.yml') }}
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: cache
+        if: steps.cache-config.outcome == 'success'
+        continue-on-error: true
+        with:
+          path: ${{ steps.cache-config.outputs.path }}
+          key: ${{ steps.cache-config.outputs.key }}
+          restore-keys: ${{ steps.cache-config.outputs.prefix }}
+      - name: Record restore evidence
+        continue-on-error: true
+        run: node .github/scripts/cache.ts summary
+        env:
+          CACHE_PRIMARY_KEY: ${{ steps.cache.outputs.cache-primary-key }}
+          CACHE_MATCHED_KEY: ${{ steps.cache.outputs.cache-matched-key }}
+          CACHE_RESTORE_OUTCOME: ${{ steps.cache.outcome }}
       - run: npm ci --no-audit
       - run: npm run ci
 
@@ -78,7 +99,7 @@ jobs:
         with:
           node-version: '26.x'
           check-latest: true
-          cache: npm
+          package-manager-cache: false
       - name: Validate source revision
         run: node .github/scripts/validate-ci.ts
         env:
@@ -86,6 +107,27 @@ jobs:
           CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           CHANGE_MERGE_SHA: ${{ github.sha }}
+      - name: Resolve compatible npm cache
+        id: cache-config
+        continue-on-error: true
+        run: node .github/scripts/cache.ts configure
+        env:
+          CACHE_INPUT_HASH: ${{ hashFiles('package.json', 'package-lock.json', '.npmrc', '.github/scripts/cache.ts', '.github/workflows/ci.yml', '.github/workflows/dependency-cache.yml') }}
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: cache
+        if: steps.cache-config.outcome == 'success'
+        continue-on-error: true
+        with:
+          path: ${{ steps.cache-config.outputs.path }}
+          key: ${{ steps.cache-config.outputs.key }}
+          restore-keys: ${{ steps.cache-config.outputs.prefix }}
+      - name: Record restore evidence
+        continue-on-error: true
+        run: node .github/scripts/cache.ts summary
+        env:
+          CACHE_PRIMARY_KEY: ${{ steps.cache.outputs.cache-primary-key }}
+          CACHE_MATCHED_KEY: ${{ steps.cache.outputs.cache-matched-key }}
+          CACHE_RESTORE_OUTCOME: ${{ steps.cache.outcome }}
       - run: npm ci --no-audit
       - run: npm run build
       - name: Install the locked Chromium headless shell

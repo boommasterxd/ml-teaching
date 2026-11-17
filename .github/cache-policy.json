@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "repository": "boommasterxd/the-teachable-machine",
+  "defaultBranch": "main",
+  "producerWorkflows": [
+    {
+      "name": "Dependency cache",
+      "path": ".github/workflows/dependency-cache.yml",
+      "job": "Warm npm cache"
+    }
+  ],
+  "producerInputs": [
+    "package.json",
+    "package-lock.json",
+    ".npmrc",
+    ".github/workflows/ci.yml",
+    ".github/workflows/dependency-cache.yml",
+    ".github/workflows/cache-lifecycle.yml",
+    ".github/scripts/cache.ts",
+    ".github/scripts/cache-lifecycle/",
+    ".github/cache-policy.json"
+  ],
+  "families": { "npm": "mlteaching-npm-v1-" },
+  "codeqlWorkflows": [],
+  "retiredPrefixes": []
+}

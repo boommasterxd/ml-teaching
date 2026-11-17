@@ -4,12 +4,11 @@ import KnnQuiz from '@/components/knn-quiz/KnnQuiz';
 import { installBrowserHost, restoreBrowserHost } from '../../helpers/browser-host';
 
 function rankedPoints() {
-  const query = screen.getByRole('img', { name: 'Raute: der neue Datenpunkt' });
-  const distance = (point: HTMLElement) =>
-    Math.hypot(
-      Number.parseFloat(point.style.left) - Number.parseFloat(query.style.left),
-      Number.parseFloat(point.style.top) - Number.parseFloat(query.style.top),
-    );
+  const distance = (point: HTMLElement) => {
+    const match = point.getAttribute('aria-label')?.match(/Abstand zur Raute: ([\d,]+) Einheiten/);
+    if (!match) throw new Error('The point has no accessible distance.');
+    return Number(match[1].replace(',', '.'));
+  };
   return screen
     .getAllByRole<HTMLButtonElement>('button', { name: /^(Hund|Katze), Punkt / })
     .sort((left, right) => distance(left) - distance(right));

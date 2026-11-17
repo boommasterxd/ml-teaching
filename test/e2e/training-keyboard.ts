@@ -74,10 +74,24 @@ export async function settleLandingReveals(page: Page) {
 export async function openThemeMenu(page: Page) {
   const trigger = page.getByRole('button', { name: 'Darstellung einstellen', exact: true });
   await trigger.focus();
-  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
   const menu = page.getByRole('menu', { name: 'Darstellung einstellen' });
   await expect(menu).toBeVisible();
   return menu;
+}
+
+export async function expectThemeMenuTriggers(page: Page) {
+  const trigger = page.getByRole('button', { name: 'Darstellung einstellen', exact: true });
+  const menu = page.getByRole('menu', { name: 'Darstellung einstellen' });
+  for (const activation of ['Space', 'ArrowDown', 'pointer']) {
+    await trigger.focus();
+    if (activation === 'pointer') await trigger.click();
+    else await page.keyboard.press(activation);
+    await expect(menu).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+    await expect(trigger).toBeFocused();
+  }
 }
 
 export async function expectThemeKeepsTraining(page: Page) {

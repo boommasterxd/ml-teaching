@@ -6,6 +6,7 @@
     "src",
     "test",
     "scripts",
+    "csp",
     ".github/scripts",
     "next.config.mjs",
     "csp.config.mjs",

@@ -26,10 +26,8 @@ export default function LegalMobileNavigation({ children }: { children: ReactNod
         <DropdownMenuTrigger
           asChild
           ref={trigger}
-          onPointerDown={(event) => {
-            // Motion's keyboard press emits an untyped pointer before Radix handles Enter.
-            if (!event.pointerType && !event.nativeEvent.isTrusted) event.preventDefault();
-            else keyboardOpening.current = false;
+          onPointerDown={() => {
+            keyboardOpening.current = false;
           }}
           onKeyDown={(event) => {
             keyboardOpening.current = ['Enter', ' ', 'ArrowDown'].includes(event.key);

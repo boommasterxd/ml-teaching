@@ -107,6 +107,10 @@ Dropdown menu items retain full opacity while Animate UI staggers their translat
 and blur. The installed primitive exposes no item-opacity option, so the shared
 content wrapper fixes enabled-item opacity with an important utility to preserve
 text contrast during entry. Disabled items retain their separate opacity state.
+The shared DropdownMenuTrigger leaves keyboard activation with Radix and press
+feedback with Motion. It ignores Motion's untyped, untrusted synthetic pointer
+event before consumer handlers or Radix can treat it as pointer input; Radix handles
+Enter. Native pointer input and intent preparation retain their handlers.
 `LearningCard` composes the standard CardHeader, CardTitle, CardAction and
 CardDescription for the three training steps. The badge aligns with the title row;
 the description follows within the same header grid. The image explanation varies its
@@ -478,11 +482,12 @@ Card, Button, Typography and Progress remain the shared shadcn interfaces.
 
 The demonstration portraits were generated with OpenAI ImageGen rather than
 downloaded from an external photo provider. They are versioned native static WebP imports.
-`NetworkScene` uses Next.js `getImageProps` for responsive optimizer URLs and
-AVIF-first negotiation. CSS owns image appearance after removing the native
-transparent-color style, preserving strict SSG `style-src-attr 'none'`. The exact
-ESLint exception for this file permits the native API's underlying img element;
-initial-markup tests retain both style prohibition and optimizer-source checks.
+`src/components/network/examples.ts` uses Next.js `getImageProps` for responsive
+optimizer URLs and AVIF-first negotiation. Its shared `exampleImageProps` helper
+omits the native transparent-color style so CSS owns image appearance, preserving
+strict SSG `style-src-attr 'none'`. `ExamplePhoto.tsx` renders these prepared props
+through the shared img element; its exact ESLint exception permits that native element.
+Initial-markup tests retain both style prohibition and optimizer-source checks.
 
 The official animated Lucide catalog lacks the existing Brain, Calculator, Car, Cat, Dog,
 ImagePlus, Square, Stethoscope and SwitchCamera producers. Their original Lucide

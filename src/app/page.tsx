@@ -1,5 +1,5 @@
 import LandingPage from '@/screens/LandingPage';
-import { siteConfig } from '@/lib/site';
+import { siteConfig, webApplicationId } from '@/lib/site';
 
 export const dynamic = 'error';
 
@@ -7,6 +7,7 @@ export default function HomePage() {
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
+    '@id': webApplicationId,
     name: siteConfig.name,
     url: siteConfig.url,
     description: siteConfig.description,

@@ -9,6 +9,8 @@ export const siteConfig = {
   locale: 'de_DE',
 } as const;
 
+export const webApplicationId = `${siteConfig.url}/#application`;
+
 const socialImage = {
   url: `${siteConfig.url}/opengraph-image`,
   width: 1200,

@@ -50,7 +50,8 @@ export default defineConfig([
       '*.{js,mjs,cjs,ts,tsx}',
       'src/**/*.{js,jsx,ts,tsx}',
       'scripts/**/*.{ts,mjs}',
-      '.github/scripts/**/*.{ts,mjs}',
+      'csp/**/*.{js,cjs,ts,mjs}',
+      '.github/scripts/**/*.{ts,mjs,cjs}',
       'test/**/*.{ts,tsx,mjs}',
     ],
     plugins: { sonarjs },
@@ -65,6 +66,10 @@ export default defineConfig([
         { max: 100, skipBlankLines: true, skipComments: true, IIFEs: true },
       ],
     },
+  },
+  {
+    files: ['.github/scripts/cache-lifecycle/{core,planner,github,recovery,run}.cjs'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
     files: ['test/**/*.{ts,tsx,mjs}'],

@@ -93,13 +93,12 @@ export const PrivacyCollection = (
       berechtigtes Interesse liegt in der sicheren und funktionsfähigen Bereitstellung der Website
       und der Aufklärung technischer Störungen.
     </p>
-    <h4>Empfänger und ihre jeweiligen Datenschutzrollen</h4>
+    <h4>Empfänger und Speicherdauer</h4>
     <p>
       Empfänger ist Vercel als Hostinganbieter. Die Unterscheidung zwischen Auftragsverarbeitung und
       eigener Verantwortlichkeit sowie die Informationen zu Drittlandübermittlungen finden Sie im
       Abschnitt „Vercel“.
     </p>
-    <h4>Speicherdauer beziehungsweise Kriterien für ihre Festlegung je Protokollart</h4>
     <p>
       Für technische Plattform- und Sicherheitsprotokolle gelten die im Abschnitt „Vercel“
       beschriebenen Aufbewahrungskriterien.

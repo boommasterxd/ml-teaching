@@ -28,6 +28,19 @@ async function rankedTargets(exercise: Locator) {
   return points.sort((a, b) => a.distance - b.distance);
 }
 
+async function rankedAccessibleTargets(exercise: Locator) {
+  const controls = await exercise.getByRole('button', { name: /^(Hund|Katze), Punkt / }).all();
+  const points = await Promise.all(
+    controls.map(async (control) => {
+      const label = (await control.getAttribute('aria-label'))!;
+      const match = label.match(/Abstand zur Raute: ([\d,]+) Einheiten/);
+      if (!match) throw new Error('The point has no accessible distance.');
+      return { control, label, distance: Number(match[1].replace(',', '.')) };
+    }),
+  );
+  return points.sort((a, b) => a.distance - b.distance);
+}
+
 async function plottedData(exercise: Locator) {
   return exercise.getByRole('button', { name: /^(Hund|Katze), Punkt / }).evaluateAll((buttons) =>
     buttons.map((button) => ({
@@ -119,7 +132,7 @@ async function expectResizeContinuity(exercise: Locator, page: Page) {
 }
 
 async function expectOddNeighborVote(exercise: Locator, count: number) {
-  const nearest = (await rankedTargets(exercise)).slice(0, count);
+  const nearest = (await rankedAccessibleTargets(exercise)).slice(0, count);
   for (const point of nearest) {
     await point.control.click();
     await expect(point.control).toHaveAttribute('aria-pressed', 'true');
@@ -157,13 +170,17 @@ for (const [width, colorScheme] of [
     await expectAccessible(page);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('tooltip')).toHaveCount(0);
-    for (const point of points.slice(0, 3)) {
-      await point.control.click();
+    const accessiblePoints = await rankedAccessibleTargets(exercise);
+    for (const point of accessiblePoints.slice(0, 3)) {
+      await point.control.focus();
+      await page.keyboard.press('Enter');
       await expect(point.control).toHaveAttribute('aria-pressed', 'true');
     }
     await expectConnections(exercise);
     if (width === 712) await expectResizeContinuity(exercise, page);
-    const dogs = points.slice(0, 3).filter((point) => point.label.startsWith('Hund')).length;
+    const dogs = accessiblePoints
+      .slice(0, 3)
+      .filter((point) => point.label.startsWith('Hund')).length;
     const winner = dogs >= 2 ? 'Hund' : 'Katze';
     const loser = dogs >= 2 ? 'Katze' : 'Hund';
     await exercise.getByRole('button', { name: loser, exact: true }).click();

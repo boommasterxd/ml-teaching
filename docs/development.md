@@ -100,7 +100,16 @@ must respond to actual missing requirements. Playwright starts `npm start` on
 127.0.0.1:3100 and refuses to reuse an unrelated server. Build once first.
 
 The Lighthouse command expects a separately started native production server on
-that same port. It saves ignored lab reports under `test-results/lighthouse/`.
+that same port. It resolves Lighthouse through the active npm's global package
+root, verifies the package, Node.js engine compatibility and native CLI version,
+and reuses that absolute CLI for both mobile and desktop profiles. A present but
+invalid or incompatible global installation fails without a silent fallback.
+When no global installation exists, the command checks the registry's latest
+stable version and accepts the existing project-local Lighthouse only when its
+version matches. A missing, outdated or incompatible fallback fails with an error;
+the command does not install or update tools. Prepare any required local fallback
+separately under the repository's installation controls.
+It saves ignored lab reports under `test-results/lighthouse/`.
 Scores are measurements, not accessibility or ranking guarantees.
 
 ## Build and recovery

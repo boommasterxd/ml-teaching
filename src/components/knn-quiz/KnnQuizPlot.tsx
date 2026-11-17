@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import {
   motionTokens,
@@ -11,17 +12,24 @@ import { Text } from '@/components/ui/typography';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { KnnQuizState } from './useKnnQuiz';
 import KnnQuizPoint from './KnnQuizPoint';
+import { squaredDistance } from '@/lib/knn';
 
 export default function KnnQuizPlot({ state }: { state: KnnQuizState }) {
+  const descriptionId = useId();
   const reduce = useShouldReduceMotion();
   const timing = useTempoTransition(motionTokens.transition.fade);
   return (
     <TooltipProvider>
       <div className="knn-quiz-figure">
+        <p id={descriptionId} className="sr-only">
+          Die Abstände zur Raute verwenden dieselben Einheiten im vereinfachten Merkmalsraum.
+          Kleinere Werte bedeuten nähere Nachbarn.
+        </p>
         <div
           className="knn-quiz-plot"
           role="group"
           aria-label="Datenpunkte: Wähle die nächsten Nachbarn der Raute"
+          aria-describedby={descriptionId}
         >
           <svg
             className="knn-quiz-connections"
@@ -52,6 +60,7 @@ export default function KnnQuizPlot({ state }: { state: KnnQuizState }) {
             <KnnQuizPoint
               key={point.id}
               point={point}
+              distance={Math.sqrt(squaredDistance(point, state.round.query))}
               neighborOffset={
                 state.neighbors.some((neighbor) => neighbor.id === point.id)
                   ? { x: point.x - state.round.query.x, y: point.y - state.round.query.y }
