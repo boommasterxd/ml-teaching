@@ -7,7 +7,9 @@
  * as they are tied to the consent flow, not to modal state.
  */
 import { useCallback } from 'react';
-import { AlertCircle, RotateCcw, Trash2 } from './icons';
+import { AlertCircle } from './icons/alert-circle';
+import { RotateCcw } from './icons/rotate-ccw';
+import { Trash2 } from './icons/trash2';
 import type { MLClass } from '../types/ml';
 import type { ModalState } from '../hooks/useModalState';
 import type { Classifier } from '../types/ml-models';

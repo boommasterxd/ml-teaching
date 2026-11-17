@@ -5,7 +5,8 @@ import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { Shine } from '@animate-ui/react/primitives/effects/shine';
 import { motionTokens, useShouldReduceMotion } from '@animate-ui/react/utils/motion';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { Dog, Cat } from './icons';
+import { Dog } from './icons/dog';
+import { Cat } from './icons/cat';
 import { Progress } from './ui/progress';
 import { Text } from './ui/typography';
 import { ANIMATION, NETWORK_STAGES } from '../constants';
@@ -13,11 +14,12 @@ import { KNN_EXAMPLES, KNN_NEIGHBOR_COUNT } from '../lib/network-demo';
 import type { useNeuralNetAnimation } from '../hooks/useNeuralNetAnimation';
 import FeatureEngine from './network/FeatureEngine';
 import KnnEngine from './network/KnnEngine';
-import { FLOW_PATHS, NetworkScene } from './network/NetworkScene';
+import { FLOW_HEAD_PATHS, FLOW_PATHS, NetworkScene } from './network/NetworkScene';
 import { NETWORK_EXAMPLES, type ExampleSignal } from './network/examples';
 
 function SignalFlow({ active, sequence }: { active: boolean; sequence: number }) {
   const reduce = useShouldReduceMotion();
+  const duration = active && !reduce ? ANIMATION.STEP_DURATION_MS / 1000 : 0;
   return (
     <svg
       viewBox="0 0 120 100"
@@ -34,11 +36,26 @@ function SignalFlow({ active, sequence }: { active: boolean; sequence: number })
           initial={{ pathLength: 0 }}
           animate={{ pathLength: active ? 1 : 0 }}
           transition={{
-            duration: active && !reduce ? ANIMATION.STEP_DURATION_MS / 1000 : 0,
+            duration: duration * 0.7,
             ease: motionTokens.ease.draw,
           }}
         >
-          <path d={d} />
+          <path d={d} data-flow-part="shaft" />
+        </Effect>
+      ))}
+      {FLOW_HEAD_PATHS.map((d, index) => (
+        <Effect
+          asChild
+          key={`${sequence}-head-${index}`}
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: active ? 1 : 0 }}
+          transition={{
+            duration: duration * 0.3,
+            delay: duration * 0.7,
+            ease: motionTokens.ease.draw,
+          }}
+        >
+          <path d={d} data-flow-part="head" />
         </Effect>
       ))}
       {active && !reduce && (
@@ -47,7 +64,7 @@ function SignalFlow({ active, sequence }: { active: boolean; sequence: number })
           key={`${sequence}-packet`}
           initial={{ pathLength: 0.15, pathOffset: 0, opacity: 0 }}
           animate={{ pathOffset: [0, 0.85], opacity: [0, 1, 0] }}
-          transition={{ duration: ANIMATION.STEP_DURATION_MS / 1000, ease: 'linear' }}
+          transition={{ duration: duration * 0.7, ease: 'linear' }}
         >
           <path d={FLOW_PATHS[0]} strokeWidth="8" strokeLinecap="round" />
         </Effect>

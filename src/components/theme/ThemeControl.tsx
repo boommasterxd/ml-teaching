@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type ComponentType } from 'react';
-import { ChevronDown, Loader2, Moon, Sun } from '../icons';
+import { ChevronDown } from '../icons/chevron-down';
+import { Loader2 } from '../icons/loader2';
+import { Moon } from '../icons/moon';
+import { Sun } from '../icons/sun';
 import Button from '../Button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Switch } from '../ui/switch';

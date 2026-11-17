@@ -28,7 +28,6 @@ describe('decorative hero lifetime', () => {
     const canvas = container.querySelector('canvas');
     fireEvent.click(screen.getByRole('button', { name: 'Animation pausieren' }));
     expect(container.querySelector('canvas')).toBe(canvas);
-    expect(container.querySelector('.hero-field-poster')).not.toBeNull();
     expect(lifecycle.disposed).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Animation fortsetzen' }));
     expect(container.querySelector('canvas')).toBe(canvas);

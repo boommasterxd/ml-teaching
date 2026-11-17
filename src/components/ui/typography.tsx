@@ -14,12 +14,20 @@ export function Heading({
   variant = 'default',
   className,
   ...props
-}: ComponentProps<'h2'> & { as?: keyof typeof headingClasses; variant?: 'default' | 'hero' }) {
+}: ComponentProps<'h2'> & {
+  as?: keyof typeof headingClasses;
+  variant?: 'default' | 'hero' | 'document';
+}) {
   return (
     <Tag
       data-slot="heading"
       data-variant={variant}
-      className={cn(headingClasses[Tag], variant === 'hero' && 'hero-title', className)}
+      className={cn(
+        headingClasses[Tag],
+        variant === 'hero' && 'hero-title',
+        variant === 'document' && 'document-title',
+        className,
+      )}
       {...props}
     />
   );

@@ -1,12 +1,18 @@
+.landing-demo {
+  container: network-demo / inline-size;
+}
 .network-studio {
-  --network-heading-height: 3.5rem;
+  --network-heading-height: 2.75rem;
   --network-visual-height: 12.5rem;
+  --network-station-gap: 0.75rem;
+  --network-row-gap: 2.5rem;
+  --network-column-gap: 2.5rem;
   position: relative;
   isolation: isolate;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 3rem;
-  padding-block: 1.5rem;
+  gap: var(--network-row-gap) var(--network-column-gap);
+  padding-block: 1rem 0;
 }
 .network-studio::before {
   content: '';
@@ -23,7 +29,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: var(--network-station-gap);
   min-width: 0;
   text-align: center;
 }
@@ -88,7 +94,7 @@
   overflow: hidden;
   width: 2rem;
   height: 2rem;
-  bottom: -2.5rem;
+  bottom: calc(-1rem - var(--network-row-gap) / 2);
   left: calc(50% - 1rem);
   transform: rotate(90deg);
   pointer-events: none;
@@ -119,30 +125,78 @@
 .network-result {
   display: grid;
   place-items: center;
-  min-height: 7rem;
-  margin-top: 1rem;
+  min-height: 5.25rem;
+  margin-top: 1.5rem;
   text-align: center;
 }
-@variant max-lg {
-  .network-station:first-child .network-visual-slot {
-    height: 8rem;
+.network-station:first-child .network-visual-slot {
+  height: 7.5rem;
+}
+.network-station:last-child .network-visual-slot {
+  height: 8rem;
+}
+@container network-demo (min-width: 34rem) {
+  .network-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
   }
+  .network-header > [data-slot='card-action'] {
+    align-self: center;
+    flex-shrink: 0;
+  }
+  .network-studio {
+    --network-heading-height: 3.5rem;
+    --network-station-gap: 1rem;
+    --network-row-gap: 3rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: 'input features' 'output neighbors';
+    padding-top: 1.5rem;
+  }
+  .network-station:nth-child(1) {
+    grid-area: input;
+  }
+  .network-station:nth-child(2) {
+    grid-area: features;
+  }
+  .network-station:nth-child(3) {
+    grid-area: neighbors;
+  }
+  .network-station:nth-child(4) {
+    grid-area: output;
+  }
+  .network-station:first-child .network-visual-slot,
   .network-station:last-child .network-visual-slot {
-    height: 9rem;
+    height: var(--network-visual-height);
+  }
+  .network-station:nth-child(1) .network-bridge,
+  .network-station:nth-child(3) .network-bridge {
+    left: calc(100% + var(--network-column-gap) / 2 - 1rem);
+    top: calc(
+      var(--network-heading-height) + var(--network-station-gap) + var(--network-visual-height) /
+        2 - 1rem
+    );
+    bottom: auto;
+    transform: none;
+  }
+  .network-station:nth-child(3) .network-bridge {
+    left: calc(-1rem - var(--network-column-gap) / 2);
+    transform: rotate(180deg);
   }
 }
-@variant lg {
+@container network-demo (min-width: 64rem) {
   .network-studio {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 2.5rem;
-    padding-block: 2rem;
+    grid-template-areas: 'input features neighbors output';
+    padding-block: 2rem 0;
   }
-  .network-station > [data-slot='text'] {
-    min-height: 4rem;
-  }
-  .network-bridge {
-    left: calc(100% + 0.25rem);
-    top: calc(var(--network-heading-height) + 1rem + var(--network-visual-height) / 2 - 1rem);
+  .network-station:nth-child(n) .network-bridge {
+    left: calc(100% + var(--network-column-gap) / 2 - 1rem);
+    top: calc(
+      var(--network-heading-height) + var(--network-station-gap) + var(--network-visual-height) /
+        2 - 1rem
+    );
     bottom: auto;
     transform: none;
   }

@@ -1,7 +1,8 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Route } from '@playwright/test';
 import { diagnostics, expectAccessible } from './browser-checks';
 import sharp from 'sharp';
 import { syntheticModel } from './synthetic-model';
+import { expectNetworkLayout } from './network-layout';
 import {
   expectHeaderLayout,
   expectCancelledResetKeepsImages,
@@ -11,6 +12,7 @@ import {
   expectImmediateThemeFeedback,
   openThemeMenu,
   settleLandingReveals,
+  withdrawTrainingConsent,
 } from './training-keyboard';
 
 async function grantModelConsent(page: Page) {
@@ -41,6 +43,38 @@ async function uploadTrainingClasses(page: Page) {
       );
   }
 }
+
+test('mobile information menu supports keyboard, focus return and native navigation', async ({
+  page,
+}) => {
+  const failures = diagnostics(page);
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto('/barrierefreiheit');
+  const trigger = page.getByRole('button', { name: 'Informationen', exact: true });
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  const menu = page.getByRole('menu', { name: 'Informationen', exact: true });
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: 'Impressum' })).toBeFocused();
+  await expectAccessible(page);
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await page.evaluate(() => {
+    document.documentElement.dataset.navigationProbe = 'legal-menu';
+  });
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowDown');
+  await expect(menu.getByRole('menuitem', { name: 'Datenschutz' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/datenschutz$/);
+  await expect(
+    page.getByRole('heading', { name: 'Datenschutzerklärung', exact: true }),
+  ).toBeVisible();
+  expect(await page.locator('html').getAttribute('data-navigation-probe')).toBe('legal-menu');
+  await expectAccessible(page);
+  expect(failures).toEqual([]);
+});
 
 test('static documents, native navigation and strict CSP preserve visible content', async ({
   page,
@@ -147,14 +181,19 @@ test('educational examples start directly and keep the selected control focused'
     stages.getByRole('img', { name: 'Generiertes Beispielbild einer Katze' }),
   ).toBeVisible();
   await expect(cat).toBeFocused();
+  await expectNetworkLayout(page, 'column');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   await expectAccessible(page);
-  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.setViewportSize({ width: 712, height: 1291 });
+  await expectNetworkLayout(page, 'grid');
   await page.getByRole('button', { name: 'Hundebild zeigen', exact: true }).click();
   await expect(page.getByText('Hund erkannt', { exact: true })).toBeVisible();
   await expect(page.locator('.landing-demo').getByRole('status')).toContainText(
     '2 von 3 Nachbarn stimmen für Hund.',
   );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expectNetworkLayout(page, 'row');
+  await expect(page.getByText('Hund erkannt', { exact: true })).toBeVisible();
   await expectAccessible(page);
   expect(failures).toEqual([]);
 });
@@ -228,6 +267,31 @@ test('model download is consent-gated and a failed download leaves an accessible
   await expectAccessible(page);
   await page.getByRole('button', { name: 'Zur Startseite', exact: true }).click();
   await expect(page).toHaveURL('http://127.0.0.1:3100/');
+});
+
+test('consent can be withdrawn while a model download is pending', async ({ page }) => {
+  const pending: Route[] = [];
+  await page.route(
+    /^https:\/\/(?:tfhub\.dev|www\.kaggle\.com|www\.gstatic\.com|storage\.googleapis\.com)\//,
+    (route) => {
+      pending.push(route);
+    },
+  );
+  try {
+    await page.goto('/lernen');
+    expect(pending).toHaveLength(0);
+    await grantModelConsent(page);
+    const loading = page.getByRole('dialog', { name: 'Lade KI-Modelle...' });
+    await expect(loading).toBeVisible();
+    await expect.poll(() => pending.length).toBeGreaterThan(0);
+    await expectAccessible(page);
+    const requestsBeforeWithdrawal = pending.length;
+    await withdrawTrainingConsent(page);
+    expect(pending).toHaveLength(requestsBeforeWithdrawal);
+    await expectAccessible(page);
+  } finally {
+    await Promise.all(pending.map((route) => route.abort().catch(() => {})));
+  }
 });
 
 test('theme changes preserve navigation and require explicit remembering across visits and tabs', async ({
@@ -421,4 +485,6 @@ test('local images train a real browser classifier, predict and reset without up
   expect(modelRequests).toBe(2);
   expect(remoteWrites).toEqual([]);
   expect(failures).toEqual([]);
+  await withdrawTrainingConsent(page);
+  expect(modelRequests).toBe(2);
 });

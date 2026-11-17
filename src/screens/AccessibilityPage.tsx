@@ -1,13 +1,10 @@
 import PageLayout from '../components/PageLayout';
-import PageHeader from '../components/PageHeader';
 import PageContent from '../components/PageContent';
 
 export default function AccessibilityPage() {
   return (
-    <PageLayout>
-      <PageHeader title="Barrierefreiheit" />
-      <PageContent labelledBy="accessibility-title">
-        <h1 id="accessibility-title">Barrierefreiheit</h1>
+    <PageLayout page="accessibility">
+      <PageContent labelledBy="accessibility-title" title="Barrierefreiheit">
         <p>
           Diese Seite informiert freiwillig über die Barrierefreiheitsmaßnahmen dieser Website. Das
           Barrierefreiheitsstärkungsgesetz (BFSG) richtet sich an Wirtschaftsakteure, die Produkte

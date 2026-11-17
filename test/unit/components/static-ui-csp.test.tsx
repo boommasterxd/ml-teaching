@@ -1,5 +1,5 @@
-import { createElement, type ComponentType } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement, type ComponentType, type ReactNode } from 'react';
+import { renderToStaticMarkup as renderStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import * as Icons from '@/components/icons';
 import DeferredNetworkDemo from '@/components/hero/DeferredNetworkDemo';
@@ -9,8 +9,35 @@ import AnimatedLink from '@/components/AnimatedLink';
 import { AnimatedList, AnimatedListItem } from '@/components/ui/animated-list';
 import LandingPage from '@/screens/LandingPage';
 import ConsentModal from '@/components/modals/ConsentModal';
+import ImprintPage from '@/screens/ImprintPage';
+import PrivacyPage from '@/screens/PrivacyPage';
+import AccessibilityPage from '@/screens/AccessibilityPage';
+import { AppRouterHost } from '../helpers/app-router-host';
+
+const renderToStaticMarkup = (ui: ReactNode) =>
+  renderStaticMarkup(<AppRouterHost>{ui}</AppRouterHost>);
 
 describe('strict-CSP static UI', () => {
+  it('ships complete legal documents with one title and native current-page navigation', () => {
+    const pages = [
+      [ImprintPage, '/impressum', 'Impressum'],
+      [PrivacyPage, '/datenschutz', 'Datenschutzerklärung'],
+      [AccessibilityPage, '/barrierefreiheit', 'Barrierefreiheit'],
+    ] as const;
+    for (const [Page, href, title] of pages) {
+      const markup = renderToStaticMarkup(createElement(Page));
+      const document = new DOMParser().parseFromString(markup, 'text/html');
+      expect(document.querySelector('[style], style, script')).toBeNull();
+      expect(document.querySelectorAll('h1')).toHaveLength(1);
+      expect(document.querySelector('article h1')?.textContent).toBe(title);
+      const navigation = document.querySelector('nav[aria-label="Informationsseiten"]');
+      expect(navigation?.querySelectorAll('a')).toHaveLength(3);
+      expect(navigation?.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
+      expect(navigation?.querySelector('a[aria-current="page"]')?.getAttribute('href')).toBe(href);
+      expect(document.querySelectorAll('article p').length).toBeGreaterThan(0);
+    }
+  });
+
   it('ships the real initial consent content and choices without inline styles or client-only portals', () => {
     const markup = renderToStaticMarkup(
       <ConsentModal isOpen onConfirm={() => {}} onDecline={() => {}} />,

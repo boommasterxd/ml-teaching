@@ -74,12 +74,12 @@ const travel: Variants = {
   animate: { x: [0, 1.5, 0], transition: { duration: 0.45, ease: 'easeInOut' } },
 };
 
-export const Brain = projectIcon(glyphs.Brain, pulse);
-export const Calculator = projectIcon(glyphs.Calculator, pulse);
-export const Car = projectIcon(glyphs.Car, travel);
-export const Cat = projectIcon(glyphs.Cat, acknowledge);
-export const Dog = projectIcon(glyphs.Dog, acknowledge);
-export const ImagePlus = projectIcon(glyphs.ImagePlus, pulse);
-export const Square = projectIcon(glyphs.Square, pulse);
-export const Stethoscope = projectIcon(glyphs.Stethoscope, pulse);
-export const SwitchCamera = projectIcon(glyphs.SwitchCamera, acknowledge);
+export const Brain = /* @__PURE__ */ projectIcon(glyphs.Brain, pulse);
+export const Calculator = /* @__PURE__ */ projectIcon(glyphs.Calculator, pulse);
+export const Car = /* @__PURE__ */ projectIcon(glyphs.Car, travel);
+export const Cat = /* @__PURE__ */ projectIcon(glyphs.Cat, acknowledge);
+export const Dog = /* @__PURE__ */ projectIcon(glyphs.Dog, acknowledge);
+export const ImagePlus = /* @__PURE__ */ projectIcon(glyphs.ImagePlus, pulse);
+export const Square = /* @__PURE__ */ projectIcon(glyphs.Square, pulse);
+export const Stethoscope = /* @__PURE__ */ projectIcon(glyphs.Stethoscope, pulse);
+export const SwitchCamera = /* @__PURE__ */ projectIcon(glyphs.SwitchCamera, acknowledge);

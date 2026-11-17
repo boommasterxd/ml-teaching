@@ -7,6 +7,7 @@ import { KnnArtwork } from './KnnArtwork';
 import { exampleImageProps, NETWORK_EXAMPLES, type ExampleSignal } from './examples';
 
 export const FLOW_PATHS = ['M10 50H110'];
+export const FLOW_HEAD_PATHS = ['M110 50L90 30', 'M110 50L90 70'];
 
 function FlowBridge({ children }: { children?: ReactNode }) {
   return (
@@ -15,11 +16,13 @@ function FlowBridge({ children }: { children?: ReactNode }) {
         viewBox="0 0 120 100"
         fill="none"
         className="size-full"
-        stroke="var(--border)"
+        stroke="var(--muted-foreground)"
         strokeWidth="4"
       >
         <path d={FLOW_PATHS[0]} />
-        <path d="m90 30 20 20-20 20" />
+        {FLOW_HEAD_PATHS.map((d) => (
+          <path key={d} d={d} />
+        ))}
       </svg>
       {children}
     </div>

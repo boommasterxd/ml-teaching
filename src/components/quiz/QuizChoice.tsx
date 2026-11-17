@@ -1,34 +1,42 @@
 'use client';
 
-import type { Ref } from 'react';
 import { AnimatePresence } from 'motion/react';
-import type { QuizExample } from '@/content/recognition-quiz';
-import { Calculator, Car, Cat, FileText, Mic, Timer } from '@/components/icons';
+import type { QuizExample } from '@/lib/recognition-quiz';
+import { Calculator } from '@/components/icons/calculator';
+import { Camera } from '@/components/icons/camera';
+import { Car } from '@/components/icons/car';
+import { Cat } from '@/components/icons/cat';
+import { FileText } from '@/components/icons/file-text';
+import { Image } from '@/components/icons/image';
+import { Mic } from '@/components/icons/mic';
+import { Smartphone } from '@/components/icons/smartphone';
+import { Timer } from '@/components/icons/timer';
 import Button from '@/components/Button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import QuizResult from './QuizResult';
 
 const exampleIcons = {
-  photos: Cat,
-  voice: Mic,
+  animal: Cat,
+  sound: Mic,
   traffic: Car,
-  calculator: Calculator,
-  'photo-text': FileText,
-  timer: Timer,
+  numbers: Calculator,
+  text: FileText,
+  time: Timer,
+  camera: Camera,
+  image: Image,
+  phone: Smartphone,
 };
 
 export default function QuizChoice({
   example,
   answered,
   onAnswer,
-  buttonRef,
 }: {
   example: QuizExample;
   answered: boolean;
   onAnswer: (example: QuizExample) => void;
-  buttonRef?: Ref<HTMLButtonElement>;
 }) {
-  const Icon = exampleIcons[example.id];
+  const Icon = exampleIcons[example.icon];
   return (
     <Card className="h-full gap-0 py-0">
       <div className="relative flex-1">
@@ -37,7 +45,7 @@ export default function QuizChoice({
           <CardDescription>{example.description}</CardDescription>
         </CardHeader>
         <Button
-          ref={buttonRef}
+          data-quiz-choice=""
           variant="quiz-card"
           size="quiz-card"
           data-result={answered ? (example.correct ? 'correct' : 'incorrect') : undefined}

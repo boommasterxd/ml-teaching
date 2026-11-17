@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, waitFor, within } from '@testing-library/react';
 import ConsentModal from '@/components/modals/ConsentModal';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
+import { AppRouterHost } from '../helpers/app-router-host';
 
 beforeEach(installBrowserHost);
 afterEach(restoreBrowserHost);
@@ -27,11 +28,16 @@ function InitialConsent() {
 describe('initial consent hydration', () => {
   it('retains the visible server dialog, focuses within it and requires both choices after hydration', async () => {
     const container = document.createElement('div');
-    container.innerHTML = renderToString(<InitialConsent />);
+    const initialContent = (
+      <AppRouterHost>
+        <InitialConsent />
+      </AppRouterHost>
+    );
+    container.innerHTML = renderToString(initialContent);
     document.body.append(container);
     const initialDialog = container.querySelector<HTMLElement>('[role="dialog"]')!;
     const errors = vi.fn();
-    const root = hydrateRoot(container, <InitialConsent />, { onRecoverableError: errors });
+    const root = hydrateRoot(container, initialContent, { onRecoverableError: errors });
     try {
       const initialChoice = initialDialog.querySelector<HTMLElement>('[role="checkbox"]')!;
       initialChoice.focus();

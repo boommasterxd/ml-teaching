@@ -3,7 +3,7 @@
 import type { ComponentProps } from 'react';
 import { DropdownMenu as Primitive } from '@animate-ui/react/primitives/radix-ui/dropdown-menu';
 import { useIsPresent } from 'motion/react';
-import { Check } from '../icons';
+import { Check } from '../icons/check';
 import { cn } from '@/lib/utils';
 import { ActionFeedback } from './action-feedback';
 
@@ -38,6 +38,21 @@ export function DropdownMenuContent({
         <MenuSurface>{children}</MenuSurface>
       </Primitive.Content>
     </Primitive.Portal>
+  );
+}
+
+export function DropdownMenuItem({ className, ...props }: ComponentProps<typeof Primitive.Item>) {
+  return (
+    <ActionFeedback disabled={props.disabled}>
+      <Primitive.Item
+        {...props}
+        data-slot="dropdown-menu-item"
+        className={cn(
+          'relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground aria-[current=page]:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
+          className,
+        )}
+      />
+    </ActionFeedback>
   );
 }
 

@@ -5,8 +5,9 @@ import { useIsPresent } from 'motion/react';
 import { useAnimateIconContext } from '@animate-ui/react/icons';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { ReducedMotionConfig, useShouldReduceMotion } from '@animate-ui/react/utils/motion';
-import type { QuizExample } from '@/content/recognition-quiz';
-import { Check, X } from '@/components/icons';
+import type { QuizExample } from '@/lib/recognition-quiz';
+import { Check } from '@/components/icons/check';
+import { X } from '@/components/icons/x';
 import Button from '@/components/Button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 

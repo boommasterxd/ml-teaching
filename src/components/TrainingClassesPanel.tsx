@@ -6,7 +6,8 @@
  * All state and callbacks are passed in from TrainingPage.
  */
 import type React from 'react';
-import { Plus, RotateCcw } from './icons';
+import { Plus } from './icons/plus';
+import { RotateCcw } from './icons/rotate-ccw';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import ClassCard from './ClassCard';
@@ -15,11 +16,13 @@ import Button from './Button';
 import { Empty, EmptyDescription, EmptyHeader } from './ui/empty';
 import { AnimatedList, AnimatedListItem } from './ui/animated-list';
 import { Heading } from './ui/typography';
+import { EntryReveal } from './ui/entry-reveal';
 
 /**
  * Props for the TrainingClassesPanel component.
  */
 interface TrainingClassesPanelProps {
+  entryReady?: boolean;
   /** List of ML classes to display. */
   classes: MLClass[];
   /** Set of class names that appear more than once (used to show duplicate warnings). */
@@ -52,6 +55,7 @@ export default function TrainingClassesPanel({
   cardActions,
   onAddClass,
   onShowClearConfirm,
+  entryReady = true,
 }: TrainingClassesPanelProps) {
   return (
     <div className="lg:col-span-7 flex min-w-0 flex-col gap-6">
@@ -92,30 +96,32 @@ export default function TrainingClassesPanel({
         </div>
       </div>
 
-      <AnimatedList>
-        {classes.length === 0 ? (
-          <Empty key="empty">
-            <EmptyHeader>
-              <EmptyDescription>
-                Keine Klassen vorhanden. Füge Klassen hinzu, um zu starten.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          classes.map((cls: MLClass, index) => (
-            <AnimatedListItem key={cls.id} emptyFocus={mainHeadingRef}>
-              <ClassCard
-                cls={cls}
-                position={index + 1}
-                isDuplicate={duplicateClassNames.has(cls.name.trim())}
-                stream={stream}
-                facingMode={facingMode}
-                actions={cardActions}
-              />
-            </AnimatedListItem>
-          ))
-        )}
-      </AnimatedList>
+      <EntryReveal kind="text" active={entryReady} activation>
+        <AnimatedList>
+          {classes.length === 0 ? (
+            <Empty key="empty">
+              <EmptyHeader>
+                <EmptyDescription>
+                  Keine Klassen vorhanden. Füge Klassen hinzu, um zu starten.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            classes.map((cls: MLClass, index) => (
+              <AnimatedListItem key={cls.id} emptyFocus={mainHeadingRef}>
+                <ClassCard
+                  cls={cls}
+                  position={index + 1}
+                  isDuplicate={duplicateClassNames.has(cls.name.trim())}
+                  stream={stream}
+                  facingMode={facingMode}
+                  actions={cardActions}
+                />
+              </AnimatedListItem>
+            ))
+          )}
+        </AnimatedList>
+      </EntryReveal>
     </div>
   );
 }

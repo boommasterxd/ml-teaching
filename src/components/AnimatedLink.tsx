@@ -1,7 +1,7 @@
 'use client';
 
 import type { ComponentProps } from 'react';
-import Link from 'next/link';
+import Link from './IntentLink';
 import { Button } from './ui/button';
 
 type AnimatedLinkProps = ComponentProps<typeof Link> &

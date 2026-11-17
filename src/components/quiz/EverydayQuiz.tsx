@@ -1,40 +1,53 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { AnimatePresence } from 'motion/react';
 import {
   QUIZ_CORRECT_COUNT,
-  QUIZ_EXAMPLES,
+  INITIAL_QUIZ_ROUND,
+  createQuizRound,
   type QuizExample,
   type QuizId,
-} from '@/content/recognition-quiz';
+} from '@/lib/recognition-quiz';
 import Button from '@/components/Button';
-import { RotateCcw } from '@/components/icons';
+import { RotateCcw } from '@/components/icons/rotate-ccw';
 import { Badge } from '@/components/ui/badge';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { EntryReveal } from '@/components/ui/entry-reveal';
 import QuizChoice from './QuizChoice';
 import QuizCompletion from './QuizCompletion';
 
 interface QuizState {
   answers: QuizId[];
   announcement: string;
+  round?: readonly QuizExample[];
 }
 
+const visitRound = typeof window === 'undefined' ? INITIAL_QUIZ_ROUND : createQuizRound();
+const subscribe = () => () => {};
+const clientSnapshot = () => visitRound;
+const serverSnapshot = () => INITIAL_QUIZ_ROUND;
+
 export default function EverydayQuiz() {
+  const initialRound = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
   const [state, setState] = useState<QuizState>({ answers: [], announcement: '' });
-  const firstChoice = useRef<HTMLButtonElement>(null);
-  const correctCount = QUIZ_EXAMPLES.filter(
+  const round = state.round ?? initialRound;
+  const choices = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (state.round)
+      choices.current?.querySelector<HTMLButtonElement>('button[data-quiz-choice]')?.focus();
+  }, [state.round]);
+  const correctCount = round.filter(
     (example) => example.correct && state.answers.includes(example.id),
   ).length;
   const answer = (example: QuizExample) => {
     setState((current) => {
       if (current.answers.includes(example.id)) return current;
       const answers = [...current.answers, example.id];
-      const found = QUIZ_EXAMPLES.filter(
-        (item) => item.correct && answers.includes(item.id),
-      ).length;
+      const found = round.filter((item) => item.correct && answers.includes(item.id)).length;
       const completed = example.correct && found === QUIZ_CORRECT_COUNT;
       return {
+        ...current,
         answers,
         announcement:
           example.title +
@@ -46,40 +59,52 @@ export default function EverydayQuiz() {
     });
   };
   const reset = () => {
-    setState({ answers: [], announcement: 'Quiz zurückgesetzt. 0 von 3 gefunden.' });
-    firstChoice.current?.focus();
+    setState({
+      round: createQuizRound(round),
+      answers: [],
+      announcement: 'Neue Runde. 0 von 3 gefunden.',
+    });
   };
 
   return (
     <TooltipProvider>
       <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Badge variant="secondary">
-            {correctCount} von {QUIZ_CORRECT_COUNT} gefunden
-          </Badge>
-          <Button
-            variant="ghost"
-            className="min-h-11"
-            disabled={!state.answers.length}
-            onClick={reset}
-          >
-            <RotateCcw data-icon="inline-start" aria-hidden="true" /> Nochmal spielen
-          </Button>
+        <EntryReveal kind="text" asChild>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Badge variant="secondary">
+              {correctCount} von {QUIZ_CORRECT_COUNT} gefunden
+            </Badge>
+            <Button
+              variant="ghost"
+              className="min-h-11"
+              disabled={!state.answers.length}
+              onClick={reset}
+            >
+              <RotateCcw data-icon="inline-start" aria-hidden="true" /> Nochmal spielen
+            </Button>
+          </div>
+        </EntryReveal>
+        <div>
+          <div ref={choices} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {round.map((example, index) => (
+              <EntryReveal
+                key={example.id}
+                index={index % 3}
+                activation={Boolean(state.round)}
+                className="h-full"
+              >
+                <QuizChoice
+                  example={example}
+                  answered={state.answers.includes(example.id)}
+                  onAnswer={answer}
+                />
+              </EntryReveal>
+            ))}
+          </div>
+          <AnimatePresence initial={false}>
+            {correctCount === QUIZ_CORRECT_COUNT && <QuizCompletion key="complete" />}
+          </AnimatePresence>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {QUIZ_EXAMPLES.map((example, index) => (
-            <QuizChoice
-              key={example.id}
-              example={example}
-              answered={state.answers.includes(example.id)}
-              onAnswer={answer}
-              buttonRef={index === 0 ? firstChoice : undefined}
-            />
-          ))}
-        </div>
-        <AnimatePresence initial={false}>
-          {correctCount === QUIZ_CORRECT_COUNT && <QuizCompletion key="complete" />}
-        </AnimatePresence>
         <p role="status" aria-atomic="true" className="sr-only">
           {state.announcement}
         </p>

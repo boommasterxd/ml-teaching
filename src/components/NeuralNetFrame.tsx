@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Button from './Button';
-import { Dog, Cat } from './icons';
+import { Dog } from './icons/dog';
+import { Cat } from './icons/cat';
 import { NetworkScene } from './network/NetworkScene';
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from './ui/card';
 
@@ -58,7 +59,7 @@ export function DiagramSurface({
 }) {
   return (
     <Card aria-busy={isPreparing || undefined}>
-      <CardHeader className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+      <CardHeader className="network-header flex flex-col gap-5">
         <CardTitle as="h3">Vom Bild zur Vorhersage</CardTitle>
         <CardAction className="row-span-1 self-stretch lg:self-center">{controls}</CardAction>
       </CardHeader>

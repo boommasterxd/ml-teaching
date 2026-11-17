@@ -1,29 +1,20 @@
 'use client';
 
-import { useSyncExternalStore, type ReactElement } from 'react';
-import { Effect } from '@animate-ui/react/primitives/effects/effect';
+import type { ComponentProps } from 'react';
 import { AnimateIcon } from '@animate-ui/react/icons';
-
-const subscribe = () => () => {};
-const clientSnapshot = () => true;
-const serverSnapshot = () => false;
+import { EntryReveal } from '@/components/ui/entry-reveal';
 
 /** Required server content stays visible; only below-fold, hydrated decorations reveal on admission. */
-export default function ScrollReveal({ children }: { children: ReactElement }) {
-  const hydrated = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
+export default function ScrollReveal({
+  children,
+  className = 'h-full',
+  ...props
+}: ComponentProps<typeof EntryReveal>) {
   return (
     <AnimateIcon animateOnHover className="contents">
-      <Effect
-        data-scroll-reveal=""
-        className="h-full"
-        initial={false}
-        fade={hydrated}
-        slide={hydrated ? { offset: 16 } : false}
-        inView
-        inViewMargin="-32px"
-      >
+      <EntryReveal className={className} {...props}>
         {children}
-      </Effect>
+      </EntryReveal>
     </AnimateIcon>
   );
 }

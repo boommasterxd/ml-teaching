@@ -1,7 +1,8 @@
 import DeferredNetworkDemo from '@/components/hero/DeferredNetworkDemo';
 import ScrollReveal from '@/components/hero/ScrollReveal';
-import { Brain, Users } from '@/components/icons';
-import { Badge } from '@/components/ui/badge';
+import { EntryReveal } from '@/components/ui/entry-reveal';
+import { Brain } from '@/components/icons/brain';
+import { Users } from '@/components/icons/users';
 import {
   Item,
   ItemContent,
@@ -34,11 +35,11 @@ const techniques = [
 
 export const neuralNetworkContent = (
   <>
-    <section className="landing-band" aria-labelledby="section-neural-net">
+    <section aria-labelledby="section-neural-net">
       <div className="landing-container landing-section">
-        <ScrollReveal>
+        <ScrollReveal kind="text">
           <div className="landing-section-heading">
-            <Badge variant="secondary">02 / Bilderkennung</Badge>
+            <Text variant="muted">02 / Bilderkennung</Text>
             <Heading id="section-neural-net">Vom Bild zur Zuordnung.</Heading>
             <Text id="network-demo-intro" variant="lead">
               Wähle Hund oder Katze. Folge dem Bild durch MobileNet, den Nachbarvergleich und die
@@ -46,58 +47,69 @@ export const neuralNetworkContent = (
             </Text>
           </div>
         </ScrollReveal>
-        <DeferredNetworkDemo />
-        <Text variant="muted" className="mt-4">
-          Vereinfachtes Beispiel mit generierten Bildern und erfundenen Merkmalswerten.
-        </Text>
+        <EntryReveal kind="surface">
+          <DeferredNetworkDemo />
+        </EntryReveal>
+        <EntryReveal kind="reading" index={1} asChild>
+          <Text variant="muted" className="mt-4">
+            Vereinfachtes Beispiel mit generierten Bildern und erfundenen Merkmalswerten.
+          </Text>
+        </EntryReveal>
       </div>
     </section>
     <section
       className="landing-container landing-section landing-technique-layout"
       aria-labelledby="section-explanation"
     >
-      <ScrollReveal>
+      <div className="h-full">
         <div className="landing-technique-copy">
-          <div className="flex flex-col gap-5">
-            <Text variant="muted">03 / Die Technik</Text>
-            <Heading id="section-explanation">MobileNet und KNN</Heading>
-            <Text variant="lead">
-              Du zeigst ein neues Bild. MobileNet beschreibt, was darin zu sehen ist, mit Zahlen.
-              KNN vergleicht diese Zahlen mit deinen Beispielen und ordnet das Bild einer Gruppe zu.
+          <EntryReveal kind="text" asChild>
+            <div className="flex flex-col gap-5">
+              <Text variant="muted">03 / Die Technik</Text>
+              <Heading id="section-explanation">MobileNet und KNN</Heading>
+              <Text variant="lead">
+                Du zeigst ein neues Bild. MobileNet beschreibt, was darin zu sehen ist, mit Zahlen.
+                KNN vergleicht diese Zahlen mit deinen Beispielen und ordnet das Bild einer Gruppe
+                zu.
+              </Text>
+            </div>
+          </EntryReveal>
+          <EntryReveal kind="reading" index={1} asChild>
+            <Text variant="muted">
+              MobileNet wurde schon mit vielen Bildern trainiert. Du nutzt seine bereits gelernten
+              Bildmerkmale und gibst eigene Beispiele für deine Gruppen hinzu. Eine solche Gruppe
+              heißt Klasse, zum Beispiel „Hund“. Das Nutzen eines vortrainierten Netzes nennt man
+              Transfer Learning. MobileNet selbst wird hier nicht neu trainiert.
             </Text>
-          </div>
-          <Text variant="muted">
-            MobileNet wurde schon mit vielen Bildern trainiert. Du nutzt seine bereits gelernten
-            Bildmerkmale und gibst eigene Beispiele für deine Gruppen hinzu. Eine solche Gruppe
-            heißt Klasse, zum Beispiel „Hund“. Das Nutzen eines vortrainierten Netzes nennt man
-            Transfer Learning. MobileNet selbst wird hier nicht neu trainiert.
-          </Text>
+          </EntryReveal>
         </div>
-      </ScrollReveal>
-      <ScrollReveal>
+      </div>
+      <div className="h-full">
         <ItemGroup aria-label="Bausteine des Modells" className="landing-technique-items">
           {techniques.map(({ title, Icon, descriptions }, index) => (
-            <div key={title} role="listitem" className="landing-technique-item">
-              {index > 0 && <Separator />}
-              <Item className="items-start p-0">
-                <ItemMedia variant="icon">
-                  <Icon aria-hidden="true" />
-                </ItemMedia>
-                <ItemContent className="gap-3">
-                  <ItemTitle>
-                    <h3>{title}</h3>
-                  </ItemTitle>
-                  {descriptions.map((description) => (
-                    <ItemDescription key={description} className="line-clamp-none">
-                      {description}
-                    </ItemDescription>
-                  ))}
-                </ItemContent>
-              </Item>
-            </div>
+            <ScrollReveal key={title} kind="reading" index={index} asChild className="">
+              <div role="listitem" className="landing-technique-item">
+                {index > 0 && <Separator />}
+                <Item className="items-start p-0">
+                  <ItemMedia variant="icon">
+                    <Icon aria-hidden="true" />
+                  </ItemMedia>
+                  <ItemContent className="gap-3">
+                    <ItemTitle>
+                      <h3>{title}</h3>
+                    </ItemTitle>
+                    {descriptions.map((description) => (
+                      <ItemDescription key={description} className="line-clamp-none">
+                        {description}
+                      </ItemDescription>
+                    ))}
+                  </ItemContent>
+                </Item>
+              </div>
+            </ScrollReveal>
           ))}
         </ItemGroup>
-      </ScrollReveal>
+      </div>
     </section>
   </>
 );

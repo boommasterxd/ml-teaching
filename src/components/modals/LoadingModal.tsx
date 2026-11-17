@@ -1,13 +1,13 @@
 /**
  * LoadingModal.tsx
  *
- * Non-dismissible modal shown while ML models (MobileNet + KNN) are being
- * downloaded and initialized. Blocks user interaction until loading completes.
+ * Blocks workspace interaction while models load, with native consent withdrawal.
  */
-import { Loader2 } from '../icons';
+import { Loader2 } from '../icons/loader2';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import { DialogTitle } from '../ui/dialog';
+import TrainingWithdrawal from '../TrainingWithdrawal';
 
 /**
  * Props for the LoadingModal component.
@@ -21,7 +21,7 @@ interface LoadingModalProps {
 
 /**
  * Displays a centered spinner and a dynamic status message while ML models load.
- * The modal cannot be dismissed by the user.
+ * Withdrawal reloads the document instead of dismissing an unfinished load.
  *
  * @param isOpen - Whether the modal is currently shown.
  * @param loadingText - Status text rendered in a live region for screen readers.
@@ -37,6 +37,7 @@ export default function LoadingModal({ isOpen, loadingText }: LoadingModalProps)
         <p className="text-muted-foreground text-sm" aria-live="polite">
           {loadingText}
         </p>
+        <TrainingWithdrawal variant="dialog" />
       </ModalContent>
     </Dialog>
   );

@@ -1,6 +1,11 @@
 import AnimatedLink from '@/components/AnimatedLink';
-import { ArrowRight, Camera, Zap, Users, Check } from '@/components/icons';
+import { ArrowRight } from '@/components/icons/arrow-right';
+import { Camera } from '@/components/icons/camera';
+import { Zap } from '@/components/icons/zap';
+import { Users } from '@/components/icons/users';
+import { Check } from '@/components/icons/check';
 import { Badge } from '@/components/ui/badge';
+import { EntryReveal } from '@/components/ui/entry-reveal';
 import LearningCard from '@/components/LearningCard';
 import { Heading, Text } from '@/components/ui/typography';
 import HeroScene from '@/components/hero/HeroScene';
@@ -39,31 +44,39 @@ export default function LandingPage() {
         <HeroScene>
           <div className="hero-copy landing-container">
             <AnimateIcon animateOnHover className="contents">
-              <Badge variant="outline">
-                <Zap aria-hidden="true" /> Dein KI-Labor im Browser
-              </Badge>
+              <EntryReveal kind="hero" asChild>
+                <Badge variant="outline">
+                  <Zap aria-hidden="true" /> Dein KI-Labor im Browser
+                </Badge>
+              </EntryReveal>
             </AnimateIcon>
             <Heading as="h1" variant="hero" id="hero-title">
               Du zeigst.
               <br />
               <HeroAccent text="Deine KI lernt." />
             </Heading>
-            <Text variant="lead" className="hero-description">
-              Eine Tasse. Deine Hand. Eine neue Idee. Bring deinem Computer bei, Bilder zu
-              unterscheiden. Ohne Code, mit deinen eigenen Beispielen.
-            </Text>
-            <div className="hero-actions">
-              <AnimatedLink href="/lernen" size="lg">
-                Jetzt ausprobieren <ArrowRight data-icon="inline-end" aria-hidden="true" />
-              </AnimatedLink>
-              <AnimatedLink href="/#so-funktionierts" variant="outline" size="lg">
-                So funktioniert’s
-              </AnimatedLink>
-            </div>
-            <AnimateIcon animateOnHover className="contents">
-              <Text variant="muted" className="hero-kicker">
-                <Check aria-hidden="true" /> Kein Konto. Deine Bilder bleiben auf diesem Gerät.
+            <EntryReveal kind="hero" index={1} asChild>
+              <Text variant="lead" className="hero-description">
+                Eine Tasse. Deine Hand. Eine neue Idee. Bring deinem Computer bei, Bilder zu
+                unterscheiden. Ohne Code, mit deinen eigenen Beispielen.
               </Text>
+            </EntryReveal>
+            <EntryReveal kind="hero" index={2} asChild>
+              <div className="hero-actions">
+                <AnimatedLink href="/lernen" size="lg">
+                  Jetzt ausprobieren <ArrowRight data-icon="inline-end" aria-hidden="true" />
+                </AnimatedLink>
+                <AnimatedLink href="/#so-funktionierts" variant="outline" size="lg">
+                  So funktioniert’s
+                </AnimatedLink>
+              </div>
+            </EntryReveal>
+            <AnimateIcon animateOnHover className="contents">
+              <EntryReveal kind="hero" index={2} asChild>
+                <Text variant="muted" className="hero-kicker">
+                  <Check aria-hidden="true" /> Kein Konto. Deine Bilder bleiben auf diesem Gerät.
+                </Text>
+              </EntryReveal>
             </AnimateIcon>
           </div>
         </HeroScene>
@@ -74,9 +87,9 @@ export default function LandingPage() {
         className="landing-section landing-container"
         aria-labelledby="section-steps"
       >
-        <ScrollReveal>
+        <ScrollReveal kind="text">
           <div className="landing-section-heading">
-            <Badge variant="secondary">01 / Selbst ausprobieren</Badge>
+            <Text variant="muted">01 / Selbst ausprobieren</Text>
             <Heading id="section-steps">So trainierst du dein Modell.</Heading>
             <Text variant="lead">
               Sammle Bilder, trainiere das Modell und teste es mit neuen Aufnahmen.
@@ -84,8 +97,8 @@ export default function LandingPage() {
           </div>
         </ScrollReveal>
         <div className="grid gap-5 md:grid-cols-3">
-          {steps.map(({ number, Icon, title, text }) => (
-            <ScrollReveal key={number}>
+          {steps.map(({ number, Icon, title, text }, index) => (
+            <ScrollReveal key={number} kind="surface" index={index}>
               <LearningCard title={title} description={text} icon={Icon} marker={number} />
             </ScrollReveal>
           ))}

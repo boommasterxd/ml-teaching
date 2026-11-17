@@ -6,7 +6,8 @@
  */
 import type React from 'react';
 import { memo, useCallback } from 'react';
-import { Trash2, RotateCcw } from './icons';
+import { Trash2 } from './icons/trash2';
+import { RotateCcw } from './icons/rotate-ccw';
 import { cn } from '../lib/utils';
 import { classColorClasses } from '../lib/class-colors';
 import { useClassCapture } from '../hooks/useClassCapture';

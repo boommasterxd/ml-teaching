@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { AlertCircle } from './icons';
+import { AlertCircle } from './icons/alert-circle';
 import Button from './Button';
 import type { AppError } from '../types/errors';
 import { Alert, AlertDescription } from './ui/alert';

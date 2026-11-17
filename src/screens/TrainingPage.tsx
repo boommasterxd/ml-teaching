@@ -1,68 +1,75 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Camera, SwitchCamera } from '../components/icons';
+import { Camera } from '../components/icons/camera';
+import { SwitchCamera } from '../components/icons/switch-camera';
 import { useTrainingWorkspace } from '../hooks/useTrainingWorkspace';
 import PageHeader from '../components/PageHeader';
 import Button from '../components/Button';
-import TrainingClassesPanel from '../components/TrainingClassesPanel';
-import TrainingControls from '../components/TrainingControls';
-import PredictionPanel from '../components/PredictionPanel';
+import TrainingPanels from '../components/TrainingPanels';
 import TrainingPageModals from '../components/TrainingPageModals';
 import TrainingError from '../components/TrainingError';
 import { ConsentModal, CameraConsentModal, LoadingModal } from '../components/modals';
 import { Badge } from '../components/ui/badge';
 import { cn } from '../lib/utils';
 import { Separator } from '../components/ui/separator';
+import TrainingWithdrawal from '../components/TrainingWithdrawal';
+import { EntryReveal } from '../components/ui/entry-reveal';
 
 function TrainingPipeline({
   canTrain,
   hasTrainedModel,
+  ready,
 }: {
   canTrain: boolean;
   hasTrainedModel: boolean;
+  ready: boolean;
 }) {
   const currentStep = hasTrainedModel ? 2 : canTrain ? 1 : 0;
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 sm:pt-12 lg:px-8">
-      <div className="flex flex-col gap-5 pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:pb-8">
-        <p className="eyebrow">Lernlabor</p>
-        <ol aria-label="Trainingsablauf" className="grid grid-cols-3 gap-2 sm:gap-6">
-          {['Bilder sammeln', 'Training', 'Vorhersage'].map((label, index) => {
-            const state =
-              index < currentStep ? 'complete' : index === currentStep ? 'active' : 'idle';
-            return (
-              <li
-                key={label}
-                data-state={state}
-                aria-current={state === 'active' ? 'step' : undefined}
-                className={cn(
-                  'flex items-center gap-2 sm:gap-3',
-                  state === 'idle' ? 'text-muted-foreground' : 'text-foreground',
-                )}
-              >
-                <Badge
-                  variant={state === 'active' ? 'default' : 'secondary'}
+    <EntryReveal kind="text" active={ready} activation asChild>
+      <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 sm:pt-12 lg:px-8">
+        <div className="flex flex-col gap-5 pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:pb-8">
+          <p className="eyebrow">Lernlabor</p>
+          <ol aria-label="Trainingsablauf" className="grid grid-cols-3 gap-2 sm:gap-6">
+            {['Bilder sammeln', 'Training', 'Vorhersage'].map((label, index) => {
+              const state =
+                index < currentStep ? 'complete' : index === currentStep ? 'active' : 'idle';
+              return (
+                <li
+                  key={label}
                   data-state={state}
-                  aria-hidden="true"
-                >{`0${index + 1}`}</Badge>
-                <span className="text-xs sm:text-sm">{label}</span>
-              </li>
-            );
-          })}
-        </ol>
+                  aria-current={state === 'active' ? 'step' : undefined}
+                  className={cn(
+                    'flex items-center gap-2 sm:gap-3',
+                    state === 'idle' ? 'text-muted-foreground' : 'text-foreground',
+                  )}
+                >
+                  <Badge
+                    variant={state === 'active' ? 'default' : 'secondary'}
+                    data-state={state}
+                    aria-hidden="true"
+                  >{`0${index + 1}`}</Badge>
+                  <span className="text-xs sm:text-sm">{label}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+        <Separator />
       </div>
-      <Separator />
-    </div>
+    </EntryReveal>
   );
 }
 
 /** Browser-only ML workspace inside a build-rendered App Router page. */
 export default function TrainingPage() {
   const router = useRouter();
-  const { resources, data, dialogs, cardActions } = useTrainingWorkspace();
+  const workspace = useTrainingWorkspace();
+  const { resources, data, dialogs } = workspace;
   const { errors, consent, models, camera, prediction } = resources;
   const { classes } = data;
+  const ready = Boolean(models.mobilenetModel) && !models.isModelLoading;
   const declineConsent = () => router.push('/');
   return (
     <div className="bg-background text-foreground pb-16 sm:pb-24">
@@ -85,46 +92,14 @@ export default function TrainingPage() {
           </Button>
         }
       />
-      <TrainingPipeline canTrain={data.canTrain} hasTrainedModel={resources.hasTrainedModel} />
+      <TrainingPipeline
+        canTrain={data.canTrain}
+        hasTrainedModel={resources.hasTrainedModel}
+        ready={ready}
+      />
       {errors.error && <TrainingError error={errors.error} onReturn={declineConsent} />}
-      <div
-        inert={!models.mobilenetModel}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid lg:grid-cols-12 gap-8 items-start lg:gap-10"
-      >
-        <TrainingClassesPanel
-          classes={classes.classes}
-          duplicateClassNames={data.duplicateClassNames}
-          stream={camera.stream}
-          facingMode={camera.facingMode}
-          mainHeadingRef={resources.mainHeadingRef}
-          cardActions={cardActions}
-          onAddClass={classes.addClass}
-          onShowClearConfirm={dialogs.showClearConfirm}
-        />
-        <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-24 min-w-0">
-          <TrainingControls
-            classes={classes.classes}
-            canTrain={data.canTrain}
-            hasPendingUploads={data.activity.hasUploads}
-            isTraining={data.training.isTraining}
-            hasTrainedModel={resources.hasTrainedModel}
-            hasInvalidNames={data.training.hasInvalidNames}
-            hasDuplicateNames={data.hasDuplicateNames}
-            onTrain={data.trainModel}
-          />
-          <PredictionPanel
-            hasCamera={camera.stream !== null}
-            classes={classes.classes}
-            prediction={prediction.prediction}
-            isPredicting={prediction.isPredicting}
-            hasTrainedModel={resources.hasTrainedModel}
-            facingMode={camera.facingMode}
-            predictVideoRef={resources.predictVideoRef}
-            onStartPredicting={resources.startPredicting}
-            onStopPredicting={prediction.stopPredicting}
-          />
-        </div>
-      </div>
+      <TrainingPanels workspace={workspace} />
+      {consent.hasConsented && <TrainingWithdrawal />}
       <TrainingPageModals
         modal={dialogs.modal}
         classes={classes.classes}

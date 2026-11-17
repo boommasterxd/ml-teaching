@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from 'react';
 import { cn } from '@/lib/utils';
-import { Check as CheckIcon } from '../icons';
+import { Check as CheckIcon } from '../icons/check';
 import { Checkbox as CheckboxPrimitive } from '@animate-ui/react/primitives/radix-ui';
 import { useControlHydrated, useControlRef } from './use-control-hydration';
 

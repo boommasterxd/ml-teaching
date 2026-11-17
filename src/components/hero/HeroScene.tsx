@@ -1,12 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
-import dynamic from 'next/dynamic';
 import { motion, useInView, useMotionValue, useScroll, useTransform } from 'motion/react';
 import { ReducedMotionConfig, useShouldReduceMotion } from '@animate-ui/react/utils/motion';
 import { usePageVisible } from '@animate-ui/react/utils/use-page-visible';
 import Button from '@/components/Button';
-import { Pause, Play } from '@/components/icons';
+import { Pause } from '@/components/icons/pause';
+import { Play } from '@/components/icons/play';
 import StaticContourPoster from './StaticContourPoster';
 
 let fieldModule: ReturnType<typeof importField> | undefined;
@@ -20,7 +20,7 @@ function prepareField() {
   });
   return fieldModule;
 }
-const TopographyField = dynamic(prepareField, { ssr: false });
+type FieldComponent = typeof import('./TopographyField').default;
 
 function useParallax(root: RefObject<HTMLDivElement | null>, paused: boolean) {
   const { scrollYProgress } = useScroll({ target: root, offset: ['start start', 'end start'] });
@@ -52,7 +52,7 @@ function Scene({ children }: { children?: ReactNode }) {
   const visible = usePageVisible();
   const reduce = useShouldReduceMotion();
   const [paused, setPaused] = useState(false);
-  const [prepared, setPrepared] = useState(false);
+  const [Field, setField] = useState<FieldComponent | null>(null);
   const [failed, setFailed] = useState(false);
   const [rendered, setRendered] = useState(false);
   const unavailable = useCallback(() => setFailed(true), []);
@@ -65,8 +65,8 @@ function Scene({ children }: { children?: ReactNode }) {
     if (!active) return;
     let current = true;
     void prepareField()
-      .then(() => {
-        if (current) setPrepared(true);
+      .then((module) => {
+        if (current) setField(() => module.default);
       })
       .catch(() => {
         if (current) setFailed(true);
@@ -98,8 +98,8 @@ function Scene({ children }: { children?: ReactNode }) {
         style={available ? { y: fieldY } : undefined}
       >
         <StaticContourPoster />
-        {available && prepared && (
-          <TopographyField
+        {available && Field && (
+          <Field
             interactionRoot={root}
             paused={paused}
             onUnavailable={unavailable}

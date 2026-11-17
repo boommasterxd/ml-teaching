@@ -1,10 +1,19 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render as renderComponent,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import ConsentModal from '@/components/modals/ConsentModal';
 import CameraConsentModal from '@/components/modals/CameraConsentModal';
 import LoadingModal from '@/components/modals/LoadingModal';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
+import { AppRouterHost } from '../helpers/app-router-host';
+
+const render = (ui: ReactNode) => renderComponent(ui, { wrapper: AppRouterHost });
 
 beforeEach(installBrowserHost);
 afterEach(restoreBrowserHost);

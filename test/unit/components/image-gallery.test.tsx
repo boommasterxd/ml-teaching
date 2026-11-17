@@ -26,7 +26,63 @@ function trackResizeEvents() {
   return () => act(() => callbacks.forEach((callback) => callback()));
 }
 
+function trackActiveResizeObservers() {
+  const active = new Set<ResizeObserver>();
+  const HostResizeObserver = globalThis.ResizeObserver;
+  vi.stubGlobal(
+    'ResizeObserver',
+    class extends HostResizeObserver {
+      observe(target: Element) {
+        active.add(this);
+        super.observe(target);
+      }
+      unobserve(target: Element) {
+        active.delete(this);
+        super.unobserve(target);
+      }
+      disconnect() {
+        active.delete(this);
+        super.disconnect();
+      }
+    },
+  );
+  return active;
+}
+
 describe('training image gallery', () => {
+  it('releases empty-gallery measurement and restores usable previews with a fresh selection', async () => {
+    const observers = trackActiveResizeObservers();
+    const image = makeImage('first');
+    const onImageClick = vi.fn();
+    const props = { label, color: '#dc2626', onImageClick, onRemoveImages: vi.fn() };
+    const { rerender } = render(<ImageGallery {...props} images={[]} />);
+    const region = screen.getByRole('region', { name: label });
+    expect(observers.size).toBe(0);
+    act(() => region.focus());
+    expect(document.activeElement).toBe(region);
+    rerender(<ImageGallery {...props} images={[image]} />);
+    const preview = await screen.findByRole('button', { name: 'Bild vergrößern' });
+    expect(observers.size).toBeGreaterThan(0);
+    expect(document.activeElement).toBe(region);
+    fireEvent.click(screen.getByRole('button', { name: 'Bilder auswählen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bild auswählen' }));
+    expect(screen.getByText('1 ausgewählt')).toBeTruthy();
+    rerender(<ImageGallery {...props} images={[]} />);
+    expect(observers.size).toBe(0);
+    expect(preview.isConnected).toBe(false);
+    expect(screen.queryByText('1 ausgewählt')).toBeNull();
+    expect(screen.getByText(/Halte „Aufnehmen“ gedrückt/)).toBeTruthy();
+    rerender(<ImageGallery {...props} images={[image]} />);
+    const restored = await screen.findByRole('button', { name: 'Bild vergrößern' });
+    expect(observers.size).toBeGreaterThan(0);
+    await act(async () => restored.focus());
+    expect(document.activeElement).toBe(restored);
+    fireEvent.click(restored);
+    expect(onImageClick).toHaveBeenCalledWith(image);
+    fireEvent.click(screen.getByRole('button', { name: 'Bilder auswählen' }));
+    expect(screen.getByText('0 ausgewählt')).toBeTruthy();
+  });
+
   it('opens previews, supports reversible selection and deletes only selected images', async () => {
     const images = ['first', 'second', 'third'].map(makeImage);
     const onImageClick = vi.fn();

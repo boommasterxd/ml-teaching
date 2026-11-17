@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 @import './components/hero/hero.css';
+@import './components/legal.css';
 @import './components/network/network.css';
+@import './components/knn-quiz/knn-quiz.css';
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
@@ -46,6 +48,7 @@
   --class-purple-on-surface: #6d28d9;
   --class-pink-on-surface: #bd185e;
   --header-height: 4.5rem;
+  --header-border-width: 1px;
   --radius: 0.625rem;
 }
 
@@ -220,7 +223,7 @@
   z-index: 40;
   min-height: var(--header-height);
   background: var(--background);
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--header-border-width) solid var(--border);
 }
 .site-header-inner {
   max-width: 90rem;
@@ -254,35 +257,25 @@
 }
 .site-footer {
   border-top: 1px solid var(--border);
-  padding: 3rem clamp(1rem, 4vw, 4rem) 1.75rem;
+  padding: 2rem clamp(1rem, 4vw, 4rem);
   color: var(--muted-foreground);
 }
 .site-footer-inner {
   max-width: 82rem;
   margin-inline: auto;
   display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-.footer-top,
-.footer-bottom {
-  display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: start;
+  align-items: center;
   gap: 1.5rem;
 }
-.footer-local {
-  max-width: 32rem;
-  font-size: 0.875rem;
-  line-height: 1.7;
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
-.footer-withdrawal {
-  align-self: center;
-  max-width: 48rem;
-  font-size: 0.875rem;
-  line-height: 1.7;
-  text-align: center;
+.footer-copyright {
+  font-size: 0.75rem;
 }
 .footer-links {
   display: flex;
@@ -290,15 +283,25 @@
   gap: 1rem 1.5rem;
   font-size: 0.875rem;
 }
+@variant max-md {
+  .site-footer-inner {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+  }
+  .footer-brand {
+    align-items: center;
+  }
+  .footer-links {
+    justify-content: center;
+  }
+}
 .footer-link {
   text-decoration: underline;
   text-underline-offset: 0.25em;
 }
 .footer-link:hover {
   color: var(--primary);
-}
-.footer-bottom {
-  font-size: 0.75rem;
 }
 .eyebrow {
   display: block;
@@ -341,65 +344,6 @@
   font-weight: 600;
   letter-spacing: -0.02em;
 }
-.legal-section {
-  max-width: 54rem;
-  margin-inline: auto;
-  padding: clamp(2.5rem, 6vw, 5rem) clamp(1.25rem, 5vw, 3rem);
-}
-.legal-content {
-  color: var(--foreground);
-  line-height: 1.75;
-  overflow-wrap: anywhere;
-}
-.legal-content h1,
-.legal-content h2,
-.legal-content h3,
-.legal-content h4 {
-  font-family: var(--font-display);
-  color: var(--foreground);
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.025em;
-  text-wrap: balance;
-}
-.legal-content h1 {
-  @apply scroll-m-20 text-4xl font-extrabold tracking-tight text-balance;
-  margin-bottom: 2rem;
-}
-.legal-content h2 {
-  @apply scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight;
-  margin-top: 3.5rem;
-  margin-bottom: 1.25rem;
-}
-.legal-content h3 {
-  @apply scroll-m-20 text-2xl font-semibold tracking-tight;
-  margin-top: 2.5rem;
-  margin-bottom: 1rem;
-}
-.legal-content h4 {
-  @apply scroll-m-20 text-xl font-semibold tracking-tight;
-  margin-top: 1.75rem;
-  margin-bottom: 0.75rem;
-}
-.legal-content p,
-.legal-content ul {
-  margin-bottom: 1rem;
-}
-.legal-content ul {
-  list-style: disc;
-  padding-left: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.legal-content a {
-  color: var(--primary);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-.legal-content a:hover {
-  color: var(--foreground);
-}
 .gallery-region {
   --gallery-columns: 4;
   @variant sm {
@@ -416,12 +360,22 @@
   }
 }
 
-::view-transition-group(*) {
-  animation-duration: 180ms;
+.page-transition {
+  view-transition-class: page-transition;
 }
-::view-transition-old(root),
-::view-transition-new(root) {
+:root[data-page-transition]::view-transition-old(root) {
+  display: none;
+}
+:root[data-page-transition]::view-transition-new(root) {
   animation: none;
+}
+::view-transition-image-pair(*.page-transition) {
+  overflow: clip;
+  border-radius: 0;
+}
+::view-transition-old(*.page-transition),
+::view-transition-new(*.page-transition) {
+  background-color: var(--background);
 }
 
 /* Keep immediate switch feedback above the page-wide Animate UI theme wipe. */

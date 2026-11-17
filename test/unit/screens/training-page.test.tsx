@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import TrainingPage from '@/screens/TrainingPage';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
@@ -105,6 +105,7 @@ beforeEach(() => {
   );
 });
 afterEach(() => {
+  cleanup();
   restoreBrowserHost();
   for (const [target, name, descriptor] of [
     [navigator, 'mediaDevices', originalMediaDevices],
@@ -156,6 +157,7 @@ describe('training page integration', () => {
     fireEvent.change(names[1], { target: { value: 'Buch' } });
     const inputs = container.querySelectorAll<HTMLInputElement>('input[type="file"]');
     fireEvent.change(inputs[0], { target: { files: selectedImages('tasse') } });
+    await screen.findByText('10 / 200 Bilder');
     fireEvent.change(inputs[1], { target: { files: selectedImages('buch') } });
     await waitFor(() => expect(screen.getAllByText('10 / 200 Bilder')).toHaveLength(2));
     const train = screen.getByRole('button', { name: 'Modell trainieren' });

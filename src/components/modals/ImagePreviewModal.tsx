@@ -4,7 +4,8 @@
  * Modal that displays an enlarged preview of a single training image
  * and provides a delete action for that image.
  */
-import { Trash2, X } from '../icons';
+import { Trash2 } from '../icons/trash2';
+import { X } from '../icons/x';
 import Image from 'next/image';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';

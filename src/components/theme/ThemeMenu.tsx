@@ -1,7 +1,9 @@
 'use client';
 
 import type { RefObject } from 'react';
-import { Sun, Moon, Smartphone } from '../icons';
+import { Sun } from '../icons/sun';
+import { Moon } from '../icons/moon';
+import { Smartphone } from '../icons/smartphone';
 import { Alert, AlertDescription } from '../ui/alert';
 import {
   DropdownMenuContent,

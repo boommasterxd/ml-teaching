@@ -11,6 +11,7 @@ React Router, API routes, database or authentication layer.
 - `src/screens/`: page compositions; only the learning workspace is a client root.
 - `src/components/`: shared product UI and the local shadcn/Animate UI compositions.
 - `src/components/hero/`: static landing posters and optional decorative/demo clients.
+- `src/components/icons/`: per-icon client entries with a shared style-free SSG fallback.
 - `src/components/theme/`: persistent appearance state and intent-loaded settings.
 - `src/content/`: static educational and controlled legal content.
 - `src/hooks/`: browser workspace, consent, class, camera, model and prediction logic.
@@ -26,16 +27,39 @@ not live in `src/pages/`, where Next.js would expose unintended routes.
 ## Shared shell and progressive enhancement
 
 The root Server Component renders the shared header, main content and footer.
-ThemeProvider encloses them outside the route ViewTransition, preserving both
+ThemeProvider encloses them outside Animate UI's shared Flow PageTransition,
+which uses React ViewTransition through Motion AnimateView. Public pages remain
+complete SSG documents; the transition wrapper is a small client boundary and does
+not add request-time reads. ThemeProvider preserves both
 appearance and private in-memory training state across theme changes. A trusted
 static bootstrap applies a valid remembered light/dark/system selection or the
 operating-system preference. Only explicit remembering writes the single enum key;
 there is no theme service or server personalization. The local font and brand
 assets require no external font provider.
 
-The landing hero starts from a static contour poster. Its optional local Topography
+Shared `IntentLink` keeps native Next.js links and a fixed `prefetch={false}`
+while pointer entry, keyboard focus and pointer down call `router.prefetch` for
+other same-origin routes. Native router caches reuse in-flight and prepared work;
+there is no second cache or automatic invalidation loop. Viewport admission alone
+does not load another page. Caller event handlers, refs, modified clicks and route
+transition types remain native. Current path/search and fragment-only navigation
+do not prepare another route.
+
+For App Router destinations, intent warms the build-rendered RSC payload and
+route assets, not a hidden mounted browser page. In particular, preparation does
+not run the learning consent dialog's autofocus or start camera/model effects.
+The initial consent remains available in SSG and mounts on actual navigation.
+Consent withdrawal intentionally uses a full document reload rather than this
+shared link, discarding the private workspace.
+
+The landing hero starts from a static contour image rendered from the same Topography
+shader at time zero. A CSS alpha mask preserves its CSS-pixel scale and theme color.
+Its optional local Topography
 WebGL enhancement is active only while visible, unpaused, in a visible document
-and outside reduced motion. It owns bounded pointer/ripple work and two decorative
+and outside reduced motion. Its first successfully drawn frame replaces the matching
+static terrain. One shared import promise prepares the renderer; the resolved
+component mounts directly on the client without a second Lazy/Suspense reveal that
+could trigger a page update transition. It owns bounded pointer/ripple work and two decorative
 parallax layers. Explicit pause retains the last GPU image and stops frame, pointer
 spring and ripple playback; resuming continues the same animation time. Hidden,
 offscreen and reduced-motion states release the enhancement and its resources.
@@ -55,12 +79,23 @@ The illustration never invokes the actual model or processes user images.
 Theme-menu intent loads the module only;
 its public portal mounts on opening.
 
-The everyday recognition quiz uses six fixed examples from
-`src/content/recognition-quiz.ts`. Its required choices are rendered during SSG.
+The everyday recognition quiz samples three matching and three nonmatching examples
+from the 40-entry pool in `src/content/recognition-examples.ts`. Six complete choices
+are rendered during SSG; a stable hydration snapshot switches to a randomized browser
+visit round. Replay selects a different set through `src/lib/recognition-quiz.ts`.
 Small local React state tracks unique attempts and correct selections; explanations
 mount only after an answer. It does not invoke ML, request a camera, send answers,
 persist state or create a learning profile. Reset and document reload discard the
 quiz state independently of model consent, theme preferences and the learning lab.
+
+The KNN exercise loads near the viewport, with pointer/focus/touch intent warming
+the same retryable module. Its twelve synthetic points and query use a bounded random
+construction, separated targets and a large radial gap between the active K nearest
+neighbors and the remaining points. Changing K regenerates the arrangement while
+preserving the input image and clearing previous answers. The explanatory animation
+and exercise share ranking/voting in `src/lib/knn.ts` and point glyphs. Children
+select the nearest 1, 3 or 5 points before choosing the majority class; mistakes
+remain retryable. Neither exercise loads TensorFlow or stores/sends answers.
 
 ## Browser ML flow
 
@@ -90,7 +125,10 @@ codec cancellation. HEIC/HEIF and other formats still require browser codec supp
 
 A model download is a consent-gated one-time asset load, not interactive server
 state: TanStack Query is therefore unnecessary. TanStack Virtual owns thumbnail
-windowing. There are no shared server entities, reactive joins or SQL operations
+windowing. Empty galleries keep their server-rendered region and hint without
+starting virtualizer measurements or column ResizeObservers; both activate when
+the first image arrives and are released when the gallery becomes empty.
+There are no shared server entities, reactive joins or SQL operations
 that justify TanStack DB, Table, Drizzle or Turso. Class-name editing remains a
 small local field without a separate form submission or validation schema.
 

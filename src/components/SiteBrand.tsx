@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from './IntentLink';
 import SiteLogo from './SiteLogo';
 import { ActionFeedback } from './ui/action-feedback';
 

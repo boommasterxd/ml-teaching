@@ -87,7 +87,8 @@ describe('development-only CSP transport', () => {
     for (const path of [
       '/_next/static/runtime.js',
       '/_next/image?url=%2Fapple-icon.png&w=64&q=75',
-      '/_next/pngack-hmr',
+      '/_next/hmr',
+      '/_next/webpack-hmr',
       '/favicon.svg',
       '/favicon-light.svg',
       '/favicon-dark.svg',

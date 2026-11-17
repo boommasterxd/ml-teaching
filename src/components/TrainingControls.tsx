@@ -4,7 +4,9 @@
  * Training section panel showing class readiness, total image count,
  * and the train/retrain button with contextual status messages.
  */
-import { Brain, CheckCircle2, Loader2 } from './icons';
+import { Brain } from './icons/brain';
+import { CheckCircle2 } from './icons/check-circle2';
+import { Loader2 } from './icons/loader2';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import Button from './Button';

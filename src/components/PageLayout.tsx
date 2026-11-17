@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react';
+import LegalNavigation, { type LegalPage } from './LegalNavigation';
 
-/** Shared inner-page spacing beneath the persistent site shell. */
-export default function PageLayout({ children }: { children: ReactNode }) {
-  return <div className="page-layout">{children}</div>;
+/** Shared legal reading layout beneath the persistent site shell. */
+export default function PageLayout({ children, page }: { children: ReactNode; page: LegalPage }) {
+  return (
+    <div className="page-layout legal-layout">
+      <LegalNavigation page={page} />
+      {children}
+    </div>
+  );
 }

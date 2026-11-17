@@ -1,5 +1,21 @@
 import { expect, type Page } from '@playwright/test';
 
+export async function withdrawTrainingConsent(page: Page) {
+  await page.evaluate(() => {
+    document.documentElement.dataset.withdrawalProbe = 'old-workspace';
+  });
+  const withdrawal = page.getByRole('link', {
+    name: 'Einwilligung widerrufen und lokale Trainingsdaten verwerfen',
+    exact: true,
+  });
+  await withdrawal.focus();
+  await page.keyboard.press('Enter');
+  await expect(
+    page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' }),
+  ).toBeVisible();
+  expect(await page.locator('html').getAttribute('data-withdrawal-probe')).toBeNull();
+}
+
 export async function expectHeaderLayout(page: Page) {
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation', exact: true });
   const brand = navigation.getByRole('link', { name: 'ML Teaching – Startseite', exact: true });

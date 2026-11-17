@@ -1,10 +1,15 @@
 import AnimatedLink from '@/components/AnimatedLink';
 import ScrollReveal from '@/components/hero/ScrollReveal';
+import { EntryReveal } from '@/components/ui/entry-reveal';
 import EverydayQuiz from '@/components/quiz/EverydayQuiz';
+import DeferredKnnQuiz from '@/components/knn-quiz/DeferredKnnQuiz';
 import { Separator } from '@/components/ui/separator';
 import { Heading, Text } from '@/components/ui/typography';
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from '@/components/ui/item';
-import { ImagePlus, Lightbulb, Camera, ArrowRight } from '@/components/icons';
+import { ImagePlus } from '@/components/icons/image-plus';
+import { Lightbulb } from '@/components/icons/lightbulb';
+import { Camera } from '@/components/icons/camera';
+import { ArrowRight } from '@/components/icons/arrow-right';
 
 const tips = [
   {
@@ -26,9 +31,9 @@ const tips = [
 
 export const learningContent = (
   <>
-    <section className="landing-guidance" aria-labelledby="section-tips">
+    <section aria-labelledby="section-tips">
       <div className="landing-section landing-container">
-        <ScrollReveal>
+        <ScrollReveal kind="text">
           <div className="landing-section-heading">
             <Text variant="muted">04 / Bessere Beispiele</Text>
             <Heading id="section-tips">Bessere Trainingsbilder</Heading>
@@ -40,7 +45,7 @@ export const learningContent = (
         </ScrollReveal>
         <ItemGroup aria-label="Tipps für Trainingsbilder">
           {tips.map(({ Icon, title, text }, index) => (
-            <ScrollReveal key={title}>
+            <ScrollReveal key={title} kind="reading" index={index}>
               <div role="listitem">
                 <Separator />
                 <Item>
@@ -61,9 +66,9 @@ export const learningContent = (
         </ItemGroup>
       </div>
     </section>
-    <section className="landing-band" aria-labelledby="section-examples">
+    <section aria-labelledby="section-examples">
       <div className="landing-container landing-section">
-        <ScrollReveal>
+        <ScrollReveal kind="text">
           <div className="landing-section-heading">
             <Text variant="muted">05 / Im Alltag</Text>
             <Heading id="section-examples">Wo steckt Bilderkennung drin?</Heading>
@@ -75,15 +80,36 @@ export const learningContent = (
         <EverydayQuiz />
       </div>
     </section>
+    <section className="landing-container landing-section" aria-labelledby="section-knn-quiz">
+      <ScrollReveal kind="text">
+        <div className="landing-section-heading">
+          <Text variant="muted">06 / KNN ausprobieren</Text>
+          <Heading id="section-knn-quiz">Welche Nachbarn zählen?</Heading>
+          <Text variant="lead">
+            Finde die nächsten Nachbarn der Raute. Entscheide danach, welche Klasse die meisten
+            Stimmen bekommt.
+          </Text>
+        </div>
+      </ScrollReveal>
+      <EntryReveal kind="surface">
+        <DeferredKnnQuiz />
+      </EntryReveal>
+    </section>
     <section className="landing-cta" aria-labelledby="section-cta">
       <div className="landing-container flex flex-col items-center gap-6">
-        <Heading id="section-cta">Trainiere deine eigenen Klassen.</Heading>
-        <Text variant="lead" className="max-w-xl">
-          Öffne das Lernlabor und füge deine ersten Bilder hinzu.
-        </Text>
-        <AnimatedLink href="/lernen" size="lg">
-          Jetzt ausprobieren <ArrowRight data-icon="inline-end" aria-hidden="true" />
-        </AnimatedLink>
+        <EntryReveal kind="text" asChild>
+          <Heading id="section-cta">Trainiere deine eigenen Klassen.</Heading>
+        </EntryReveal>
+        <EntryReveal kind="text" index={1} asChild>
+          <Text variant="lead" className="max-w-xl">
+            Öffne das Lernlabor und füge deine ersten Bilder hinzu.
+          </Text>
+        </EntryReveal>
+        <EntryReveal kind="text" index={2}>
+          <AnimatedLink href="/lernen" size="lg">
+            Jetzt ausprobieren <ArrowRight data-icon="inline-end" aria-hidden="true" />
+          </AnimatedLink>
+        </EntryReveal>
       </div>
     </section>
   </>

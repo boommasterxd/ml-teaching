@@ -1,10 +1,14 @@
+.landing-page {
+  background: var(--background);
+}
 .landing-container {
   width: 100%;
   max-width: 80rem;
   margin-inline: auto;
   padding-inline: clamp(1.25rem, 5vw, 4rem);
 }
-.landing-section {
+.landing-section,
+.landing-cta {
   padding-block: clamp(4rem, 7vw, 7rem);
 }
 .landing-section-heading {
@@ -17,9 +21,6 @@
 }
 .landing-section-heading > [data-slot='heading'] {
   width: 100%;
-}
-.landing-band {
-  background: var(--card);
 }
 .landing-technique-layout {
   display: grid;
@@ -41,9 +42,6 @@
   flex-direction: column;
   min-width: 0;
 }
-.landing-guidance {
-  background: var(--muted);
-}
 .landing-tip-content {
   display: grid;
   min-width: 0;
@@ -52,7 +50,6 @@
 .landing-cta {
   position: relative;
   overflow: hidden;
-  padding-block: clamp(5rem, 10vw, 8rem);
   text-align: center;
   background: radial-gradient(ellipse at 50% 100%, rgb(var(--hero-glow) / 0.1), transparent 65%);
 }
@@ -120,12 +117,15 @@
     radial-gradient(ellipse at 85% 65%, rgb(var(--hero-glow) / 0.18), transparent 40%);
 }
 .hero-field-poster {
-  width: 100%;
-  height: 100%;
-  color: rgb(var(--hero-line-color));
+  position: absolute;
+  inset: 0;
+  background: rgb(var(--hero-line-color));
+  mask-image: url('/hero-contours-mobile.webp');
+  mask-size: 1024px 1536px;
+  mask-repeat: repeat;
 }
 .hero-field[data-enhanced='true'] .hero-field-poster {
-  opacity: 0;
+  display: none;
 }
 .hero-field-canvas {
   position: absolute;
@@ -186,6 +186,14 @@
   height: 1rem;
   flex: none;
 }
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-entry-reveal='hero'][data-entry-initial='true'] {
+    filter: blur(2px);
+  }
+  [data-entry-reveal='hero'][data-entry-initial='true']:focus-within {
+    filter: none;
+  }
+}
 .hero-field-controls {
   position: absolute;
   z-index: 2;
@@ -196,10 +204,6 @@
   .landing-technique-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 5rem;
-  }
-  .landing-technique-copy {
-    height: 100%;
-    justify-content: space-between;
   }
   .landing-technique-items {
     display: grid;
@@ -215,6 +219,10 @@
   }
 }
 @variant md {
+  .hero-field-poster {
+    mask-image: url('/hero-contours.webp');
+    mask-size: 5120px 2160px;
+  }
   .landing-tip-content {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
     align-items: center;

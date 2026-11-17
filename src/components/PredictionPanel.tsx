@@ -1,5 +1,7 @@
 import type React from 'react';
-import { Camera, Play, Square } from './icons';
+import { Camera } from './icons/camera';
+import { Play } from './icons/play';
+import { Square } from './icons/square';
 import Button from './Button';
 import { cn } from '../lib/utils';
 import type { MLClass, Prediction } from '../types/ml';

@@ -9,7 +9,8 @@ import NextImage from 'next/image';
 import Button from './Button';
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
 import type { Range, VirtualItem, Virtualizer } from '@tanstack/react-virtual';
-import { Image as ImageIcon, CheckCircle2 } from './icons';
+import { Image as ImageIcon } from './icons/image';
+import { CheckCircle2 } from './icons/check-circle2';
 import { cn } from '../lib/utils';
 import { classColorClasses } from '../lib/class-colors';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from './ui/empty';
@@ -100,11 +101,11 @@ const ImageThumbnail = memo(function ImageThumbnail({
 });
 
 /** Read the centralized Tailwind breakpoint rule used by the rendered gallery. */
-function useColumnCount(ref: React.RefObject<HTMLDivElement | null>): number {
+function useColumnCount(ref: React.RefObject<HTMLDivElement | null>, enabled: boolean): number {
   const [cols, setCols] = useState(4);
   useEffect(() => {
     const element = ref.current;
-    if (!element) return;
+    if (!element || !enabled) return;
     const update = () => {
       const value = Number.parseInt(
         getComputedStyle(element).getPropertyValue('--gallery-columns'),
@@ -116,7 +117,7 @@ function useColumnCount(ref: React.RefObject<HTMLDivElement | null>): number {
     observer.observe(element);
     update();
     return () => observer.disconnect();
-  }, [ref]);
+  }, [ref, enabled]);
   return cols;
 }
 
@@ -301,7 +302,8 @@ const ImageGallery = memo(function ImageGallery({
     setSelectedIds(new Set());
   }
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const columnCount = useColumnCount(scrollContainerRef);
+  const hasImages = images.length > 0;
+  const columnCount = useColumnCount(scrollContainerRef, hasImages);
   const focus = useGalleryFocus(images, columnCount);
 
   /** Adds or removes an image ID from the current selection set. */
@@ -328,6 +330,7 @@ const ImageGallery = memo(function ImageGallery({
   const rowCount = Math.ceil(images.length / columnCount);
 
   const virtualizer = useVirtualizer({
+    enabled: hasImages,
     count: rowCount,
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: () => 88,

@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useEffect, useRef } from 'react';
-import { Camera, Upload } from './icons';
+import { Camera } from './icons/camera';
+import { Upload } from './icons/upload';
 import Button from './Button';
 import { cn } from '../lib/utils';
 import { IMAGE_INPUT_ACCEPT } from '../lib/image-input-policy';

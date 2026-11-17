@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { ViewTransition } from 'react';
+import { PageTransition } from '@/components/animate-ui/components/page-transition';
 import Footer from '@/components/Footer';
 import SiteHeader from '@/components/SiteHeader';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
@@ -63,7 +63,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </a>
           <SiteHeader />
           <main id="main-content" tabIndex={-1} className="app-main">
-            <ViewTransition name="page-content">{children}</ViewTransition>
+            <PageTransition effect="flow">{children}</PageTransition>
           </main>
           <Footer />
         </ThemeProvider>

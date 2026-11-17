@@ -1,16 +1,11 @@
-export type ExampleSignal = 'dog' | 'cat';
+import { countVotes, nearestNeighbors, winningSignal, type KnnPoint } from '@/lib/knn';
 
-interface ExamplePoint {
-  readonly id: string;
-  readonly x: number;
-  readonly y: number;
-  readonly signal: ExampleSignal;
-}
+export type { ExampleSignal } from '@/lib/knn';
 
 export const KNN_NEIGHBOR_COUNT = 3;
 
 /** Synthetic feature coordinates for the explanatory diagram, never image inference. */
-export const KNN_POINTS: readonly ExamplePoint[] = [
+export const KNN_POINTS: readonly KnnPoint[] = [
   { id: 'dog-1', x: 50, y: 50, signal: 'dog' },
   { id: 'dog-2', x: 92, y: 58, signal: 'dog' },
   { id: 'dog-3', x: 154, y: 60, signal: 'dog' },
@@ -32,14 +27,9 @@ export const KNN_POINTS: readonly ExamplePoint[] = [
 ];
 
 function createExample(query: { x: number; y: number }) {
-  const distance = (point: ExamplePoint) => (point.x - query.x) ** 2 + (point.y - query.y) ** 2;
-  const neighbors = KNN_POINTS.toSorted((a, b) => distance(a) - distance(b)).slice(
-    0,
-    KNN_NEIGHBOR_COUNT,
-  );
-  const votes = { dog: 0, cat: 0 };
-  for (const point of neighbors) votes[point.signal] += 1;
-  const winner: ExampleSignal = votes.dog > votes.cat ? 'dog' : 'cat';
+  const neighbors = nearestNeighbors(KNN_POINTS, query, KNN_NEIGHBOR_COUNT);
+  const votes = countVotes(neighbors);
+  const winner = winningSignal(votes);
   return { query, neighbors, votes, winner };
 }
 

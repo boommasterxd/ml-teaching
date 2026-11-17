@@ -45,10 +45,17 @@ SOFTWARE.
 ## Animate UI
 
 The installed `@animate-ui/react` package and generated files in
-`src/components/animate-ui/icons/` use the MIT license with the Commons Clause
+`src/components/animate-ui/icons/` and the adapted
+`src/components/animate-ui/components/page-transition.tsx` use the MIT license with the Commons Clause
 condition below. The original SVG paths and animation variants remain from the
 official Animate UI registry. Optional unused exports are removed; formatting and
 import paths are adapted to this application.
+
+The PageTransition source comes from the official
+[Animate UI registry](https://animate-ui.com/r/components-page-transition.json).
+It retains the Flow/Fade presets and native React transition owner. Unused effects
+and shared-element helpers are removed; static CSS and a trusted build-rendered
+Motion reset replace dynamic styles for strict hash-CSP compatibility.
 
 Copyright (c) 2025 Elliot Sutton
 

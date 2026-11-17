@@ -5,7 +5,7 @@
  * Informs the user that all captured image data is processed locally and never transmitted
  * to external servers. Exports the `CameraConsentModal` component as default.
  */
-import { Camera } from '../icons';
+import { Camera } from '../icons/camera';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import Button from '../Button';

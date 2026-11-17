@@ -5,7 +5,7 @@
  * and acknowledge external model loading before the app can proceed.
  */
 import { useState } from 'react';
-import Link from 'next/link';
+import Link from '../IntentLink';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import Button from '../Button';

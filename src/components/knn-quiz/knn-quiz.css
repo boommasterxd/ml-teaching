@@ -1,0 +1,83 @@
+.knn-quiz-card,
+.knn-quiz-placeholder {
+  --knn-plot-max: 24rem;
+  width: 100%;
+}
+.knn-quiz-header,
+.knn-quiz-layout {
+  width: 100%;
+  margin-inline: auto;
+}
+.knn-quiz-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+.knn-quiz-figure {
+  container-type: inline-size;
+  width: 100%;
+  min-width: 0;
+  justify-self: center;
+}
+.knn-quiz-plot {
+  container-type: size;
+  position: relative;
+  width: 100%;
+  height: min(100cqw, var(--knn-plot-max));
+  background-image: radial-gradient(var(--border) 0.8px, transparent 0.8px);
+  background-size: 18px 18px;
+}
+.knn-quiz-connections {
+  position: absolute;
+  width: 100cqmin;
+  height: 100cqmin;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+.knn-point-control,
+.knn-query-position {
+  position: absolute;
+  translate: -50% -50%;
+}
+.knn-point-control {
+  /* Keep the close group isometric while outer points use the available plot width. */
+  translate: calc(-50% + var(--knn-neighbor-offset-x) * (1cqmin - 1cqw))
+    calc(-50% + var(--knn-neighbor-offset-y) * (1cqmin - 1cqh));
+}
+.knn-query-position {
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.knn-quiz-placeholder {
+  min-height: 45rem;
+}
+@variant lg {
+  .knn-quiz-card,
+  .knn-quiz-placeholder {
+    --knn-plot-max: 42rem;
+  }
+  .knn-quiz-header,
+  .knn-quiz-layout {
+    width: 100%;
+    max-width: 66rem;
+    margin-inline: auto;
+  }
+  .knn-quiz-layout {
+    grid-template-columns: minmax(0, 18rem) minmax(0, 42rem);
+    grid-template-rows: min-content 1fr;
+    justify-content: center;
+    gap: 3rem;
+    align-items: start;
+  }
+  .knn-quiz-placeholder {
+    min-height: 35rem;
+  }
+  .knn-quiz-figure {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    max-width: 42rem;
+    width: 100%;
+    justify-self: end;
+  }
+}
