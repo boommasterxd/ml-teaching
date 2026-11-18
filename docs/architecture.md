@@ -1,7 +1,8 @@
 # Architecture
 
 ML Teaching is a German educational platform for learning about machine learning.
-Image classification is implemented; Q-learning currently has empty page shells.
+Image classification is implemented. The reward demonstration illustrates fixed
+example paths and the Q-learning explanation is reserved.
 Next.js App
 Router renders public content and metadata at build time. It has no Express server,
 React Router, API routes, database or authentication layer.
@@ -28,15 +29,18 @@ not live in `src/pages/`, where Next.js would expose unintended routes.
 
 ## Shared shell and progressive enhancement
 
-The general homepage links to the learning-area selection at `/lernen`.
+The homepage links to the learning-area selection at `/lernen` and offers
+two automatic previews. The homepage and learning hub link directly to image
+training and reward practice. The hub also links to the image explanation.
 `/lernen/bilderkennung` contains the image-learning explanation, demonstrations and
 quizzes; `/lernen/bilderkennung/ausprobieren` owns the existing browser training
 workspace and its consent flow. Back links and consent rejection return to the
 image explanation. Consent withdrawal reloads the practice URL as a new document.
 `src/lib/learning-paths.ts` centralizes these destinations for navigation.
-The reserved `/lernen/q-learning` and `/lernen/q-learning/ausprobieren` routes render
-no page content. They inherit the shared header, footer and page background, remain
-`noindex`, and are excluded from the sitemap until their content is implemented.
+The reserved `/lernen/q-learning` route renders the shared shell.
+`/lernen/q-learning/ausprobieren` hosts the browser reward demonstration, where
+changing the rewarded goal selects a fixed example path. Both routes carry
+`noindex` and are excluded from the sitemap during the preview phase.
 
 The root Server Component renders the shared header, main content and footer.
 ThemeProvider encloses them outside Animate UI's shared Flow PageTransition,

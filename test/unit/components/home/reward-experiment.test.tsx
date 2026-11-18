@@ -7,7 +7,7 @@ import { installBrowserHost, restoreBrowserHost } from '../../helpers/browser-ho
 beforeEach(installBrowserHost);
 afterEach(restoreBrowserHost);
 
-describe('homepage reward experiment', () => {
+describe('interactive reward experiment', () => {
   it('provides a complete style-free static illustration before interaction', () => {
     const markup = renderToStaticMarkup(<RewardExperiment />);
     const document = new DOMParser().parseFromString(markup, 'text/html');

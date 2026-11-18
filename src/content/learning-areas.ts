@@ -1,31 +1,23 @@
 import { learningPaths } from '@/lib/learning-paths';
 
-/** Shared descriptions and actions for the home sections and learning-area selection. */
+/** The learning choices pair a home experiment with a next action in the lab. */
 export const learningAreas = [
   {
     id: 'images',
     title: 'Bilderkennung',
-    description:
-      'Wie erkennt eine KI eine Tasse oder einen Stift? Du gibst ihr Beispielbilder und testest, ob sie neue Bilder richtig zuordnet. Dafür gibt es viele Verfahren, zum Beispiel tiefe neuronale Netze. Eine verwandte Aufgabe ist Anomalieerkennung: Sie sucht ungewöhnliche Abweichungen, etwa einen Riss in einem Bauteil. Hier liefert das vortrainierte Netz MobileNet die Bildmerkmale. KNN vergleicht sie mit deinen Beispielen und ordnet das Bild einer Gruppe zu.',
-    steps: [
-      'Eigene Gruppen anlegen und Bilder mit der Kamera aufnehmen oder hochladen.',
-      'Dein Modell trainieren und seine Vorhersagen mit neuen Bildern testen.',
-      'Weitere Beispiele ergänzen und beobachten, was sich am Ergebnis verändert.',
-    ],
-    href: learningPaths.images,
-    action: 'Bilderkennung selbst ausprobieren',
+    explanation:
+      'Bilderkennung soll automatisch erkennen, was auf einem Bild zu sehen ist, etwa ein Tier oder ein Gegenstand. Häufig lernt ein Modell aus Beispielbildern mit bekannten Kategorien, welche Merkmale zu welcher Kategorie passen. So kann es neue Bilder zuordnen.',
+    description: 'Trainiere ein Modell mit eigenen Beispielbildern und teste es mit neuen Bildern.',
+    href: learningPaths.imagePractice,
+    action: 'Eigenes Bildmodell trainieren',
   },
   {
     id: 'q-learning',
-    title: 'Reinforcement Learning',
-    description:
-      'Wie lernt eine KI, sich in einer Welt wie Minecraft zurechtzufinden? Stell dir eine Spielfigur vor, die einen sicheren Weg zu einem Ziel sucht. Sie probiert Schritte aus, bekommt für hilfreiche Aktionen Belohnungen und lernt daraus. Beim Q-Learning hält eine Q-Tabelle fest, welche Schritte in welcher Situation Erfolg versprechen.',
-    steps: [
-      'Ziele und Belohnungen für eine Spielfigur festlegen.',
-      'Ihre Entscheidungen und die Werte in der Q-Tabelle verfolgen.',
-      'Andere Belohnungen ausprobieren und vergleichen, welchen Weg sie lernt.',
-    ],
-    href: learningPaths.qLearning,
-    action: 'Q-Learning selbst ausprobieren',
+    title: 'Lernen durch Belohnung',
+    explanation:
+      'Ziel ist es, mit einer Folge von Aktionen möglichst viel Belohnung zu bekommen. Dazu probiert ein Agent, etwa eine Spielfigur, verschiedene Aktionen in seiner Umgebung aus und lernt aus den Rückmeldungen, welche Entscheidungen sich auf Dauer lohnen.',
+    description: 'Entscheide, welches Ziel Punkte bringt, und vergleiche zwei Beispielwege.',
+    href: learningPaths.qLearningPractice,
+    action: 'Belohnungen ausprobieren',
   },
 ] as const;

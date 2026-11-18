@@ -1,5 +1,6 @@
 import { createElement, type ComponentType, type ReactNode } from 'react';
 import { renderToStaticMarkup as renderStaticMarkup } from 'react-dom/server';
+import assert from 'node:assert/strict';
 import { describe, expect, it } from 'vitest';
 import * as Icons from '@/components/icons';
 import DeferredNetworkDemo from '@/components/hero/DeferredNetworkDemo';
@@ -64,30 +65,53 @@ describe('strict-CSP static UI', () => {
     const document = new DOMParser().parseFromString(markup, 'text/html');
     expect(document.querySelector('[style], style, script, canvas')).toBeNull();
     expect(document.querySelectorAll('h1')).toHaveLength(1);
-    expect(document.querySelector('.hero-copy h1')).not.toBeNull();
-    expect(document.querySelector(`a[href="${learningPaths.hub}"]`)).not.toBeNull();
-    expect(document.querySelector('section[aria-labelledby="section-examples"]')).toBeNull();
-    expect(document.querySelector('.landing-demo')).toBeNull();
+    const hero = document.querySelector('section[aria-labelledby="hero-title"]');
+    expect(hero?.querySelector(`a[href="${learningPaths.hub}"]`)?.textContent).toContain(
+      'Zum Lernlabor',
+    );
+    expect(hero?.querySelector('a[href="#lernbereiche"]')?.textContent).toContain(
+      'Mini-Experimente ansehen',
+    );
     const journey = [
       'hero-title',
       'home-ai-title',
+      'home-purpose-title',
+      'home-experiments-title',
       'home-images-title',
       'home-q-learning-title',
-      'home-purpose-title',
+      'home-preview-actions-title',
     ];
     const readingOrder = Array.from(document.querySelectorAll('section[aria-labelledby]'))
       .map((section) => section.getAttribute('aria-labelledby') ?? '')
       .filter((title) => journey.includes(title));
     expect(readingOrder).toEqual(journey);
-    const images = document.querySelector('#lernbereiche');
-    expect(images?.querySelector('#home-images-title')?.textContent).toBe('Bilderkennung');
-    expect(images?.textContent).toContain('Hundebild zeigen');
-    const reinforcement = document.querySelector('#reinforcement-learning');
-    expect(reinforcement?.querySelector('#home-q-learning-title')?.textContent).toBe(
-      'Reinforcement Learning',
+    const experiments = document.querySelector('#lernbereiche');
+    expect(experiments?.querySelector('h2#home-experiments-title')?.textContent).toBe(
+      'Zwei Arten, wie KI lernt',
     );
-    expect(reinforcement?.textContent).toContain('Stern belohnen');
-    expect(reinforcement?.textContent).toContain('Minecraft');
+    const images = experiments?.querySelector('section[aria-labelledby="home-images-title"]');
+    expect(images?.querySelector('h3#home-images-title')?.textContent).toBe('Bilderkennung');
+    const reinforcement = experiments?.querySelector('#reinforcement-learning');
+    expect(reinforcement?.querySelector('h3#home-q-learning-title')?.textContent).toBe(
+      'Lernen durch Belohnung',
+    );
+    expect(reinforcement?.textContent).toContain('Reinforcement Learning');
+    const practice = experiments?.querySelector(
+      'section[aria-labelledby="home-preview-actions-title"]',
+    );
+    assert.ok(practice);
+    expect(practice.querySelector('h3#home-preview-actions-title')?.textContent).toBe(
+      'Willst du es selbst ausprobieren?',
+    );
+    const practiceLinks = Array.from(practice.querySelectorAll('a'), (link) => [
+      link.getAttribute('href'),
+      link.textContent?.trim(),
+    ]);
+    expect(practiceLinks).toEqual([
+      [learningPaths.imagePractice, 'Eigenes Bildmodell trainieren'],
+      [learningPaths.qLearningPractice, 'Belohnungen ausprobieren'],
+    ]);
+    expect(experiments?.querySelector('button, [role="status"], [aria-live]')).toBeNull();
   });
 
   it('ships the learning choices and introductions without consent or client-only navigation', () => {
@@ -95,12 +119,14 @@ describe('strict-CSP static UI', () => {
     const document = new DOMParser().parseFromString(markup, 'text/html');
     expect(document.querySelector('[style], style, script, canvas, [role="dialog"]')).toBeNull();
     expect(document.querySelectorAll('h1')).toHaveLength(1);
-    for (const path of [learningPaths.images, learningPaths.qLearning]) {
-      const link = document.querySelector(`a[href="${path}"]`);
-      expect(link?.textContent?.trim()).toBeTruthy();
+    for (const [path, label] of [
+      [learningPaths.imagePractice, 'Eigenes Bildmodell trainieren'],
+      [learningPaths.images, 'Bilderkennung verstehen'],
+      [learningPaths.qLearningPractice, 'Belohnungen ausprobieren'],
+    ]) {
+      expect(document.querySelector(`a[href="${path}"]`)?.textContent).toContain(label);
     }
-    expect(document.body.textContent).toContain('Bilderkennung');
-    expect(document.body.textContent).toContain('Reinforcement Learning');
+    expect(document.querySelector(`a[href="${learningPaths.qLearning}"]`)).toBeNull();
   });
 
   it('ships the complete image explanation and local exercises before hydration', () => {

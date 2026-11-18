@@ -1,3 +1,5 @@
+export const rewardPreviewId = 'reinforcement-learning';
+
 /** Public learning destinations shared by explanations, navigation and the browser workspace. */
 export const learningPaths = {
   hub: '/lernen',

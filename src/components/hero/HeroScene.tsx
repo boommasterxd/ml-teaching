@@ -7,6 +7,7 @@ import { usePageVisible } from '@animate-ui/react/utils/use-page-visible';
 import Button from '@/components/Button';
 import { Pause } from '@/components/icons/pause';
 import { Play } from '@/components/icons/play';
+import { useHomePlayback } from '@/components/home/HomePlaybackProvider';
 import StaticContourPoster from './StaticContourPoster';
 
 let fieldModule: ReturnType<typeof importField> | undefined;
@@ -51,7 +52,7 @@ function Scene({ children }: { children?: ReactNode }) {
   const inView = useInView(root, { amount: 0.1 });
   const visible = usePageVisible();
   const reduce = useShouldReduceMotion();
-  const [paused, setPaused] = useState(false);
+  const { paused, togglePause } = useHomePlayback();
   const [Field, setField] = useState<FieldComponent | null>(null);
   const [failed, setFailed] = useState(false);
   const [rendered, setRendered] = useState(false);
@@ -85,6 +86,7 @@ function Scene({ children }: { children?: ReactNode }) {
       className="hero-field"
       data-enhanced={(available && rendered) || undefined}
       data-paused={paused || reduce || undefined}
+      data-field-unavailable={failed || undefined}
     >
       <motion.div
         className="hero-field-glow"
@@ -112,11 +114,12 @@ function Scene({ children }: { children?: ReactNode }) {
         <Button
           variant="secondary"
           size="sm"
-          disabled={reduce || failed}
+          disabled={reduce}
+          aria-controls="lernbereiche"
           aria-pressed={paused}
           onClick={() => {
             capturePause();
-            setPaused((value) => !value);
+            togglePause();
           }}
         >
           {paused || reduce ? (
@@ -126,11 +129,9 @@ function Scene({ children }: { children?: ReactNode }) {
           )}
           {reduce
             ? 'Bewegung reduziert'
-            : failed
-              ? 'Ruhige Ansicht'
-              : paused
-                ? 'Animation fortsetzen'
-                : 'Animation pausieren'}
+            : paused
+              ? 'Animationen fortsetzen'
+              : 'Animationen pausieren'}
         </Button>
       </div>
     </div>

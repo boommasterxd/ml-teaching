@@ -1,4 +1,5 @@
 import AnimatedLink from '@/components/AnimatedLink';
+import { AlertTriangle } from '@/components/icons/alert-triangle';
 import { ArrowRight } from '@/components/icons/arrow-right';
 import ScrollReveal from '@/components/hero/ScrollReveal';
 import { Separator } from '@/components/ui/separator';
@@ -8,39 +9,17 @@ import { learningPaths } from '@/lib/learning-paths';
 export function HomeIntroduction() {
   return (
     <section className="landing-section landing-container" aria-labelledby="home-ai-title">
-      <div className="home-reading-grid">
-        <ScrollReveal kind="reading">
-          <div className="landing-section-heading">
-            <Text variant="muted">Kurz erklärt</Text>
-            <Heading id="home-ai-title">Was ist künstliche Intelligenz?</Heading>
-            <Text variant="lead">
-              Von der Foto-App bis zum Sprachassistenten: Künstliche Intelligenz, kurz KI, hilft
-              Computern, Bilder zu erkennen, Sprache zu verarbeiten oder Entscheidungen zu
-              unterstützen.
-            </Text>
-            <Text>
-              Viele KI-Systeme lernen aus Beispielen oder durch Ausprobieren. Das Gelernte steckt in
-              einem Modell, das auf neue Eingaben reagieren kann.
-            </Text>
-          </div>
-        </ScrollReveal>
-        <ScrollReveal kind="reading">
-          <div className="flex flex-col gap-5">
-            <Separator />
-            <Heading as="h3">Menschen gestalten KI</Heading>
-            <Text>
-              Welche Aufgabe soll die KI lösen? Welche Beispiele bekommt sie? Wann gibt es eine
-              Belohnung? Diese Entscheidungen prägen, was sie lernt.
-            </Text>
-            <Separator />
-            <Heading as="h3">Ergebnisse prüfen</Heading>
-            <Text>
-              Eine KI kann sich irren oder einseitige Ergebnisse liefern. Schau deshalb genau hin,
-              ob ihre Antwort zur Aufgabe passt.
-            </Text>
-          </div>
-        </ScrollReveal>
-      </div>
+      <ScrollReveal kind="reading">
+        <div className="max-w-2xl space-y-4">
+          <Heading id="home-ai-title">Was ist künstliche Intelligenz?</Heading>
+          <Text>
+            Künstliche Intelligenz (KI) umfasst Verfahren, mit denen Computer Muster erkennen,
+            Schlüsse ziehen oder Handlungen planen können. KI kann zum Beispiel Texte übersetzen,
+            Musik empfehlen oder Spielzüge vorschlagen. Viele KI-Systeme lernen aus Beispielen oder
+            durch Rückmeldungen.
+          </Text>
+        </div>
+      </ScrollReveal>
     </section>
   );
 }
@@ -118,12 +97,19 @@ export function HomePerspectives() {
         {perspectives.map(({ title, opportunity, limit }, index) => (
           <ScrollReveal key={title} kind="reading" index={index}>
             <article className="flex flex-col gap-5">
-              <Separator />
+              {index > 0 && <Separator />}
               <Heading as="h3">{title}</Heading>
               <div className="home-reading-grid">
                 <Text>{opportunity}</Text>
-                <Text>
-                  <strong>Genau hinschauen:</strong> {limit}
+                <Text className="flex items-start gap-2">
+                  <AlertTriangle
+                    className="mt-1.5 size-4 shrink-0 text-primary"
+                    aria-hidden="true"
+                  />
+                  <span>
+                    <span className="sr-only">Achtung: </span>
+                    {limit}
+                  </span>
                 </Text>
               </div>
             </article>
@@ -143,29 +129,37 @@ const questions = [
     'Ist jede KI ein Chatbot?',
     'Nein. Ein Chatbot ist nur eine mögliche Anwendung. Andere KI-Systeme erkennen Bilder, verarbeiten Sprache oder lernen, welche Aktion sie als Nächstes ausführen sollen.',
   ],
-  [
-    'Welche Lernbereiche kann ich ausprobieren?',
-    'Bilderkennung mit deinen eigenen Beispielbildern und Reinforcement Learning mit Aktionen, Belohnungen und einer Q-Tabelle.',
-  ],
 ] as const;
+
+function HomeQuestion({ question, answer }: { question: string; answer: string }) {
+  return (
+    <article className="flex flex-col gap-3">
+      <Heading as="h3">{question}</Heading>
+      <Text>{answer}</Text>
+    </article>
+  );
+}
 
 export function HomeQuestions() {
   return (
     <section className="landing-section landing-container" aria-labelledby="home-questions-title">
       <div className="home-reading-grid">
         <ScrollReveal kind="text">
-          <div className="landing-section-heading">
-            <Text variant="muted">Vor dem Start</Text>
-            <Heading id="home-questions-title">KI lernen, ohne Vorwissen.</Heading>
+          <div className="flex flex-col gap-8">
+            <div className="landing-section-heading">
+              <Text variant="muted">Vor dem Start</Text>
+              <Heading id="home-questions-title">KI lernen, ohne Vorwissen.</Heading>
+            </div>
+            <HomeQuestion
+              question="Brauche ich eine Kamera?"
+              answer="Nein. Für die Bilderkennung kannst du Fotos von deinem Gerät auswählen. In der Belohnungsübung wählst du zwischen Stern und Schatz."
+            />
           </div>
         </ScrollReveal>
         <div className="flex flex-col gap-8">
           {questions.map(([question, answer], index) => (
             <ScrollReveal key={question} kind="reading" index={index}>
-              <article className="flex flex-col gap-3">
-                <Heading as="h3">{question}</Heading>
-                <Text>{answer}</Text>
-              </article>
+              <HomeQuestion question={question} answer={answer} />
             </ScrollReveal>
           ))}
         </div>

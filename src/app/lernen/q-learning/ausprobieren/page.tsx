@@ -1,17 +1,17 @@
 import { learningPaths } from '@/lib/learning-paths';
 import { pageMetadata } from '@/lib/site';
+import RewardPracticePage from '@/screens/RewardPracticePage';
 
 export const dynamic = 'error';
 export const metadata = {
   ...pageMetadata(
-    'Q-Learning ausprobieren',
-    'Q-Learning ausprobieren bei ML Teaching.',
+    'Belohnungen ausprobieren',
+    'Wähle ein Ziel und vergleiche zwei Beispielwege beim Lernen durch Belohnung.',
     learningPaths.qLearningPractice,
   ),
   robots: { index: false, follow: true },
 };
 
-/** Reserved for the Q-learning exercise; no experiment or instructional content is mounted yet. */
 export default function QLearningPracticePage() {
-  return null;
+  return <RewardPracticePage />;
 }

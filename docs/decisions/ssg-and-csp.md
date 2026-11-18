@@ -5,7 +5,8 @@
 All public routes contain request-independent content and use complete SSG: the
 homepage, the `/lernen` selection, the explanation/practice pairs under
 `/lernen/bilderkennung` and `/lernen/q-learning`, and the three legal pages.
-The empty Q-learning shells remain statically generated with `noindex` metadata.
+The reserved Q-learning explanation and introductory reward practice remain
+statically generated with `noindex` metadata.
 Static errors `/404` and `/500` are protected too. Metadata routes and the social
 image use native build-time conventions. Production has no ISR, PPR, private SSR
 or CSP-only Proxy. Learning interactivity does not require request-time rendering:

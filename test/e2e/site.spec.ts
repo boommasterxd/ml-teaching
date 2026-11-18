@@ -141,10 +141,9 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
     .click();
   await expect(page).toHaveURL(new RegExp(`${learningPaths.hub}$`));
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByRole('link', { name: /Bilderkennung selbst ausprobieren/ }).click();
-  await expect(page).toHaveURL(new RegExp(`${learningPaths.images}$`));
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByRole('link', { name: 'Jetzt ausprobieren', exact: true }).first().click();
+  const practice = page.getByRole('link', { name: 'Eigenes Bildmodell trainieren', exact: true });
+  await practice.click();
+  await expect(page).toHaveURL(learningPaths.imagePractice);
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Zustimmen', exact: true })).toBeDisabled();
@@ -153,8 +152,8 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
   expect(await dialog.evaluate((node) => node.contains(document.activeElement))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.keyboard.press('Escape');
-  await expect(page).toHaveURL(`http://127.0.0.1:3100${learningPaths.images}`);
-  await page.getByRole('link', { name: 'Jetzt ausprobieren' }).first().click();
+  await expect(page).toHaveURL(learningPaths.images);
+  await page.getByRole('link', { name: 'Jetzt ausprobieren', exact: true }).first().click();
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('checkbox').first()).not.toBeChecked();
   expect(external).toEqual([]);

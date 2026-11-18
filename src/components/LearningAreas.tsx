@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/card';
 import LearningAreaArtwork from '@/components/home/LearningAreaArtwork';
 import ScrollReveal from '@/components/hero/ScrollReveal';
-import { Text } from '@/components/ui/typography';
 import { learningAreas } from '@/content/learning-areas';
+import { learningPaths } from '@/lib/learning-paths';
 
 /** Learning cards retain SSG content and centered native button links with intent preparation. */
 export default function LearningAreas({
@@ -23,7 +23,7 @@ export default function LearningAreas({
 }) {
   return (
     <div className="learning-areas">
-      {learningAreas.map(({ id, title, description, steps, href, action }, index) => (
+      {learningAreas.map(({ id, title, description, href, action }, index) => (
         <ScrollReveal key={id} kind="reading" index={index} className="learning-area-reveal h-full">
           <Card className="learning-area-card h-full">
             <CardHeader>
@@ -35,15 +35,7 @@ export default function LearningAreas({
             <CardContent>
               <LearningAreaArtwork area={id} />
             </CardContent>
-            <CardContent className="flex flex-col gap-5">
-              <Text variant="small">Das machst du selbst:</Text>
-              <ol className="learning-area-steps">
-                {steps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-            </CardContent>
-            <CardFooter className="mt-auto justify-center">
+            <CardFooter className="mt-auto flex-wrap justify-center gap-2">
               <AnimatedLink
                 href={href}
                 id={`${idPrefix}-${id}-action`}
@@ -52,6 +44,16 @@ export default function LearningAreas({
               >
                 {action} <ArrowRight data-icon="inline-end" aria-hidden="true" />
               </AnimatedLink>
+              {id === 'images' && (
+                <AnimatedLink
+                  href={learningPaths.images}
+                  variant="outline"
+                  size="lg"
+                  className="mobile-action h-auto min-h-11 max-w-full whitespace-normal"
+                >
+                  Bilderkennung verstehen
+                </AnimatedLink>
+              )}
             </CardFooter>
           </Card>
         </ScrollReveal>

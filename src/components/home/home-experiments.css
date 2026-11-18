@@ -1,25 +1,9 @@
 .home-input-experiment {
   min-width: 0;
-  padding-block: 1rem;
-}
-.home-learning-layout {
-  align-items: center;
-  grid-template-areas: 'copy' 'experiment' 'action';
-  row-gap: 1.5rem;
-}
-.home-learning-copy {
-  grid-area: copy;
-}
-.home-learning-experiment {
-  grid-area: experiment;
-}
-.home-learning-action {
-  grid-area: action;
 }
 .home-signal-artwork {
   display: block;
   width: 100%;
-  margin-block: 1.5rem 0;
   overflow: visible;
 }
 .home-signal-surface {
@@ -33,9 +17,6 @@
 }
 .home-signal-muted {
   stroke: var(--border);
-}
-.home-signal-input {
-  color: var(--primary);
 }
 .home-example-photo {
   display: block;
@@ -81,25 +62,5 @@
   }
   .home-signal-output {
     font-size: 25px;
-  }
-}
-@variant max-lg {
-  .home-learning-layout {
-    row-gap: 1rem;
-  }
-  .home-input-experiment {
-    padding-block: 0;
-  }
-}
-@variant lg {
-  .home-learning-layout {
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-    grid-template-areas: 'copy experiment' 'action experiment';
-  }
-  .home-learning-copy {
-    align-self: end;
-  }
-  .home-learning-action {
-    align-self: start;
   }
 }

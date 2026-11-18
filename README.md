@@ -2,7 +2,7 @@
 
 Explore machine learning through a German interface for children. Choose a learning
 area, discover image classification, and train a model directly in your browser.
-Reinforcement learning with Q-learning has reserved page shells for future content.
+Explore reinforcement learning by comparing two example paths in the reward demo.
 
 [Quick start](#quick-start) · [Architecture](docs/architecture.md) ·
 [Development](docs/development.md) · [Security](SECURITY.md)
@@ -11,7 +11,7 @@ Reinforcement learning with Q-learning has reserved page shells for future conte
 
 | Workflow                                              | Result                                                                                         |
 | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Choose a learning area                                | Open the image-learning explanation or the reserved Q-learning introduction.                   |
+| Choose a learning area                                | Open image learning or compare reward paths in the learning lab.                               |
 | Explore the image-classification demonstration        | Follow an illustrated classification step by step.                                             |
 | Play the everyday image-recognition quiz              | Find three matching uses, reveal explanations and start another round.                         |
 | Choose light, dark or system appearance               | Use a temporary choice, or explicitly remember it for later visits.                            |

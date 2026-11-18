@@ -90,7 +90,7 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
         await expect(link).toHaveCount(0);
         await expect(page.getByRole('dialog')).toHaveCount(0);
         await expectAccessible(page);
-        const imageLink = page.getByRole('link', { name: /Bilderkennung selbst ausprobieren/ });
+        const imageLink = page.getByRole('link', { name: 'Bilderkennung verstehen', exact: true });
         await imageLink.focus();
         await page.keyboard.press('Enter');
         await expect(page).toHaveURL(new RegExp(`${learningPaths.images}$`));
@@ -127,33 +127,30 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
   });
 }
 
-test('Q-learning routes keep blank bodies and keyboard-accessible shared navigation', async ({
+test('the Q-learning introduction keeps a blank body and keyboard-accessible shared navigation', async ({
   page,
 }) => {
   const failures = diagnostics(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: 'dark' });
-  for (const path of [learningPaths.qLearning, learningPaths.qLearningPractice]) {
-    await page.goto(path);
-    expect(await page.getByRole('main').innerText()).toBe('');
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByRole('contentinfo')).toBeVisible();
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
-    const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
-    await expect(
-      navigation.getByRole('link', { name: 'Lernlabor öffnen', exact: true }),
-    ).toHaveCount(0);
-    const home = navigation.getByRole('link', { name: 'ML Teaching – Startseite', exact: true });
-    await focusByKeyboard(page, home);
-    await expect(home).toBeFocused();
-    await expectAccessible(page);
-    await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/\/$/);
-    const hub = navigation.getByRole('link', { name: 'Lernlabor öffnen', exact: true });
-    await focusByKeyboard(page, hub);
-    await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(new RegExp(`${learningPaths.hub}$`));
-    await expect(page.getByRole('link', { name: /Q-Learning selbst ausprobieren/ })).toBeVisible();
-  }
+  await page.goto(learningPaths.qLearning);
+  expect(await page.getByRole('main').innerText()).toBe('');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('contentinfo')).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+  const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
+  await expect(navigation.getByRole('link', { name: 'Lernlabor öffnen', exact: true })).toHaveCount(
+    0,
+  );
+  const home = navigation.getByRole('link', { name: 'ML Teaching – Startseite', exact: true });
+  await focusByKeyboard(page, home);
+  await expect(home).toBeFocused();
+  await expectAccessible(page);
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/$/);
+  const hub = navigation.getByRole('link', { name: 'Lernlabor öffnen', exact: true });
+  await focusByKeyboard(page, hub);
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(new RegExp(`${learningPaths.hub}$`));
   expect(failures).toEqual([]);
 });

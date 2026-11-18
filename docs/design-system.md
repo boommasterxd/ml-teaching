@@ -12,33 +12,32 @@ Font-role aliases also resolve on `.app-body`, where `next/font` exposes the loc
 font variable; resolving that body-scoped variable only on `:root` would fall back
 to the browser's inherited font.
 `src/components/hero/hero.css` extends these tokens for the landing composition.
-The general homepage retains the shader hero, followed by a short AI introduction
-covering everyday applications, learning, human choices and checking results.
-Two separate learning sections follow. Each places its explanation, hands-on steps and learning action on the
-left and the matching interactive illustration on the right at `lg`; below `lg`
-they stack in reading order. The image experiment uses the shared cat/dog photos
-and drawn signal paths, with coordinated red frame outlines following the same
+The viewport-height shader hero is followed by a short AI introduction and the
+project's educational purpose.
+The two previews follow in one section, with centered illustrations within a
+shared row at `lg` and stacked panels below it. A single heading introduces both
+action links below the previews. Each preview explains the goal and typical
+learning process. The image preview uses the shared cat/dog photos and drawn
+signal paths, with red frame outlines following the same
 input-to-features-to-result sequence. Paths retain space from both adjoining frames.
-The reinforcement-learning experiment lets the reader
-change a goal and follow one of two fixed example routes. The educational purpose,
-opportunities and limitations, and common entry questions
-follow these sections. Both experiments retain complete style-free
-SSG scenes, stable native action Buttons and polite result text; only an explicit
-action starts a bounded Animate UI Effect. There are no background animation loops,
-model downloads or speculative simulation mounts. Their small fixed SVG scenes do
-not require virtualization. The homepage and learning hub share their descriptions,
-hands-on steps and action labels through `src/content/learning-areas.ts`.
-Photo actions warm the same bounded example-image loader on pointer, focus and touch
-intent before selecting the input; route actions retain the shared native intent links.
-Below `lg`, each learning-section action follows its experiment in both the document
-and keyboard order. At `lg`, shared grid areas
-place the same action under the left copy with the experiment spanning both rows
-on the right; resizing does not replace the link or experiment.
-Stacked learning sections use a 16px gap between content, experiment and action.
-The input result is labeled inside the diagram and announced through a concise
-screen-reader live region. It has no duplicate visible caption or reserved empty area.
-Reward feedback shows the selected goal, points and step count without a second
-explanatory subtitle. Removed supporting copy leaves no spacer or empty wrapper.
+Both previews ship complete, style-free static scenes with stable accessible
+descriptions. The reward board starts with the agent at the starting position.
+One cycle plays the dog classification, the star path, the cat classification,
+then the treasure path. It runs in four-second turns while either
+preview and the tab are visible. Only the current visible preview draws its
+illustration, while the previous highlight fades to its neutral state.
+System reduced motion and the shared homepage pause control stop the cycle.
+The dog turn waits for its image to decode while the image preview is visible.
+If loading fails, the cat classification remains available and the cycle continues.
+The previews use small, fixed SVGs and require no ML model or simulation.
+The homepage and learning hub share their topics and destinations through
+`src/content/learning-areas.ts`; route actions use the native intent links.
+The hero's fragment link focuses the combined experiments section and uses smooth
+browser scrolling on activation. Reduced motion uses the native fragment jump.
+The opportunities, limitations and entry questions follow the previews.
+The reward practice page shares the preview's paths and adds controls for selecting
+a reward and resetting the board. Feedback shows and announces the selected
+goal, points and step count after a user action.
 Below `sm`, public learning CTAs use the shared `mobile-action` full-width rule.
 The `mobile-action-pair` rule gives related example actions equal-width columns
 across the available space, with wrapping labels and 44px minimum touch height.
@@ -49,11 +48,11 @@ the final learning action retains the red glow.
 The `/lernen` hub reuses `LearningAreas` with centered shared button links at the
 bottom of both Cards. These links preserve native navigation and intent preparation;
 their labels can wrap on narrow screens without extending beyond the Card padding.
-The hub Cards retain decorative method previews.
-Each area explains its learning method and lists three concrete hands-on actions,
-with a matching action label.
-From `md`, native nested row subgrids align the headers, illustrations, hands-on
-steps and footer actions across neighboring Cards without fixed content heights
+Each area pairs a short task description with a decorative preview and its
+destination. Image recognition links to training and offers a secondary explanation
+link. The rewards card and homepage reward preview link to the practice page.
+From `md`, native nested row subgrids align the headers, illustrations and footer
+actions across neighboring Cards without fixed content heights
 or JavaScript measurements. Below `md`, Cards stack at their natural heights.
 These text-rich cards use the reading reveal, retaining full text contrast while
 their entry position animates.
@@ -70,8 +69,8 @@ Photographic inputs use these assets rather than animal glyphs; decorative SVG
 scenes embed the same style-free image through a fixed-size foreignObject.
 The image explanation keeps the original six-section learning journey below its
 hero, with technique before the explanatory animation and training steps. Its workspace
-lives on a separate practice route. Q-learning explanation and practice currently
-render only the shared site shell, with no placeholder copy or local controls.
+lives on a separate practice route. The reserved Q-learning explanation renders
+the shared shell. Its practice route hosts the fixed-path reward demonstration.
 The shared Lucide Brain glyph defines the brand. Its red stroke follows the theme;
 the SVG favicon has light/dark variants and the PNG Apple icon uses the same glyph.
 

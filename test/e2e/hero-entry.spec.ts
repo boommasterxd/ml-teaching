@@ -22,8 +22,7 @@ async function expectStableHeroHandoff(page: Page) {
     .poll(() =>
       page.evaluate(() => {
         const field = document.querySelector('.hero-field');
-        return field?.hasAttribute('data-enhanced') ||
-          field?.querySelector('button')?.textContent?.includes('Ruhige Ansicht')
+        return field?.hasAttribute('data-enhanced') || field?.hasAttribute('data-field-unavailable')
           ? 'ready'
           : 'pending';
       }),

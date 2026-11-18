@@ -2,34 +2,58 @@ import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import HeroScene from '@/components/hero/HeroScene';
+import { HomePlaybackProvider, useHomePlayback } from '@/components/home/HomePlaybackProvider';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
-const lifecycle = vi.hoisted(() => ({ created: vi.fn(), disposed: vi.fn() }));
+const lifecycle = vi.hoisted(() => ({ created: vi.fn(), disposed: vi.fn(), available: true }));
 vi.mock('@/components/hero/TopographyField', () => ({
-  default: function SyntheticGpuField({ onRendered }: { onRendered: (ready: boolean) => void }) {
+  default: function SyntheticGpuField({
+    onRendered,
+    onUnavailable,
+  }: {
+    onRendered: (ready: boolean) => void;
+    onUnavailable: () => void;
+  }) {
     useEffect(() => {
       lifecycle.created();
+      if (!lifecycle.available) {
+        onUnavailable();
+        return;
+      }
       onRendered(true);
       return () => {
         lifecycle.disposed();
         onRendered(false);
       };
-    }, [onRendered]);
-    return <canvas aria-hidden="true" />;
+    }, [onRendered, onUnavailable]);
+    return lifecycle.available ? <canvas aria-hidden="true" /> : null;
   },
 }));
-beforeEach(installBrowserHost);
+beforeEach(() => {
+  lifecycle.available = true;
+  vi.clearAllMocks();
+  installBrowserHost();
+});
 afterEach(restoreBrowserHost);
+
+function PlaybackReadout() {
+  const { paused } = useHomePlayback();
+  return <p>{paused ? 'Previews paused' : 'Previews playing'}</p>;
+}
 
 describe('decorative hero lifetime', () => {
   it('retains the paused GPU image and disposes it only when the document is hidden', async () => {
-    const { container } = render(<HeroScene />);
+    const { container } = render(
+      <HomePlaybackProvider>
+        <HeroScene />
+      </HomePlaybackProvider>,
+    );
     await waitFor(() => expect(container.querySelector('canvas')).not.toBeNull());
     const canvas = container.querySelector('canvas');
-    fireEvent.click(screen.getByRole('button', { name: 'Animation pausieren' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Animationen pausieren' }));
     expect(container.querySelector('canvas')).toBe(canvas);
     expect(lifecycle.disposed).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Animation fortsetzen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Animationen fortsetzen' }));
     expect(container.querySelector('canvas')).toBe(canvas);
     vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
     act(() => {
@@ -38,5 +62,24 @@ describe('decorative hero lifetime', () => {
     expect(container.querySelector('canvas')).toBeNull();
     expect(lifecycle.disposed).toHaveBeenCalledTimes(1);
     expect(lifecycle.created).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the shared playback control usable when the GPU field fails', async () => {
+    lifecycle.available = false;
+    const { container } = render(
+      <HomePlaybackProvider>
+        <HeroScene />
+        <PlaybackReadout />
+      </HomePlaybackProvider>,
+    );
+    await waitFor(() => expect(container.querySelector('[data-field-unavailable]')).not.toBeNull());
+    const pause = screen.getByRole('button', { name: 'Animationen pausieren' });
+    pause.focus();
+    fireEvent.click(pause);
+    expect(screen.getByText('Previews paused')).toBeTruthy();
+    const resume = screen.getByRole('button', { name: 'Animationen fortsetzen' });
+    expect(document.activeElement).toBe(resume);
+    fireEvent.click(resume);
+    expect(screen.getByText('Previews playing')).toBeTruthy();
   });
 });
