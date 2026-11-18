@@ -81,7 +81,7 @@ test('visible home previews alternate automatically without model requests', asy
   });
   await page.goto('/');
   const hero = page.getByRole('region', { name: 'Du probierst. Deine KI lernt.', exact: true });
-  await hero.getByRole('link', { name: 'Mini-Experimente ansehen', exact: true }).focus();
+  await hero.getByRole('link', { name: 'Mini-Experimente', exact: true }).focus();
   const previews = page.getByRole('region', { name: 'Zwei Arten, wie KI lernt', exact: true });
   const playback = await trackPreviewSteps(previews);
   const scrollPositions = await page.evaluateHandle(() => {

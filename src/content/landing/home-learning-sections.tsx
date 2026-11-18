@@ -54,7 +54,7 @@ export default function HomeLearningSections() {
         <Heading id="home-experiments-title">Zwei Arten, wie KI lernt</Heading>
       </ScrollReveal>
       <PreviewCycleProvider>
-        <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-x-12 lg:gap-y-4">
+        <div className="mt-6 grid gap-y-12 lg:grid-cols-2 lg:gap-x-12 lg:gap-y-4">
           {learningAreas.map(({ id, title, explanation, action, href }, index) => {
             const isRewardPreview = id === 'q-learning';
             const comingSoon = isRewardPreview && rewardPracticeComingSoon;

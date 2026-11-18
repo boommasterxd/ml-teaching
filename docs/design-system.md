@@ -44,6 +44,8 @@ The reward practice page shares the preview's paths and adds controls for select
 a reward and resetting the board. Feedback shows and announces the selected
 goal, points and step count after a user action.
 Below `sm`, public learning CTAs use the shared `mobile-action` full-width rule.
+The homepage hero uses compact side-by-side links with 44px touch targets. The
+action area retains its minimum height on short mobile viewports.
 The `mobile-action-pair` rule gives related example actions equal-width columns
 across the available space, with wrapping labels and 44px minimum touch height.
 The reward experiment places its separate reset action across both columns.

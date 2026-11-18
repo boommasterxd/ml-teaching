@@ -221,11 +221,12 @@
 }
 @variant max-sm {
   .hero-actions {
-    flex-direction: column;
-    width: 100%;
+    /* Preserve the hero's height when its content sets the minimum on short screens. */
+    min-block-size: 5.75rem;
+    align-content: start;
   }
-  .hero-actions > *,
   .hero-actions a {
-    width: 100%;
+    min-block-size: 2.75rem;
+    padding-inline: 0.75rem;
   }
 }

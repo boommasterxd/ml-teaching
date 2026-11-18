@@ -29,7 +29,7 @@ export default function ExperimentsLink() {
   return (
     <Button asChild variant="outline" size="lg">
       <a href="#lernbereiche" onClick={scrollToExperiments}>
-        Mini-Experimente ansehen
+        Mini-Experimente
       </a>
     </Button>
   );

@@ -66,11 +66,11 @@ describe('strict-CSP static UI', () => {
     expect(document.querySelector('[style], style, script, canvas')).toBeNull();
     expect(document.querySelectorAll('h1')).toHaveLength(1);
     const hero = document.querySelector('section[aria-labelledby="hero-title"]');
-    expect(hero?.querySelector(`a[href="${learningPaths.hub}"]`)?.textContent).toContain(
-      'Zum Lernlabor',
+    expect(hero?.querySelector(`a[href="${learningPaths.hub}"]`)?.textContent?.trim()).toBe(
+      'Lernlabor',
     );
     expect(hero?.querySelector('a[href="#lernbereiche"]')?.textContent).toContain(
-      'Mini-Experimente ansehen',
+      'Mini-Experimente',
     );
     const journey = [
       'hero-title',

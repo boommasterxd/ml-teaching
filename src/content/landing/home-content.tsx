@@ -2,6 +2,7 @@ import AnimatedLink from '@/components/AnimatedLink';
 import { AlertTriangle } from '@/components/icons/alert-triangle';
 import { ArrowRight } from '@/components/icons/arrow-right';
 import ScrollReveal from '@/components/hero/ScrollReveal';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Heading, Text } from '@/components/ui/typography';
 import { learningPaths } from '@/lib/learning-paths';
@@ -101,16 +102,18 @@ export function HomePerspectives() {
               <Heading as="h3">{title}</Heading>
               <div className="home-reading-grid">
                 <Text>{opportunity}</Text>
-                <Text className="flex items-start gap-2">
-                  <AlertTriangle
-                    className="mt-1.5 size-4 shrink-0 text-primary"
-                    aria-hidden="true"
-                  />
-                  <span>
-                    <span className="sr-only">Achtung: </span>
-                    {limit}
-                  </span>
-                </Text>
+                <Alert
+                  role="note"
+                  className="self-start border-destructive/60 bg-destructive/10 [&>svg]:text-destructive"
+                >
+                  <AlertTriangle aria-hidden="true" />
+                  <AlertDescription className="text-base text-foreground [&_p]:leading-7">
+                    <p>
+                      <span className="sr-only">Achtung: </span>
+                      {limit}
+                    </p>
+                  </AlertDescription>
+                </Alert>
               </div>
             </article>
           </ScrollReveal>

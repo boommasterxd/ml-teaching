@@ -37,7 +37,7 @@ export default function LandingPage() {
               <EntryReveal kind="hero" index={2} asChild>
                 <div className="hero-actions">
                   <AnimatedLink href={learningPaths.hub} size="lg">
-                    Zum Lernlabor <ArrowRight data-icon="inline-end" aria-hidden="true" />
+                    Lernlabor <ArrowRight data-icon="inline-end" aria-hidden="true" />
                   </AnimatedLink>
                   <ExperimentsLink />
                 </div>
