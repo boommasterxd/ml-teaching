@@ -4,7 +4,8 @@ Explore machine learning through a German interface for children. Choose a learn
 area, discover image classification, and train a model directly in your browser.
 Explore reinforcement learning by comparing two example paths in the reward demo.
 
-[Quick start](#quick-start) · [Architecture](docs/architecture.md) ·
+[Source](https://github.com/boommasterxd/ml-teaching) · [Quick start](#quick-start) ·
+[Architecture](docs/architecture.md) ·
 [Development](docs/development.md) · [Security](SECURITY.md)
 
 ## What you can do
@@ -44,8 +45,7 @@ npm start
 
 The source targets **ML Teaching** at `https://mlteaching.boomapps.de` on Vercel.
 The new domain and provider configuration are prepared separately from publication.
-The legacy repository name is retained for existing source links. This project is
-independent of Google Teachable Machine.
+ML Teaching is independent of Google Teachable Machine.
 
 ## Data, providers and costs
 

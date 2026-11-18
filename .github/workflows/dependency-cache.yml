@@ -26,7 +26,7 @@ jobs:
   warm:
     name: Warm npm cache
     if: >-
-      github.repository == 'boommasterxd/the-teachable-machine' &&
+      github.repository == 'boommasterxd/ml-teaching' &&
       github.ref == 'refs/heads/main' &&
       github.event.repository.default_branch == 'main'
     runs-on: ubuntu-latest

@@ -43,6 +43,7 @@ describe('dependency-cache workflow contracts', () => {
   });
 
   it('writes replacement receipts only from the actual trusted producer identity', () => {
+    expect(producer).toContain(`github.repository == '${policy.repository}'`);
     expect(producer).toContain("github.ref == 'refs/heads/main'");
     expect(producer).toContain("github.event.repository.default_branch == 'main'");
     expect(producer).toContain('key: ${{ steps.cache.outputs.cache-primary-key }}');
