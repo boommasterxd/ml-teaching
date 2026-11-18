@@ -3,7 +3,7 @@ import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-
 import { expectHeaderLayout, settleLandingReveals } from './training-keyboard';
 import { learningPaths } from '../../src/lib/learning-paths';
 
-test('the home header responds to scrolling and keeps its navigation across routes', async ({
+test('the transparent home header lets the hero receive clicks and keeps its navigation', async ({
   page,
 }) => {
   const failures = diagnostics(page);
@@ -13,6 +13,12 @@ test('the home header responds to scrolling and keeps its navigation across rout
   const nav = header.getByRole('navigation', { name: 'Hauptnavigation', exact: true });
   const initialNav = await nav.elementHandle();
   const surface = header.locator('.site-header-surface');
+  const pointerOwner = () =>
+    header.evaluate((node) => {
+      const { top, height } = node.getBoundingClientRect();
+      const hit = document.elementFromPoint(window.innerWidth / 2, top + height / 2);
+      return { hero: !!hit?.closest('.hero-field'), header: node.contains(hit) };
+    });
   await expect(surface).toHaveAttribute('aria-hidden', 'true');
   await expect(surface).toHaveCSS('opacity', '0');
   const backdropTop = await page
@@ -21,17 +27,20 @@ test('the home header responds to scrolling and keeps its navigation across rout
   expect(backdropTop).toBeLessThanOrEqual(
     await header.evaluate((node) => node.getBoundingClientRect().top),
   );
+  await expect.poll(pointerOwner).toEqual({ hero: true, header: false });
 
   await page.evaluate(() => scrollTo({ top: 1, behavior: 'instant' }));
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(1);
   await expect(surface).toHaveCSS('opacity', '1');
   await expect.poll(() => header.evaluate((node) => node.getBoundingClientRect().top)).toBe(0);
+  await expect.poll(pointerOwner).toEqual({ hero: false, header: true });
   await page.keyboard.press('Home');
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
   await expect(surface).toHaveCSS('opacity', '0');
+  await expect.poll(pointerOwner).toEqual({ hero: true, header: false });
 
   const lab = nav.getByRole('link', { name: 'Lernlabor öffnen', exact: true });
-  await lab.press('Enter');
+  await lab.click();
   await expect(page).toHaveURL(learningPaths.hub);
   await expect(page.getByRole('heading', { name: 'Dein Lernlabor', exact: true })).toBeVisible();
   await expect(surface).toHaveCSS('opacity', '1');

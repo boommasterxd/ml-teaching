@@ -30,6 +30,7 @@ function HomeHeaderSurface() {
   );
   const reduce = useShouldReduceMotion();
   const transition = useTempoTransition(motionTokens.transition.fade);
+  const position = scrolled === null ? 'initial' : scrolled ? 'scrolled' : 'top';
 
   return (
     <Effect
@@ -38,7 +39,7 @@ function HomeHeaderSurface() {
       animate={scrolled === null ? undefined : { opacity: scrolled ? 1 : 0 }}
       transition={reduce ? { duration: 0 } : transition}
     >
-      <div className="site-header-surface" aria-hidden="true" data-home-header-surface="" />
+      <div className="site-header-surface" aria-hidden="true" data-home-header-surface={position} />
     </Effect>
   );
 }

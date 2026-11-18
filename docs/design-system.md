@@ -252,8 +252,9 @@ from a central CSS custom property rather than a separate JavaScript breakpoint.
 
 The persistent SiteHeader contains the shared brand, learning action and theme
 control. At the top of the home page, the decorative hero backdrop extends behind
-the transparent header within the existing navigation and hero geometry. A separate
-surface fades in once the page scrolls and fades out at the top. It is solid on
+the transparent header within the existing navigation and hero geometry. Pointer
+input in the free space reaches the hero, while the header controls remain operable.
+A separate surface fades in once the page scrolls and fades out at the top. It is solid on
 other routes and without scripting. Reduced motion switches the surface immediately.
 ThemeProvider and the shared header/footer sit outside the route
 ViewTransition. Theme changes update the root appearance without remounting the

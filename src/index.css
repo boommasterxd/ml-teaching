@@ -240,6 +240,14 @@
   :root:not(:has(:target)) .site-header-surface[data-home-header-surface] {
     opacity: 0;
   }
+  .site-header:has([data-home-header-surface='top']),
+  :root:not(:has(:target)) .site-header:has([data-home-header-surface='initial']) {
+    pointer-events: none;
+
+    & :is(a[href], button:enabled) {
+      pointer-events: auto;
+    }
+  }
 }
 .site-header-inner {
   max-width: 90rem;
