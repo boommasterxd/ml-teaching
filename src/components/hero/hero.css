@@ -77,10 +77,16 @@
   place-items: center;
   width: 100%;
   min-height: calc(100svh - var(--header-height));
+}
+.hero-field-backdrop {
+  position: absolute;
+  inset: calc(-1 * (var(--header-height) + var(--header-border-width))) 0 0;
+  z-index: -1;
   overflow: hidden;
+  pointer-events: none;
   background: var(--background);
 }
-.hero-field::after {
+.hero-field-backdrop::after {
   content: '';
   position: absolute;
   inset: 0;

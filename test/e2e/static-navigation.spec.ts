@@ -1,7 +1,52 @@
 import { expect, test } from '@playwright/test';
-import { diagnostics, expectAccessible } from './browser-checks';
+import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-checks';
 import { expectHeaderLayout, settleLandingReveals } from './training-keyboard';
 import { learningPaths } from '../../src/lib/learning-paths';
+
+test('the home header responds to scrolling and keeps its navigation across routes', async ({
+  page,
+}) => {
+  const failures = diagnostics(page);
+  await page.goto('/');
+  await settleEntryAnimations(page);
+  const header = page.getByRole('banner');
+  const nav = header.getByRole('navigation', { name: 'Hauptnavigation', exact: true });
+  const initialNav = await nav.elementHandle();
+  const surface = header.locator('.site-header-surface');
+  await expect(surface).toHaveAttribute('aria-hidden', 'true');
+  await expect(surface).toHaveCSS('opacity', '0');
+  const backdropTop = await page
+    .locator('.hero-field-backdrop')
+    .evaluate((node) => node.getBoundingClientRect().top);
+  expect(backdropTop).toBeLessThanOrEqual(
+    await header.evaluate((node) => node.getBoundingClientRect().top),
+  );
+
+  await page.evaluate(() => scrollTo({ top: 1, behavior: 'instant' }));
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(1);
+  await expect(surface).toHaveCSS('opacity', '1');
+  await expect.poll(() => header.evaluate((node) => node.getBoundingClientRect().top)).toBe(0);
+  await page.keyboard.press('Home');
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+  await expect(surface).toHaveCSS('opacity', '0');
+
+  const lab = nav.getByRole('link', { name: 'Lernlabor öffnen', exact: true });
+  await lab.press('Enter');
+  await expect(page).toHaveURL(learningPaths.hub);
+  await expect(page.getByRole('heading', { name: 'Dein Lernlabor', exact: true })).toBeVisible();
+  await expect(surface).toHaveCSS('opacity', '1');
+  expect(await nav.evaluate((node, original) => node === original, initialNav)).toBe(true);
+
+  const brand = nav.getByRole('link', { name: 'ML Teaching – Startseite', exact: true });
+  await brand.press('Enter');
+  await expect(page).toHaveURL('/');
+  await expect(
+    page.getByRole('heading', { name: /Du probierst\.\s*Deine KI lernt\./ }),
+  ).toBeVisible();
+  await expect(surface).toHaveCSS('opacity', '0');
+  expect(await nav.evaluate((node, original) => node === original, initialNav)).toBe(true);
+  expect(failures).toEqual([]);
+});
 
 test('static documents, native navigation and strict CSP preserve visible content', async ({
   page,
@@ -28,6 +73,7 @@ test('static documents, native navigation and strict CSP preserve visible conten
     expect(html).toContain('lang="de"');
     expect(html).toContain('https://mlteaching.boomapps.de');
     expect(html).not.toMatch(/\sstyle="/);
+    expect(/<div\b[^>]*\sdata-home-header-surface=/.test(html)).toBe(path === '/');
     if (path === learningPaths.hub) {
       expect(html).toContain(`href="${learningPaths.images}"`);
       expect(html).toContain(`href="${learningPaths.qLearningPractice}"`);
@@ -75,6 +121,7 @@ test('static documents, native navigation and strict CSP preserve visible conten
         exact: true,
       }),
     ).toBeVisible();
+    await expect(serverError.locator('.site-header-surface')).toHaveCSS('opacity', '1');
     await expectAccessible(serverError);
   } finally {
     await serverError.close();

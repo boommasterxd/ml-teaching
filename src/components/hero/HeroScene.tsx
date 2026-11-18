@@ -88,27 +88,28 @@ function Scene({ children }: { children?: ReactNode }) {
       data-paused={paused || reduce || undefined}
       data-field-unavailable={failed || undefined}
     >
-      <motion.div
-        className="hero-field-glow"
-        initial={false}
-        style={available ? { y: glowY } : undefined}
-        aria-hidden="true"
-      />
-      <motion.div
-        className="hero-field-art"
-        initial={false}
-        style={available ? { y: fieldY } : undefined}
-      >
-        <StaticContourPoster />
-        {available && Field && (
-          <Field
-            interactionRoot={root}
-            paused={paused}
-            onUnavailable={unavailable}
-            onRendered={onRendered}
-          />
-        )}
-      </motion.div>
+      <div className="hero-field-backdrop" aria-hidden="true">
+        <motion.div
+          className="hero-field-glow"
+          initial={false}
+          style={available ? { y: glowY } : undefined}
+        />
+        <motion.div
+          className="hero-field-art"
+          initial={false}
+          style={available ? { y: fieldY } : undefined}
+        >
+          <StaticContourPoster />
+          {available && Field && (
+            <Field
+              interactionRoot={root}
+              paused={paused}
+              onUnavailable={unavailable}
+              onRendered={onRendered}
+            />
+          )}
+        </motion.div>
+      </div>
       {children}
       <div className="hero-field-controls" onPointerEnter={prepare} onFocus={prepare}>
         <Button
