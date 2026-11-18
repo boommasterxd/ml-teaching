@@ -2,10 +2,15 @@ import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import HeroScene from '@/components/hero/HeroScene';
+import { EntryViewportReadyContext } from '@/components/ui/entry-policy';
 import { HomePlaybackProvider, useHomePlayback } from '@/components/home/HomePlaybackProvider';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
-const lifecycle = vi.hoisted(() => ({ created: vi.fn(), disposed: vi.fn(), available: true }));
+const lifecycle = vi.hoisted(() => ({
+  created: vi.fn(),
+  disposed: vi.fn(),
+  available: true,
+}));
 vi.mock('@/components/hero/TopographyField', () => ({
   default: function SyntheticGpuField({
     onRendered,
@@ -42,6 +47,22 @@ function PlaybackReadout() {
 }
 
 describe('decorative hero lifetime', () => {
+  it('waits for navigation snapshots to finish before starting the GPU field', async () => {
+    const hero = (ready: boolean) => (
+      <EntryViewportReadyContext value={ready}>
+        <HomePlaybackProvider>
+          <HeroScene />
+        </HomePlaybackProvider>
+      </EntryViewportReadyContext>
+    );
+    const { rerender } = render(hero(false));
+    fireEvent.focus(screen.getByRole('button', { name: 'Animationen pausieren' }));
+    await act(() => vi.dynamicImportSettled());
+    expect(lifecycle.created).not.toHaveBeenCalled();
+    rerender(hero(true));
+    await waitFor(() => expect(lifecycle.created).toHaveBeenCalledTimes(1));
+  });
+
   it('retains the paused GPU image and disposes it only when the document is hidden', async () => {
     const { container } = render(
       <HomePlaybackProvider>

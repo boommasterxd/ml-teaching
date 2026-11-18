@@ -10,6 +10,7 @@ import {
 } from '@/content/landing/neural-network-content';
 import { LearningContent } from '@/content/landing/learning-content';
 import ImageLearningHero from '@/components/image-hero/ImageLearningHero';
+import '@/content/landing/image-chapter.css';
 
 const steps = [
   {
@@ -35,7 +36,7 @@ const steps = [
 /** The complete image-learning journey stays build-rendered and independent of the workspace. */
 export default function ImageRecognitionPage() {
   return (
-    <div className="landing-page">
+    <div className="landing-page image-chapter">
       <ImageLearningHero />
       <ImageTechniqueSection />
       <ImageAnimationSection />
@@ -53,7 +54,7 @@ export default function ImageRecognitionPage() {
             </Text>
           </div>
         </ScrollReveal>
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
           {steps.map(({ number, Icon, title, text }, index) => (
             <ScrollReveal key={number} kind="surface" index={index}>
               <LearningCard title={title} description={text} icon={Icon} marker={number} />

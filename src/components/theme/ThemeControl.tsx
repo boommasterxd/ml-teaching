@@ -76,6 +76,7 @@ export function ThemeControl() {
       </span>
       <Switch
         data-theme-switch=""
+        className="data-[size=default]:h-6 data-[size=default]:w-10 data-[size=default]:[&>[data-slot=switch-thumb]]:size-5"
         aria-labelledby={label}
         checked={preference.resolved === 'dark'}
         onCheckedChange={(dark) => select(dark ? 'dark' : 'light')}
@@ -87,6 +88,7 @@ export function ThemeControl() {
           <Button
             variant="ghost"
             size="icon-sm"
+            tapScale={1}
             aria-label="Darstellung einstellen"
             aria-busy={open && !Menu && !failed}
             onPointerEnter={prepare}
@@ -114,11 +116,6 @@ export function ThemeControl() {
             Erneut versuchen
           </Button>
         </Alert>
-      )}
-      {!open && preference.notice && (
-        <span role="status" className="sr-only">
-          {preference.notice}
-        </span>
       )}
     </div>
   );

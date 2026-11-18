@@ -21,7 +21,7 @@ export default function QuizResult({ example }: { example: QuizExample }) {
         <ResultMotion kind="dimmer">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-10 rounded-xl bg-black/65"
+            className="pointer-events-none absolute -inset-px z-10 rounded-(--glass-radius) bg-black/82"
           />
         </ResultMotion>
       </ReducedMotionConfig>

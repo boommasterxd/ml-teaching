@@ -1,6 +1,9 @@
 import Head from 'next/head';
-import Link from '@/components/IntentLink';
+import AnimatedLink from '@/components/AnimatedLink';
+import { Card } from '@/components/ui/card';
 import { EntryReveal } from '@/components/ui/entry-reveal';
+import { EmptyDescription } from '@/components/ui/empty';
+import { Heading } from '@/components/ui/typography';
 
 export default function ServerError() {
   return (
@@ -8,19 +11,18 @@ export default function ServerError() {
       <Head>
         <title>Seite konnte nicht geladen werden | ML Teaching</title>
       </Head>
-      <main
-        lang="de"
-        className="flex flex-1 min-h-[60svh] flex-col items-center justify-center gap-6 p-6 text-center"
-      >
-        <h1 className="text-3xl font-bold">Diese Seite konnte nicht geladen werden</h1>
-        <EntryReveal kind="text" asChild>
-          <p className="mt-4">Bitte versuche es später erneut.</p>
-        </EntryReveal>
-        <EntryReveal kind="text" index={1} asChild>
-          <Link href="/" className="mt-6 underline">
-            Zur Startseite
-          </Link>
-        </EntryReveal>
+      <main lang="de" className="public-error-frame">
+        <Card className="public-error-surface">
+          <Heading as="h1">Diese Seite konnte nicht geladen werden</Heading>
+          <EntryReveal kind="text" asChild>
+            <EmptyDescription>Bitte versuche es später erneut.</EmptyDescription>
+          </EntryReveal>
+          <EntryReveal kind="text" index={1}>
+            <AnimatedLink href="/" size="lg">
+              Zur Startseite
+            </AnimatedLink>
+          </EntryReveal>
+        </Card>
       </main>
     </>
   );

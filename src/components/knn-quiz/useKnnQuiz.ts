@@ -68,7 +68,7 @@ export function useKnnQuiz() {
       ...current,
       result: correct ? 'correct' : 'incorrect',
       announcement: correct
-        ? `Richtig! ${votes[signal]} von ${state.k} Nachbarn stimmen für ${names[signal]}.`
+        ? voteSentence(votes[signal], state.k, signal)
         : 'Zähle die umkreisten Hunde und Katzen. Welche Klasse hat mehr Stimmen?',
     }));
   };
@@ -83,3 +83,8 @@ export function useKnnQuiz() {
 }
 
 export type KnnQuizState = ReturnType<typeof useKnnQuiz>;
+
+function voteSentence(count: number, k: KnnNeighborCount, signal: ExampleSignal) {
+  if (k === 1) return `Der nächste Nachbar stimmt für ${names[signal]}.`;
+  return `${count} von ${k} Nachbarn stimmen für ${names[signal]}.`;
+}

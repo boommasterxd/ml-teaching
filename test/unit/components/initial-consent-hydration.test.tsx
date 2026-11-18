@@ -3,7 +3,7 @@ import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, waitFor, within } from '@testing-library/react';
-import ConsentModal from '@/components/modals/ConsentModal';
+import { SetupDialogFixture } from '../helpers/training-setup-dialog';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 import { AppRouterHost } from '../helpers/app-router-host';
 
@@ -16,10 +16,10 @@ function InitialConsent() {
     <>
       <h1>Modell trainieren</h1>
       <p role="status">{open ? 'Einwilligung erforderlich' : 'Einwilligung erteilt'}</p>
-      <ConsentModal
-        isOpen={open}
-        onConfirm={() => setOpen(false)}
-        onDecline={() => setOpen(false)}
+      <SetupDialogFixture
+        step={open ? 'consent' : null}
+        onConfirmConsent={() => setOpen(false)}
+        onDeclineConsent={() => setOpen(false)}
       />
     </>
   );

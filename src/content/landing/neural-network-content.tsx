@@ -3,6 +3,7 @@ import ScrollReveal from '@/components/hero/ScrollReveal';
 import { EntryReveal } from '@/components/ui/entry-reveal';
 import { Brain } from '@/components/icons/brain';
 import { Users } from '@/components/icons/users';
+import { Card } from '@/components/ui/card';
 import {
   Item,
   ItemContent,
@@ -11,7 +12,6 @@ import {
   ItemMedia,
   ItemTitle,
 } from '@/components/ui/item';
-import { Separator } from '@/components/ui/separator';
 import { Heading, Text } from '@/components/ui/typography';
 
 const techniques = [
@@ -65,9 +65,11 @@ export function ImageTechniqueSection() {
         <div className="landing-technique-copy">
           <EntryReveal kind="text" asChild>
             <div className="flex flex-col gap-5">
-              <Text variant="muted">01 / Die Technik</Text>
+              <Text variant="muted" className="image-chapter-label">
+                01 / Die Technik
+              </Text>
               <Heading id="section-explanation">MobileNet und KNN</Heading>
-              <Text variant="lead">
+              <Text variant="lead" className="image-technique-intro">
                 Du zeigst ein neues Bild. MobileNet beschreibt, was darin zu sehen ist, mit Zahlen.
                 KNN vergleicht diese Zahlen mit deinen Beispielen und ordnet das Bild einer Gruppe
                 zu.
@@ -94,18 +96,17 @@ export function ImageTechniqueSection() {
           </EntryReveal>
         </div>
       </div>
-      <div className="h-full">
+      <Card className="py-0">
         <ItemGroup aria-label="Bausteine des Modells" className="landing-technique-items">
           {techniques.map(({ title, Icon, descriptions }, index) => (
-            <ScrollReveal key={title} kind="reading" index={index} asChild className="">
+            <ScrollReveal key={title} kind="reading" index={index} asChild>
               <div role="listitem" className="landing-technique-item">
-                {index > 0 && <Separator />}
-                <Item className="items-start p-0">
-                  <ItemMedia variant="icon">
-                    <Icon aria-hidden="true" />
-                  </ItemMedia>
+                <Item className="p-0">
                   <ItemContent className="gap-3">
                     <ItemTitle>
+                      <ItemMedia variant="icon">
+                        <Icon aria-hidden="true" />
+                      </ItemMedia>
                       <h3>{title}</h3>
                     </ItemTitle>
                     {descriptions.map((description) => (
@@ -119,7 +120,7 @@ export function ImageTechniqueSection() {
             </ScrollReveal>
           ))}
         </ItemGroup>
-      </div>
+      </Card>
     </section>
   );
 }

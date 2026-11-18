@@ -34,7 +34,7 @@ function CameraControls({
 
 describe('camera preview controls', () => {
   it('supports keyboard toggling, ignores key repeat and cancels capture on blur or pointer cancellation', () => {
-    render(<CameraControls />);
+    render(<CameraControls stream={{} as MediaStream} />);
     const record = screen.getByRole('button', { name: 'Aufnehmen' });
     record.focus();
     fireEvent.keyDown(record, { key: ' ' });
@@ -58,7 +58,7 @@ describe('camera preview controls', () => {
   });
 
   it('keeps Enter recording active after key release until Enter is pressed again', () => {
-    render(<CameraControls />);
+    render(<CameraControls stream={{} as MediaStream} />);
     const record = screen.getByRole('button', { name: 'Aufnehmen' });
     record.focus();
     fireEvent.keyDown(record, { key: 'Enter' });
@@ -79,14 +79,22 @@ describe('camera preview controls', () => {
     expect(video.srcObject).toBe(stream);
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
     const openPicker = vi.spyOn(input, 'click');
-    fireEvent.click(screen.getByRole('button', { name: 'Bilder hochladen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bilder auswählen' }));
     expect(openPicker).toHaveBeenCalledOnce();
     fireEvent.change(input, {
       target: { files: [new File(['image'], 'example.png', { type: 'image/png' })] },
     });
     expect(onFileUpload).toHaveBeenCalledOnce();
-    rerender(<CameraControls disabled stream={null} onFileUpload={onFileUpload} />);
+    const record = screen.getByRole('button', { name: 'Aufnehmen' });
+    fireEvent.keyDown(record, { key: 'Enter' });
+    expect(record.getAttribute('aria-pressed')).toBe('true');
+    rerender(<CameraControls stream={null} onFileUpload={onFileUpload} />);
     expect(video.srcObject).toBeNull();
+    expect(screen.queryByRole('button', { name: /Aufnehm|Aufnahme/ })).toBeNull();
+    expect(screen.queryByLabelText('Kameravorschau für Trainingsaufnahme')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Bilder auswählen' }));
+    expect(openPicker).toHaveBeenCalledTimes(2);
+    rerender(<CameraControls disabled stream={stream} onFileUpload={onFileUpload} />);
     expect(input.disabled).toBe(true);
     expect((screen.getByRole('button', { name: 'Aufnehmen' }) as HTMLButtonElement).disabled).toBe(
       true,

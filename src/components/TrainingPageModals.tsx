@@ -74,7 +74,7 @@ function Confirmations({
         title="Daten unwiderruflich löschen?"
         description="Möchten Sie wirklich alle erfassten Klassen und Bilddaten löschen? Das aktuell trainierte Modell wird dabei unwiderruflich entfernt und der Vorgang kann nicht rückgängig gemacht werden."
         confirmLabel="Unwiderruflich löschen"
-        icon={<AlertCircle className="w-6 h-6" />}
+        icon={<AlertCircle />}
       />
 
       <ConfirmDialog
@@ -96,7 +96,7 @@ function Confirmations({
           </>
         }
         confirmLabel="Zurücksetzen"
-        icon={<RotateCcw className="w-6 h-6" />}
+        icon={<RotateCcw />}
       />
 
       <ConfirmDialog
@@ -120,7 +120,7 @@ function Confirmations({
           </>
         }
         confirmLabel="Löschen"
-        icon={<Trash2 className="w-6 h-6" />}
+        icon={<Trash2 />}
       />
     </>
   );

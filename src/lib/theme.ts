@@ -2,6 +2,7 @@ export const THEME_STORAGE_KEY = 'ml-teaching-theme';
 const THEME_SELECTIONS = ['light', 'dark', 'system'] as const;
 export type ThemeSelection = (typeof THEME_SELECTIONS)[number];
 export type ResolvedTheme = Exclude<ThemeSelection, 'system'>;
+export const themeColors = { light: '#faf9fa', dark: '#000000' } as const;
 
 export function parseTheme(value: unknown): ThemeSelection | null {
   return THEME_SELECTIONS.includes(value as ThemeSelection) ? (value as ThemeSelection) : null;
@@ -19,6 +20,7 @@ export function applyTheme(selection: ThemeSelection, resolved: ResolvedTheme): 
   document.documentElement.classList.toggle('dark', resolved === 'dark');
   document.documentElement.dataset.theme = selection;
   document.getElementById('site-favicon')?.setAttribute('href', `/favicon-${resolved}.svg`);
+  document.getElementById('site-theme-color')?.setAttribute('content', themeColors[resolved]);
 }
 
 export function readRememberedTheme(): ThemeSelection | null {
@@ -42,4 +44,22 @@ export function rememberTheme(selection: ThemeSelection | null): boolean {
 }
 
 /** Trusted build-known script, shared by App Router and the native static error document. */
-export const THEME_BOOTSTRAP_SCRIPT = `(()=>{let t="system";try{const v=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});if(${JSON.stringify(THEME_SELECTIONS)}.includes(v))t=v}catch{}const d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.dataset.theme=t;document.getElementById("site-favicon")?.setAttribute("href",d?"/favicon-dark.svg":"/favicon-light.svg")})()`;
+export const THEME_BOOTSTRAP_SCRIPT = `(()=>{
+  let selection = "system";
+  try {
+    const saved = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
+    if (${JSON.stringify(THEME_SELECTIONS)}.includes(saved)) selection = saved;
+  } catch {}
+  const dark = selection === "dark" || (selection === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.classList.toggle("dark", dark);
+  document.documentElement.dataset.theme = selection;
+  document.getElementById("site-favicon")?.setAttribute("href", dark ? "/favicon-dark.svg" : "/favicon-light.svg");
+  let chromeColor = document.getElementById("site-theme-color");
+  if (!chromeColor) {
+    chromeColor = document.createElement("meta");
+    chromeColor.id = "site-theme-color";
+    chromeColor.name = "theme-color";
+    document.head.append(chromeColor);
+  }
+  chromeColor.content = dark ? "${themeColors.dark}" : "${themeColors.light}";
+})()`;

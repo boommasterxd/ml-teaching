@@ -47,9 +47,9 @@ function HeroScene({ active, hydrated }: { active: boolean; hydrated: boolean })
   return (
     <svg viewBox="0 0 580 460" fill="none" className="image-hero-scene" aria-hidden="true">
       <g className="image-hero-grid">
-        <circle cx="310" cy="225" r="192" />
-        <circle cx="310" cy="225" r="160" />
-        <path d="M310 8v430M90 225h440" />
+        <circle cx="295" cy="224" r="183" />
+        <circle cx="295" cy="224" r="172" strokeDasharray="1 12" />
+        <path d="M58 179h11m-5.5-5.5v11m437-23h11m-5.5-5.5v11" />
       </g>
       <text x="170" y="47" className="image-hero-meta">
         BILD / 01
@@ -82,10 +82,21 @@ function HeroScene({ active, hydrated }: { active: boolean; hydrated: boolean })
       <foreignObject x="58" y="285" width="114" height="114">
         <ExamplePhoto signal="dog" decorative className="image-hero-photo" />
       </foreignObject>
-      <text x="75" y="434" className="image-hero-meta">
+      <text x="56" y="434" className="image-hero-meta">
         ODER EIN HUND?
       </text>
       <defs>
+        <linearGradient id="image-hero-glass" x1="0" x2="1" y1="0" y2="1">
+          <stop stopColor="var(--secondary-hover)" />
+          <stop offset="0.48" stopColor="var(--card)" />
+          <stop offset="1" stopColor="var(--primary-soft)" />
+        </linearGradient>
+        <linearGradient id="image-hero-edge" x1="0" x2="1" y1="0" y2="1">
+          <stop stopColor="var(--foreground)" stopOpacity="0.74" />
+          <stop offset="0.38" stopColor="var(--control)" stopOpacity="0.5" />
+          <stop offset="0.78" stopColor="var(--primary)" stopOpacity="0.7" />
+          <stop offset="1" stopColor="var(--control)" stopOpacity="0.43" />
+        </linearGradient>
         <linearGradient
           id="image-hero-scan-light"
           className="image-hero-accent"

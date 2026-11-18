@@ -9,7 +9,7 @@ import {
 import type { KnnPoint, KnnPosition } from '@/lib/knn';
 import Button from '@/components/Button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { KnnPoint as PointGlyph } from '@/components/network/KnnArtwork';
+import { KNN_RING_RADIUS, KnnPoint as PointGlyph } from '@/components/network/KnnArtwork';
 
 export default function KnnQuizPoint({
   point,
@@ -47,7 +47,7 @@ export default function KnnQuizPoint({
         <Button
           variant="ghost"
           size="icon-lg"
-          className="knn-point-control size-11"
+          className="knn-point-control size-(--knn-point-size)"
           style={placement}
           aria-label={`${point.signal === 'dog' ? 'Hund' : 'Katze'}, Punkt ${point.id.replace('point-', '')}, Abstand zur Raute: ${distance.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Einheiten`}
           aria-pressed={selected}
@@ -75,7 +75,14 @@ export default function KnnQuizPoint({
                   animate={{ pathLength: 1 }}
                   transition={draw}
                 >
-                  <circle cx="0" cy="0" r="9" fill="none" stroke="var(--primary)" strokeWidth="1" />
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r={KNN_RING_RADIUS}
+                    fill="none"
+                    stroke="var(--primary)"
+                    strokeWidth="1"
+                  />
                 </Effect>
               )}
             </svg>

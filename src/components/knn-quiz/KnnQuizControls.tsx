@@ -5,7 +5,6 @@ import { AnimatePresence } from 'motion/react';
 import Button from '@/components/Button';
 import { Cat } from '@/components/icons/cat';
 import { Dog } from '@/components/icons/dog';
-import { Check } from '@/components/icons/check';
 import { X } from '@/components/icons/x';
 import { NETWORK_EXAMPLES } from '@/components/network/examples';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -14,6 +13,9 @@ import { Field, FieldLabel, FieldDescription, FieldSet, FieldLegend } from '@/co
 import { Slider } from '@/components/ui/slider';
 import { Text } from '@/components/ui/typography';
 import type { KnnQuizState } from './useKnnQuiz';
+import { KnnSuccessMedal } from './KnnSuccessMedal';
+
+const successTitle = 'Richtig zugeordnet!';
 
 export function KnnQuizInput({ state }: { state: KnnQuizState }) {
   const example = NETWORK_EXAMPLES[state.round.input];
@@ -91,14 +93,15 @@ export function KnnQuizAnswer({ state }: { state: KnnQuizState }) {
       <AnimatePresence initial={false}>
         {state.result && (
           <AnimatedFeedback key="result" contentKey={state.result}>
-            <Alert variant={state.result === 'correct' ? 'success' : 'destructive'}>
-              {state.result === 'correct' ? (
-                <Check animate aria-hidden="true" />
-              ) : (
-                <X animate aria-hidden="true" />
-              )}
-              <AlertTitle>
-                {state.result === 'correct' ? 'Richtig zugeordnet!' : 'Zähle noch einmal.'}
+            <Alert
+              variant={state.result === 'correct' ? 'achievement' : 'destructive'}
+              aria-live={state.result === 'correct' ? 'off' : undefined}
+            >
+              {state.result === 'correct' ? <KnnSuccessMedal /> : <X animate aria-hidden="true" />}
+              <AlertTitle
+                className={state.result === 'correct' ? 'self-end font-semibold' : undefined}
+              >
+                {state.result === 'correct' ? successTitle : 'Zähle noch einmal.'}
               </AlertTitle>
               <AlertDescription>{state.announcement}</AlertDescription>
             </Alert>
@@ -106,7 +109,7 @@ export function KnnQuizAnswer({ state }: { state: KnnQuizState }) {
         )}
       </AnimatePresence>
       <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-        {state.announcement}
+        {state.result === 'correct' ? `${successTitle} ${state.announcement}` : state.announcement}
       </p>
     </div>
   );

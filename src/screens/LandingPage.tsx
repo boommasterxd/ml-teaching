@@ -19,11 +19,11 @@ import HomeLearningSections from '@/content/landing/home-learning-sections';
 /** The introduction and learning choices remain complete in build-time HTML. */
 export default function LandingPage() {
   return (
-    <div className="landing-page">
+    <div className="landing-page home-glass">
       <HomePlaybackProvider>
         <section className="hero-section" aria-labelledby="hero-title">
           <HeroScene>
-            <div className="hero-copy landing-container">
+            <div className="hero-copy">
               <Heading as="h1" variant="hero" id="hero-title">
                 Du probierst.
                 <br />

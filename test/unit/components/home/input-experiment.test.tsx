@@ -34,8 +34,9 @@ function advancePreview(milliseconds = 4_000) {
 
 function expectPhoto(label: 'Katze' | 'Hund', filename: 'cat' | 'dog') {
   const preview = screen.getByRole('img', { name: 'Bilderkennung anhand von Bildmerkmalen' });
-  expect(screen.getByText(label, { exact: true })).toBeTruthy();
-  expect(preview.querySelector('img')?.getAttribute('src')).toContain(filename);
+  const current = preview.querySelector('[data-current-example="true"]');
+  expect(current?.querySelector('.home-signal-output')?.textContent).toBe(label);
+  expect(current?.querySelector('img')?.getAttribute('src')).toContain(filename);
 }
 
 beforeEach(() => {
@@ -157,12 +158,23 @@ describe('homepage input preview', () => {
     expectPhoto('Hund', 'dog');
     fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
     advancePreview();
-    expectPhoto('Hund', 'dog');
-    advancePreview();
     expectPhoto('Katze', 'cat');
     expect(container.querySelector(activePreview)).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
     expect(container.querySelector('.home-signal-active')).toBeNull();
+  });
+
+  it('starts the visible reward board without waiting for the offscreen image preview', () => {
+    vi.useFakeTimers();
+    const { container } = render(<RewardPreview />, { wrapper: PreviewHost });
+    expect(
+      container.querySelector(`${activePreview} [data-goal="star"][data-rewarded="true"]`),
+    ).not.toBeNull();
+    advancePreview();
+    expect(
+      container.querySelector(`${activePreview} [data-goal="treasure"][data-rewarded="true"]`),
+    ).not.toBeNull();
+    expect(prepareExample).not.toHaveBeenCalled();
   });
 
   it('keeps the initial example when the user prefers reduced motion', () => {

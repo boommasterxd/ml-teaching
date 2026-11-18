@@ -1,43 +1,60 @@
-import AnimatedLink from '@/components/AnimatedLink';
-import Button from '@/components/Button';
-import { ArrowRight } from '@/components/icons/arrow-right';
+import LearningPracticeAction from '@/components/LearningPracticeAction';
 import ScrollReveal from '@/components/hero/ScrollReveal';
 import InputExperiment from '@/components/home/InputExperiment';
 import { PreviewCycleProvider } from '@/components/home/PreviewCycle';
 import { RewardPreview } from '@/components/home/RewardExperiment';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Heading, Text } from '@/components/ui/typography';
 import { learningAreas } from '@/content/learning-areas';
 import { rewardPreviewId } from '@/lib/learning-paths';
-import { cn } from '@/lib/utils';
+import './home-experiment-panels.css';
 
-const rewardPracticeComingSoon = true;
-const rewardAvailabilityId = 'home-reward-availability';
-const practiceActionClassName =
-  'mobile-action h-auto min-h-11 max-w-full justify-self-start whitespace-normal lg:row-start-4';
-
-function PreviewAction({
-  href,
-  action,
-  comingSoon,
-}: Pick<(typeof learningAreas)[number], 'href' | 'action'> & { comingSoon: boolean }) {
-  const label = (
-    <>
-      {action} <ArrowRight data-icon="inline-end" aria-hidden="true" />
-    </>
-  );
-  return comingSoon ? (
-    <Button
-      disabled
-      size="lg"
-      className={practiceActionClassName}
-      aria-describedby={rewardAvailabilityId}
+function ExperimentPanel({ area, index }: { area: (typeof learningAreas)[number]; index: number }) {
+  const isRewardPreview = area.id === 'q-learning';
+  return (
+    <ScrollReveal
+      kind="reading"
+      index={index}
+      asChild
+      className="grid min-w-0 lg:row-span-4 lg:grid-rows-subgrid"
     >
-      {label}
-    </Button>
-  ) : (
-    <AnimatedLink href={href} size="lg" className={practiceActionClassName}>
-      {label}
-    </AnimatedLink>
+      <section
+        id={isRewardPreview ? rewardPreviewId : 'bilderkennung'}
+        tabIndex={isRewardPreview ? -1 : undefined}
+        aria-labelledby={`home-${area.id}-title`}
+      >
+        <Card
+          className="learning-area-card grid lg:row-span-4 lg:grid-rows-subgrid"
+          data-method={area.id}
+        >
+          <CardHeader>
+            <CardTitle as="h3" id={`home-${area.id}-title`}>
+              {area.title}
+            </CardTitle>
+            {isRewardPreview && <CardDescription lang="en">Reinforcement Learning</CardDescription>}
+          </CardHeader>
+          <CardContent className="grid gap-6 lg:row-span-2 lg:grid-rows-subgrid">
+            <div className="learning-area-preview home-experiment-art">
+              {isRewardPreview ? <RewardPreview /> : <InputExperiment />}
+            </div>
+            <Text className="text-muted-foreground">{area.explanation}</Text>
+          </CardContent>
+          <CardFooter className="flex-col items-start gap-3">
+            <Heading as="h4" className="text-base">
+              Willst du es selbst ausprobieren?
+            </Heading>
+            <LearningPracticeAction area={area} />
+          </CardFooter>
+        </Card>
+      </section>
+    </ScrollReveal>
   );
 }
 
@@ -50,62 +67,14 @@ export default function HomeLearningSections() {
       className="landing-section landing-container"
       aria-labelledby="home-experiments-title"
     >
-      <ScrollReveal kind="reading">
+      <ScrollReveal kind="reading" asChild className="home-experiments-heading">
         <Heading id="home-experiments-title">Zwei Arten, wie KI lernt</Heading>
       </ScrollReveal>
       <PreviewCycleProvider>
-        <div className="mt-6 grid gap-y-12 lg:grid-cols-2 lg:gap-x-12 lg:gap-y-4">
-          {learningAreas.map(({ id, title, explanation, action, href }, index) => {
-            const isRewardPreview = id === 'q-learning';
-            const comingSoon = isRewardPreview && rewardPracticeComingSoon;
-            return (
-              <ScrollReveal
-                key={id}
-                kind="reading"
-                index={index}
-                asChild
-                className={cn(
-                  'grid min-w-0 gap-4 lg:row-span-4 lg:grid-rows-subgrid',
-                  comingSoon && 'home-preview-pending',
-                )}
-              >
-                <section
-                  id={isRewardPreview ? rewardPreviewId : 'bilderkennung'}
-                  tabIndex={isRewardPreview ? -1 : undefined}
-                  aria-labelledby={`home-${id}-title`}
-                >
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <Heading as="h3" id={`home-${id}-title`}>
-                        {title}
-                      </Heading>
-                      {isRewardPreview && <Text variant="muted">Reinforcement Learning</Text>}
-                    </div>
-                    <Text>{explanation}</Text>
-                  </div>
-                  <div className="min-w-0 self-center">
-                    {isRewardPreview ? <RewardPreview /> : <InputExperiment />}
-                  </div>
-                  {comingSoon && (
-                    <>
-                      <div className="home-preview-pending-shade" aria-hidden="true" />
-                      <div className="home-preview-pending-overlay">
-                        <span id={rewardAvailabilityId} lang="en">
-                          Coming Soon
-                        </span>
-                      </div>
-                    </>
-                  )}
-                  {!isRewardPreview && (
-                    <Heading as="h4" className="text-2xl">
-                      Willst du es selbst ausprobieren?
-                    </Heading>
-                  )}
-                  <PreviewAction href={href} action={action} comingSoon={comingSoon} />
-                </section>
-              </ScrollReveal>
-            );
-          })}
+        <div className="home-experiments-grid lg:grid-cols-2">
+          {learningAreas.map((area, index) => (
+            <ExperimentPanel key={area.id} area={area} index={index} />
+          ))}
         </div>
       </PreviewCycleProvider>
     </section>

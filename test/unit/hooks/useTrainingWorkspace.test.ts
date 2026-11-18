@@ -7,6 +7,7 @@ import type { MLImage } from '@/types/ml';
 const mocks = vi.hoisted(() => ({
   modelReady: true,
   extract: vi.fn(),
+  toastError: vi.fn(),
   setClassifier: vi.fn(),
   classifier: {
     addExample: vi.fn(),
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
+vi.mock('@/lib/toast', () => ({ toast: { error: mocks.toastError } }));
 vi.mock('@/hooks/useModelLoader', () => ({
   useModelLoader: () => ({
     classifier: mocks.modelReady ? mocks.classifier : null,
@@ -98,7 +100,9 @@ describe('local training workspace', () => {
       expect(result.current.cardActions.onUploadStart()).toBe(false);
     });
     expect(result.current.cardActions.captureDisabled).toBe(true);
-    expect(result.current.resources.errors.error?.message).toContain('Training abgeschlossen');
+    expect(mocks.toastError).toHaveBeenLastCalledWith(
+      expect.stringContaining('Training abgeschlossen'),
+    );
     await waitFor(() => expect(result.current.resources.hasTrainedModel).toBe(true));
     expect(mocks.classifier.addExample).toHaveBeenCalledTimes(2 * ML.MIN_IMAGES_PER_CLASS + 2);
   });
@@ -224,13 +228,15 @@ describe('local training workspace', () => {
     expect(result.current.resources.prediction.isPredicting).toBe(false);
   });
 
-  it('reports failed local extraction, rejects unknown classes and detects duplicate labels', async () => {
+  it('passes extraction failures to the upload batch and still validates class changes', async () => {
     const { result } = renderHook(() => useTrainingWorkspace());
     mocks.extract.mockRejectedValueOnce(new Error('Image unavailable'));
-    await act(async () =>
-      result.current.cardActions.onAddImageExample('class-1', document.createElement('img')),
-    );
-    expect(result.current.resources.errors.error?.category).toBe('validation');
+    await act(async () => {
+      await expect(
+        result.current.cardActions.onAddImageExample('class-1', document.createElement('img')),
+      ).rejects.toThrow('Das Bild konnte nicht verarbeitet werden');
+    });
+    expect(mocks.toastError).not.toHaveBeenCalled();
     await act(async () =>
       result.current.cardActions.onAddImageExample('deleted-class', document.createElement('img')),
     );
@@ -238,5 +244,25 @@ describe('local training workspace', () => {
     act(() => result.current.data.classes.updateClassName('class-2', 'Klasse 1'));
     expect(result.current.data.hasDuplicateNames).toBe(true);
     expect(result.current.data.training.canTrain).toBe(false);
+    act(() => result.current.data.trainModel());
+    expect(mocks.toastError).not.toHaveBeenCalled();
+  });
+
+  it('reports one error per failed training run and retains the examples for retry', async () => {
+    const { result } = renderHook(() => useTrainingWorkspace());
+    await collectMinimumImages(result);
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      mocks.classifier.addExample.mockImplementationOnce(() => {
+        throw new Error('Training failed');
+      });
+      act(() => result.current.data.trainModel());
+      await waitFor(() => expect(result.current.data.training.isTraining).toBe(false));
+      expect(mocks.toastError).toHaveBeenCalledTimes(attempt);
+      expect(mocks.toastError).toHaveBeenLastCalledWith('Fehler beim Training des Modells.');
+      expect(result.current.data.canTrain).toBe(true);
+    }
+    act(() => result.current.data.trainModel());
+    await waitFor(() => expect(result.current.resources.hasTrainedModel).toBe(true));
+    expect(mocks.toastError).toHaveBeenCalledTimes(2);
   });
 });

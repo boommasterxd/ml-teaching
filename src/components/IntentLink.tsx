@@ -4,17 +4,21 @@ import { useCallback, type ComponentProps, type SyntheticEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+type IntentLinkProps = ComponentProps<typeof Link> & { prepareOnIntent?: boolean };
+const forwardNavigation = ['nav-forward'];
+
 /** Native navigation warms its route payload only after pointer, keyboard or touch intent. */
 export default function IntentLink({
   onPointerEnter,
   onFocus,
   onPointerDown,
+  prepareOnIntent = true,
   ...props
-}: ComponentProps<typeof Link>) {
+}: IntentLinkProps) {
   const router = useRouter();
   const prepare = useCallback(
     (event: SyntheticEvent<HTMLAnchorElement>) => {
-      if (event.defaultPrevented) return;
+      if (!prepareOnIntent || event.defaultPrevented) return;
       const target = new URL(event.currentTarget.href);
       const current = window.location;
       if (
@@ -23,13 +27,15 @@ export default function IntentLink({
         (target.pathname === current.pathname && target.search === current.search)
       )
         return;
-      router.prefetch(target.pathname + target.search);
+      const path = target.pathname + target.search;
+      router.prefetch(path.startsWith('//') ? target.origin + path : path);
     },
-    [router],
+    [prepareOnIntent, router],
   );
 
   return (
     <Link
+      transitionTypes={forwardNavigation}
       {...props}
       prefetch={false}
       onPointerEnter={(event) => {

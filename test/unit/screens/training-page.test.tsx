@@ -12,9 +12,13 @@ const boundary = vi.hoisted(() => {
     push: vi.fn(),
     getUserMedia: vi.fn(),
     stopTrack: vi.fn(),
+    toastError: vi.fn(),
+    prepareToastViewport: vi.fn(),
     model: { infer: vi.fn(tensor), dispose: vi.fn() },
   };
 });
+vi.mock('@/components/ToastHost', () => ({ prepareToastViewport: boundary.prepareToastViewport }));
+vi.mock('@/lib/toast', () => ({ toast: { error: boundary.toastError } }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: boundary.push }) }));
 vi.mock('@tensorflow/tfjs-core', () => ({
   setBackend: vi.fn(async () => true),
@@ -151,20 +155,27 @@ describe('training page integration', () => {
     );
     expect(boundary.load).not.toHaveBeenCalled();
     expect(boundary.getUserMedia).not.toHaveBeenCalled();
+    expect(boundary.prepareToastViewport).not.toHaveBeenCalled();
     await enterWithoutCamera();
+    expect(boundary.prepareToastViewport).toHaveBeenCalledOnce();
     expect(boundary.getUserMedia).not.toHaveBeenCalled();
+    const steps = within(screen.getByRole('navigation', { name: 'Trainingsablauf' }));
+    const currentStep = () => steps.getByRole('link', { current: 'step' }).getAttribute('href');
+    expect(currentStep()).toBe('#training-images');
     const names = screen.getAllByRole('textbox');
     fireEvent.change(names[0], { target: { value: 'Tasse' } });
     fireEvent.change(names[1], { target: { value: 'Buch' } });
     const inputs = container.querySelectorAll<HTMLInputElement>('input[type="file"]');
     fireEvent.change(inputs[0], { target: { files: selectedImages('tasse') } });
-    await screen.findByText('10 / 200 Bilder');
+    await screen.findByText('10 Bilder');
     fireEvent.change(inputs[1], { target: { files: selectedImages('buch') } });
-    await waitFor(() => expect(screen.getAllByText('10 / 200 Bilder')).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2));
     const train = screen.getByRole('button', { name: 'Modell trainieren' });
     await waitFor(() => expect((train as HTMLButtonElement).disabled).toBe(false));
+    expect(currentStep()).toBe('#training-model');
     fireEvent.click(train);
     await screen.findByRole('button', { name: 'Modell neu trainieren' });
+    expect(currentStep()).toBe('#training-prediction');
     expect((screen.getByRole('button', { name: 'Starten' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
@@ -187,20 +198,21 @@ describe('training page integration', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Bild vergrößern' })[0]);
     fireEvent.click(await screen.findByRole('button', { name: 'Bild löschen' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(screen.getByText('9 / 200 Bilder')).toBeTruthy();
+    expect(screen.getByText('9 / 10 Bilder')).toBeTruthy();
+    expect(currentStep()).toBe('#training-images');
     fireEvent.click(
       screen.getByRole('button', { name: 'Bilder der Klasse 1: Tasse zurücksetzen' }),
     );
     fireEvent.click(await screen.findByRole('button', { name: 'Abbrechen' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(screen.getByText('9 / 200 Bilder')).toBeTruthy();
+    expect(screen.getByText('9 / 10 Bilder')).toBeTruthy();
     fireEvent.click(
       screen.getByRole('button', { name: 'Bilder der Klasse 1: Tasse zurücksetzen' }),
     );
     const clear = await screen.findByRole('dialog', { name: 'Bilder dieser Klasse löschen?' });
     fireEvent.click(within(clear).getByRole('button', { name: 'Zurücksetzen' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(screen.getByText('0 / 200 Bilder')).toBeTruthy();
+    expect(screen.getByText('0 / 10 Bilder')).toBeTruthy();
     const removeClass = screen.getByRole('button', { name: 'Klasse 1: Tasse löschen' });
     act(() => removeClass.focus());
     fireEvent.click(removeClass);
@@ -219,7 +231,7 @@ describe('training page integration', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Unwiderruflich löschen' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(
-      screen.getAllByText('0 / 200 Bilder').filter((node) => !node.closest('[inert]')),
+      screen.getAllByText('0 / 10 Bilder').filter((node) => !node.closest('[inert]')),
     ).toHaveLength(2);
     unmount();
     expect(boundary.stopTrack).toHaveBeenCalled();
@@ -233,27 +245,52 @@ describe('training page integration', () => {
     expect(error.textContent).toContain('Fehler beim Laden der KI-Modelle');
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(document.activeElement).toBe(error);
+    expect(boundary.toastError).not.toHaveBeenCalled();
     expect(boundary.getUserMedia).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Seite neu laden' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Zur Bilderkennung' }));
-    expect(boundary.push).toHaveBeenCalledWith(learningPaths.images);
+    expect(boundary.push).toHaveBeenCalledWith(learningPaths.images, {
+      transitionTypes: ['nav-back'],
+    });
   });
 
-  it('reports a failed file decode and accepts a later valid local image', async () => {
+  it('reports failed file selections once per action and accepts a later valid local image', async () => {
     const { container } = render(<TrainingPage />);
     await enterWithoutCamera();
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
-    fireEvent.change(input, { target: { files: selectedImages('broken', 1) } });
-    expect((await screen.findByRole('alert')).textContent).toContain('broken-0.png');
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      fireEvent.change(input, { target: { files: selectedImages('broken', 1) } });
+      await waitFor(() => expect(boundary.toastError).toHaveBeenCalledTimes(attempt));
+      expect(boundary.toastError).toHaveBeenLastCalledWith(expect.stringContaining('broken-0.png'));
+    }
+    expect(screen.queryByRole('alert')).toBeNull();
     fireEvent.change(input, { target: { files: selectedImages('valid', 1) } });
-    await screen.findByText('1 / 200 Bilder');
+    await screen.findByText('1 / 10 Bilder');
     expect(boundary.getUserMedia).not.toHaveBeenCalled();
+  });
+
+  it('reports camera access failure and still lets the user continue with uploads', async () => {
+    boundary.getUserMedia.mockRejectedValue(new DOMException('Access denied', 'NotAllowedError'));
+    const { container } = render(<TrainingPage />);
+    confirmGeneralConsent();
+    fireEvent.click(await screen.findByRole('button', { name: 'Erlauben' }));
+    await waitFor(() => expect(boundary.toastError).toHaveBeenCalledOnce());
+    expect(boundary.toastError).toHaveBeenCalledWith(
+      'Kamerazugriff verweigert oder keine Kamera gefunden.',
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    fireEvent.change(input, { target: { files: selectedImages('valid', 1) } });
+    await screen.findByText('1 / 10 Bilder');
+    expect(boundary.toastError).toHaveBeenCalledOnce();
   });
 
   it('returns to the image explanation when the general processing choice is declined', () => {
     render(<TrainingPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));
-    expect(boundary.push).toHaveBeenCalledWith(learningPaths.images);
+    expect(boundary.push).toHaveBeenCalledWith(learningPaths.images, {
+      transitionTypes: ['nav-back'],
+    });
     expect(boundary.load).not.toHaveBeenCalled();
   });
 });

@@ -41,6 +41,7 @@ const publicRoutes = [
   '/',
   learningPaths.hub,
   learningPaths.images,
+  learningPaths.qLearning,
   '/impressum',
   '/datenschutz',
   '/barrierefreiheit',
@@ -58,11 +59,15 @@ for (const path of publicRoutes) {
       await expectReadable(page.getByRole('navigation', { name: 'Hauptnavigation' }));
       const main = page.getByRole('main');
       await expectReadable(main.getByRole('heading', { level: 1 }));
-      // These routes share the shell; their first heading, explanation and action
-      // exercise the distinct page render paths without walking optional content.
-      await expectReadable(main.getByRole('heading', { level: 2 }).first());
-      await expectReadable(main.locator('p:not(.sr-only)').first());
-      await expectReadable(main.getByRole('link').first());
+      if (path === learningPaths.qLearning) {
+        await expect(main).toHaveText('Coming Soon');
+        await expect(main.getByRole('heading', { level: 1 })).toHaveText('Coming Soon');
+        await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+      } else {
+        await expectReadable(main.getByRole('heading', { level: 2 }).first());
+        await expectReadable(main.locator('p:not(.sr-only)').first());
+        await expectReadable(main.getByRole('link').first());
+      }
       await scripts.expectHeld();
       scripts.release();
       await page.waitForLoadState('load');
@@ -78,6 +83,25 @@ for (const path of publicRoutes) {
     }
   });
 }
+
+test('the focused header trigger remains keyboard-operable across hydration', async ({ page }) => {
+  const scripts = await holdApplicationScripts(page);
+  try {
+    await page.goto('/', { waitUntil: 'commit' });
+    const trigger = page.getByRole('button', { name: 'Lernlabor', exact: true });
+    await scripts.expectHeld();
+    await trigger.focus();
+    await expect(trigger).toBeFocused();
+    scripts.release();
+    await page.waitForLoadState('load');
+    await page.keyboard.press('Enter');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('Escape');
+    await expect(trigger).toBeFocused();
+  } finally {
+    scripts.release();
+  }
+});
 
 for (const [width, colorScheme] of [
   [390, 'dark'],

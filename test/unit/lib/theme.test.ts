@@ -2,6 +2,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import {
   THEME_BOOTSTRAP_SCRIPT,
   THEME_STORAGE_KEY,
+  themeColors,
   applyTheme,
   parseTheme,
   rememberTheme,
@@ -19,6 +20,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   document.getElementById('site-favicon')?.remove();
+  document.getElementById('site-theme-color')?.remove();
   restoreThemeHost();
 });
 
@@ -46,6 +48,9 @@ describe('theme preference and prepaint contract', () => {
     boot();
     expect(document.documentElement.classList.contains('dark')).toBe(true);
     expect(document.documentElement.dataset.theme).toBe('system');
+    expect(document.getElementById('site-theme-color')?.getAttribute('content')).toBe(
+      themeColors.dark,
+    );
     expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe('/favicon-dark.svg');
     expect(writes).not.toHaveBeenCalled();
     window.localStorage.setItem(THEME_STORAGE_KEY, 'light');
@@ -53,6 +58,10 @@ describe('theme preference and prepaint contract', () => {
     boot();
     expect(document.documentElement.classList.contains('dark')).toBe(false);
     expect(document.documentElement.dataset.theme).toBe('light');
+    expect(document.querySelectorAll('meta[name="theme-color"]')).toHaveLength(1);
+    expect(document.getElementById('site-theme-color')?.getAttribute('content')).toBe(
+      themeColors.light,
+    );
     expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe(
       '/favicon-light.svg',
     );
@@ -65,10 +74,16 @@ describe('theme preference and prepaint contract', () => {
     boot();
     const writes = vi.spyOn(Storage.prototype, 'setItem');
     applyTheme('light', 'light');
+    expect(document.getElementById('site-theme-color')?.getAttribute('content')).toBe(
+      themeColors.light,
+    );
     expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe(
       '/favicon-light.svg',
     );
     applyTheme('system', 'dark');
+    expect(document.getElementById('site-theme-color')?.getAttribute('content')).toBe(
+      themeColors.dark,
+    );
     expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe('/favicon-dark.svg');
     host.setSystemDark(false);
     applyTheme('system', 'light');

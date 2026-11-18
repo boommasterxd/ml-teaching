@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import TopographyField from '@/components/hero/TopographyField';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
@@ -9,6 +9,7 @@ const host = vi.hoisted(() => ({
   draw: vi.fn(),
   dispose: vi.fn(),
   animations: [] as {
+    finish: () => void;
     stop: ReturnType<typeof vi.fn>;
     pause: ReturnType<typeof vi.fn>;
     play: ReturnType<typeof vi.fn>;
@@ -19,6 +20,7 @@ vi.mock('@/components/hero/topography-renderer', () => ({
     draw: host.draw,
     dispose: host.dispose,
     maxRasterDimension: 8192,
+    rippleCapacity: 8,
   }),
 }));
 vi.mock('motion/react', async (original) => ({
@@ -26,11 +28,13 @@ vi.mock('motion/react', async (original) => ({
   frame: { render: host.render },
   cancelFrame: host.cancel,
   animate: () => {
+    const completion = Promise.withResolvers<void>();
     const control = {
+      finish: completion.resolve,
       stop: vi.fn(),
       pause: vi.fn(),
       play: vi.fn(),
-      then: () => Promise.resolve(),
+      then: completion.promise.then.bind(completion.promise),
     };
     host.animations.push(control);
     return control;
@@ -44,7 +48,11 @@ beforeEach(() => {
 });
 afterEach(restoreBrowserHost);
 
-describe('active contour field ownership', () => {
+function activeFrame() {
+  return host.render.mock.calls[0]![0] as (frame: { timestamp: number }) => void;
+}
+
+describe('active glass field ownership', () => {
   it('bounds raster memory and GPU dimensions through mobile, 4K and ultrawide resizing', () => {
     vi.stubGlobal('devicePixelRatio', 4);
     let resize = () => {};
@@ -80,45 +88,38 @@ describe('active contour field ownership', () => {
     expect(host.draw.mock.lastCall![0].width).toBe(15360);
   });
 
-  it('accepts scoped background gestures without consuming controls, text selection or touch scrolling', () => {
-    const root = { current: document.createElement('div') };
-    const text = document.createElement('p');
-    const link = document.createElement('a');
-    const button = document.createElement('button');
-    root.current.append(text, link, button);
-    document.body.append(root.current);
-    const { unmount } = render(
-      <TopographyField interactionRoot={root} onUnavailable={vi.fn()} onRendered={vi.fn()} />,
+  it('starts a wave at the tapped glass or at its center for keyboard activation', () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ x: 20, y: 10, width: 400, height: 320 }),
     );
-    const wave = (target: HTMLElement, pointerType: string) => {
-      const event = new MouseEvent('pointerdown', {
-        bubbles: true,
-        cancelable: true,
-        clientX: 80,
-        clientY: 60,
-      });
-      Object.defineProperty(event, 'pointerType', { value: pointerType });
-      fireEvent(target, event);
-      expect(event.defaultPrevented).toBe(false);
-    };
-    wave(text, 'mouse');
-    expect(host.animations).toHaveLength(1);
-    wave(button, 'mouse');
-    wave(link, 'touch');
-    expect(host.animations).toHaveLength(1);
-    wave(text, 'touch');
+    render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+    const glass = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
+    const tick = activeFrame();
+    fireEvent.pointerDown(glass, { pointerType: 'touch' });
+    fireEvent.pointerCancel(glass, { pointerType: 'touch' });
+    expect(host.animations).toHaveLength(0);
+    fireEvent.click(glass, { detail: 1, clientX: 75, clientY: 250 });
+    fireEvent.click(glass, { detail: 0 });
+    tick({ timestamp: 16 });
+    expect(Array.from(host.draw.mock.lastCall![0].ripples.slice(0, 8))).toEqual([
+      55, 240, 0, 1, 200, 160, 0, 1,
+    ]);
+    vi.spyOn(window, 'getSelection').mockReturnValue({ isCollapsed: false } as Selection);
+    fireEvent.click(glass, { detail: 1 });
     expect(host.animations).toHaveLength(2);
-    const selection = vi
-      .spyOn(window, 'getSelection')
-      .mockReturnValue({ isCollapsed: false } as Selection);
-    wave(text, 'mouse');
-    expect(host.animations).toHaveLength(2);
-    selection.mockReturnValue({ isCollapsed: true } as Selection);
-    unmount();
-    wave(text, 'mouse');
-    expect(host.animations).toHaveLength(2);
-    root.current.remove();
   });
+
+  it('paces autonomous GPU work by scene time and draws each display frame during an impulse', () => {
+    render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+    const tick = activeFrame();
+    for (let i = 0; i <= 120; i++) tick({ timestamp: (1000 * i) / 120 });
+    expect(host.draw).toHaveBeenCalledTimes(31);
+    expect(host.draw.mock.lastCall![0].time).toBe(1000);
+    fireEvent.click(screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' }));
+    for (const timestamp of [1008, 1016, 1024]) tick({ timestamp });
+    expect(host.draw.mock.calls.slice(-3).map(([frame]) => frame.time)).toEqual([1008, 1016, 1024]);
+  });
+
   it('freezes the same GPU image and wave controls, then continues without counting paused time', () => {
     let resize = () => {};
     vi.stubGlobal(
@@ -138,48 +139,82 @@ describe('active contour field ownership', () => {
       <TopographyField onUnavailable={onUnavailable} onRendered={onRendered} />,
     );
     const canvas = container.querySelector('canvas');
-    const field = container.querySelector('.hero-field-canvas')!;
-    const tick = host.render.mock.calls[0]![0] as (frame: { delta: number }) => void;
-    tick({ delta: 16 });
-    fireEvent(field, new MouseEvent('pointerdown', { bubbles: true, clientX: 25, clientY: 25 }));
+    const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
+    const tick = activeFrame();
+    tick({ timestamp: 100 });
+    tick({ timestamp: 134 });
+    tick({ timestamp: 150 });
+    fireEvent.click(field, { detail: 1, clientX: 25, clientY: 25 });
     rerender(<TopographyField paused onUnavailable={onUnavailable} onRendered={onRendered} />);
     expect(container.querySelector('canvas')).toBe(canvas);
     expect(host.dispose).not.toHaveBeenCalled();
     expect(host.cancel).toHaveBeenCalledWith(tick);
     expect(host.animations[0]!.pause).toHaveBeenCalledTimes(1);
     const draws = host.draw.mock.calls.length;
-    tick({ delta: 500 });
-    fireEvent(field, new MouseEvent('pointerdown', { bubbles: true, clientX: 50, clientY: 50 }));
+    tick({ timestamp: 500 });
+    fireEvent.click(field, { detail: 1, clientX: 50, clientY: 50 });
     expect(host.draw).toHaveBeenCalledTimes(draws);
     expect(host.animations).toHaveLength(1);
+    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ width: 430, height: 350 }),
+    );
     act(() => resize());
     expect(host.draw).toHaveBeenCalledTimes(draws + 1);
-    expect(host.draw.mock.lastCall![0].time).toBe(16);
+    expect(host.draw.mock.lastCall![0].time).toBe(34);
     rerender(<TopographyField onUnavailable={onUnavailable} onRendered={onRendered} />);
     expect(host.animations[0]!.play).toHaveBeenCalledTimes(1);
     expect(host.render).toHaveBeenLastCalledWith(tick, true);
-    tick({ delta: 500 });
-    expect(host.draw.mock.lastCall![0].time).toBe(16);
-    tick({ delta: 16 });
-    expect(host.draw.mock.lastCall![0].time).toBe(32);
+    tick({ timestamp: 1000 });
+    expect(host.draw.mock.lastCall![0].time).toBe(34);
+    tick({ timestamp: 1016 });
+    expect(host.draw.mock.lastCall![0].time).toBe(50);
     expect(host.dispose).not.toHaveBeenCalled();
     expect(onRendered).toHaveBeenCalledTimes(1);
   });
 
-  it('bounds raster density and waves, then cancels the frame owner and waves when retired', () => {
+  it('finishes rapid taps at their original coordinates as rendering capacity becomes available', async () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ width: 400, height: 320 }),
+    );
+    const { unmount } = render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+    const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
+    const tick = activeFrame();
+    const taps = Array.from({ length: 10 }, (_, i) => [20 + i, 80 - i, 0, 1]);
+    taps.push(taps[8]!);
+    for (const [clientX, clientY] of taps) fireEvent.click(field, { detail: 1, clientX, clientY });
+    expect(host.animations).toHaveLength(8);
+    tick({ timestamp: 0 });
+    expect(Array.from(host.draw.mock.lastCall![0].ripples)).toEqual(taps.slice(0, 8).flat());
+    for (const [offset, finished] of [4, 2, 6].entries()) {
+      await act(async () => host.animations[finished]!.finish());
+      expect(host.animations).toHaveLength(9 + offset);
+      tick({ timestamp: 16 * (offset + 1) });
+      const lanes = host.draw.mock.lastCall![0].ripples as Float32Array;
+      const active = Array.from({ length: 8 }, (_, i) => Array.from(lanes.slice(i * 4, i * 4 + 4)));
+      const expected = taps[8 + offset]!;
+      const atOrigin = active.filter(([x, y]) => x === expected[0] && y === expected[1]);
+      expect(atOrigin).toEqual(taps.slice(8, 9 + offset).filter((tap) => tap === expected));
+      expect(active).not.toContainEqual(taps[finished]);
+    }
+    await act(async () => {
+      for (const control of host.animations) control.finish();
+    });
+    tick({ timestamp: 96 });
+    expect(host.draw.mock.lastCall![0].ripples.every((value: number) => value === 0)).toBe(true);
+    unmount();
+    for (const control of host.animations) expect(control.stop).not.toHaveBeenCalled();
+  });
+
+  it('bounds raster density and cancels active waves and the frame owner when retired', () => {
     vi.stubGlobal('devicePixelRatio', 4);
     const onRendered = vi.fn();
-    const { container, unmount } = render(
-      <TopographyField onUnavailable={vi.fn()} onRendered={onRendered} />,
-    );
+    const { unmount } = render(<TopographyField onUnavailable={vi.fn()} onRendered={onRendered} />);
     expect(onRendered).toHaveBeenCalledWith(true);
     expect(host.draw.mock.calls[0]![0].dpr).toBe(1.5);
-    const field = container.querySelector('.hero-field-canvas')!;
+    const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
     for (let wave = 0; wave < 5; wave++)
-      fireEvent(field, new MouseEvent('pointerdown', { bubbles: true, clientX: 25, clientY: 25 }));
+      fireEvent.click(field, { detail: 1, clientX: 25, clientY: 25 });
     expect(host.animations).toHaveLength(5);
-    expect(host.animations[0]!.stop).toHaveBeenCalledTimes(1);
-    expect(host.animations[1]!.stop).not.toHaveBeenCalled();
     unmount();
     for (const animation of host.animations) expect(animation.stop).toHaveBeenCalledTimes(1);
     expect(host.cancel).toHaveBeenCalledWith(host.render.mock.calls[0]![0]);
@@ -187,7 +222,7 @@ describe('active contour field ownership', () => {
     expect(onRendered).toHaveBeenLastCalledWith(false);
   });
 
-  it('stops rendering immediately on GPU context loss and requests the static fallback', async () => {
+  it('stops rendering immediately on GPU context loss and requests the static fallback', () => {
     const unavailable = vi.fn();
     const { container } = render(
       <TopographyField onUnavailable={unavailable} onRendered={vi.fn()} />,
@@ -198,12 +233,6 @@ describe('active contour field ownership', () => {
     expect(host.cancel).toHaveBeenCalledWith(host.render.mock.calls[0]![0]);
     expect(host.dispose).toHaveBeenCalledTimes(1);
     expect(unavailable).toHaveBeenCalledTimes(1);
-    const draws = host.draw.mock.calls.length;
-    await act(async () => {
-      document.documentElement.classList.add('dark');
-    });
-    expect(host.draw).toHaveBeenCalledTimes(draws);
-    document.documentElement.classList.remove('dark');
   });
 
   it('keeps the fallback authoritative when the first GPU draw cannot run', () => {
@@ -218,52 +247,66 @@ describe('active contour field ownership', () => {
     expect(host.dispose).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the poster during compilation and suspends polling until playback resumes', () => {
+    host.draw.mockReturnValue('pending');
+    const onRendered = vi.fn();
+    const onUnavailable = vi.fn();
+    const props = { onRendered, onUnavailable };
+    const { rerender } = render(<TopographyField {...props} />);
+    const tick = activeFrame();
+    act(() => tick({ timestamp: 30 }));
+    expect(onRendered).not.toHaveBeenCalled();
+    rerender(<TopographyField {...props} paused />);
+    expect(host.cancel).toHaveBeenCalledWith(tick);
+    const polls = host.draw.mock.calls.length;
+    host.draw.mockReturnValue(true);
+    act(() => tick({ timestamp: 60 }));
+    expect(host.draw).toHaveBeenCalledTimes(polls);
+    rerender(<TopographyField {...props} />);
+    act(() => tick({ timestamp: 500 }));
+    expect(onRendered.mock.calls).toEqual([[true]]);
+    expect(host.draw.mock.lastCall![0].time).toBe(0);
+    expect(onUnavailable).not.toHaveBeenCalled();
+  });
+
+  it('retires an unfinished link when the decorative scene unmounts', () => {
+    host.draw.mockReturnValue('pending');
+    const onRendered = vi.fn();
+    const { unmount } = render(<TopographyField onRendered={onRendered} onUnavailable={vi.fn()} />);
+    const tick = activeFrame();
+    unmount();
+    expect(host.dispose).toHaveBeenCalledTimes(1);
+    expect(host.cancel).toHaveBeenCalledWith(tick);
+    act(() => tick({ timestamp: 16 }));
+    expect(host.draw).toHaveBeenCalledTimes(1);
+    expect(onRendered).not.toHaveBeenCalledWith(true);
+  });
+
   it('retires GPU work and restores the fallback if a later raster allocation fails', () => {
     const unavailable = vi.fn();
     const onRendered = vi.fn();
     render(<TopographyField onUnavailable={unavailable} onRendered={onRendered} />);
     expect(onRendered).toHaveBeenCalledWith(true);
-    const tick = host.render.mock.calls[0]![0] as (frame: { delta: number }) => void;
+    const tick = activeFrame();
+    tick({ timestamp: 0 });
     host.draw.mockReturnValue(false);
-    act(() => tick({ delta: 16 }));
+    act(() => tick({ timestamp: 34 }));
     expect(host.dispose).toHaveBeenCalledTimes(1);
     expect(host.cancel).toHaveBeenCalledWith(tick);
     expect(onRendered).toHaveBeenLastCalledWith(false);
     expect(unavailable).toHaveBeenCalledTimes(1);
   });
 
-  it('redraws the new theme without advancing time and never polls unchanged theme colors', async () => {
-    const stylesheet = document.createElement('style');
-    stylesheet.textContent =
-      'canvas { --hero-line-color: 201 35 55; } .dark canvas { --hero-line-color: 255 90 110; }';
-    document.head.append(stylesheet);
+  it('keeps the paused glass frame when the surrounding theme changes', async () => {
+    render(<TopographyField paused onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+    expect(host.draw).toHaveBeenCalledTimes(1);
     try {
-      const styles = vi.spyOn(globalThis, 'getComputedStyle');
-      const { container, unmount } = render(
-        <TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />,
-      );
-      const canvas = container.querySelector('canvas')!;
-      const colorReads = () => styles.mock.calls.filter(([element]) => element === canvas).length;
-      const initialReads = colorReads();
-      expect(initialReads).toBeGreaterThan(0);
-      const tick = host.render.mock.calls[0]![0] as (frame: { delta: number }) => void;
-      for (let frame = 0; frame < 60; frame++) tick({ delta: 16 });
-      expect(colorReads()).toBe(initialReads);
-      const time = host.draw.mock.lastCall![0].time;
       await act(async () => {
         document.documentElement.classList.add('dark');
       });
-      expect(colorReads()).toBe(initialReads + 1);
-      expect(host.draw.mock.lastCall![0].color).toEqual([1, 90 / 255, 110 / 255]);
-      expect(host.draw.mock.lastCall![0].time).toBe(time);
-      unmount();
-      const draws = host.draw.mock.calls.length;
-      await act(async () => {
-        document.documentElement.classList.remove('dark');
-      });
-      expect(host.draw).toHaveBeenCalledTimes(draws);
+      expect(host.draw).toHaveBeenCalledTimes(1);
+      expect(host.render).not.toHaveBeenCalled();
     } finally {
-      stylesheet.remove();
       document.documentElement.classList.remove('dark');
     }
   });

@@ -2,8 +2,11 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { ThemeControl } from '@/components/theme/ThemeControl';
+import { toast } from '@/lib/toast';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
 import { installThemeHost, restoreThemeHost } from '../helpers/theme-host';
+
+vi.mock('@/lib/toast', () => ({ toast: { info: vi.fn() } }));
 
 beforeEach(() => {
   installThemeHost();
@@ -104,6 +107,8 @@ describe('controlled theme wipe lifetime', () => {
     });
     fireEvent.click(control);
     await waitFor(() => expect(document.documentElement.classList.contains('dark')).toBe(false));
-    expect(screen.getByRole('status').textContent).toContain('ohne Animation');
+    expect(toast.info).toHaveBeenCalledWith(expect.stringContaining('ohne Animation'), {
+      id: 'theme-animation',
+    });
   });
 });

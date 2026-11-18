@@ -2,6 +2,48 @@ import { expect, test, type Locator } from '@playwright/test';
 import { diagnostics, expectAccessible } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
 
+async function expectAgentJourney(board: Locator, destination: 'star' | 'treasure') {
+  const sample = () =>
+    board.evaluate((svg, destination) => {
+      const route = svg.querySelector<SVGPathElement>('.reward-experiment-route');
+      const agent = svg.querySelector<SVGCircleElement>('.reward-experiment-traveler');
+      const ring = svg.querySelector<SVGCircleElement>('.reward-experiment-start');
+      const goal = svg.querySelector<SVGGraphicsElement>(
+        `[data-rewarded="true"][data-goal="${destination}"]`,
+      );
+      if (!route || !agent || !ring || !goal) return null;
+      const progress = 1 - Number(route.getAttribute('stroke-dashoffset'));
+      const origin = route.getPointAtLength(0);
+      const tip = route.getPointAtLength(route.getTotalLength() * progress);
+      const dot = new DOMPoint(agent.cx.baseVal.value, agent.cy.baseVal.value);
+      const box = goal.getBBox();
+      const tile = svg.querySelector('.reward-experiment-arrival rect')?.getBoundingClientRect();
+      const target = goal.getBoundingClientRect();
+      return {
+        startsAtRing:
+          Math.hypot(origin.x - ring.cx.baseVal.value, origin.y - ring.cy.baseVal.value) < 1,
+        followsTrail:
+          !tile &&
+          progress > 0.05 &&
+          progress < 0.95 &&
+          Math.hypot(dot.x - tip.x, dot.y - tip.y) < 1,
+        arrived:
+          progress === 1 &&
+          Math.hypot(dot.x - box.x - box.width / 2, dot.y - box.y - box.height / 2) < 3,
+        confirmsDestination:
+          !!tile &&
+          tile.left < target.left &&
+          tile.top < target.top &&
+          tile.right > target.right &&
+          tile.bottom > target.bottom &&
+          !!svg.querySelector('.reward-experiment-arrival svg path'),
+      };
+    }, destination);
+  const options = { timeout: 12_000, intervals: [90] };
+  await expect.poll(sample, options).toMatchObject({ startsAtRing: true, followsTrail: true });
+  await expect.poll(sample, options).toMatchObject({ arrived: true, confirmsDestination: true });
+}
+
 function trackPreviewSteps(previews: Locator) {
   return previews.evaluateHandle((section) => {
     const steps: (string | number)[][] = [];
@@ -39,8 +81,9 @@ function trackPreviewSteps(previews: Locator) {
       previous = overlay;
       if (!overlay) return;
 
-      const output = section.querySelector('.home-signal-output')?.textContent ?? '';
-      const src = section.querySelector('.home-example-photo')?.getAttribute('src') ?? '';
+      const example = section.querySelector('[data-current-example="true"]');
+      const output = example?.querySelector('.home-signal-output')?.textContent ?? '';
+      const src = example?.querySelector('.home-example-photo')?.getAttribute('src') ?? '';
       const image = src.includes('dog') ? 'dog' : src.includes('cat') ? 'cat' : '';
       const goal = overlay.querySelector('[data-rewarded="true"]');
       const destination = goal?.querySelector('rect') ? 'treasure' : goal ? 'star' : '';
@@ -52,7 +95,7 @@ function trackPreviewSteps(previews: Locator) {
       childList: true,
       subtree: true,
       characterData: true,
-      attributeFilter: ['src', 'data-preview-active', 'data-rewarded'],
+      attributeFilter: ['src', 'data-current-example', 'data-preview-active', 'data-rewarded'],
     });
     record();
     return {
@@ -104,13 +147,15 @@ test('visible home previews alternate automatically without model requests', asy
   const images = previews.getByRole('region', { name: 'Bilderkennung', exact: true });
   const rewards = previews.getByRole('region', { name: 'Lernen durch Belohnung', exact: true });
   const rewardAction = rewards.getByRole('button', {
-    name: 'Belohnungen ausprobieren',
+    name: 'Coming Soon',
     exact: true,
   });
   await expect(rewardAction).toBeDisabled();
-  await expect(rewardAction).toHaveAccessibleDescription('Coming Soon');
+  await expect(rewardAction).toHaveText('Coming Soon');
   await expect(images.getByRole('img')).toBeInViewport({ ratio: 1 });
   await expect(rewards.getByRole('img')).toBeInViewport({ ratio: 1 });
+  await expectAgentJourney(rewards.getByRole('img'), 'star');
+  await expectAgentJourney(rewards.getByRole('img'), 'treasure');
   await expect
     .poll(() => playback.evaluate(({ steps }) => steps.slice(0, 5)), { timeout: 26_000 })
     .toEqual([
@@ -136,43 +181,26 @@ test('visible home previews alternate automatically without model requests', asy
   expect(failures).toEqual([]);
 });
 
-test('the reward experiment opens from the learning hub and keeps keyboard focus', async ({
+test('the unpublished reward practice explains its availability and returns to the hub by keyboard', async ({
   page,
 }) => {
   const failures = diagnostics(page);
-  await page.goto(learningPaths.hub);
-  const practiceLink = { name: 'Belohnungen ausprobieren', exact: true };
-  await page.getByRole('link', practiceLink).focus();
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(learningPaths.qLearningPractice);
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Belohnungen ausprobieren', exact: true }),
-  ).toBeVisible();
+  await page.goto(learningPaths.qLearningPractice);
+  const main = page.getByRole('main');
+  await expect(main.getByText('Coming Soon', { exact: true })).toBeVisible();
+  await expect(main.getByRole('button')).toHaveCount(0);
   const robots = page.locator('meta[name="robots"]');
   await expect
     .poll(() => robots.evaluateAll((tags) => tags.map((tag) => tag.getAttribute('content'))))
     .toEqual([expect.stringMatching(/noindex/)]);
 
-  const star = page.getByRole('button', { name: 'Stern belohnen', exact: true });
-  const treasure = page.getByRole('button', { name: 'Schatz belohnen', exact: true });
-  const reset = page.getByRole('button', { name: 'Zurücksetzen', exact: true });
-  const reward = page.getByRole('main').getByRole('status');
-  await star.focus();
-  await page.keyboard.press('Enter');
-  await expect(reward).toContainText('Stern: +10');
-  await expect(star).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(treasure).toBeFocused();
-  await page.keyboard.press('Enter');
-  await expect(reward).toContainText('Schatz: +10');
-  await page.keyboard.press('Tab');
-  await expect(reset).toBeFocused();
-  await page.keyboard.press('Enter');
-  await expect(reward).toContainText('Noch kein Ziel');
-  await expect(star).toBeFocused();
   await expectAccessible(page);
 
-  await page.getByRole('link', { name: 'Zum Lernlabor', exact: true }).click();
+  await main.getByRole('link', { name: 'Zum Lernlabor', exact: true }).press('Enter');
   await expect(page).toHaveURL(learningPaths.hub);
+  const unavailable = main.getByRole('button', { name: 'Coming Soon', exact: true });
+  await expect(unavailable).toBeDisabled();
+  await expect(unavailable).toHaveText('Coming Soon');
+  await expect(main.getByText('Coming Soon', { exact: true })).toHaveCount(1);
   expect(failures).toEqual([]);
 });

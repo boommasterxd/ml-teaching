@@ -1,0 +1,162 @@
+.header-menu-desktop {
+  display: none;
+}
+
+/* Inline panels follow their triggers in tab order. Radix also inserts a focus
+   proxy for detached viewports, which would add a hidden tab stop here. */
+[data-slot='inline-navigation-menu-list'] > li > button + span[aria-hidden='true'][tabindex='0'] {
+  display: none;
+}
+
+.site-header-inner .header-menu-mobile,
+.header-menu-mobile > div {
+  /* Anchor the open mobile panel to the glass bar, across its available width. */
+  position: static !important;
+}
+
+.header-menu-panel {
+  --menu-inset: 0.625rem;
+  --menu-icon: 1rem;
+  --menu-gap: 0.625rem;
+  pointer-events: auto;
+  max-height: calc(100dvh - var(--header-height) - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-color: var(--glass-line);
+  border-radius: 1.4rem;
+  padding: 0.5rem;
+  background: var(--glass-surface);
+  box-shadow:
+    var(--glass-highlight),
+    0 1rem 2.5rem color-mix(in srgb, black 15%, transparent);
+}
+
+.header-menu-panel .header-menu-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: var(--menu-icon) minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--menu-gap);
+  min-height: 2.75rem;
+  padding: 0.375rem var(--menu-inset);
+  border-radius: 0.75rem;
+  line-height: 1.35;
+}
+
+.header-menu-row[data-overview] {
+  font-weight: 600;
+}
+
+:is(.header-menu-trigger, a.header-menu-row, a.legal-page-link) {
+  &:is(
+    :focus-visible,
+    :active,
+    [aria-current='page'],
+    [data-current-section],
+    [data-highlighted],
+    [aria-expanded='true']
+  ) {
+    color: var(--primary);
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      color: var(--primary);
+    }
+  }
+}
+
+.header-menu-highlight {
+  inset: 0;
+  pointer-events: none;
+  border-radius: 0.75rem;
+  background-color: var(--primary-soft);
+}
+
+:is(.header-menu-trigger, a.legal-page-link):is(
+  :hover,
+  :focus-visible,
+  [aria-expanded='true'],
+  [data-highlighted]
+),
+a.legal-page-link[data-slot='dropdown-menu-item'][aria-current='page'] {
+  background-color: var(--primary-soft);
+}
+
+.header-menu-label {
+  padding: 0.375rem var(--menu-inset) 0.125rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.header-menu-group + .header-menu-group {
+  margin-block-start: 0.25rem;
+  border-top: 1px solid var(--glass-line);
+  padding-block-start: 0.25rem;
+}
+
+/* Extend the hit area above and below the compact Animate UI highlight. */
+.header-menu-trigger::before {
+  content: '';
+  position: absolute;
+  inset: -0.375rem 0;
+}
+
+.header-menu-panel-mobile {
+  inset-inline: 0;
+  width: 100%;
+}
+
+@variant max-sm {
+  .site-header-inner .site-brand {
+    gap: 0.35rem;
+    font-size: 0.95rem;
+  }
+  .site-header-inner .brand-mark {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+  .header-menu-mobile button {
+    padding-inline: 0.5rem;
+  }
+  .header-menu-mobile button svg {
+    display: none;
+  }
+}
+
+@variant md {
+  .header-menu-mobile {
+    display: none;
+  }
+  .header-menu-desktop {
+    display: block;
+  }
+  .header-menu-desktop [data-slot='inline-navigation-menu-list'] > li {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+  .header-menu-desktop .header-menu-trigger[aria-expanded='true']::before {
+    /* Keep the pointer on the trigger while it crosses the gap into its panel. */
+    bottom: -0.75rem;
+  }
+  .header-menu-desktop .header-menu-panel {
+    left: 50%;
+    translate: -50% 0;
+    width: max-content;
+    min-width: 13rem;
+    max-width: calc(100vw - 3rem);
+  }
+  .header-menu-desktop .header-menu-panel:has([data-overview]) {
+    width: 16.5rem;
+  }
+  @media (pointer: fine) {
+    .header-menu-panel .header-menu-row {
+      min-height: 2.125rem;
+    }
+  }
+}

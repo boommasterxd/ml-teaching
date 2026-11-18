@@ -1,65 +1,58 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Camera } from '../components/icons/camera';
-import { SwitchCamera } from '../components/icons/switch-camera';
 import { useTrainingWorkspace } from '../hooks/useTrainingWorkspace';
 import PageHeader from '../components/PageHeader';
 import Button from '../components/Button';
+import { Badge } from '../components/ui/badge';
 import TrainingPanels from '../components/TrainingPanels';
 import TrainingPageModals from '../components/TrainingPageModals';
 import TrainingError from '../components/TrainingError';
-import { ConsentModal, CameraConsentModal, LoadingModal } from '../components/modals';
-import { Badge } from '../components/ui/badge';
-import { cn } from '../lib/utils';
-import { Separator } from '../components/ui/separator';
+import { TrainingSetupDialog } from '../components/modals';
 import TrainingWithdrawal from '../components/TrainingWithdrawal';
-import { EntryReveal } from '../components/ui/entry-reveal';
+import { prepareToastViewport } from '@/components/ToastHost';
 import { learningPaths } from '@/lib/learning-paths';
+import './training-workspace.css';
 
-function TrainingPipeline({
-  canTrain,
-  hasTrainedModel,
-  ready,
-}: {
-  canTrain: boolean;
-  hasTrainedModel: boolean;
-  ready: boolean;
-}) {
-  const currentStep = hasTrainedModel ? 2 : canTrain ? 1 : 0;
+const steps = [
+  { id: 'training-images', label: 'Bilder sammeln' },
+  { id: 'training-model', label: 'Training' },
+  { id: 'training-prediction', label: 'Vorhersage' },
+] as const;
+
+function TrainingPipeline({ currentStep, ready }: { currentStep: number; ready: boolean }) {
   return (
-    <EntryReveal kind="text" active={ready} activation asChild>
-      <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 sm:pt-12 lg:px-8">
-        <div className="flex flex-col pb-6 sm:flex-row sm:justify-end sm:pb-8">
-          <ol aria-label="Trainingsablauf" className="grid grid-cols-3 gap-2 sm:gap-6">
-            {['Bilder sammeln', 'Training', 'Vorhersage'].map((label, index) => {
-              const state =
-                index < currentStep ? 'complete' : index === currentStep ? 'active' : 'idle';
-              return (
-                <li
-                  key={label}
-                  data-state={state}
-                  aria-current={state === 'active' ? 'step' : undefined}
-                  className={cn(
-                    'flex items-center gap-2 sm:gap-3',
-                    state === 'idle' ? 'text-muted-foreground' : 'text-foreground',
-                  )}
+    <nav aria-label="Trainingsablauf" inert={!ready}>
+      <ol className="flex max-w-full flex-wrap gap-1">
+        {steps.map(({ id, label }, index) => (
+          <li key={id}>
+            <Button asChild variant="ghost" size="sm" className="training-step">
+              <a href={`#${id}`} aria-current={index === currentStep ? 'step' : undefined}>
+                <Badge
+                  variant={index === currentStep ? 'default' : 'secondary'}
+                  className="size-[1.375rem] p-0 text-[0.7rem] tabular-nums"
+                  aria-hidden="true"
                 >
-                  <Badge
-                    variant={state === 'active' ? 'default' : 'secondary'}
-                    data-state={state}
-                    aria-hidden="true"
-                  >{`0${index + 1}`}</Badge>
-                  <span className="text-xs sm:text-sm">{label}</span>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-        <Separator />
-      </div>
-    </EntryReveal>
+                  {index + 1}
+                </Badge>
+                {label}
+              </a>
+            </Button>
+          </li>
+        ))}
+      </ol>
+    </nav>
   );
+}
+
+function getSetupStep({
+  consent,
+  models,
+  showCameraPrompt,
+}: ReturnType<typeof useTrainingWorkspace>['resources']) {
+  if (consent.showConsentModal) return 'consent';
+  if (models.isModelLoading) return 'loading';
+  return showCameraPrompt ? 'camera' : null;
 }
 
 /** Browser-only ML workspace inside a build-rendered App Router page. */
@@ -67,41 +60,25 @@ export default function TrainingPage() {
   const router = useRouter();
   const workspace = useTrainingWorkspace();
   const { resources, data, dialogs } = workspace;
-  const { errors, consent, models, camera, prediction } = resources;
+  const { modelError, consent, models, prediction } = resources;
   const { classes } = data;
+  const setupStep = getSetupStep(resources);
   const ready = Boolean(models.mobilenetModel) && !models.isModelLoading;
-  const declineConsent = () => router.push(learningPaths.images);
+  const trainingStep = data.canTrain || data.training.isTraining ? 1 : 0;
+  const currentStep = resources.hasTrainedModel && !data.training.isTraining ? 2 : trainingStep;
+  const declineConsent = () => router.push(learningPaths.images, { transitionTypes: ['nav-back'] });
   return (
     <div className="bg-background text-foreground pb-16 sm:pb-24">
-      <PageHeader
-        title="Modell trainieren"
-        backHref={learningPaths.images}
-        backLabel="Zurück zur Bilderkennung"
-        rightSlot={
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={consent.cameraConsent ? camera.toggleCamera : consent.requestCameraConsent}
-            disabled={!models.mobilenetModel}
-            title={consent.cameraConsent ? 'Kamera wechseln' : 'Kamera aktivieren'}
-            aria-label={consent.cameraConsent ? 'Kamera wechseln' : 'Kamera aktivieren'}
-          >
-            {consent.cameraConsent ? (
-              <SwitchCamera data-icon="inline-start" aria-hidden="true" />
-            ) : (
-              <Camera data-icon="inline-start" aria-hidden="true" />
-            )}
-          </Button>
-        }
-      />
-      <TrainingPipeline
-        canTrain={data.canTrain}
-        hasTrainedModel={resources.hasTrainedModel}
-        ready={ready}
-      />
-      {errors.error && <TrainingError error={errors.error} onReturn={declineConsent} />}
-      <TrainingPanels workspace={workspace} />
-      {consent.hasConsented && <TrainingWithdrawal />}
+      <div className="training-workspace" inert={setupStep !== null}>
+        <PageHeader
+          title="Dein Bildmodell"
+          description="Welche Motive soll dein Modell unterscheiden? Benenne die Klassen zum Beispiel „Tasse“ und „Stift“."
+          rightSlot={<TrainingPipeline currentStep={currentStep} ready={ready} />}
+        />
+        {modelError && <TrainingError message={modelError.message} onReturn={declineConsent} />}
+        <TrainingPanels workspace={workspace} />
+        {consent.hasConsented && !models.isModelLoading && <TrainingWithdrawal />}
+      </div>
       <TrainingPageModals
         modal={dialogs.modal}
         classes={classes.classes}
@@ -114,19 +91,16 @@ export default function TrainingPage() {
         setHasTrainedModel={resources.setHasTrainedModel}
         stopPredicting={prediction.stopPredicting}
       />
-      <ConsentModal
-        isOpen={consent.showConsentModal}
-        onDecline={declineConsent}
-        onConfirm={consent.grantConsent}
-      />
-      <LoadingModal
-        isOpen={consent.hasConsented && models.isModelLoading}
+      <TrainingSetupDialog
+        step={setupStep}
         loadingText={models.loadingText}
-      />
-      <CameraConsentModal
-        isOpen={resources.showCameraPrompt}
-        onDecline={consent.declineCameraConsent}
-        onConfirm={consent.grantCameraConsent}
+        onDeclineConsent={declineConsent}
+        onConfirmConsent={() => {
+          prepareToastViewport();
+          consent.grantConsent();
+        }}
+        onDeclineCamera={consent.declineCameraConsent}
+        onConfirmCamera={consent.grantCameraConsent}
       />
     </div>
   );

@@ -1,8 +1,6 @@
 import { RotateCcw } from './icons/rotate-ccw';
 import Button from './Button';
 import { Text } from './ui/typography';
-import { Separator } from './ui/separator';
-import { cn } from '@/lib/utils';
 import { EntryReveal } from './ui/entry-reveal';
 import { learningPaths } from '@/lib/learning-paths';
 
@@ -12,30 +10,23 @@ export default function TrainingWithdrawal({
 }: {
   variant?: 'workspace' | 'dialog';
 }) {
-  const workspace = variant === 'workspace';
+  const action = (
+    <Button asChild variant="outline">
+      <a
+        href={learningPaths.imagePractice}
+        aria-label="Einwilligung widerrufen und lokale Trainingsdaten verwerfen"
+      >
+        <RotateCcw data-icon="inline-start" aria-hidden="true" />
+        Einwilligung widerrufen
+      </a>
+    </Button>
+  );
+  if (variant === 'dialog') return action;
   return (
     <EntryReveal kind="text" asChild>
-      <div className={workspace ? 'mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-10' : 'mt-6'}>
-        {workspace && <Separator />}
-        <div
-          className={cn(
-            'flex flex-col gap-3',
-            workspace
-              ? 'pt-6 items-start sm:flex-row sm:items-center sm:justify-between'
-              : 'items-center',
-          )}
-        >
-          <Button asChild variant="outline">
-            <a
-              href={learningPaths.imagePractice}
-              aria-label="Einwilligung widerrufen und lokale Trainingsdaten verwerfen"
-            >
-              <RotateCcw data-icon="inline-start" aria-hidden="true" />
-              Einwilligung widerrufen
-            </a>
-          </Button>
-          <Text variant="muted">Lädt die Lernseite neu und verwirft deine Trainingsdaten.</Text>
-        </div>
+      <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+        {action}
+        <Text variant="muted">Lädt die Lernseite neu und verwirft deine Trainingsdaten.</Text>
       </div>
     </EntryReveal>
   );

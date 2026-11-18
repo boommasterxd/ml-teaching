@@ -1,69 +1,71 @@
+'use client';
+
 import AnimatedLink from './AnimatedLink';
 import Link from './IntentLink';
 import LegalMobileNavigation from './LegalMobileNavigation';
-import { ArrowLeft } from './icons/arrow-left';
-import { Gavel } from './icons/gavel';
-import { LockKeyhole } from './icons/lock-keyhole';
-import { Accessibility } from './icons/accessibility';
+import LegalBackLink from './LegalBackLink';
+import LegalSelection from './LegalSelection';
+import { legalPageIcons } from './site-navigation-icons';
 import { DropdownMenuItem } from './ui/dropdown-menu';
+import { Card } from './ui/card';
 import { Text } from './ui/typography';
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+} from './ui/navigation-menu';
 import { EntryReveal } from './ui/entry-reveal';
+import { headerLegalLinks } from '@/content/site-navigation';
 
-const pages = [
-  { id: 'imprint', href: '/impressum', title: 'Impressum', Icon: Gavel },
-  { id: 'privacy', href: '/datenschutz', title: 'Datenschutz', Icon: LockKeyhole },
-  {
-    id: 'accessibility',
-    href: '/barrierefreiheit',
-    title: 'Barrierefreiheit',
-    Icon: Accessibility,
-  },
-] as const;
+export type LegalPage = (typeof headerLegalLinks)[number]['id'];
+const pages = headerLegalLinks.map((link) => ({ ...link, Icon: legalPageIcons[link.id] }));
 
-export type LegalPage = (typeof pages)[number]['id'];
-
-/** Static utility navigation keeps native links, intent preparation and shared icon feedback. */
+/** Compose the Radix slots with their link elements in the same client boundary. */
 export default function LegalNavigation({ page }: { page: LegalPage }) {
   return (
     <EntryReveal kind="navigation" asChild>
       <aside className="legal-sidebar">
-        <AnimatedLink
-          href="/"
-          transitionTypes={['nav-back']}
-          variant="ghost"
-          size="sm"
-          className="legal-back-link"
-          aria-label="Zurück zur Startseite"
-        >
-          <ArrowLeft data-icon="inline-start" aria-hidden="true" />
-          Startseite
-        </AnimatedLink>
+        <LegalBackLink />
         <LegalMobileNavigation>
-          {pages.map(({ id, href, title, Icon }) => (
-            <DropdownMenuItem key={id} asChild className="min-h-11">
+          {pages.map(({ id, href, label, Icon }) => (
+            <DropdownMenuItem key={id} asChild className="legal-page-link min-h-11">
               <Link href={href} aria-current={page === id ? 'page' : undefined}>
                 <Icon aria-hidden="true" />
-                {title}
+                {label}
               </Link>
             </DropdownMenuItem>
           ))}
         </LegalMobileNavigation>
         <div className="legal-navigation-group">
           <Text variant="muted">Informationen</Text>
-          <nav aria-label="Informationsseiten" className="legal-navigation">
-            {pages.map(({ id, href, title, Icon }) => (
-              <AnimatedLink
-                key={id}
-                href={href}
-                variant={page === id ? 'secondary' : 'ghost'}
-                aria-current={page === id ? 'page' : undefined}
-                className="justify-start"
+          <Card asChild className="p-1.5">
+            <nav aria-label="Informationsseiten" className="legal-navigation">
+              <NavigationMenu
+                orientation="vertical"
+                aria-label={undefined}
+                className="block max-w-none"
               >
-                <Icon data-icon="inline-start" aria-hidden="true" />
-                {title}
-              </AnimatedLink>
-            ))}
-          </nav>
+                <NavigationMenuList className="flex-col items-stretch">
+                  {pages.map(({ id, href, label, Icon }) => (
+                    <NavigationMenuItem key={id}>
+                      <NavigationMenuLink
+                        asChild
+                        active={page === id}
+                        className="legal-page-link relative isolate flex w-full justify-start rounded-full px-3 focus-visible:bg-accent"
+                      >
+                        <AnimatedLink href={href} variant="ghost">
+                          {page === id && <LegalSelection />}
+                          <Icon data-icon="inline-start" aria-hidden="true" />
+                          {label}
+                        </AnimatedLink>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  ))}
+                </NavigationMenuList>
+              </NavigationMenu>
+            </nav>
+          </Card>
         </div>
       </aside>
     </EntryReveal>

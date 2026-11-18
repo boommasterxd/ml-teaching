@@ -2,70 +2,106 @@
 
 ## Foundation
 
-Redline uses red primary actions, neutral light surfaces and near-black dark
-surfaces for the German educational interface. Local Geist defines both headings
+Redline uses red primary actions and rounded glass surfaces. Light mode pairs
+dark text with an off-white background and white panels. Dark mode uses light
+text, a black background and smoked glass panels. Local Geist defines both headings
 and interface text. `src/lib/fonts.ts` loads its Latin WOFF2 asset through
 `next/font/local`, without a remote font request. Colors,
 theme pairs, typography, shared site/legal roles and media surfaces live in
 `src/index.css`; action variants live in `src/components/button-variants.ts`.
+The shared `--glass-surface`, `--glass-highlight` and `--glass-radius` tokens
+define panel backgrounds, edge highlights and corner radii.
+The shared shadcn `Card` has a neutral one-pixel glass rim with white and silver
+reflections. The closing actions on the homepage and the image lesson use
+`<Card rim="ruby">` for a ruby reflection and a soft red glow in the lower corner.
+Hover and focus within the Card intensify the reflection. Reduced motion makes
+this change immediate, and forced colors use the native border.
 Font-role aliases also resolve on `.app-body`, where `next/font` exposes the local
 font variable; resolving that body-scoped variable only on `:root` would fall back
 to the browser's inherited font.
-`src/components/hero/hero.css` extends these tokens for the landing composition.
-The viewport-height shader hero is followed by a short AI introduction and the
-project's educational purpose.
-The two previews follow in one section, with centered illustrations and aligned
-actions in shared rows at `lg`. On smaller screens each panel and its action stay
-together. Each preview explains the goal and typical
+The homepage hero pairs its headline and actions on
+the left with a luminous glass loop on the right. On narrow screens the loop
+sits above the centered headline. Red accents connect the typography and actions
+to the concentrated light inside the loop. Neutral white reflections define the
+curved glass. The surrounding glow fades into the page background beyond the artwork.
+
+The introduction pairs the AI question with its definition. The educational
+purpose and the opportunities comparison each use one neutral Card. The purpose
+Card includes one decorative waveform made of twelve curves. The complete
+drawing is present in static HTML. On first viewport entry an Animate UI clip
+passes across it once. Reduced motion and the homepage pause control leave the
+complete drawing visible.
+
+Homepage experiments and learning hub topics use the same shadcn Card, glass
+surface and title styles. Each homepage Card groups its illustration and
+explanation in CardContent and its practice question and action in CardFooter.
+Shared rows align their actions at `lg`. On smaller screens each
+illustration, explanation and action stay together. Each preview explains the goal and typical
 learning process. The image preview uses the shared cat/dog photos and drawn
-signal paths, with red frame outlines following the same
-input-to-features-to-result sequence. Paths retain space from both adjoining frames.
+signal paths. Direction arrows remain visible at rest, and highlights follow the
+input-to-features-to-result sequence.
 Both previews ship complete, style-free static scenes with stable accessible
-descriptions. The reward board starts with the agent at the starting position.
+descriptions. On the reward board a ring marks the start, dotted guides show the
+two possible paths and hatching marks obstacles. A single Motion timeline advances
+the solid trail and samples that same rounded SVG path for the red agent's position.
+When the point reaches the destination, that tile darkens and the shared Animate UI
+Check draws in green. The tile and check fade out with the route as the turn ends.
+The learning hub shows the route to the star as a static scene.
 One cycle plays the dog classification, the star path, the cat classification,
 then the treasure path. It runs in four-second turns while either
-preview and the tab are visible. Only the current visible preview draws its
-illustration, while the previous highlight fades to its neutral state.
+preview and the tab are visible. When only one preview is visible, it uses each
+turn and skips its offscreen partner. The previous highlight fades to its neutral state.
 System reduced motion and the shared homepage pause control stop the cycle.
 The dog turn waits for its image to decode while the image preview is visible.
+Photo, feature pattern and result crossfade together. The signal stroke starts
+with the Animate UI fill curve so its first segment accelerates gradually.
 If loading fails, the cat classification remains available and the cycle continues.
 The previews use small, fixed SVGs and require no ML model or simulation.
 The homepage and learning hub share their topics and destinations through
 `src/content/learning-areas.ts`; route actions use the native intent links.
-On the homepage, `rewardPracticeComingSoon` in `home-learning-sections.tsx` controls
-the translucent black overlay, diagonal availability label and disabled practice
-button together. The underlying panel uses the page theme, and the reward board
-continues the shared preview cycle beneath the label. Setting the flag to `false`
-enables the practice link and removes the overlay.
+The homepage and learning hub use `LearningPracticeAction` for both subjects.
+A pending exercise displays “Coming Soon” as the visible name of a disabled button.
+On the homepage, both actions follow the question “Willst du es selbst ausprobieren?”.
+The reward board remains visible during the shared preview cycle.
 The hero's fragment link focuses the combined experiments section and uses smooth
 browser scrolling on activation. Reduced motion uses the native fragment jump.
 The opportunities, limitations and entry questions follow the previews.
-The reward practice page shares the preview's paths and adds controls for selecting
-a reward and resetting the board. Feedback shows and announces the selected
-goal, points and step count after a user action.
+The shared `rewardPracticeComingSoon` flag in `src/content/learning-areas.ts`
+also controls the practice route. Direct visits show the notice and a link back
+to the learning hub while the exercise is pending.
 Below `sm`, public learning CTAs use the shared `mobile-action` full-width rule.
-The homepage hero uses compact side-by-side links with 44px touch targets. The
-action area retains its minimum height on short mobile viewports.
+The learning hub links share available space and wrap at their card's content
+width. Stacked links fill narrow cards. Their 20rem maximum width also applies
+to the unavailable action. The one-column mobile layout centers these controls
+in their cards.
+The homepage hero actions sit side by side with room to wrap. The primary pill
+uses a red fill and the secondary pill uses a translucent surface.
+The default red Button has a one-pixel white highlight along its inside top edge.
+Outline Buttons use a thin border and a subtle neutral shadow. Keyboard focus
+adds its own ring.
 The `mobile-action-pair` rule gives related example actions equal-width columns
 across the available space, with wrapping labels and 44px minimum touch height.
 The reward experiment places its separate reset action across both columns.
-Open editorial grids and separated reading rows vary the remaining text layout.
-They reuse the central section spacing, theme background, Typography and ScrollReveal;
-the final learning action retains the red glow.
-The `/lernen` hub reuses `LearningAreas` with centered shared button links at the
-bottom of both Cards. These links preserve native navigation and intent preparation;
-their labels can wrap on narrow screens without extending beyond the Card padding.
-Each area pairs a short task description with a decorative preview and its
-destination. Image recognition links to training and offers a secondary explanation
-link. The rewards card in the learning hub links to the practice page.
+Each comparison topic groups its heading, opportunity and accessible caution.
+From `lg`, the three topics share grid rows so wrapped text keeps the columns
+aligned. On narrower screens each topic stacks at its natural height.
+Entry questions and answers remain fully visible. These
+sections use theme-aware text, translucent surfaces and the shared Typography
+and ScrollReveal components. The final learning action uses the shared Card
+with a centered title and a footer link to the hub.
+The `/lernen` hub introduces labeled examples and rewards, then presents the two
+experiments. A reading section below them suggests changing the background of the
+training photos and comparing the paths with an imagined cost per step.
+The hub reuses `LearningAreas` with leading-aligned actions at the bottom of both
+cards. Labels can wrap on narrow screens. Image recognition offers training and
+explanation links with native navigation and intent preparation.
 From `md`, native nested row subgrids align the headers, illustrations and footer
 actions across neighboring Cards without fixed content heights
 or JavaScript measurements. Below `md`, Cards stack at their natural heights.
 These text-rich cards use the reading reveal, retaining full text contrast while
 their entry position animates.
-The shared header shows its learning-hub action outside `/lernen`; the hub and all
-its descendants retain the brand and theme controls without that entry action.
-The image explanation opens with an editorial hero and the shared example photos.
+The shared header offers the same navigation on learning, information and home pages.
+The image explanation opens with the shared example photos on a borderless stage.
 Its Animate UI scan loops while visible, stays within the illustration, and can be
 paused. It respects reduced motion and document visibility. The title, photos and example
 classification are static content. The hero action and final page action both lead
@@ -76,10 +112,10 @@ Photographic inputs use these assets rather than animal glyphs; decorative SVG
 scenes embed the same style-free image through a fixed-size foreignObject.
 The image explanation keeps the original six-section learning journey below its
 hero, with technique before the explanatory animation and training steps. Its workspace
-lives on a separate practice route. The reserved Q-learning explanation renders
-the shared shell. Its practice route hosts the fixed-path reward demonstration.
-The shared Lucide Brain glyph defines the brand. Its red stroke follows the theme;
-the SVG favicon has light/dark variants and the PNG Apple icon uses the same glyph.
+lives on a separate practice route. The hub displays one inactive Coming Soon action
+for Q-learning while its explanation and practice are pending.
+The shared Lucide Brain glyph defines the brand. Its stroke uses the local primary color.
+The SVG favicon has light/dark variants and the PNG Apple icon uses the same glyph.
 
 The selected foundation is Tailwind CSS 4, shadcn/ui's Radix/new-york structure and
 Animate UI 2.4. `components.json` is the component/alias source of truth.
@@ -92,13 +128,29 @@ links remain appropriate.
 Shared Alert, Empty, Card, Badge, Field, Label and Separator wrappers own recurring
 feedback, grouping and form semantics. Landing and training cards compose the same
 CardHeader, CardTitle, CardContent, CardAction and CardFooter parts. Do not recreate
-feature, explanation or open Card variants. The everyday quiz composes standard
+feature, explanation or open Card variants. For a card-shaped list or navigation
+landmark, `Card asChild` applies the surface to the semantic element. Training
+dialogs reuse DialogContent, DialogTitle, DialogDescription and, for grouped
+actions, DialogFooter. ModalContent sets the product width on the dialog element.
+The consent footer uses equal columns when each action has room for 7.5rem
+and stacks them when the available dialog width is smaller.
+DialogTitle places optional 1rem icons beside the first line of the heading.
+Confirmations use muted icons, and model loading uses an accent spinner in the same slot.
+The everyday quiz composes standard
 Cards, whole-card answer Buttons and contextual Alerts; notices use Alert. Badges use default, secondary, outline and
 destructive variants for their roles. Consent groups and class-name
 editors reuse FieldSet/Legend/Group/Label/Error as applicable, with shared Input
 and DialogTitle variants. Semantic color and state tokens remain in `src/index.css`.
 FieldLabel keeps descendant links underlined, including the required consent links,
 so they remain distinguishable without relying on color.
+
+Global notifications use the shadcn Base UI Toast composition through Animate UI.
+Its single viewport appears at the top center on mobile and at the bottom right
+from the desktop breakpoint. Toast code is prepared on training consent and
+mounted on the first notification. The provider owns announcements, timers and
+dismissal. Field errors, exercise results and recovery for a blocked step stay
+with their controls.
+
 Switch and Checkbox compose the installed public Radix Provider/Trigger parts
 through Animate UI so their interactive DOM node remains stable across hydration.
 Their optional indicator and form bridge use a shared client hydration snapshot;
@@ -117,26 +169,16 @@ The shared DropdownMenuTrigger leaves keyboard activation with Radix and press
 feedback with Motion. It ignores Motion's untyped, untrusted synthetic pointer
 event before consumer handlers or Radix can treat it as pointer input; Radix handles
 Enter. Native pointer input and intent preparation retain their handlers.
-`LearningCard` composes the standard CardHeader, CardTitle, CardAction and
-CardDescription for the three training steps. The badge aligns with the title row;
-the description follows within the same header grid. The image explanation varies its
-reading rhythm: after the hero, the technique explanation precedes its interactive
-animation and the three training steps. The technique section pairs an editorial introduction with an open
-ItemGroup, training tips use numbered Item rows in a full-width section, and
-everyday examples form a quiz grid, followed by a KNN exercise. All six numbered section labels use the shared
-muted Text variant without Badges. The final action starts directly with its heading.
-All landing sections share the page's `--background` surface in both themes.
-All numbered sections and the final call to action share the same block padding:
-`clamp(4rem, 7vw, 7rem)` on each side, controlled by one rule in `hero.css`.
-Spacing and typography separate sections without alternating background bands.
-The final action retains its subtle red radial glow over the shared page background.
-Technique columns use equal widths at the shared `lg` breakpoint and start at the
-same top edge. The introduction and its Transfer Learning paragraph stay grouped
-with the shared text gap; they do not distribute surplus column height between them.
-Below `lg`, the columns stack at their natural content height.
-Training-tip headings keep their introduction below the title at every width.
-Each tip's counter, icon and title share one centered flex row. Descriptions move
-beside that row at `md` and align on its center; below it they stack naturally.
+`LearningCard` composes CardHeader, CardTitle and CardDescription for each of
+the three training steps. A red icon and step number share a row above the title.
+The image explanation presents the technique before its interactive animation
+and training steps. The technique section groups MobileNet and KNN in a single
+glass panel with a divider. From `lg`, it places the introduction beside the
+panel and the training-tip introduction beside its numbered list. Smaller screens
+stack these sections. Each tip groups its number, icon and title above the description.
+The chapter's six numbered section labels use the shared Text component with red
+type. Everyday examples form a quiz grid, followed by a KNN exercise. The final
+training link sits in a rounded glass panel with a red glow.
 The everyday quiz presents six choices in one column, two at
 `md` and three at `lg`. Each is a one-shot answer action, not a persistent toggle
 or submitted questionnaire. The official Questionnaire/ToggleGroup catalogs own
@@ -152,8 +194,8 @@ preparation controller is warranted for six visible choices and a bounded state 
 The 40-entry content pool supplies three matching and three nonmatching examples
 per browser visit or replay. A stable server snapshot preserves hydration; a replay
 changes the selection and restores focus to the new first choice after commit.
-A shared result component mounts an Animate UI Effect dimmer and a plain green Check
-or red X, without an additional circle or inline explanation. Its `quiz-result`
+A shared result component dims the entire Card, including its one-pixel glass rim,
+with an 82% black overlay. A green Check or red X sits above it. Its `quiz-result`
 Button opens the standard shared shadcn Tooltip with Animate UI primitives on hover,
 focus or tap. Escape, blur and outside interaction dismiss the explanation. Tooltip
 content mounts on demand and respects available viewport width.
@@ -178,16 +220,16 @@ each answer. Answers and score remain in memory; the quiz sends no answers and
 writes no browser storage.
 
 The KNN exercise uses the same dog circle, cat square, query diamond and drawn
-selection rings as the explanatory diagram. Twelve separated targets keep the
-whole plot operable on mobile without virtualization; a single bounded
-SVG only draws accepted neighbor connections. The current K neighbors form an
+selection rings as the explanatory diagram. In both diagrams each line ends at
+the near edge of its neighbor's ring. Twelve separated targets keep the
+whole quiz plot operable on mobile. The current K neighbors form an
 isometric close group around the query, using the plot's shorter dimension.
 Outer points occupy the full rectangle; extending its longer axis can only move
 them farther from the query. The logical neighbor set therefore remains the
 visually closest set, with at least 16 percentage points of the shorter dimension
 separating their radius from the outer points. Native container units position the
-close group and its query-centered square connection layer without resize observers
-or state resets. Changing K resets the arrangement and selections
+close group and size each accepted connection from the query to the fixed-size
+ring as the plot resizes. Changing K resets the arrangement and selections
 while retaining the input image. Standard Button hit areas remain separated and
 44px wide; the glyph inside owns the official Animate UI field-error shake recipe.
 Wrong-point tooltips survive focus scrolling and dismiss on Escape, blur or an
@@ -207,9 +249,10 @@ Its placeholder retains reading instructions in SSG; random data and hidden
 interactive controls initialize only when that local exercise mounts.
 The compact Footer contains the brand, copyright and information links. Below `md`,
 all three groups stack and center, including wrapped information-link rows. Consent
-withdrawal belongs below the training workspace and inside the model-loading dialog.
+withdrawal belongs below the training workspace and inside the model-loading step.
 Both reuse `TrainingWithdrawal` and its native document reload, discarding the
-in-memory workspace and presenting consent again. The consent dialog and privacy
+in-memory workspace and presenting consent again. Only the workspace includes the
+explanatory line below the action. The consent step and privacy
 policy retain the local-processing disclosures.
 Badge icons inherit the surrounding Card or control's AnimateIcon context instead
 of introducing a nested provider that would restrict their hover trigger to the badge.
@@ -226,20 +269,26 @@ controlled semantic HTML. `PageLayout` pairs a sticky utility navigation with th
 document at `lg`. Its sticky offset shares the document's block-padding token and
 the header's height/border tokens, keeping the initial navigation position while
 the document scrolls. Gavel, LockKeyhole and Accessibility identify the three legal
-destinations in both navigation variants. Below `lg`, a single toolbar pairs Startseite with an
-Informationen dropdown. The mobile back link offsets its unchanged hit area into
-the gutter so the arrow aligns optically with the document's left text edge.
+destinations in both navigation variants. The current, hovered or keyboard-focused
+link and its icon share the primary text color. On desktop each link fills the menu's
+inner width. The vertical shadcn Navigation Menu applies the header's Animate UI
+highlight across that full row. Its Radix slots and link children are composed in
+one client boundary so hydration preserves the native anchors and their active state.
+The selected background moves between rows
+as a named layer in the existing page transition, using the selection spring.
+Below `lg`, the toolbar pairs the back action with the Informationen dropdown.
+Back traverses the previous browser entry when available and uses the homepage for a direct entry.
 The dropdown's three native links use the shared Animate UI menu, including
 current-page semantics, shared intent-based native route prefetching and whole-control icon
 feedback. The three static menu items reuse primitives already loaded by the header;
 a separate lazy chunk would add a loading boundary without deferring a meaningful
 workload. The portal mounts only on activation, preserving menu entry and focus.
 `PageContent` composes Card, CardHeader and CardContent around one semantic article
-and one h1. Below `lg`, the document uses the page background without a border,
-shadow or additional horizontal padding. Privacy-policy paragraphs and lists use
+and one h1. The reading column has a bounded width. Documents and public error
+screens use the neutral Card. Privacy-policy paragraphs and lists use
 justified text with German automatic hyphenation; headings remain left-aligned.
-The legal text remains visible in SSG, with no collapsed sections or
-decorative content entrance. Document typography, reading width and spacing live
+The legal text remains visible in SSG. Heading-led reading groups keep full
+opacity as they enter. Document typography, reading width and spacing live
 in `src/components/legal.css`; route transitions retain the existing native owner.
 
 Official project-local Codex guidance lives in `.agents/skills/shadcn/` and
@@ -250,23 +299,49 @@ do not install a second UI foundation.
 
 ## Layout and interaction
 
-Tailwind's shared `sm`, `md` and `lg` breakpoints own responsive layouts. The
-learning page changes to a seven/five-column workspace at `lg`; cards and legal
-content use bounded reading containers. Thumbnail grouping reads the CSS custom property set by the same Tailwind
-breakpoint variants; JavaScript has no independently duplicated breakpoint values.
-Hero CSS uses the same Tailwind `lg` and `max-sm` variants; parallax depth comes
-from a central CSS custom property rather than a separate JavaScript breakpoint.
+The image-training workspace puts the class collection first. Its Cards share two columns
+from Tailwind's `lg` breakpoint and stack on narrower screens. Training and prediction
+share a glass panel underneath and sit side by side from `md`. Each class reserves space
+for its gallery toolbar and scrollable thumbnails from the empty state onward. Adding or
+removing images leaves the surrounding controls in place. Container queries set thumbnail
+columns from the gallery's own width. TanStack Virtual reads the same CSS column count.
+The homepage hero places the glass beside the text at `md`. The loop and droplets
+share one scroll-parallax layer.
 
-The persistent SiteHeader contains the shared brand, learning action and theme
-control. At the top of the home page, the decorative hero backdrop extends behind
-the transparent header within the existing navigation and hero geometry. Pointer
-input in the free space reaches the hero, while the header controls remain operable.
-A separate surface fades in once the page scrolls and fades out at the top. It is solid on
-other routes and without scripting. Reduced motion switches the surface immediately.
+The persistent SiteHeader places the brand and theme controls on either side of the centered
+navigation. The desktop shadcn Navigation Menu groups explanations and practice routes by
+subject under Lernlabor and collects the three information pages under Rechtliches.
+The lab overview precedes a single column of topics. Each topic lists its explanation
+before its exercise. Section labels align with the leading edge of the Animate UI
+icons. A lightbulb marks each explanation. Exercises use icons for their respective activities.
+Link text starts in the next column and availability occupies the trailing column.
+Enabled rows trigger their icon on hover, keyboard focus and press. Their labels and
+icons inherit the same accent color in those states and on the current page.
+One Animate UI Highlight follows pointer or keyboard focus inside each panel
+and returns to the current page when idle. The header and legal navigation
+surfaces share the theme's `--primary-soft` color.
+Each desktop panel opens from the center of its trigger. The 32 px trigger pills
+have a 44 px pointer target. Menu rows use compact spacing for mouse input and
+retain their larger touch targets on coarse-pointer devices.
+Below `md`, one Menü trigger exposes the same destinations. Unavailable learning items
+show their availability without a navigable URL. Enabled links use native intent preparation.
+Static markup and the interactive header share their menu items, links and triggers.
+The Radix list's inline-positioned indicator track mounts after hydration and preserves
+focus on the visitor's selected link or trigger. Animate UI
+opens the inline Radix panels and restores focus on Escape. Panel links immediately
+follow their trigger in tab order. Header, footer and legal pages share the legal destinations.
 ThemeProvider and the shared header/footer sit outside the route
 ViewTransition. Theme changes update the root appearance without remounting the
-learning workspace. The training pipeline is an ordered readiness list, not route
-navigation; panel, modal, gallery and video states reuse shared theme/media tokens.
+learning workspace. Three native fragment links mark the current training step and
+focus its section heading on activation. The class name fills the header beside
+the right-aligned image count. A full-width row groups upload, reset and removal.
+Narrow cards retain more space for the upload label and show reset and removal
+as icons with accessible names. The gallery's fixed-height area includes its
+selection controls so collecting the first image keeps the card height stable.
+Class counters show progress toward the training minimum, then the collected total;
+the camera controls in the collection header enable live capture, and the prediction
+preview appears once a trained model and a stream are available. The workspace panels, dialogs, gallery and
+camera preview use shared theme and media tokens.
 SiteBrand is a small client boundary so Animate UI's press Slot receives a concrete
 Link element. Passing the server-produced Link through that Slot can resolve to an
 opaque child during development and omit the brand. Header and Footer remain server
@@ -275,9 +350,9 @@ On the homepage, the brand returns to the top and clears any fragment without
 starting a route transition. From other pages it uses the standard route navigation.
 
 Dialogs have constrained viewport height and scrollable content. Radix owns
-focus trapping, Escape and inertness; react-remove-scroll owns scroll containment. Controlled dialog return
-focus handles the absence of a trigger and avoids stealing focus from a following
-consent/loading dialog. Immediate focus and status semantics never wait for motion.
+focus trapping, Escape and inertness; react-remove-scroll owns scroll containment.
+The training setup focuses each new step's title and announces loading progress
+in place. Controlled dialogs restore focus when they close.
 Buttons share disabled, keyboard and touch behavior. Error messages, empty data,
 loading state and deletion confirmations stay explicit.
 
@@ -291,17 +366,22 @@ write defaults. Blocked reads fall back to the system; failed writes or deletion
 produce an honest status message. The trusted build-known bootstrap and the
 upstream ThemeToggler wipe style are rendered in static HTML for exact CSP hashing.
 The public theme-wipe callbacks are serialized so the latest selection wins.
-The favicon link precedes the trusted bootstrap in both document owners. Bootstrap
-and `applyTheme` select its resolved light/dark asset without another subscription
-or storage entry; the default SVG also follows the OS color scheme. An explicit
-theme wipe updates the favicon when its existing completion applies the theme.
+The favicon link precedes the trusted bootstrap in both document owners. Before
+hydration, the bootstrap creates the browser theme-color meta tag and sets its
+color and the favicon for the resolved theme. The default favicon SVG also
+follows the OS color scheme. An explicit
+theme wipe updates both when its existing completion applies the theme.
 
 The lightweight switch and menu trigger remain available initially. Pointer/focus
 intent prepares one deduplicated, retryable ThemeMenu module; the supported public
 portal mounts its content only when opened. No hidden portal prerender is assumed.
-Initial learning consent remains eager. Closed camera, confirmation and image
-preview wrappers are small element trees with no unique heavy dependency or active
-effect/subscription; their shared UI is already required by consent and galleries.
+The menu trigger sets the shared Button's Animate UI tap scale to 1 so Radix
+positions the panel against a stable rectangle during pointer and keyboard press.
+The toolbar defines the Radix offset at its mobile and desktop breakpoints to
+align the appearance menu with the navigation flyouts.
+Initial learning consent remains eager. The loading and camera steps mount on
+activation in the same dialog. Closed confirmation and image preview wrappers
+share the UI already required by consent and galleries.
 TensorFlow and model imports remain consent-gated and are never prepared on intent.
 
 ## Motion ownership
@@ -338,7 +418,10 @@ speculatively. Header/footer have one independent shell admission; theme changes
 do not remount them or replay entries.
 
 Landing supporting hero copy, step cards, demonstrations, quiz cards, guidance
-rows and the closing action use the shared roles. Legal text is grouped at existing
+rows and the closing action use the shared roles. The learning hub groups each question
+with its answer for scroll admission. Its main heading is stationary, and its
+introduction uses the reading role.
+Legal text is grouped at existing
 h2/h3 boundaries without changing controlled copy, while its H1 stays visible.
 Training panels enter after the consent-gated model is ready; their mounted controls,
 camera/model lifetime and existing class-list reflow remain independent. Virtual
@@ -350,17 +433,24 @@ Quiz completion and KNN answer feedback share `AnimatedFeedback`. Animate UI's
 `Effect` owns its short fade and upward entrance. Presence retains outgoing content
 until exit finishes, while immediately hiding it from assistive technology. KNN
 answer corrections replay the content entrance without replacing the height owner.
+The correct class earns a mint seal. A single ripple expands around its drawn
+check and two glints fade. Reduced motion shows the finished seal immediately.
+The vote sentence stays visible and the persistent status region announces it
+with the success title.
 Reduced motion uses the library's instant height change and opacity feedback.
 
-- The official Animate UI `PageTransition` registry component owns same-document
-  route continuity through Motion `AnimateView` and React 19.3 ViewTransition.
-  The shared root layout selects `flow` for every pathname change: a 30% horizontal
-  shift and blur, with a 350 ms entrance and 250 ms exit. Explicit return links use
+- The shared adaptation of Animate UI's `PageTransition` uses React 19.3
+  ViewTransition directly so that snapshot eligibility follows the navigation
+  type. Next links tag forward navigation with `nav-forward`. The new page
+  travels 16 px in 240 ms as the previous page fades and travels 8 px in 160 ms.
+  The text stays sharp throughout. Explicit return links use
   `nav-back` to mirror the direction. Header, footer and ThemeProvider remain outside
-  this single boundary. Query/hash changes do not replace it. Browser back/forward
-  navigation remains native and does not promise the Flow animation in Next.js.
-  Reduced-motion CSS disables native snapshot animations; the component also selects
-  Animate UI's non-spatial Fade preset instead of Flow. Unsupported browsers retain
+  this persistent boundary. Query/hash changes and subsequent updates leave
+  the main content out of capture. The legal Back control applies those same
+  Flow layers to its native history traversal. The browser owns this capture
+  because a cached history restore can bypass React's view transition. If the
+  restored page does not commit promptly, the capture yields to normal navigation.
+  Reduced motion opts out of page capture. Unsupported browsers retain
   normal navigation. The consent-withdrawal
   link deliberately reloads the document to discard the in-memory workspace. It
   does not opt into cross-document snapshots of training images or predictions.
@@ -373,55 +463,46 @@ Reduced motion uses the library's instant height change and opacity feedback.
   in both directions. The same Radix control, thumb spring and hydration/focus
   bridge remain in place. Native document capture continues to intercept pointer
   clicks during the wipe; keyboard selection and state updates remain immediate.
-  The registry adaptation retains only the selected Flow and reduced-motion Fade
-  presets. Unused shared-element and pointer/frame machinery is omitted. The
-  rectangular page surface uses external CSS for its view-transition class,
-  clipping and theme background instead of dynamic inline styles. Motion's exact
-  constant reset style is emitted during SSG so the existing hash-CSP build also
-  authorizes the runtime producer; a security contract test compares those bytes
-  with the installed upstream hook. No request-time nonce or dynamic rendering is
-  needed. The root route owner must be ready before first navigation; destination
-  preparation remains native Next Link prefetching rather than hidden page mounts.
-- The hero adapts the official Animate UI Topography WebGL renderer in a bounded
-  full-width surface behind the hero content. A two-pass renderer computes the
-  noise field at approximately one texel per four CSS pixels, capped at 600,000
-  field texels. A separate antialiased contour pass uses up to 1.5 device pixels
-  per CSS pixel, capped at 8,294,400 raster pixels and the GPU's dimension limits.
-  This keeps expensive noise work separate from line sharpness on 4K and ultrawide
-  displays. The intermediate RGBA8 texture preserves a packed 16-bit scalar field;
-  interpolation decodes samples before blending to avoid color-byte boundaries.
-  Textures are reused between frames and resized only when required. Motion owns its
-  frame, pointer hill, bounded ripples and two
-  transform-only parallax layers. The static poster uses `public/hero-contours.webp`,
-  an alpha capture of the same shader's first frame at a 5120 by 2160 CSS-pixel
-  surface. Eight alpha levels reduce transfer size, stored as lossless WebP.
-  Below the shared `md` breakpoint, `hero-contours-mobile.webp` crops the same frame
-  to a 1024 by 1536 CSS-pixel area, avoiding the full desktop download.
-  Native image preload links prioritize only the matching mask before CSS discovery.
-  Their HTML media queries mirror Tailwind's default `md` value of `48rem`; HTML
-  media attributes cannot resolve CSS theme variables, so breakpoint changes must
-  update these two preload conditions together with the theme.
-  Its CSS mask retains that scale and top-left origin instead of stretching
-  the terrain to each viewport, so its hills match the live field. It repeats beyond
-  that captured area. The mask uses the shared line-color token for both themes;
-  it deliberately bypasses photographic image optimization to preserve contour alpha.
-  The first successful GPU draw hides the poster without an extra entrance fade.
+  Each pathname change alternates the main content's capture name. This keeps
+  the departing and arriving pages at their own sizes and scroll positions.
+  External CSS animates their opacity and horizontal translation and excludes
+  the document root from route captures. Motion's exact constant reset style
+  is emitted during SSG for the shared legal selection and covered by the hash CSP.
+  Destination preparation uses the native Next router cache.
+- The hero adapts the Animate UI Topography WebGL renderer. The first pass computes
+  the loop's reflections and refraction. The second resolves its edge coverage at
+  output resolution. The field is capped at 600,000 texels
+  and output at 8,294,400 raster pixels, subject to GPU dimension limits.
+  The mobile and desktop posters, `public/hero-glass-mobile.webp` and
+  `public/hero-glass.webp`, preserve the shader's alpha channel so the themed
+  stage shows through and around the glass before WebGL starts.
+  Both themes use the same ruby glass material. The loop turns and the droplets
+  drift with moving highlights at up to 30 frames per second during autonomous
+  playback. Each droplet follows its own path with a visible gap from the loop.
+  Hover and light pulses use the available display cadence.
+  Hovering pulls the glass toward the pointer. Clicking or tapping
+  a droplet intensifies its light and motion; the loop carries a light pulse
+  from the chosen angle. Overlapping pulses finish their full 2.6-second circuit.
+  The shader runs up to 32 at once within the GPU's uniform budget. Further
+  activations start as slots become free, including repeated taps at the same pixel.
+  The artwork itself accepts Enter and Space and keeps
+  the normal pointer cursor. The only separate control pauses or resumes playback.
+  The poster remains visible while the two GPU programs link. Where parallel
+  compilation is available, the renderer checks their readiness on its frame
+  loop. The first successful draw hides the poster without an extra entrance fade.
   Visibility and intent share one renderer import promise. The resolved component
-  mounts directly on the client without an additional dynamic/Lazy/Suspense boundary,
-  so preparing the decorative enhancement does not trigger a page update transition.
+  mounts directly on the client after an incoming page transition finishes. Its
+  GPU setup starts immediately on an eligible direct visit.
   The poster returns on reduced motion, hidden or offscreen state, unsupported WebGL
   or context loss. These states unmount the enhancement
   and dispose its renderer. Explicit pause instead retains the current GPU image,
   stops frame, pointer-spring and ripple playback, and freezes parallax. Resuming
-  continues the same animation time; theme or resize changes can redraw the paused
-  image without advancing time. No CPU animation fallback runs. The scene performs
+  continues the same animation time. Resizing can redraw the paused image without
+  advancing time. No CPU animation fallback runs. The scene performs
   no ML inference or external data request.
-  A static contrast veil protects the headline and controls; passive pointer input
-  stays inside the hero and never captures scrolling or interactive targets. Text
-  selection is disabled only within the hero so repeated background gestures do not
-  select its copy; the remaining page retains native text selection.
-  The headline uses the official HighlightText effect while keeping its entire
-  required text visible in static HTML.
+  The artwork responds to a completed tap and leaves touch scrolling available.
+  The headline pairs light type with a red accent. Its full text is visible in
+  static HTML.
 - Animate UI owns action presses, dialog entry, checkbox indicators, progress and
   icon interaction. Shared `ActionFeedback` composes whole-control hover, tap and
   keyboard-focus icon triggers for Button and native Next.js `AnimatedLink`
@@ -465,13 +546,13 @@ Reduced motion uses the library's instant height change and opacity feedback.
   a hidden React Activity prepares the visual tree. The sequence starts after
   image decoding and visible commit. Image failures and the eight-second deadline
   offer explicit retry. No real inference or user-image processing occurs here.
-  A full-width shared Alert result variant presents the recognized class and its
-  neighbor-vote explanation, with a larger animated animal icon. The painted alert
-  owns its hover/tap icon triggers; the outer status region owns the polite
-  announcement. Reserved footer height keeps normal replay states stable.
-  Result feedback enters by position without fading its text/background contrast.
-  Effect owns entry separately; dedicated hover/tap icon triggers keep the first
-  interaction independent of entrance playback.
+  The result Alert presents the recognized class and vote sentence immediately.
+  Beside them, the three neighbors retain their circle or square shapes. Their
+  paths converge into one line that reveals the winning animal in a ruby seal.
+  Animate UI draws this sequence once per prediction. Reduced motion shows the
+  completed diagram immediately. The painted Alert owns hover and tap feedback
+  for the animal icon, and the outer status region announces the text. The
+  footer reserves space across replay states.
   Below-fold reveals use `EntryReveal`; Effect measures the actual content surface,
   outside display-contents icon wrappers. ScrollReveal keeps the shared whole-group
   icon hover context and delegates entry to this composition.
@@ -567,6 +648,13 @@ The initial consent uses the shared Dialog's `initialContent` variant: public na
 `RadixDialog.Content` renders inline in SSG and retains the same dialog node through
 hydration. Radix owns focus, modality and dismissal; the existing RemoveScroll
 composition owns scrolling. Already visible initial content has no entrance replay.
+Consent, model loading and the optional camera choice share one surface and scrim.
+Each step change focuses the incoming heading. The outgoing panel becomes inert
+as it slides out of the layout. The incoming Animate UI Effect uses the same
+horizontal offset and timing as the page Flow.
+A measured height animation follows the active panel and can be interrupted by
+the next step. This preserves natural height in static HTML and bypasses the
+initial zero height of Animate UI's AutoHeight. Reduced motion skips both movements.
 Animate UI 2.4.6's Content always supplies hidden initial motion targets and its
 Effect emits an initial style even with `initial={false}`. The native content and
 static scrim are the scoped initial-content integration; later openings retain

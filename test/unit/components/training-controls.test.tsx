@@ -58,15 +58,23 @@ describe('training and prediction controls', () => {
       onStartPredicting,
       onStopPredicting,
     };
-    const { rerender } = render(<PredictionPanel {...base} />);
+    const { rerender } = render(<PredictionPanel {...base} hasTrainedModel={false} hasCamera />);
+    const preview = base.predictVideoRef.current as HTMLVideoElement | null;
+    expect(preview?.closest('[hidden]')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Vorhersage' }).id).toBe('training-prediction');
+    expect(screen.getByText(/Trainiere zuerst dein Modell/)).toBeTruthy();
+    rerender(<PredictionPanel {...base} />);
     const start = screen.getByRole('button', { name: 'Starten' });
     expect((start as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText(/Aktiviere die Kamera/)).toBeTruthy();
     rerender(<PredictionPanel {...base} hasCamera />);
+    expect(base.predictVideoRef.current).toBe(preview);
+    expect(preview?.closest('[hidden]')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Starten' }));
     expect(onStartPredicting).toHaveBeenCalledOnce();
     rerender(<PredictionPanel {...base} hasCamera isPredicting />);
     expect(screen.getByText('Die Vorhersage wird vorbereitet.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Stoppen' })).toBe(start);
     rerender(
       <PredictionPanel
         {...base}
@@ -88,12 +96,7 @@ describe('training and prediction controls', () => {
 
   it('focuses model failures and offers a route back without forcing a permission prompt', () => {
     const onReturn = vi.fn();
-    render(
-      <TrainingError
-        error={{ category: 'model', message: 'Modell konnte nicht geladen werden.' }}
-        onReturn={onReturn}
-      />,
-    );
+    render(<TrainingError message="Modell konnte nicht geladen werden." onReturn={onReturn} />);
     expect(document.activeElement).toBe(screen.getByRole('alert'));
     expect(screen.getByRole('button', { name: 'Seite neu laden' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Zur Bilderkennung' }));

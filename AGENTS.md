@@ -74,22 +74,33 @@
 
 ## UI and accessibility
 
-- Apply the Redline educational brief: red primary actions, neutral light surfaces,
-  near-black dark surfaces and locally hosted Geist. Use official shadcn/ui
+- Use an off-white background with dark text in light mode and a black background
+  with light text in dark mode. Both use rounded glass surfaces, red primary
+  actions and locally hosted Geist. Use official shadcn/ui
   Radix/new-york components and Typography recipes with Tailwind 4 and Animate UI.
   Prefer their standard variants and geometry; product Button variants cover
-  image-gallery thumbnails and the quiz card/result controls. The official Topography adaptation fills the
-  hero behind readable content. Keep its two-pass field/contour rendering, bounded
+  image-gallery thumbnails and the quiz card/result controls. The homepage's
+  red-lit glass loop moves independently during playback and responds to local pointer input.
+  Keep the local renderer's two passes bounded
   to 600,000 field texels and 8,294,400 output pixels with GPU dimension limits.
-  Preserve its static fallback and at most two decorative parallax layers with
+  Preserve its full-color WebP fallback and at most two decorative parallax layers with
   pause, offscreen and reduced-motion handling.
 - Follow the OS theme unless the user selects another appearance. Persist only the
   light/dark/system enum after explicit remembering; keep it independent of ML
   consent/data. ThemeProvider stays outside the route boundary. Preserve trusted
   static theme bootstrap and wipe-style hashes, including native error output.
-- Reuse shared wrappers in `src/components/ui/`, product Button/Dialog interfaces,
-  central variants/tokens and native framework navigation. Consult official
-  catalogs before introducing components or custom substitutes.
+- Always use a suitable shadcn/ui component first. Reuse its shared implementation
+  in `src/components/ui/` or the product component that wraps it. If it is missing
+  locally, use the matching component from the official shadcn/ui catalog.
+  Use the shared shadcn Card and its parts for cards, Button (or
+  AnimatedLink for button-like navigation) for actions, and the matching shared
+  controls for forms, dialogs, menus and feedback. Apply this to loading, error
+  and pre-hydration states as well. Extend a shared variant when the design
+  needs one. Keep semantic HTML for ordinary layout, links and document content.
+- During review, trace card-like surfaces and controls to their shared component.
+  Replace local HTML/CSS lookalikes. If shadcn/ui has no suitable component,
+  check the Animate UI catalog before writing custom UI. Record concrete platform or
+  interaction exceptions in [the design guide](docs/design-system.md).
 - Animate UI owns component motion; React ViewTransition owns native route
   continuity. Preserve reduced motion, immediate keyboard/focus behavior, one owner
   per property/lifetime, and no decorative replay from virtualized scroll admission.

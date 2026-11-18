@@ -1,10 +1,8 @@
 # Architecture
 
 ML Teaching is a German educational platform for learning about machine learning.
-Image classification is implemented. The reward demonstration illustrates fixed
-example paths and the Q-learning explanation is reserved.
-Next.js App
-Router renders public content and metadata at build time. It has no Express server,
+Image classification is implemented. The homepage previews learning through rewards.
+Next.js App Router renders public content and metadata at build time. It has no Express server,
 React Router, API routes, database or authentication layer.
 
 ## Source boundaries
@@ -30,22 +28,25 @@ not live in `src/pages/`, where Next.js would expose unintended routes.
 ## Shared shell and progressive enhancement
 
 The homepage links to the learning-area selection at `/lernen` and offers
-two automatic previews and links directly to image training. The homepage reward
-preview displays a coming-soon state and disables its practice action. The learning
-hub links to image training, the image explanation and reward practice.
+two automatic previews and a direct link to image training. The learning hub
+links to image training and its explanation. Both screens read the reward
+practice availability from `src/content/learning-areas.ts`.
 `/lernen/bilderkennung` contains the image-learning explanation, demonstrations and
 quizzes; `/lernen/bilderkennung/ausprobieren` owns the existing browser training
-workspace and its consent flow. Back links and consent rejection return to the
-image explanation. Consent withdrawal reloads the practice URL as a new document.
+workspace and its consent flow. The header menu links to the image explanation.
+Declining consent also returns there. Consent withdrawal reloads the practice URL as a new document.
 `src/lib/learning-paths.ts` centralizes these destinations for navigation.
-The reserved `/lernen/q-learning` route renders the shared shell.
-`/lernen/q-learning/ausprobieren` hosts the browser reward demonstration, where
-changing the rewarded goal selects a fixed example path. Both routes carry
-`noindex` and are excluded from the sitemap during the preview phase.
+`/lernen/q-learning` shows a static availability notice for the upcoming lesson.
+`/lernen/q-learning/ausprobieren` shows the availability notice and a link
+back to the hub while the exercise is pending. Both pending routes carry
+`noindex, follow` and are omitted from the sitemap and the links in `llms.txt`.
 
 The root Server Component renders the shared header, main content and footer.
-ThemeProvider encloses them outside Animate UI's shared Flow PageTransition,
-which uses React ViewTransition through Motion AnimateView. Public pages remain
+Shared CSS tokens supply the light and dark backgrounds, glass surfaces and red
+accent colors for the learning, practice, legal and error pages.
+ThemeProvider encloses them outside the shared Flow PageTransition. A persistent
+React ViewTransition applies the Animate UI Flow preset to the main content on
+typed route changes. Public pages remain
 complete SSG documents; the transition wrapper is a small client boundary and does
 not add request-time reads. ThemeProvider preserves both
 appearance and private in-memory training state across theme changes. A trusted
@@ -64,9 +65,12 @@ do not prepare another route.
 
 The current complete static routes have no loading-only prefetch boundary. Native
 preparation includes their build-time initial content; no separate server-data
-warmer is needed. Next.js 16 restores native browser back/forward history
-synchronously outside React transitions, so that trigger currently has no Flow
-animation. In-page back links use native link navigation and the shared Flow owner.
+warmer is needed. Next.js can restore cached history entries synchronously,
+outside React's view transition. The legal sidebar's Back link starts a
+browser-owned Flow capture for a same-document traversal to another page.
+Next.js still restores the original entry. The link exposes the previous
+same-origin address, including query and fragment, when available. With no
+identifiable previous entry, it links to the homepage.
 
 For App Router destinations, intent warms the build-rendered RSC payload and
 route assets, not a hidden mounted browser page. In particular, preparation does
@@ -75,16 +79,16 @@ The initial consent remains available in SSG and mounts on actual navigation.
 Consent withdrawal intentionally uses a full document reload rather than this
 shared link, discarding the private workspace.
 
-The landing hero starts from a static contour image rendered from the same Topography
-shader at time zero. A CSS alpha mask preserves its CSS-pixel scale and theme color.
-Its optional local Topography
-WebGL enhancement is active only while visible, unpaused, in a visible document
-and outside reduced motion. Its first successfully drawn frame replaces the matching
-static terrain. One shared import promise prepares the renderer; the resolved
-component mounts directly on the client without a second Lazy/Suspense reveal that
-could trigger a page update transition. It owns bounded pointer/ripple work and two decorative
-parallax layers. Explicit pause retains the last GPU image and stops frame, pointer
-spring and ripple playback; resuming continues the same animation time. Hidden,
+The homepage hero includes its headline and a responsive full-color WebP of the
+glass loop and both droplets in static HTML. While the artwork and document are visible, motion is
+enabled and playback is unpaused, the client loads the optional local WebGL
+renderer. Its first successful frame replaces the poster. Visibility and intent
+share the module import. The resolved component mounts directly on the client
+without a second Lazy/Suspense reveal that could trigger a page update transition.
+During playback, elapsed time turns the loop and moves the two droplets along
+separate paths outside it.
+Local input deforms their surfaces and lights the glass. Explicit pause retains the
+last GPU image and freezes playback. Resuming continues the same animation time. Hidden,
 offscreen and reduced-motion states release the enhancement and its resources.
 This renderer is independent of consent-gated ML WebGL and processes no training
 data. The educational illustration starts with a server-rendered Input placeholder,
@@ -124,9 +128,10 @@ remain retryable. Neither exercise loads TensorFlow or stores/sends answers.
 
 1. The learning route starts with an explicit consent dialog. No TensorFlow runtime,
    model weights or camera stream is needed to render the page.
-2. After model consent, the browser imports TensorFlow.js and loads MobileNet.
+2. After model consent, the same dialog shows loading progress while the browser imports TensorFlow.js and loads MobileNet.
    The WebGL backend and compiled kernels are reusable within the document.
-3. Camera access starts only after separate camera consent and browser permission.
+3. When the models are ready, the dialog presents the optional camera choice.
+   Camera access starts only after separate camera consent and browser permission.
    Selected local files and captures are resized for local feature extraction.
 4. Training requires complete selected upload batches and no active image work.
    New capture and file selection are disabled during training. It creates a

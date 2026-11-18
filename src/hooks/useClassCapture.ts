@@ -8,7 +8,7 @@ export interface CaptureActions {
   captureDisabled: boolean;
   onUploadStart: () => boolean;
   onUploadEnd: () => void;
-  onAddExample: (classId: string, video: HTMLVideoElement) => void;
+  onAddExample: (classId: string, video: HTMLVideoElement) => void | Promise<void>;
   onAddImageExample: (classId: string, image: HTMLImageElement) => void | Promise<void>;
   onError: (message: string) => void;
 }
@@ -50,7 +50,7 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
     )
       return;
     setRecordingVersion(latest.current.cls.captureVersion ?? 0);
-    const capture = () => {
+    async function capture() {
       if (
         latest.current.actions.captureDisabled ||
         latest.current.cls.images.length >= ML.MAX_IMAGES_PER_CLASS
@@ -58,11 +58,20 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
         stopRecording();
         return;
       }
-      if (videoRef.current)
-        latest.current.actions.onAddExample(latest.current.cls.id, videoRef.current);
-    };
-    capture();
-    intervalRef.current = setInterval(capture, CAMERA.CAPTURE_INTERVAL_MS);
+      if (!videoRef.current) return;
+      try {
+        await latest.current.actions.onAddExample(latest.current.cls.id, videoRef.current);
+      } catch {
+        if (intervalRef.current !== interval) return;
+        stopRecording();
+        latest.current.actions.onError(
+          'Das Kamerabild konnte nicht verarbeitet werden. Bitte starte die Aufnahme erneut.',
+        );
+      }
+    }
+    const interval = setInterval(() => void capture(), CAMERA.CAPTURE_INTERVAL_MS);
+    intervalRef.current = interval;
+    void capture();
   }, [stopRecording]);
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,22 +97,20 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
       (message) => latest.current.actions.onError(message),
       controller.signal,
     )
-      .catch(() => latest.current.actions.onError('Die Bilder konnten nicht verarbeitet werden.'))
+      .catch(() => {
+        if (!controller.signal.aborted)
+          latest.current.actions.onError('Die Bilder konnten nicht verarbeitet werden.');
+      })
       .finally(finish);
   }, []);
-
-  useEffect(() => {
-    if (intervalRef.current !== null) clearInterval(intervalRef.current);
-    intervalRef.current = null;
-    cancelUpload(uploadRef.current);
-  }, [captureVersion]);
 
   useEffect(
     () => () => {
       if (intervalRef.current !== null) clearInterval(intervalRef.current);
+      intervalRef.current = null;
       cancelUpload(uploadRef.current);
     },
-    [],
+    [captureVersion],
   );
 
   return { videoRef, isRecording, startRecording, stopRecording, handleFileUpload };

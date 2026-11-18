@@ -2,10 +2,16 @@
 
 import { useEffect, type RefObject } from 'react';
 import { cancelFrame, frame, type MotionValue } from 'motion/react';
+import type { GlassImpulses } from './glass-impulses';
 import { createTopographyRenderer } from './topography-renderer';
 
 const MAX_RENDER_DPR = 1.5;
 const MAX_RASTER_PIXELS = 8_294_400;
+const IDLE_FRAME_MS = 1000 / 30;
+
+function idleFrame(time: number) {
+  return Math.floor((time + 0.5) / IDLE_FRAME_MS);
+}
 
 function resolveRasterDensity(width: number, height: number, maxDimension: number) {
   return Math.min(
@@ -26,35 +32,12 @@ function resizeRaster(canvas: HTMLCanvasElement, maxDimension: number) {
   return { width, height, dpr };
 }
 
-export interface FieldRipple {
-  x: number;
-  y: number;
-  progress: MotionValue<number>;
-  stop: () => void;
-  pause: () => void;
-  play: () => void;
-}
-
 export interface FieldMotion {
   x: MotionValue<number>;
   y: MotionValue<number>;
   lift: MotionValue<number>;
-  ripples: RefObject<FieldRipple[]>;
+  ripples: GlassImpulses;
   running: MotionValue<boolean>;
-}
-
-function readLineColor(canvas: HTMLCanvasElement): [number, number, number] {
-  const values = getComputedStyle(canvas)
-    .getPropertyValue('--hero-line-color')
-    .trim()
-    .split(/\s+/)
-    .map(Number);
-  if (
-    values.length !== 3 ||
-    values.some((value) => !Number.isFinite(value) || value < 0 || value > 255)
-  )
-    return [0.79, 0.14, 0.22];
-  return [values[0]! / 255, values[1]! / 255, values[2]! / 255];
 }
 
 /** Retains the GPU image while paused and schedules frames only for an active scene. */
@@ -73,75 +56,71 @@ export function useTopographyRenderer(
       onUnavailable();
       return;
     }
-    const size = { width: 0, height: 0, dpr: 1 };
-    const rippleData = new Float32Array(16);
+    let size = resizeRaster(canvas, renderer.maxRasterDimension);
+    ripples.setCapacity(renderer.rippleCapacity);
+    const rippleData = new Float32Array(renderer.rippleCapacity * 4);
     let time = 0;
-    let resuming = false;
+    let clockOrigin: number | undefined;
     let painted = false;
-    let color = readLineColor(canvas);
-    const resize = () => {
-      Object.assign(size, resizeRaster(canvas, renderer.maxRasterDimension));
+    let retired = false;
+    const centerPointer = () => {
       if (lift.get() === 0) {
         x.jump(size.width / 2);
         y.jump(size.height / 2);
       }
-      if (painted) tick({ delta: 0 });
     };
-    const tick = ({ delta }: { delta: number }) => {
-      if (delta && !running.get()) return true;
-      time += resuming ? 0 : Math.min(delta, 64);
-      resuming = false;
+    const resize = () => {
+      const next = resizeRaster(canvas, renderer.maxRasterDimension);
+      if (size.width === next.width && size.height === next.height && size.dpr === next.dpr) return;
+      size = next;
+      centerPointer();
+      if (painted || running.get()) draw();
+    };
+    const draw = () => {
       rippleData.fill(0);
-      ripples.current.forEach((ripple, index) => {
-        rippleData.set([ripple.x, ripple.y, ripple.progress.get(), 1], index * 4);
-      });
+      let offset = 0;
+      for (const ripple of ripples.active) {
+        rippleData[offset++] = ripple.x;
+        rippleData[offset++] = ripple.y;
+        rippleData[offset++] = ripple.progress.get();
+        rippleData[offset++] = 1;
+      }
       const drawn = renderer.draw({
         ...size,
         time,
-        color,
         lift: lift.get() * 1.5,
         hill: [x.get(), y.get()],
         ripples: rippleData,
       });
-      if (!drawn && painted) {
-        stop();
-        onUnavailable();
+      if (drawn === false) unavailable();
+      else if (drawn === true && !painted) {
+        painted = true;
+        onRendered(true);
       }
-      return drawn;
     };
-    resize();
-    if (!tick({ delta: 0 })) {
-      renderer.dispose();
-      onRendered(false);
-      onUnavailable();
-      return;
-    }
-    painted = true;
-    onRendered(true);
+    const tick = ({ timestamp }: { timestamp: number }) => {
+      if (retired || !running.get()) return;
+      if (!painted || clockOrigin === undefined) clockOrigin = timestamp - time;
+      const elapsed = timestamp - clockOrigin;
+      const idle = lift.get() === 0 && ripples.active.size === 0;
+      if (painted && idle && idleFrame(elapsed) === idleFrame(time)) return;
+      time = elapsed;
+      draw();
+    };
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
-    const themeObserver = new MutationObserver(() => {
-      color = readLineColor(canvas);
-      tick({ delta: 0 });
-    });
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-    let retired = false;
     const stop = () => {
       if (retired) return;
       retired = true;
       cancelFrame(tick);
       unsubscribe();
       observer.disconnect();
-      themeObserver.disconnect();
       canvas.removeEventListener('webglcontextlost', unavailable);
       renderer.dispose();
       onRendered(false);
     };
-    const unavailable = (event: Event) => {
-      event.preventDefault();
+    const unavailable = (event?: Event) => {
+      event?.preventDefault();
       stop();
       onUnavailable();
     };
@@ -149,11 +128,13 @@ export function useTopographyRenderer(
     const unsubscribe = running.on('change', (active) => {
       if (!active) cancelFrame(tick);
       else {
-        resuming = true;
+        clockOrigin = undefined;
         frame.render(tick, true);
       }
     });
-    if (running.get()) frame.render(tick, true);
+    centerPointer();
+    draw();
+    if (!retired && running.get()) frame.render(tick, true);
     return stop;
   }, [canvasRef, x, y, lift, ripples, running, onUnavailable, onRendered]);
 }

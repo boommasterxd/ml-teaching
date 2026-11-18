@@ -1,0 +1,59 @@
+/* Only the changing content is captured. The persistent header stays interactive. */
+:root:active-view-transition-type(nav-forward, nav-back) {
+  view-transition-name: none;
+}
+:root:active-view-transition-type(nav-forward, nav-back)::view-transition {
+  pointer-events: none;
+}
+:root:active-view-transition-type(nav-back) {
+  --page-direction: -1;
+}
+:root:active-view-transition-type(history-back) [data-route-capture] {
+  view-transition-class: page-flow;
+}
+:root:active-view-transition-type(history-back) [data-route-capture='page-a'] {
+  view-transition-name: page-a;
+}
+:root:active-view-transition-type(history-back) [data-route-capture='page-b'] {
+  view-transition-name: page-b;
+}
+
+::view-transition-group(.page-flow),
+::view-transition-group(.page-fade) {
+  animation: none;
+}
+::view-transition-new(.page-flow),
+::view-transition-new(.page-fade) {
+  animation: page-arrive 240ms both;
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1) !important;
+}
+::view-transition-old(.page-flow),
+::view-transition-old(.page-fade) {
+  animation: page-depart 160ms both;
+  animation-timing-function: ease-out !important;
+}
+::view-transition-new(.page-flow) {
+  --page-offset: calc(16px * var(--page-direction, 1));
+}
+::view-transition-old(.page-flow) {
+  --page-offset: calc(-8px * var(--page-direction, 1));
+}
+::view-transition-new(.page-fade) {
+  animation-duration: 120ms;
+}
+::view-transition-old(.page-fade) {
+  animation-duration: 100ms;
+}
+
+@keyframes page-arrive {
+  from {
+    opacity: 0;
+    transform: translateX(var(--page-offset, 0px));
+  }
+}
+@keyframes page-depart {
+  to {
+    opacity: 0;
+    transform: translateX(var(--page-offset, 0px));
+  }
+}

@@ -1,8 +1,9 @@
 import type React from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useId, useRef } from 'react';
 import { Camera } from './icons/camera';
 import { Upload } from './icons/upload';
 import Button from './Button';
+import { Input } from './ui/input';
 import { cn } from '../lib/utils';
 import { IMAGE_INPUT_ACCEPT } from '../lib/image-input-policy';
 
@@ -15,15 +16,17 @@ export interface CameraPreviewProps {
   onStopRecording: () => void;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   videoRef: React.RefObject<HTMLVideoElement | null>;
+  fileActions?: React.ReactNode;
 }
 
 type RecordButtonProps = Pick<
   CameraPreviewProps,
   'isRecording' | 'onStartRecording' | 'onStopRecording' | 'disabled'
->;
+> & { hintId: string };
 
 function RecordButton({
   disabled,
+  hintId,
   isRecording,
   onStartRecording,
   onStopRecording,
@@ -37,8 +40,9 @@ function RecordButton({
       variant={isRecording ? 'destructive' : 'default'}
       size="lg"
       disabled={disabled}
-      className="flex-1 touch-none select-none [-webkit-touch-callout:none]"
+      className="touch-none select-none [-webkit-touch-callout:none]"
       aria-pressed={isRecording}
+      aria-describedby={hintId}
       onPointerDown={(event) => {
         // Motion's Enter feedback dispatches pointer events without a pointer device.
         if (!event.pointerType) return;
@@ -87,55 +91,38 @@ export default function CameraPreview(props: CameraPreviewProps) {
     onFileUpload,
     videoRef,
     disabled,
+    fileActions,
   } = props;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hintId = useId();
+  const endCapture = useEffectEvent(onStopRecording);
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !stream) return;
     video.srcObject = stream;
     return () => {
       if (video.srcObject === stream) video.srcObject = null;
+      endCapture();
     };
   }, [stream, videoRef]);
   return (
-    <div className="w-full sm:w-56 flex flex-col gap-3 flex-shrink-0">
-      <div className="relative aspect-[4/3] bg-media-surface rounded-xl overflow-hidden">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          aria-label="Kameravorschau für Trainingsaufnahme"
-          className={cn(
-            'w-full h-full object-cover',
-            facingMode === 'user' && 'transform scale-x-[-1]',
-          )}
-        />
-        {!stream && (
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-media-foreground">
-            <Camera className="size-6" aria-hidden="true" />
-            <span className="text-xs">Kamera ist aus</span>
-          </div>
+    <>
+      <div
+        className={cn(
+          'col-span-full',
+          fileActions &&
+            'grid grid-cols-[minmax(0,2.4fr)_repeat(2,minmax(0,1fr))] gap-2 @md/training-class:grid-cols-3',
         )}
-      </div>
-      <div className="flex gap-2">
-        <RecordButton
-          disabled={disabled}
-          isRecording={isRecording}
-          onStartRecording={onStartRecording}
-          onStopRecording={onStopRecording}
-        />
+      >
         <Button
-          variant="ghost"
-          size="icon"
+          variant={stream ? 'outline' : 'default'}
+          className="h-auto min-h-11 min-w-0 px-2 py-1.5 text-center whitespace-normal has-[>svg]:px-2"
           onClick={() => fileInputRef.current?.click()}
-          title="Bilder hochladen"
           disabled={disabled}
-          aria-label="Bilder hochladen"
         >
-          <Upload data-icon="inline-start" aria-hidden="true" />
+          <Upload data-icon="inline-start" aria-hidden="true" /> Bilder auswählen
         </Button>
-        <input
+        <Input
           type="file"
           disabled={disabled}
           ref={fileInputRef}
@@ -146,7 +133,37 @@ export default function CameraPreview(props: CameraPreviewProps) {
           aria-hidden="true"
           tabIndex={-1}
         />
+        {fileActions}
       </div>
-    </div>
+      {stream && (
+        <div className="flex min-w-0 flex-col items-start gap-3">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            aria-label="Kameravorschau für Trainingsaufnahme"
+            className={cn(
+              'aspect-[4/3] w-full max-w-64 rounded-xl bg-media-surface object-cover',
+              facingMode === 'user' && 'transform scale-x-[-1]',
+            )}
+          />
+          <RecordButton
+            hintId={hintId}
+            disabled={disabled}
+            isRecording={isRecording}
+            onStartRecording={onStartRecording}
+            onStopRecording={onStopRecording}
+          />
+          <p id={hintId} className="text-xs text-muted-foreground">
+            Zum Aufnehmen gedrückt halten.
+            <span className="sr-only">
+              {' '}
+              Mit der Tastatur startet und stoppt Enter die Aufnahme.
+            </span>
+          </p>
+        </div>
+      )}
+    </>
   );
 }

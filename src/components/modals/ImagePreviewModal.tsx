@@ -10,7 +10,7 @@ import Image from 'next/image';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import Button from '../Button';
-import { DialogTitle } from '../ui/dialog';
+import { DialogDescription, DialogTitle } from '../ui/dialog';
 import { Separator } from '../ui/separator';
 import type { MLImage } from '../../types/ml';
 
@@ -55,9 +55,9 @@ export default function ImagePreviewModal({
           <DialogTitle asChild>
             <h3 id="image-modal-title">Bild Vorschau</h3>
           </DialogTitle>
-          <p id="image-modal-desc" className="sr-only">
+          <DialogDescription id="image-modal-desc" className="sr-only">
             Vergrößerte Ansicht eines Trainingsbildes mit Option zum Löschen.
-          </p>
+          </DialogDescription>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Schließen">
             <X data-icon="inline-start" aria-hidden="true" />
           </Button>

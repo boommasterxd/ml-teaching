@@ -9,11 +9,15 @@ import NextImage from 'next/image';
 import Button from './Button';
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
 import type { Range, VirtualItem, Virtualizer } from '@tanstack/react-virtual';
-import { Image as ImageIcon } from './icons/image';
 import { CheckCircle2 } from './icons/check-circle2';
+import { Image as ImageIcon } from './icons/image';
+import { Trash2 } from './icons/trash2';
+import { X } from './icons/x';
 import { cn } from '../lib/utils';
 import { classColorClasses } from '../lib/class-colors';
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from './ui/empty';
+import { Empty, EmptyDescription, EmptyMedia } from './ui/empty';
+import { Badge } from './ui/badge';
+import { ML } from '../constants';
 import type { MLImage } from '../types/ml';
 
 /**
@@ -85,16 +89,18 @@ const ImageThumbnail = memo(function ImageThumbnail({
         className="w-full h-full object-cover"
       />
       {isSelectionMode && (
-        <div
+        <Badge
+          variant="outline"
+          aria-hidden="true"
           className={cn(
-            'absolute top-1 right-1 size-4 rounded-full border flex items-center justify-center ',
+            'absolute top-1 right-1 size-4 p-0',
             isSelected
               ? 'text-primary-foreground bg-[var(--btn-color)] border-[var(--btn-color)]'
               : 'bg-background/80 border-input',
           )}
         >
           {isSelected && <CheckCircle2 data-icon aria-hidden="true" />}
-        </div>
+        </Badge>
       )}
     </Button>
   );
@@ -131,7 +137,6 @@ function useColumnCount(ref: React.RefObject<HTMLDivElement | null>, enabled: bo
 interface GalleryToolbarProps {
   isSelectionMode: boolean;
   selectedCount: number;
-  hasImages: boolean;
   onDelete: () => void;
   onCancel: () => void;
   onSelect: () => void;
@@ -140,17 +145,16 @@ interface GalleryToolbarProps {
 function GalleryToolbar({
   isSelectionMode,
   selectedCount,
-  hasImages,
   onDelete,
   onCancel,
   onSelect,
 }: GalleryToolbarProps) {
   return (
-    <div className="flex min-h-11 flex-wrap justify-between items-center gap-x-2 mb-2">
-      <span className="eyebrow">
-        {isSelectionMode ? `${selectedCount} ausgewählt` : 'Gesammelte Bilder'}
+    <div className="flex min-h-9 shrink-0 items-center justify-between gap-1">
+      <span className="text-sm font-medium text-foreground">
+        {isSelectionMode ? `${selectedCount} ausgewählt` : 'Bildergalerie'}
       </span>
-      <div className="flex gap-2 min-h-[2rem]">
+      <div className="flex gap-1">
         {isSelectionMode ? (
           <>
             <Button
@@ -160,18 +164,18 @@ function GalleryToolbar({
               disabled={selectedCount === 0}
               aria-label={`${selectedCount} ausgewählte Bilder löschen`}
             >
-              Löschen
+              <Trash2 aria-hidden="true" />
+              <span className="hidden @md/gallery:inline">Löschen</span>
             </Button>
             <Button variant="ghost" size="sm" onClick={onCancel} aria-label="Auswahl abbrechen">
-              Abbrechen
+              <X aria-hidden="true" />
+              <span className="hidden @md/gallery:inline">Abbrechen</span>
             </Button>
           </>
         ) : (
-          hasImages && (
-            <Button variant="ghost" size="sm" onClick={onSelect} aria-label="Bilder auswählen">
-              Auswählen
-            </Button>
-          )
+          <Button variant="ghost" size="sm" onClick={onSelect} aria-label="Mehrere markieren">
+            Markieren
+          </Button>
         )}
       </div>
     </div>
@@ -206,6 +210,7 @@ function GalleryRows({
           <div
             key={img.id}
             data-image-id={img.id}
+            className="pb-1.5"
             style={{
               position: 'absolute',
               top: 0,
@@ -274,13 +279,14 @@ function useFocusedRowVisibility(
 
 function GalleryEmpty() {
   return (
-    <Empty className="h-full p-3 md:p-3">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <ImageIcon aria-hidden="true" />
-        </EmptyMedia>
-        <EmptyDescription>Halte „Aufnehmen“ gedrückt, um Bilder zu sammeln.</EmptyDescription>
-      </EmptyHeader>
+    <Empty className="h-full gap-3 p-2 md:p-2">
+      <EmptyMedia variant="icon" className="gallery-empty-symbol" aria-hidden="true">
+        <ImageIcon className="size-5" />
+      </EmptyMedia>
+      <EmptyDescription className="max-w-[34ch]">
+        Sammle mindestens {ML.MIN_IMAGES_PER_CLASS} Bilder desselben Motivs aus verschiedenen
+        Blickwinkeln.
+      </EmptyDescription>
     </Empty>
   );
 }
@@ -341,53 +347,51 @@ const ImageGallery = memo(function ImageGallery({
   useFocusedRowVisibility(columnCount, focus.focusedRow, virtualizer);
 
   return (
-    <div
-      className={cn('relative h-[220px] sm:flex-1 min-w-0 flex flex-col', classColorClasses(color))}
-    >
-      <GalleryToolbar
-        isSelectionMode={isSelectionMode}
-        selectedCount={selectedIds.size}
-        hasImages={images.length > 0}
-        onDelete={handleBulkDelete}
-        onCancel={() => {
-          setIsSelectionMode(false);
-          setSelectedIds(new Set());
-        }}
-        onSelect={() => setIsSelectionMode(true)}
-      />
-      <div
-        ref={scrollContainerRef}
-        tabIndex={0}
-        role="region"
-        aria-label={label}
-        onFocusCapture={focus.onFocusCapture}
-        onBlurCapture={focus.onBlurCapture}
-        className="gallery-region flex-1 min-h-0 bg-muted/40 rounded-xl border border-border p-2 overflow-y-auto overflow-x-hidden"
-      >
-        {images.length > 0 ? (
-          <div
-            style={{
-              height: `${virtualizer.getTotalSize()}px`,
-              width: '100%',
-              position: 'relative',
-              display: 'grid',
-              gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
-              columnGap: '0.5rem',
+    <div className={cn('@container/gallery min-w-0', classColorClasses(color))}>
+      <div className="flex h-36 min-w-0 flex-col @sm/gallery:h-44">
+        {hasImages && (
+          <GalleryToolbar
+            isSelectionMode={isSelectionMode}
+            selectedCount={selectedIds.size}
+            onDelete={handleBulkDelete}
+            onCancel={() => {
+              setIsSelectionMode(false);
+              setSelectedIds(new Set());
             }}
-          >
-            <GalleryRows
-              images={images}
-              columnCount={columnCount}
-              virtualRows={virtualizer.getVirtualItems()}
-              selectedIds={selectedIds}
-              isSelectionMode={isSelectionMode}
-              onToggleSelect={toggleImageSelection}
-              onImageClick={onImageClick}
-            />
-          </div>
-        ) : (
-          <GalleryEmpty />
+            onSelect={() => setIsSelectionMode(true)}
+          />
         )}
+        <div
+          ref={scrollContainerRef}
+          tabIndex={hasImages ? 0 : -1}
+          role="region"
+          aria-label={label}
+          onFocusCapture={focus.onFocusCapture}
+          onBlurCapture={focus.onBlurCapture}
+          className="gallery-region min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto rounded-2xl bg-muted/60 p-1.5 dark:bg-background/40"
+        >
+          {hasImages ? (
+            <div
+              className="relative grid w-full gap-x-2"
+              style={{
+                height: `${virtualizer.getTotalSize()}px`,
+                gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
+              }}
+            >
+              <GalleryRows
+                images={images}
+                columnCount={columnCount}
+                virtualRows={virtualizer.getVirtualItems()}
+                selectedIds={selectedIds}
+                isSelectionMode={isSelectionMode}
+                onToggleSelect={toggleImageSelection}
+                onImageClick={onImageClick}
+              />
+            </div>
+          ) : (
+            <GalleryEmpty />
+          )}
+        </div>
       </div>
     </div>
   );

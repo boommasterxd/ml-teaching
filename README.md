@@ -2,7 +2,7 @@
 
 Explore machine learning through a German interface for children. Choose a learning
 area, discover image classification, and train a model directly in your browser.
-Explore reinforcement learning by comparing two example paths in the reward demo.
+Watch two example paths in the homepage preview of learning through rewards.
 
 [Source](https://github.com/boommasterxd/ml-teaching) · [Quick start](#quick-start) ·
 [Architecture](docs/architecture.md) ·
@@ -12,7 +12,7 @@ Explore reinforcement learning by comparing two example paths in the reward demo
 
 | Workflow                                              | Result                                                                                         |
 | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Choose a learning area                                | Open image learning or compare reward paths in the learning lab.                               |
+| Choose a learning area                                | Open the image lesson or training workspace. The Q-learning lesson and exercise are planned.   |
 | Explore the image-classification demonstration        | Follow an illustrated classification step by step.                                             |
 | Play the everyday image-recognition quiz              | Find three matching uses, reveal explanations and start another round.                         |
 | Choose light, dark or system appearance               | Use a temporary choice, or explicitly remember it for later visits.                            |

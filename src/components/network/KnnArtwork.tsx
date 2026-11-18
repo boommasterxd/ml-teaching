@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { KNN_POINTS, type ExampleSignal } from '@/lib/network-demo';
 
+export const KNN_RING_RADIUS = 9;
+
 export function KnnPoint({ x, y, signal }: { x: number; y: number; signal: ExampleSignal }) {
   return signal === 'dog' ? (
     <circle cx={x} cy={y} r="4" fill="var(--primary)" />

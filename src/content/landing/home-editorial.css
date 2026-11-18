@@ -1,0 +1,217 @@
+@reference 'tailwindcss';
+
+.home-chapter,
+.home-editorial-cta {
+  padding-block: clamp(3rem, 6vw, 6.5rem);
+  color: var(--foreground);
+}
+
+.home-chapter-title {
+  max-inline-size: 19ch;
+  padding: 0;
+  border: 0;
+  font-size: clamp(2.2rem, 4.4vw, 4.6rem);
+  font-weight: 500;
+  line-height: 1.06;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.home-chapter-subtitle {
+  font-size: clamp(1.32rem, 2vw, 1.85rem);
+  font-weight: 530;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.home-chapter-label {
+  margin-block-end: 1.15rem;
+  color: var(--primary);
+  font-size: 0.94rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.home-introduction-grid,
+.home-comparison-heading,
+.home-cta-content {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+
+.home-introduction-grid {
+  gap: clamp(1.25rem, 2.6vw, 2.15rem);
+  max-width: 49rem;
+  margin-inline: auto;
+}
+
+.home-introduction-grid > p,
+.home-purpose-body p,
+.home-question p,
+.home-comparison-row > p,
+.home-comparison-limit {
+  color: var(--muted-foreground);
+  text-wrap: pretty;
+}
+
+.home-introduction-grid > p {
+  max-width: 55ch;
+  font-size: clamp(1.08rem, 1.5vw, 1.32rem);
+  line-height: 1.7;
+}
+
+.home-purpose-grid {
+  display: grid;
+  align-items: center;
+  gap: clamp(1.8rem, 5vw, 5rem);
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: clamp(1.55rem, 5.2vw, 5.5rem);
+}
+
+.home-purpose-intro .home-chapter-title {
+  max-width: 14ch;
+}
+
+.home-purpose-lead {
+  max-width: 34ch;
+  margin-top: 1.35rem;
+  color: var(--foreground);
+  font-size: clamp(1.1rem, 1.6vw, 1.35rem);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.home-purpose-body {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.home-purpose-waveform {
+  display: block;
+  width: 100%;
+  max-width: 28rem;
+  height: auto;
+  margin-bottom: 0.5rem;
+  mask-image: linear-gradient(to right, transparent 1%, black 18% 82%, transparent 99%);
+}
+
+.home-comparison-heading {
+  margin-bottom: clamp(2rem, 4.5vw, 3.7rem);
+}
+
+.home-comparison {
+  display: grid;
+  align-items: start;
+  gap: 2.4rem;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding: clamp(1.55rem, 4vw, 3.6rem);
+}
+
+.home-comparison-row,
+.home-question {
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+}
+
+.home-comparison-row .home-comparison-note {
+  grid-template-columns: 1.08rem minmax(0, 1fr);
+  gap: 0.55rem;
+  padding: 0;
+  margin-top: 0.35rem;
+  border: 0;
+  color: var(--primary);
+  background: transparent;
+}
+
+.home-comparison-note > svg {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.23rem;
+}
+
+.home-comparison-limit {
+  font-size: 1rem;
+}
+
+.home-comparison-limit p {
+  line-height: 1.65;
+}
+
+.home-questions-grid {
+  display: grid;
+  align-items: start;
+  gap: clamp(2rem, 6vw, 6rem);
+}
+
+.home-question-list {
+  display: grid;
+  gap: clamp(1.7rem, 3.6vw, 2.8rem);
+  max-width: 60ch;
+}
+
+.home-question {
+  gap: 0.55rem;
+}
+
+.home-editorial-cta {
+  padding-bottom: clamp(4.5rem, 9vw, 8rem);
+}
+
+.home-cta-content {
+  max-width: 66rem;
+  margin-inline: auto;
+  padding: clamp(3.75rem, 8vw, 7.5rem) clamp(1.5rem, 5vw, 5rem);
+  gap: clamp(1.65rem, 3vw, 2.5rem);
+}
+
+.home-cta-content .home-chapter-title {
+  max-width: 16ch;
+  font-size: clamp(2.3rem, 5.8vw, 5.5rem);
+}
+
+.home-cta-content .home-cta-action {
+  min-height: 3rem;
+  width: auto;
+  padding-inline: 1.55rem;
+}
+
+@media (width >= 48rem) {
+  .home-purpose-grid {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  }
+
+  .home-questions-grid {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+
+  .home-questions-grid .home-chapter-title {
+    max-width: 13ch;
+  }
+}
+
+@variant lg {
+  .home-comparison {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    row-gap: 0.9rem;
+  }
+
+  .home-comparison-row {
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    row-gap: inherit;
+    align-items: start;
+  }
+
+  .home-comparison-row .home-comparison-note {
+    padding-block-start: 1rem;
+    border-block-start: 1px solid var(--glass-line);
+    border-radius: 0;
+  }
+}

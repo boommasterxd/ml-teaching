@@ -1,6 +1,30 @@
 import { expect, type Page } from '@playwright/test';
 import { learningPaths } from '../../src/lib/learning-paths';
 
+export async function captureSetupDialog(page: Page) {
+  const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  const original = await dialog.evaluateHandle((content) => ({
+    content,
+    overlay: content.closest('[data-slot="dialog-overlay"]'),
+  }));
+  return async () => {
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+    const retainsFocus = () =>
+      original.evaluate(({ content, overlay }) =>
+        Boolean(
+          overlay?.isConnected &&
+          overlay.contains(content) &&
+          content.contains(document.activeElement),
+        ),
+      );
+    await expect.poll(retainsFocus).toBe(true);
+    for (const key of ['Tab', 'Shift+Tab']) {
+      await page.keyboard.press(key);
+      expect(await retainsFocus()).toBe(true);
+    }
+  };
+}
+
 export async function withdrawTrainingConsent(page: Page) {
   await page.evaluate(() => {
     document.documentElement.dataset.withdrawalProbe = 'old-workspace';
@@ -21,22 +45,31 @@ export async function withdrawTrainingConsent(page: Page) {
 export async function expectHeaderLayout(page: Page) {
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation', exact: true });
   const brand = navigation.getByRole('link', { name: 'ML Teaching – Startseite', exact: true });
-  const lab = navigation.getByRole('link', { name: 'Lernlabor öffnen', exact: true });
-  await expect(brand).toBeVisible();
-  await expect(lab).toBeVisible();
-  const [brandBox, labBox, navBox] = await Promise.all([
-    brand.boundingBox(),
-    lab.boundingBox(),
-    navigation.boundingBox(),
-  ]);
-  if (!brandBox || !labBox || !navBox) throw new Error('Header controls have no visible geometry.');
-  const padding = await navigation.evaluate((node) =>
-    Number.parseFloat(getComputedStyle(node).paddingRight),
+  const start = navigation.getByRole('link', { name: 'Startseite', exact: true });
+  const legal = navigation.getByRole('button', { name: 'Rechtliches', exact: true });
+  const theme = navigation.getByRole('switch', { name: 'Dunkle Darstellung' });
+  const [brandBox, startBox, legalBox, themeBox] = await Promise.all(
+    [brand, start, legal, theme].map((control) => control.boundingBox()),
   );
-  expect(brandBox.x + brandBox.width).toBeLessThan(labBox.x);
-  expect(
-    Math.abs(labBox.x + labBox.width - (navBox.x + navBox.width - padding)),
-  ).toBeLessThanOrEqual(1);
+  if (!brandBox || !startBox || !legalBox || !themeBox)
+    throw new Error('Header controls have no visible geometry.');
+  expect(brandBox.x + brandBox.width).toBeLessThan(startBox.x);
+  expect(legalBox.x + legalBox.width).toBeLessThan(themeBox.x);
+}
+
+export async function expectThemeControlAlignment(page: Page) {
+  const navigation = page.getByRole('navigation', { name: 'Hauptnavigation', exact: true });
+  const track = navigation.getByRole('switch', { name: 'Dunkle Darstellung' });
+  const thumb = track.locator('[data-slot="switch-thumb"]');
+  const menu = navigation.getByRole('button', { name: 'Darstellung einstellen', exact: true });
+  const parts = [navigation, track, thumb, thumb.locator('svg'), menu, menu.locator('svg')];
+  const boxes = await Promise.all(parts.map((part) => part.boundingBox()));
+  const centers = boxes.map((box) => {
+    if (!box) throw new Error('Theme control has no visible geometry.');
+    return box.y + box.height / 2;
+  });
+  expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(0.5);
+  expect(boxes[1]?.height).toBeGreaterThanOrEqual(24);
 }
 
 /** The current control must remain visible above the old page while the theme wipe runs. */
@@ -99,7 +132,7 @@ export async function expectThemeKeepsTraining(page: Page) {
   await theme.focus();
   await page.keyboard.press('Space');
   await expect(theme).toBeChecked();
-  await expect(page.getByText('10 / 200 Bilder', { exact: true })).toHaveCount(2);
+  await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
   await expect(page.getByRole('status').filter({ hasText: 'Bereit' })).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Modell neu trainieren', exact: true }),
@@ -116,8 +149,8 @@ export async function expectPreviewDeletion(
   await preview.getByRole('button', { name: 'Bild löschen' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'Name für Klasse 2: Klasse 2' })).toBeFocused();
-  await expect(page.getByText('9 / 200 Bilder', { exact: true })).toHaveCount(1);
-  await expect(page.getByText('10 / 200 Bilder', { exact: true })).toHaveCount(1);
+  await expect(page.getByText('9 / 10 Bilder', { exact: true })).toHaveCount(1);
+  await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(1);
 }
 
 export async function expectGalleryFocusAcrossResize(page: Page) {
@@ -159,7 +192,7 @@ export async function expectCancelledResetKeepsImages(page: Page) {
   await page.keyboard.press('Escape');
   await page.keyboard.press('Tab');
   await page.keyboard.press('Enter');
-  await expect(page.getByText('10 / 200 Bilder', { exact: true })).toHaveCount(2);
+  await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
   expect(
     await page.evaluate(() =>
       Boolean(
@@ -172,5 +205,5 @@ export async function expectCancelledResetKeepsImages(page: Page) {
   const remove = page.getByRole('dialog', { name: 'Klasse löschen?' });
   await remove.getByRole('button', { name: 'Löschen', exact: true }).click();
   await expect(page.getByRole('textbox')).toHaveCount(2);
-  await expect(page.getByText('10 / 200 Bilder', { exact: true })).toHaveCount(2);
+  await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
 }

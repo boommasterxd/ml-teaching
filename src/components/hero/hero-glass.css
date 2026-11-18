@@ -1,0 +1,69 @@
+.hero-optics {
+  grid-area: art;
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 47svh, 34rem);
+  aspect-ratio: 1.23;
+  user-select: none;
+}
+
+.hero-field-art,
+.hero-field-poster,
+.hero-field-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-field-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.hero-field[data-enhanced='true'] .hero-field-poster {
+  display: none;
+}
+
+.hero-field-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-glass-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  cursor: inherit;
+  background: transparent;
+  border-radius: var(--glass-radius);
+}
+
+.hero-field-controls {
+  grid-area: playback;
+  display: flex;
+  justify-content: center;
+  margin-top: 1.2rem;
+}
+
+.hero-field-controls button {
+  min-height: 2.6rem;
+  padding-inline: 1rem;
+}
+
+.hero-field-controls button[aria-pressed]:disabled {
+  opacity: 1;
+}
+
+@variant md {
+  .hero-optics {
+    width: 100%;
+    aspect-ratio: 1.06;
+  }
+  .hero-field-controls {
+    margin-top: 0.85rem;
+  }
+}

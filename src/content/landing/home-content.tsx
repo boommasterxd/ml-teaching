@@ -2,17 +2,24 @@ import AnimatedLink from '@/components/AnimatedLink';
 import { AlertTriangle } from '@/components/icons/alert-triangle';
 import { ArrowRight } from '@/components/icons/arrow-right';
 import ScrollReveal from '@/components/hero/ScrollReveal';
+import PurposeWaveform from '@/components/home/PurposeWaveform';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heading, Text } from '@/components/ui/typography';
 import { learningPaths } from '@/lib/learning-paths';
+import './home-editorial.css';
 
 export function HomeIntroduction() {
   return (
-    <section className="landing-section landing-container" aria-labelledby="home-ai-title">
+    <section
+      className="home-chapter home-introduction landing-container"
+      aria-labelledby="home-ai-title"
+    >
       <ScrollReveal kind="reading">
-        <div className="max-w-2xl space-y-4">
-          <Heading id="home-ai-title">Was ist künstliche Intelligenz?</Heading>
+        <div className="home-introduction-grid">
+          <Heading id="home-ai-title" className="home-chapter-title">
+            Was ist künstliche Intelligenz?
+          </Heading>
           <Text>
             Künstliche Intelligenz (KI) umfasst Verfahren, mit denen Computer Muster erkennen,
             Schlüsse ziehen oder Handlungen planen können. KI kann zum Beispiel Texte übersetzen,
@@ -27,20 +34,28 @@ export function HomeIntroduction() {
 
 export function HomePurpose() {
   return (
-    <section className="landing-section landing-container" aria-labelledby="home-purpose-title">
-      <div className="home-reading-grid">
+    <section
+      className="home-chapter home-purpose landing-container"
+      aria-labelledby="home-purpose-title"
+    >
+      <Card className="home-purpose-grid">
         <ScrollReveal kind="reading">
-          <div className="landing-section-heading">
-            <Text variant="muted">Unsere Idee</Text>
-            <Heading id="home-purpose-title">Warum Kinder KI kennenlernen sollten.</Heading>
-            <Text variant="lead">
+          <CardHeader className="home-purpose-intro gap-0 px-0">
+            <Text className="home-chapter-label" variant="muted">
+              Unsere Idee
+            </Text>
+            <CardTitle id="home-purpose-title" className="home-chapter-title">
+              Warum Kinder KI kennenlernen sollten.
+            </CardTitle>
+            <Text variant="lead" className="home-purpose-lead">
               Wir glauben, dass Kinder KI früh kennenlernen sollten: neugierig, spielerisch und mit
               Raum für eigene Fragen.
             </Text>
-          </div>
+          </CardHeader>
         </ScrollReveal>
-        <ScrollReveal kind="reading">
-          <div className="flex flex-col gap-5">
+        <ScrollReveal kind="reading" className="self-center">
+          <CardContent className="home-purpose-body px-0">
+            <PurposeWaveform />
             <Text>
               KI prägt mit, wie wir Informationen finden, lernen und kreativ arbeiten. Kinder
               sollten deshalb mehr kennenlernen als fertige Antworten auf einem Bildschirm. Sie
@@ -51,9 +66,9 @@ export function HomePurpose() {
               Du sammelst Beispiele, testest dein Modell und prüfst seine Fehler. Dafür brauchst du
               keine Programmierkenntnisse.
             </Text>
-          </div>
+          </CardContent>
         </ScrollReveal>
-      </div>
+      </Card>
     </section>
   );
 }
@@ -85,45 +100,55 @@ const perspectives = [
 export function HomePerspectives() {
   return (
     <section
-      className="landing-section landing-container"
+      className="home-chapter home-perspectives landing-container"
       aria-labelledby="home-perspectives-title"
     >
       <ScrollReveal kind="text">
-        <div className="landing-section-heading">
-          <Text variant="muted">Chancen und Grenzen</Text>
-          <Heading id="home-perspectives-title">Was KI kann und wo sie Grenzen hat.</Heading>
+        <div className="home-comparison-heading">
+          <Text className="home-chapter-label" variant="muted">
+            Chancen und Grenzen
+          </Text>
+          <Heading id="home-perspectives-title" className="home-chapter-title">
+            Was KI kann und wo sie Grenzen hat.
+          </Heading>
         </div>
       </ScrollReveal>
-      <div className="flex flex-col gap-8">
+      <Card className="home-comparison">
         {perspectives.map(({ title, opportunity, limit }, index) => (
-          <ScrollReveal key={title} kind="reading" index={index}>
-            <article className="flex flex-col gap-5">
-              {index > 0 && <Separator />}
-              <Heading as="h3">{title}</Heading>
-              <div className="home-reading-grid">
-                <Text>{opportunity}</Text>
-                <Alert
-                  role="note"
-                  className="self-start border-destructive/60 bg-destructive/10 [&>svg]:text-destructive"
-                >
-                  <AlertTriangle aria-hidden="true" />
-                  <AlertDescription className="text-base text-foreground [&_p]:leading-7">
-                    <p>
-                      <span className="sr-only">Achtung: </span>
-                      {limit}
-                    </p>
-                  </AlertDescription>
-                </Alert>
-              </div>
+          <ScrollReveal
+            key={title}
+            kind="reading"
+            index={index}
+            asChild
+            className="home-comparison-row"
+          >
+            <article>
+              <Heading as="h3" className="home-chapter-subtitle">
+                {title}
+              </Heading>
+              <Text>{opportunity}</Text>
+              <Alert role="note" className="home-comparison-note">
+                <AlertTriangle aria-hidden="true" />
+                <AlertDescription className="home-comparison-limit">
+                  <p>
+                    <span className="sr-only">Achtung: </span>
+                    {limit}
+                  </p>
+                </AlertDescription>
+              </Alert>
             </article>
           </ScrollReveal>
         ))}
-      </div>
+      </Card>
     </section>
   );
 }
 
 const questions = [
+  [
+    'Brauche ich eine Kamera?',
+    'Nein. Für die Bilderkennung kannst du Fotos von deinem Gerät auswählen. In der Belohnungsübung wählst du zwischen Stern und Schatz.',
+  ],
   [
     'Muss ich programmieren können?',
     'Nein. Du startest mit Bildern, verständlichen Erklärungen und kleinen Aufgaben. Beim Bilderkennungsmodell legst du deine eigenen Gruppen an und probierst aus, wie das Modell neue Bilder zuordnet.',
@@ -136,8 +161,10 @@ const questions = [
 
 function HomeQuestion({ question, answer }: { question: string; answer: string }) {
   return (
-    <article className="flex flex-col gap-3">
-      <Heading as="h3">{question}</Heading>
+    <article className="home-question">
+      <Heading as="h3" className="home-chapter-subtitle">
+        {question}
+      </Heading>
       <Text>{answer}</Text>
     </article>
   );
@@ -145,21 +172,19 @@ function HomeQuestion({ question, answer }: { question: string; answer: string }
 
 export function HomeQuestions() {
   return (
-    <section className="landing-section landing-container" aria-labelledby="home-questions-title">
-      <div className="home-reading-grid">
+    <section className="home-chapter home-questions" aria-labelledby="home-questions-title">
+      <div className="home-questions-grid landing-container">
         <ScrollReveal kind="text">
-          <div className="flex flex-col gap-8">
-            <div className="landing-section-heading">
-              <Text variant="muted">Vor dem Start</Text>
-              <Heading id="home-questions-title">KI lernen, ohne Vorwissen.</Heading>
-            </div>
-            <HomeQuestion
-              question="Brauche ich eine Kamera?"
-              answer="Nein. Für die Bilderkennung kannst du Fotos von deinem Gerät auswählen. In der Belohnungsübung wählst du zwischen Stern und Schatz."
-            />
+          <div>
+            <Text className="home-chapter-label" variant="muted">
+              Vor dem Start
+            </Text>
+            <Heading id="home-questions-title" className="home-chapter-title">
+              KI lernen, ohne Vorwissen.
+            </Heading>
           </div>
         </ScrollReveal>
-        <div className="flex flex-col gap-8">
+        <div className="home-question-list">
           {questions.map(([question, answer], index) => (
             <ScrollReveal key={question} kind="reading" index={index}>
               <HomeQuestion question={question} answer={answer} />
@@ -173,14 +198,24 @@ export function HomeQuestions() {
 
 export function HomeCallToAction() {
   return (
-    <section className="landing-cta" aria-labelledby="home-cta-title">
+    <section className="home-editorial-cta landing-container" aria-labelledby="home-cta-title">
       <ScrollReveal kind="text">
-        <div className="landing-container flex flex-col items-center gap-6">
-          <Heading id="home-cta-title">Was möchtest du deiner KI beibringen?</Heading>
-          <AnimatedLink href={learningPaths.hub} size="lg" className="mobile-action">
-            Zum Lernlabor <ArrowRight data-icon="inline-end" aria-hidden="true" />
-          </AnimatedLink>
-        </div>
+        <Card rim="ruby" className="home-cta-content">
+          <CardHeader className="w-full justify-items-center gap-0 px-0">
+            <CardTitle id="home-cta-title" className="home-chapter-title">
+              Was möchtest du deiner KI beibringen?
+            </CardTitle>
+          </CardHeader>
+          <CardFooter className="justify-center px-0">
+            <AnimatedLink
+              href={learningPaths.hub}
+              size="lg"
+              className="home-cta-action mobile-action"
+            >
+              Zum Lernlabor <ArrowRight data-icon="inline-end" aria-hidden="true" />
+            </AnimatedLink>
+          </CardFooter>
+        </Card>
       </ScrollReveal>
     </section>
   );

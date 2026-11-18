@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import { Badge } from './ui/badge';
-import { Card, CardAction, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 /** One standard Card composition keeps educational headings, icons and descriptions aligned. */
 export default function LearningCard({
@@ -15,18 +15,14 @@ export default function LearningCard({
   marker: string;
 }) {
   return (
-    <Card className="h-full">
-      <CardHeader className="items-center">
-        <CardTitle as="h3" className="self-center">
-          {title}
-        </CardTitle>
-        <CardAction className="row-span-1 self-center">
-          <Badge variant="secondary">
-            <Icon aria-hidden />
-            {marker}
-          </Badge>
-        </CardAction>
-        <CardDescription className="col-span-full">{description}</CardDescription>
+    <Card className="image-training-step h-full">
+      <CardHeader>
+        <Badge variant="ghost" className="image-step-marker">
+          <Icon aria-hidden />
+          {marker}
+        </Badge>
+        <CardTitle as="h3">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
     </Card>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from '@/lib/toast';
 import {
   applyTheme,
   parseTheme,
@@ -18,7 +19,6 @@ export interface ThemePreference {
   resolved: ResolvedTheme;
   applied: ResolvedTheme;
   remember: boolean;
-  notice: string;
   revision: number;
   animate: boolean;
 }
@@ -28,10 +28,16 @@ const initial: ThemePreference = {
   resolved: 'light',
   applied: 'light',
   remember: false,
-  notice: '',
   revision: 0,
   animate: false,
 };
+
+const rememberUnavailable =
+  'Dein Browser erlaubt das Merken nicht. Die Auswahl gilt für diesen Aufruf.';
+
+function animationFailed() {
+  toast.info('Die Darstellung wurde ohne Animation geändert.', { id: 'theme-animation' });
+}
 
 export function useThemePreference() {
   const [preference, setPreference] = useState(initial);
@@ -44,14 +50,12 @@ export function useThemePreference() {
     (selection: ThemeSelection) => {
       const previous = current.current;
       const saved = !previous.remember || rememberTheme(selection);
+      if (!saved) toast.error(rememberUnavailable, { id: 'theme-storage' });
       update({
         ...previous,
         selection,
         resolved: resolveTheme(selection, systemPrefersDark()),
         remember: previous.remember && saved,
-        notice: saved
-          ? ''
-          : 'Dein Browser erlaubt das Merken nicht. Die Auswahl gilt für diesen Aufruf.',
         revision: previous.revision + 1,
         animate: true,
       });
@@ -62,21 +66,20 @@ export function useThemePreference() {
     (remember: boolean) => {
       const previous = current.current;
       const saved = rememberTheme(remember ? previous.selection : null);
+      if (!saved)
+        toast.error(
+          remember
+            ? rememberUnavailable
+            : 'Die gespeicherte Auswahl konnte nicht gelöscht werden. Bitte lösche die Website-Daten in deinem Browser.',
+          { id: 'theme-storage' },
+        );
       update({
         ...previous,
         remember: remember && saved,
-        notice: saved
-          ? ''
-          : remember
-            ? 'Dein Browser erlaubt das Merken nicht. Die Auswahl gilt für diesen Aufruf.'
-            : 'Die gespeicherte Auswahl konnte nicht gelöscht werden. Bitte lösche die Website-Daten in deinem Browser.',
       });
     },
     [update],
   );
-  const animationFailed = useCallback(() => {
-    update({ ...current.current, notice: 'Die Darstellung wurde ohne Animation geändert.' });
-  }, [update]);
   const captureAppearance = useCallback(
     (applied: ResolvedTheme) => {
       update({ ...current.current, applied });
@@ -93,7 +96,6 @@ export function useThemePreference() {
         resolved,
         applied: resolved,
         remember,
-        notice: '',
         revision: current.current.revision + 1,
         animate: false,
       });

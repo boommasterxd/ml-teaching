@@ -143,6 +143,24 @@ describe('class image capture', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('stops a failed camera recording and reports the same error again after a new recording', async () => {
+    const callbacks = actions();
+    callbacks.onAddExample.mockRejectedValue(new Error('Camera image unavailable'));
+    const cls = makeClass();
+    const { result } = renderHook(() => useClassCapture(cls, callbacks));
+    result.current.videoRef.current = document.createElement('video');
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      await act(async () => result.current.startRecording());
+      expect(result.current.isRecording).toBe(false);
+      expect(callbacks.onError).toHaveBeenCalledTimes(attempt);
+      expect(callbacks.onError).toHaveBeenLastCalledWith(
+        expect.stringContaining('Aufnahme erneut'),
+      );
+      act(() => vi.advanceTimersByTime(5 * CAMERA.CAPTURE_INTERVAL_MS));
+      expect(callbacks.onAddExample).toHaveBeenCalledTimes(attempt);
+    }
+  });
+
   it('limits queued uploads and aborts decoding on replacement and unmount', () => {
     const cls = makeClass(ML.MAX_IMAGES_PER_CLASS - 1);
     const callbacks = actions();

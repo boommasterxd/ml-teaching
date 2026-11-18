@@ -1,10 +1,9 @@
 'use client';
 
-import type { RefObject } from 'react';
+import { useLayoutEffect, useState, type RefObject } from 'react';
 import { Sun } from '../icons/sun';
 import { Moon } from '../icons/moon';
 import { Smartphone } from '../icons/smartphone';
-import { Alert, AlertDescription } from '../ui/alert';
 import {
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -24,9 +23,25 @@ export interface ThemeMenuProps {
 /** Mounted only after intent; Radix/Animate UI mount the actual portal only when opened. */
 export function ThemeMenu({ trigger }: ThemeMenuProps) {
   const { preference, select, setRemember } = useTheme();
+  const [sideOffset, setSideOffset] = useState(12);
+  useLayoutEffect(() => {
+    const button = trigger.current;
+    if (!button) return;
+    const updateOffset = () => {
+      const offset = Number.parseFloat(
+        getComputedStyle(button).getPropertyValue('--theme-menu-offset'),
+      );
+      if (Number.isFinite(offset)) setSideOffset(offset);
+    };
+    updateOffset();
+    window.addEventListener('resize', updateOffset);
+    return () => window.removeEventListener('resize', updateOffset);
+  }, [trigger]);
+
   return (
     <DropdownMenuContent
       align="end"
+      sideOffset={sideOffset}
       data-theme-menu=""
       aria-label="Darstellung einstellen"
       onEscapeKeyDown={() => trigger.current?.focus({ preventScroll: true })}
@@ -68,11 +83,6 @@ export function ThemeMenu({ trigger }: ThemeMenuProps) {
       <p className="px-2 py-1.5 text-xs leading-relaxed text-muted-foreground">
         Ohne Merken gilt die Auswahl nur für diesen Aufruf.
       </p>
-      {preference.notice && (
-        <Alert role="status">
-          <AlertDescription>{preference.notice}</AlertDescription>
-        </Alert>
-      )}
     </DropdownMenuContent>
   );
 }

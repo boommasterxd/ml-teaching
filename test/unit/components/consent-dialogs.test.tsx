@@ -7,9 +7,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import ConsentModal from '@/components/modals/ConsentModal';
-import CameraConsentModal from '@/components/modals/CameraConsentModal';
-import LoadingModal from '@/components/modals/LoadingModal';
+import { SetupDialogFixture } from '../helpers/training-setup-dialog';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 import { AppRouterHost } from '../helpers/app-router-host';
 
@@ -31,15 +29,12 @@ function ConsentJourney() {
             : 'Dateien ohne Kamera auswählen'
           : 'Einwilligung erforderlich'}
       </p>
-      <ConsentModal
-        isOpen={step === 'privacy'}
-        onConfirm={() => setStep('camera')}
-        onDecline={() => setStep('closed')}
-      />
-      <CameraConsentModal
-        isOpen={step === 'camera'}
-        onDecline={() => setStep('complete')}
-        onConfirm={() => {
+      <SetupDialogFixture
+        step={step === 'privacy' ? 'consent' : step === 'camera' ? 'camera' : null}
+        onConfirmConsent={() => setStep('camera')}
+        onDeclineConsent={() => setStep('closed')}
+        onDeclineCamera={() => setStep('complete')}
+        onConfirmCamera={() => {
           setCamera(true);
           setStep('complete');
         }}
@@ -89,10 +84,16 @@ describe('consent dialogs', () => {
   });
 
   it('keeps model loading non-dismissible and exposes updated progress', () => {
-    const { rerender } = render(<LoadingModal isOpen loadingText="Modell wird geladen" />);
+    const { rerender } = render(<SetupDialogFixture />);
+    rerender(<SetupDialogFixture step="loading" loadingText="Modell wird geladen" />);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.getByRole('dialog', { name: 'Lade KI-Modelle...' })).toBeTruthy();
-    rerender(<LoadingModal isOpen loadingText="GPU wird vorbereitet" />);
-    expect(screen.getByText('GPU wird vorbereitet')).toBeTruthy();
+    const progress = screen.getByText('Modell wird geladen');
+    expect(progress.closest('[aria-live="polite"]')).not.toBeNull();
+    const withdrawal = screen.getByRole('link', { name: /Einwilligung widerrufen/ });
+    withdrawal.focus();
+    rerender(<SetupDialogFixture step="loading" loadingText="GPU wird vorbereitet" />);
+    expect(screen.getByText('GPU wird vorbereitet')).toBe(progress);
+    expect(document.activeElement).toBe(withdrawal);
   });
 });

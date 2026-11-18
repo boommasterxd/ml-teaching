@@ -1,5 +1,4 @@
 import AnimatedLink from '@/components/AnimatedLink';
-import { ArrowLeft } from '@/components/icons/arrow-left';
 import { ArrowRight } from '@/components/icons/arrow-right';
 import { EntryReveal } from '@/components/ui/entry-reveal';
 import { Heading, Text } from '@/components/ui/typography';
@@ -11,24 +10,15 @@ export default function ImageLearningHero() {
   return (
     <section
       id="image-learning-hero"
-      className="image-learning-hero landing-container"
+      className="landing-container"
       aria-labelledby="image-learning-title"
     >
-      <EntryReveal kind="navigation" asChild>
-        <AnimatedLink
-          href={learningPaths.hub}
-          transitionTypes={['nav-back']}
-          variant="ghost"
-          className="-ml-3"
-        >
-          <ArrowLeft data-icon="inline-start" aria-hidden="true" />
-          Lernlabor
-        </AnimatedLink>
-      </EntryReveal>
       <div className="image-hero-layout">
         <EntryReveal kind="reading">
           <div className="image-hero-copy">
-            <Text variant="muted">Bilderkennung verstehen</Text>
+            <Text variant="muted" className="image-chapter-label">
+              Bilderkennung verstehen
+            </Text>
             <Heading as="h1" id="image-learning-title" className="image-hero-title">
               Du siehst eine Katze.
               <span>Was sieht die KI?</span>

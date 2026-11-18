@@ -7,17 +7,45 @@ import {
   useShouldReduceMotion,
   useTempoTransition,
 } from '@animate-ui/react/utils/motion';
-import { KnnQuery, KnnPoint as PointGlyph } from '@/components/network/KnnArtwork';
+import { KNN_RING_RADIUS, KnnQuery, KnnPoint as PointGlyph } from '@/components/network/KnnArtwork';
 import { Text } from '@/components/ui/typography';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { KnnQuizState } from './useKnnQuiz';
 import KnnQuizPoint from './KnnQuizPoint';
-import { squaredDistance } from '@/lib/knn';
+import { squaredDistance, type KnnPosition } from '@/lib/knn';
+
+function QuizConnection({ point, query }: { point: KnnPosition; query: KnnPosition }) {
+  const reduce = useShouldReduceMotion();
+  const timing = useTempoTransition(motionTokens.transition.fade);
+  const dx = point.x - query.x;
+  const dy = point.y - query.y;
+  return (
+    <svg
+      className="knn-quiz-connections"
+      viewBox="0 0 1 1"
+      preserveAspectRatio="none"
+      style={{
+        left: `${query.x}%`,
+        top: `${query.y}%`,
+        width: `calc(${Math.hypot(dx, dy)}cqmin - var(--knn-point-size) * ${KNN_RING_RADIUS / 24})`,
+        rotate: `${Math.atan2(dy, dx)}rad`,
+      }}
+      aria-hidden="true"
+    >
+      <Effect
+        asChild
+        initial={reduce ? false : { pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={timing}
+      >
+        <path d="M0 0.5H1" stroke="var(--primary)" strokeWidth="1" fill="none" />
+      </Effect>
+    </svg>
+  );
+}
 
 export default function KnnQuizPlot({ state }: { state: KnnQuizState }) {
   const descriptionId = useId();
-  const reduce = useShouldReduceMotion();
-  const timing = useTempoTransition(motionTokens.transition.fade);
   return (
     <TooltipProvider>
       <div className="knn-quiz-figure">
@@ -31,31 +59,11 @@ export default function KnnQuizPlot({ state }: { state: KnnQuizState }) {
           aria-label="Datenpunkte: Wähle die nächsten Nachbarn der Raute"
           aria-describedby={descriptionId}
         >
-          <svg
-            className="knn-quiz-connections"
-            viewBox="0 0 100 100"
-            style={{ left: `${state.round.query.x}%`, top: `${state.round.query.y}%` }}
-            aria-hidden="true"
-          >
-            {state.round.points
-              .filter((point) => state.selected.includes(point.id))
-              .map((point) => (
-                <Effect
-                  key={point.id}
-                  asChild
-                  initial={reduce ? false : { pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={timing}
-                >
-                  <path
-                    d={`M50 50L${50 + point.x - state.round.query.x} ${50 + point.y - state.round.query.y}`}
-                    stroke="var(--primary)"
-                    strokeWidth="0.4"
-                    fill="none"
-                  />
-                </Effect>
-              ))}
-          </svg>
+          {state.round.points
+            .filter((point) => state.selected.includes(point.id))
+            .map((point) => (
+              <QuizConnection key={point.id} point={point} query={state.round.query} />
+            ))}
           {state.round.points.map((point) => (
             <KnnQuizPoint
               key={point.id}

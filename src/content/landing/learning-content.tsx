@@ -1,6 +1,7 @@
 import AnimatedLink from '@/components/AnimatedLink';
 import ScrollReveal from '@/components/hero/ScrollReveal';
 import { EntryReveal } from '@/components/ui/entry-reveal';
+import { Card, CardTitle } from '@/components/ui/card';
 import EverydayQuiz from '@/components/quiz/EverydayQuiz';
 import DeferredKnnQuiz from '@/components/knn-quiz/DeferredKnnQuiz';
 import { Separator } from '@/components/ui/separator';
@@ -34,7 +35,7 @@ export function LearningContent() {
   return (
     <>
       <section aria-labelledby="section-tips">
-        <div className="landing-section landing-container">
+        <div className="landing-section landing-container image-tip-layout">
           <ScrollReveal kind="text">
             <div className="landing-section-heading">
               <Text variant="muted">04 / Bessere Beispiele</Text>
@@ -45,7 +46,7 @@ export function LearningContent() {
               </Text>
             </div>
           </ScrollReveal>
-          <ItemGroup aria-label="Tipps für Trainingsbilder">
+          <ItemGroup aria-label="Tipps für Trainingsbilder" className="image-tips">
             {tips.map(({ Icon, title, text }, index) => (
               <ScrollReveal key={title} kind="reading" index={index}>
                 <div role="listitem">
@@ -68,7 +69,7 @@ export function LearningContent() {
           </ItemGroup>
         </div>
       </section>
-      <section aria-labelledby="section-examples">
+      <section className="image-everyday-quiz" aria-labelledby="section-examples">
         <div className="landing-container landing-section">
           <ScrollReveal kind="text">
             <div className="landing-section-heading">
@@ -104,17 +105,17 @@ export function LearningContent() {
 
 function ImageTrainingAction() {
   return (
-    <section className="landing-cta" aria-labelledby="section-cta">
-      <div className="landing-container flex flex-col items-center gap-6">
+    <section className="landing-container landing-section" aria-labelledby="section-cta">
+      <Card rim="ruby" className="landing-cta image-training-cta">
         <EntryReveal kind="text" asChild>
-          <Heading id="section-cta">Trainiere deine eigenen Klassen.</Heading>
+          <CardTitle id="section-cta">Trainiere deine eigenen Klassen.</CardTitle>
         </EntryReveal>
         <EntryReveal kind="text" index={1} className="mobile-action">
           <AnimatedLink href={learningPaths.imagePractice} size="lg" className="mobile-action">
             Jetzt ausprobieren <ArrowRight data-icon="inline-end" aria-hidden="true" />
           </AnimatedLink>
         </EntryReveal>
-      </div>
+      </Card>
     </section>
   );
 }

@@ -1,13 +1,15 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
-import { diagnostics, expectAccessible } from './browser-checks';
+import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
 import sharp from 'sharp';
 import { syntheticModel } from './synthetic-model';
 import { expectNetworkLayout } from './network-layout';
 import {
+  captureSetupDialog,
   expectCancelledResetKeepsImages,
   expectGalleryFocusAcrossResize,
   expectPreviewDeletion,
+  expectThemeControlAlignment,
   expectThemeKeepsTraining,
   expectThemeMenuTriggers,
   expectImmediateThemeFeedback,
@@ -15,6 +17,32 @@ import {
   settleLandingReveals,
   withdrawTrainingConsent,
 } from './training-keyboard';
+
+async function pageBackgroundBrightness(page: Page) {
+  // The empty page margin below the header shows the composited background, including any theme wipe.
+  const banner = await page.getByRole('banner').boundingBox();
+  if (!banner) throw new Error('Header is missing.');
+  const y = Math.ceil(banner.y + banner.height) + 12;
+  const sample = await page.screenshot({ clip: { x: 2, y, width: 4, height: 4 } });
+  const pixels = await sharp(sample).removeAlpha().greyscale().raw().toBuffer();
+  return pixels.reduce((sum, pixel) => sum + pixel, 0) / pixels.length;
+}
+
+async function expectRootThemeWipe(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        document
+          .getAnimations()
+          .some(
+            (animation) =>
+              animation.effect instanceof KeyframeEffect &&
+              animation.effect.pseudoElement === '::view-transition-new(root)',
+          ),
+      ),
+    )
+    .toBe(true);
+}
 
 async function grantModelConsent(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
@@ -27,22 +55,59 @@ async function grantModelConsent(page: Page) {
   await dialog.getByRole('button', { name: 'Zustimmen', exact: true }).click();
 }
 
+async function classLayout(page: Page) {
+  const names = page.getByRole('textbox', { name: /^Name für Klasse / });
+  return names.evaluateAll((inputs) => {
+    const [first, next] = inputs.map((input) =>
+      input.closest('[data-slot="card"]')?.getBoundingClientRect(),
+    );
+    if (!first || !next) throw new Error('Two class cards are required.');
+    return { height: first.height, spacing: next.top - first.top };
+  });
+}
+
 async function uploadTrainingClasses(page: Page) {
+  const empty = await classLayout(page);
+  await page
+    .locator('input[type="file"]')
+    .first()
+    .setInputFiles({
+      name: 'unlesbar.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('Invalid image bytes'),
+    });
+  const error = page.locator('[data-slot="toast"]').filter({ hasText: 'unlesbar.png' });
+  await expect(error).toHaveCount(1);
+  await expect(error).toBeVisible();
+  await page.keyboard.press('F6');
+  await expect(page.getByRole('region', { name: 'Mitteilungen' })).toBeFocused();
+  const close = error.getByRole('button', { name: 'Meldung schließen', exact: true });
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await expect(close).toBeFocused();
+  await expectAccessible(page);
+  await page.keyboard.press('Enter');
+  await expect(error).toHaveCount(0);
+
   for (const [index, background] of ['#ff0000', '#0000ff'].entries()) {
     const buffer = await sharp({ create: { width: 224, height: 224, channels: 3, background } })
       .png()
       .toBuffer();
-    await page
-      .locator('input[type="file"]')
-      .nth(index)
-      .setInputFiles(
-        Array.from({ length: 10 }, (_, number) => ({
-          name: `synthetic-${number}.png`,
-          mimeType: 'image/png',
-          buffer,
-        })),
-      );
+    const input = page.locator('input[type="file"]').nth(index);
+    const files = Array.from({ length: 10 }, (_, number) => ({
+      name: `synthetic-${number}.png`,
+      mimeType: 'image/png',
+      buffer,
+    }));
+    if (index === 0) {
+      await input.setInputFiles(files.splice(0, 1));
+      await expect(page.getByText('1 / 10 Bilder', { exact: true })).toBeVisible();
+      expect(await classLayout(page)).toEqual(empty);
+    }
+    await input.setInputFiles(files);
+    await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(index + 1);
   }
+  expect(await classLayout(page)).toEqual(empty);
 }
 
 test('mobile information menu supports keyboard, focus return and native navigation', async ({
@@ -135,10 +200,11 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
   await page.getByRole('switch', { name: 'Dunkle Darstellung' }).focus();
   await page.keyboard.press('Space');
   await expect(page.getByRole('switch', { name: 'Dunkle Darstellung' })).toBeChecked();
-  await page
-    .getByRole('navigation', { name: 'Hauptnavigation' })
-    .getByRole('link', { name: 'Lernlabor öffnen', exact: true })
-    .click();
+  const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
+  const menu = navigation.getByRole('button', { name: 'Menü', exact: true });
+  await expect(menu).toHaveAttribute('data-state', 'closed');
+  await menu.click();
+  await navigation.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${learningPaths.hub}$`));
   await expect(page.getByRole('dialog')).toHaveCount(0);
   const practice = page.getByRole('link', { name: 'Eigenes Bildmodell trainieren', exact: true });
@@ -208,11 +274,14 @@ test('consent can be withdrawn while a model download is pending', async ({ page
   );
   try {
     await page.goto(learningPaths.imagePractice);
+    const expectSameDialog = await captureSetupDialog(page);
     expect(pending).toHaveLength(0);
     await grantModelConsent(page);
     const loading = page.getByRole('dialog', { name: 'Lade KI-Modelle...' });
     await expect(loading).toBeVisible();
     await expect.poll(() => pending.length).toBeGreaterThan(0);
+    await expectSameDialog();
+    await expect(loading.getByText(/Lädt die Lernseite neu/)).toHaveCount(0);
     await expectAccessible(page);
     const requestsBeforeWithdrawal = pending.length;
     await withdrawTrainingConsent(page);
@@ -232,9 +301,12 @@ test('theme changes preserve navigation and require explicit remembering across 
   await page.goto('/');
   const theme = page.getByRole('switch', { name: 'Dunkle Darstellung' });
   await expect(theme).not.toBeChecked();
+  await expectThemeControlAlignment(page);
+  await expect.poll(() => pageBackgroundBrightness(page)).toBeGreaterThan(200);
   await theme.focus();
   await page.keyboard.press('Space');
   await expect(theme).toBeChecked();
+  await expect.poll(() => pageBackgroundBrightness(page)).toBeLessThan(55);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
   await page.reload();
   await expect(theme).not.toBeChecked();
@@ -243,24 +315,15 @@ test('theme changes preserve navigation and require explicit remembering across 
   await theme.focus();
   await page.keyboard.press('Space');
   await expect(theme).toBeChecked();
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        document
-          .getAnimations()
-          .some(
-            (animation) =>
-              animation.effect instanceof KeyframeEffect &&
-              animation.effect.pseudoElement === '::view-transition-new(root)',
-          ),
-      ),
-    )
-    .toBe(true);
+  await expectRootThemeWipe(page);
   await expectImmediateThemeFeedback(page);
   await page.keyboard.press('Space');
   await expect(theme).not.toBeChecked();
   await expectImmediateThemeFeedback(page);
-  await page.getByRole('link', { name: 'Datenschutz', exact: true }).click();
+  await page
+    .getByRole('contentinfo')
+    .getByRole('link', { name: 'Datenschutz', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/datenschutz$/);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
@@ -269,7 +332,10 @@ test('theme changes preserve navigation and require explicit remembering across 
     .getByRole('link', { name: 'ML Teaching – Startseite', exact: true })
     .click();
   await expect(page).toHaveURL('http://127.0.0.1:3100/');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Du probierst');
+  await settleEntryAnimations(page);
   await page.setViewportSize({ width: 390, height: 844 });
+  await expectThemeControlAlignment(page);
   await theme.focus();
   await page.keyboard.press('Space');
   await expect(theme).toBeChecked();
@@ -344,9 +410,12 @@ test('local images train a real browser classifier, predict and reset without up
     },
   );
   await page.goto(learningPaths.imagePractice);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const expectSameDialog = await captureSetupDialog(page);
   await grantModelConsent(page);
   const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
   await expect(camera).toBeVisible();
+  await expectSameDialog();
   await camera.getByRole('button', { name: 'Ohne Kamera fortfahren' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.setViewportSize({ width: 320, height: 844 });
@@ -361,7 +430,6 @@ test('local images train a real browser classifier, predict and reset without up
   await expect(page.getByRole('dialog')).toHaveCount(1);
   await page.keyboard.press('Escape');
   await expect(removeClass).toBeFocused();
-  await page.setViewportSize({ width: 1280, height: 900 });
   expect(
     await page
       .locator('video')

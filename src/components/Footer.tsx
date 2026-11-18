@@ -1,6 +1,7 @@
 import Link from './IntentLink';
 import SiteBrand from './SiteBrand';
 import { EntryReveal } from './ui/entry-reveal';
+import { headerLegalLinks } from '@/content/site-navigation';
 
 /** Compact global identity and information links; consent controls belong to the workspace. */
 export default function Footer() {
@@ -16,21 +17,13 @@ export default function Footer() {
           </div>
           <nav aria-label="Rechtliche Links">
             <ul className="footer-links">
-              <li>
-                <Link href="/impressum" className="footer-link">
-                  Impressum
-                </Link>
-              </li>
-              <li>
-                <Link href="/datenschutz" className="footer-link">
-                  Datenschutz
-                </Link>
-              </li>
-              <li>
-                <Link href="/barrierefreiheit" className="footer-link">
-                  Barrierefreiheit
-                </Link>
-              </li>
+              {headerLegalLinks.map(({ href, label }) => (
+                <li key={href}>
+                  <Link href={href} className="footer-link">
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
         </div>

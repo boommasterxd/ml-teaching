@@ -5,7 +5,7 @@ import { learningPaths } from '@/lib/learning-paths';
 export const dynamic = 'error';
 export const metadata = pageMetadata(
   'Lernlabor',
-  'Wähle deinen Lernbereich: Entdecke Bilderkennung mit eigenen Beispielen oder lerne Reinforcement Learning und Q-Learning kennen.',
+  'Trainiere ein Bildmodell mit eigenen Fotos. Entdecke außerdem, wie eine Spielfigur durch Belohnungen lernen kann.',
   learningPaths.hub,
 );
 

@@ -2,26 +2,36 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { AnimateIcon } from '@animate-ui/react/icons';
+import './alert.css';
 
-const alertVariants = cva(
-  'relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border px-4 py-3 text-sm has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current',
-  {
-    variants: {
-      variant: {
-        default: 'bg-card text-card-foreground',
-        success:
-          'border-success-border bg-success-soft text-foreground [&>svg]:text-success *:data-[slot=alert-title]:line-clamp-none',
-        result:
-          'border-primary/20 bg-primary/5 px-5 py-4 text-left text-foreground gap-y-1 has-[>svg]:grid-cols-[2rem_minmax(0,1fr)] has-[>svg]:gap-x-4 [&>svg]:row-span-2 [&>svg]:size-8 [&>svg]:self-center [&>svg]:translate-y-0 [&>svg]:text-primary *:data-[slot=alert-title]:line-clamp-none *:data-[slot=alert-title]:text-lg *:data-[slot=alert-title]:font-semibold',
-        destructive:
-          'bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
+const alertVariants = cva('relative grid w-full border text-sm', {
+  variants: {
+    variant: {
+      default: 'bg-card text-card-foreground [&>svg]:text-current',
+      success:
+        'border-success-border bg-success-soft text-foreground [&>svg]:text-success *:data-[slot=alert-title]:line-clamp-none',
+      result: 'grid-cols-[minmax(0,1fr)_auto] border-primary/25',
+      achievement: 'grid-cols-[auto_minmax(0,1fr)] border-success/30',
+      destructive:
+        'bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current',
     },
   },
-);
+  compoundVariants: [
+    {
+      variant: ['default', 'success', 'destructive'],
+      className:
+        'grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg px-4 py-3 has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5',
+    },
+    {
+      variant: ['result', 'achievement'],
+      className:
+        'isolate items-center gap-x-3 gap-y-1 overflow-hidden rounded-2xl px-4 py-3 text-left text-foreground *:data-[slot=alert-title]:line-clamp-none *:data-[slot=alert-title]:font-semibold',
+    },
+  ],
+  defaultVariants: {
+    variant: 'default',
+  },
+});
 
 function Alert({
   className,
@@ -37,6 +47,7 @@ function Alert({
     >
       <div
         data-slot="alert"
+        data-variant={variant}
         role="alert"
         className={cn(alertVariants({ variant }), className)}
         {...props}

@@ -9,6 +9,7 @@ import { buttonVariants } from '../button-variants';
 
 interface ButtonProps extends ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  tapScale?: number;
 }
 
 export function Button({
@@ -18,11 +19,12 @@ export function Button({
   className,
   children,
   disabled,
+  tapScale,
   ...props
 }: ButtonProps) {
   const Component = asChild ? Slot.Root : 'button';
   return (
-    <ActionFeedback disabled={disabled}>
+    <ActionFeedback disabled={disabled} tapScale={tapScale}>
       <Component
         data-slot="button"
         data-variant={variant}

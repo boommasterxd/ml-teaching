@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { PageTransition } from '@/components/animate-ui/components/page-transition';
 import Footer from '@/components/Footer';
 import SiteHeader from '@/components/SiteHeader';
+import ToastHost from '@/components/ToastHost';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 import { geist } from '@/lib/fonts';
@@ -37,10 +38,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
-    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
-  ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -66,6 +63,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <PageTransition effect="flow">{children}</PageTransition>
           </main>
           <Footer />
+          <ToastHost />
         </ThemeProvider>
       </body>
     </html>

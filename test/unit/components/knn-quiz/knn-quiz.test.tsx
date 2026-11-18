@@ -101,7 +101,7 @@ describe('KNN neighbor exercise', () => {
     fireEvent.click(classChoice(winner));
     expect(screen.getByText('Richtig zugeordnet!')).toBeTruthy();
     expect(screen.getByRole('status').textContent).toBe(
-      `Richtig! 2 von 3 Nachbarn stimmen für ${winner}.`,
+      `Richtig zugeordnet! 2 von 3 Nachbarn stimmen für ${winner}.`,
     );
     expect(screen.queryByText('Zähle noch einmal.')).toBeNull();
     expect(classChoice('Hund').disabled).toBe(true);
@@ -126,8 +126,11 @@ describe('KNN neighbor exercise', () => {
     );
     expect(screen.queryByRole('alert')).toBeNull();
     expect(classChoice('Hund').disabled).toBe(true);
-    fireEvent.click(classChoice(chooseNeighbors(1)));
-    expect(screen.getByRole('status').textContent).toMatch(/Richtig! 1 von 1 Nachbarn/);
+    const singleNeighbor = chooseNeighbors(1);
+    fireEvent.click(classChoice(singleNeighbor));
+    expect(screen.getByRole('status').textContent).toBe(
+      `Richtig zugeordnet! Der nächste Nachbar stimmt für ${singleNeighbor}.`,
+    );
     fireEvent.keyDown(slider, { key: 'End' });
     expect(screen.getByText('K = 5 · 0 von 5 gefunden')).toBeTruthy();
     expect(screen.getByRole('img', { name: /Generiertes Beispielbild/ }).getAttribute('src')).toBe(
@@ -137,7 +140,7 @@ describe('KNN neighbor exercise', () => {
     const winner = chooseNeighbors(5);
     fireEvent.click(classChoice(winner));
     expect(screen.getByRole('status').textContent).toBe(
-      `Richtig! 3 von 5 Nachbarn stimmen für ${winner}.`,
+      `Richtig zugeordnet! 3 von 5 Nachbarn stimmen für ${winner}.`,
     );
     const previous = plottedData();
     fireEvent.click(screen.getByRole('button', { name: 'Neue Runde' }));

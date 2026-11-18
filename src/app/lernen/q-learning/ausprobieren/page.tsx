@@ -5,8 +5,8 @@ import RewardPracticePage from '@/screens/RewardPracticePage';
 export const dynamic = 'error';
 export const metadata = {
   ...pageMetadata(
-    'Belohnungen ausprobieren',
-    'Wähle ein Ziel und vergleiche zwei Beispielwege beim Lernen durch Belohnung.',
+    'Lernen durch Belohnung',
+    'Die Q-Learning-Übung im Lernlabor von ML Teaching.',
     learningPaths.qLearningPractice,
   ),
   robots: { index: false, follow: true },

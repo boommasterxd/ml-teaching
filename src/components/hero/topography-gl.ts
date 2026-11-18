@@ -1,61 +1,64 @@
-import { VERTEX } from './topography-shaders';
-
-const PERMUTATION = (() => {
-  const table = Array.from({ length: 256 }, (_, index) => index);
-  let seed = 1013;
-  for (let index = 255; index > 0; index--) {
-    seed = (seed * 16807) % 2147483647;
-    const next = seed % (index + 1);
-    [table[index], table[next]] = [table[next]!, table[index]!];
-  }
-  return Uint8Array.from(table);
-})();
+import { FIELD_FRAGMENT, GLASS_FRAGMENT, SCREEN_VERTEX, VERTEX } from './topography-shaders';
 
 function compile(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
   if (!shader) return null;
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
-  if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
-  gl.deleteShader(shader);
-  return null;
+  return shader;
 }
 
-export function createProgram(gl: WebGLRenderingContext, fragmentSource: string) {
-  const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
+function queueProgram(gl: WebGLRenderingContext, vertexSource: string, fragmentSource: string) {
+  const vertex = compile(gl, gl.VERTEX_SHADER, vertexSource);
   const fragment = compile(gl, gl.FRAGMENT_SHADER, fragmentSource);
   const program = gl.createProgram();
-  if (vertex && fragment && program) {
-    gl.attachShader(program, vertex);
-    gl.attachShader(program, fragment);
-    gl.bindAttribLocation(program, 0, 'position');
-    gl.linkProgram(program);
+  if (!vertex || !fragment || !program) {
+    gl.deleteShader(vertex);
+    gl.deleteShader(fragment);
+    gl.deleteProgram(program);
+    return null;
+  }
+  gl.attachShader(program, vertex);
+  gl.attachShader(program, fragment);
+  gl.bindAttribLocation(program, 0, 'position');
+  gl.linkProgram(program);
+  // Attached shaders stay alive until detach after linking or disposal of a pending program.
+  gl.deleteShader(vertex);
+  gl.deleteShader(fragment);
+  const releaseShaders = () => {
     gl.detachShader(program, vertex);
     gl.detachShader(program, fragment);
-  }
-  if (vertex) gl.deleteShader(vertex);
-  if (fragment) gl.deleteShader(fragment);
-  if (program && vertex && fragment && gl.getProgramParameter(program, gl.LINK_STATUS))
-    return program;
-  if (program) gl.deleteProgram(program);
-  return null;
+  };
+  return { program, releaseShaders };
 }
 
-export function initializeTexture(gl: WebGLRenderingContext, texture: WebGLTexture) {
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-  gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.LUMINANCE,
-    256,
-    1,
-    0,
-    gl.LUMINANCE,
-    gl.UNSIGNED_BYTE,
-    PERMUTATION,
-  );
-  configureTexture(gl, texture);
+export function queueGlassPrograms(gl: WebGLRenderingContext) {
+  const parallel = gl.getExtension('KHR_parallel_shader_compile');
+  // Reserve one vector per other field uniform, even on minimum-spec WebGL 1 devices.
+  const freeVectors = gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) - 8;
+  const rippleCapacity = Math.min(32, Math.max(4, freeVectors));
+  const limits = `#define RIPPLE_CAPACITY ${rippleCapacity}\n`;
+  const field = queueProgram(gl, limits + VERTEX, limits + FIELD_FRAGMENT);
+  if (!field) return null;
+  const glass = queueProgram(gl, SCREEN_VERTEX, GLASS_FRAGMENT);
+  if (!glass) {
+    gl.deleteProgram(field.program);
+    return null;
+  }
+  const programs = [field.program, glass.program];
+  const dispose = () => programs.forEach((program) => gl.deleteProgram(program));
+  const poll = () => {
+    if (
+      parallel &&
+      programs.some((p) => !gl.getProgramParameter(p, parallel.COMPLETION_STATUS_KHR))
+    )
+      return 'pending' as const;
+    const linked = programs.every((program) => gl.getProgramParameter(program, gl.LINK_STATUS));
+    field.releaseShaders();
+    glass.releaseShaders();
+    return linked;
+  };
+  return { field: field.program, glass: glass.program, rippleCapacity, poll, dispose };
 }
 
 export function rasterLimit(gl: WebGLRenderingContext) {
@@ -70,8 +73,8 @@ export function rasterLimit(gl: WebGLRenderingContext) {
 
 export function configureTexture(gl: WebGLRenderingContext, texture: WebGLTexture) {
   gl.bindTexture(gl.TEXTURE_2D, texture);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 }

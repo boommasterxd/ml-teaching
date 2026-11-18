@@ -1,5 +1,5 @@
 import AnimatedLink from '@/components/AnimatedLink';
-import { ArrowRight } from '@/components/icons/arrow-right';
+import LearningPracticeAction from '@/components/LearningPracticeAction';
 import {
   Card,
   CardContent,
@@ -11,9 +11,8 @@ import {
 import LearningAreaArtwork from '@/components/home/LearningAreaArtwork';
 import ScrollReveal from '@/components/hero/ScrollReveal';
 import { learningAreas } from '@/content/learning-areas';
-import { learningPaths } from '@/lib/learning-paths';
 
-/** Learning cards retain SSG content and centered native button links with intent preparation. */
+/** Learning cards retain SSG content and native button links with intent preparation. */
 export default function LearningAreas({
   idPrefix,
   headingLevel = 'h2',
@@ -23,35 +22,35 @@ export default function LearningAreas({
 }) {
   return (
     <div className="learning-areas">
-      {learningAreas.map(({ id, title, description, href, action }, index) => (
-        <ScrollReveal key={id} kind="reading" index={index} className="learning-area-reveal h-full">
-          <Card className="learning-area-card h-full">
+      {learningAreas.map((area, index) => (
+        <ScrollReveal
+          key={area.id}
+          kind="reading"
+          index={index}
+          className="learning-area-reveal h-full"
+        >
+          <Card className="learning-area-card h-full" data-method={area.id}>
             <CardHeader>
-              <CardTitle as={headingLevel} id={`${idPrefix}-${id}-title`}>
-                {title}
+              <CardTitle as={headingLevel} id={`${idPrefix}-${area.id}-title`}>
+                {area.title}
               </CardTitle>
-              <CardDescription id={`${idPrefix}-${id}-description`}>{description}</CardDescription>
+              <CardDescription id={`${idPrefix}-${area.id}-description`}>
+                {area.description}
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <LearningAreaArtwork area={id} />
+            <CardContent className="learning-area-preview">
+              <LearningAreaArtwork area={area.id} />
             </CardContent>
-            <CardFooter className="mt-auto flex-wrap justify-center gap-2">
-              <AnimatedLink
-                href={href}
-                id={`${idPrefix}-${id}-action`}
-                size="lg"
-                className="mobile-action h-auto min-h-11 max-w-full whitespace-normal"
-              >
-                {action} <ArrowRight data-icon="inline-end" aria-hidden="true" />
-              </AnimatedLink>
-              {id === 'images' && (
+            <CardFooter className="learning-area-actions mt-auto flex-wrap justify-start gap-2">
+              <LearningPracticeAction area={area} id={`${idPrefix}-${area.id}-action`} />
+              {!area.introduction.comingSoon && (
                 <AnimatedLink
-                  href={learningPaths.images}
+                  href={area.introduction.href}
                   variant="outline"
                   size="lg"
                   className="mobile-action h-auto min-h-11 max-w-full whitespace-normal"
                 >
-                  Bilderkennung verstehen
+                  {area.introduction.label}
                 </AnimatedLink>
               )}
             </CardFooter>

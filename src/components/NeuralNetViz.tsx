@@ -4,9 +4,7 @@ import { useEffect } from 'react';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { Shine } from '@animate-ui/react/primitives/effects/shine';
 import { motionTokens, useShouldReduceMotion } from '@animate-ui/react/utils/motion';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { Dog } from './icons/dog';
-import { Cat } from './icons/cat';
+import ResultFeedback from './network/ResultFeedback';
 import { Progress } from './ui/progress';
 import { Text } from './ui/typography';
 import { ANIMATION, NETWORK_STAGES } from '../constants';
@@ -105,21 +103,6 @@ function ResultBars({ signal, ready }: { signal: ExampleSignal; ready: boolean }
 
 type NetworkState = ReturnType<typeof useNeuralNetAnimation>;
 
-function ResultFeedback({ signal }: { signal: ExampleSignal }) {
-  const example = KNN_EXAMPLES[signal];
-  const label = NETWORK_EXAMPLES[example.winner].name;
-  const Icon = example.winner === 'dog' ? Dog : Cat;
-  return (
-    <Alert variant="result" role="presentation">
-      <Icon aria-hidden="true" />
-      <AlertTitle>{label} erkannt</AlertTitle>
-      <AlertDescription>
-        {example.votes[example.winner]} von {KNN_NEIGHBOR_COUNT} Nachbarn stimmen für {label}.
-      </AlertDescription>
-    </Alert>
-  );
-}
-
 export function NetworkDiagram({
   activeSignal,
   animStep,
@@ -139,7 +122,6 @@ export function NetworkDiagram({
   useEffect(() => {
     onReady?.();
   }, [onReady]);
-  const reduce = useShouldReduceMotion();
   const signal = activeSignal ?? requestedSignal ?? 'dog';
   return (
     <>
@@ -171,13 +153,7 @@ export function NetworkDiagram({
         ) : preparing ? (
           <Text variant="muted">Beispiel wird geladen…</Text>
         ) : result ? (
-          <Effect
-            className="w-full"
-            key={`${sequence}-result`}
-            slide={reduce ? false : { direction: 'up', offset: 8 }}
-          >
-            <ResultFeedback signal={signal} />
-          </Effect>
+          <ResultFeedback key={sequence} signal={signal} />
         ) : (
           <Text variant="muted">
             {animating ? 'Signal wird verarbeitet…' : 'Wähle ein Beispiel.'}

@@ -42,26 +42,17 @@ export default function LearningAreaArtwork({ area }: { area: 'images' | 'q-lear
               rx="8"
             />
           ))}
-          <path className="artwork-detail" d="M90 24h122v50h61v49" strokeWidth="3" />
+          <circle cx="90" cy="123" r="10" className="reward-experiment-start" />
           <path
-            className="artwork-accent"
-            d="M90 123h61V74h122V24h61m-7-7 7 7-7 7"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            className="reward-experiment-route"
+            d="M90 123H143Q151 123 151 115V82Q151 74 159 74H265Q273 74 273 66V32Q273 24 281 24H334"
           />
-          <circle cx="90" cy="123" r="9" fill="currentColor" />
-          <circle
-            cx="334"
-            cy="24"
-            r="14"
-            fill="var(--card)"
-            stroke="currentColor"
-            strokeWidth="2"
+          <path
+            className="reward-experiment-goal"
+            data-rewarded="true"
+            d="m334 9 4.4 9.4 10.4 1.4-7.6 7.2 1.9 10.2-9.1-5-9.1 5 1.9-10.2-7.6-7.2 10.4-1.4Z"
           />
-          <text x="334" y="29" textAnchor="middle" fontSize="15" fill="currentColor">
-            +1
-          </text>
+          <circle cx="334" cy="24" r="4" className="reward-experiment-agent" />
         </>
       )}
     </svg>

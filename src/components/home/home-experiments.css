@@ -8,7 +8,7 @@
 }
 .home-signal-surface {
   fill: var(--card);
-  stroke: var(--border);
+  stroke: var(--control);
 }
 .home-signal-label {
   fill: var(--muted-foreground);
@@ -16,7 +16,7 @@
   font-size: 12px;
 }
 .home-signal-muted {
-  stroke: var(--border);
+  stroke: var(--control);
 }
 .home-example-photo {
   display: block;
@@ -30,7 +30,6 @@
 }
 .home-signal-cells rect[data-on='true'] {
   fill: var(--primary);
-  opacity: 0.75;
 }
 .home-signal-output {
   fill: var(--foreground);
@@ -40,68 +39,15 @@
 .home-signal-active {
   stroke: var(--primary);
 }
-.home-preview-pending {
-  position: relative;
-  isolation: isolate;
-}
-.home-preview-pending .text-muted-foreground {
-  color: color-mix(in srgb, var(--foreground) 96%, var(--muted-foreground));
-}
-.home-preview-pending-shade {
-  position: absolute;
-  grid-row: 2 / span 2;
-  inset: 0 -0.875rem -0.875rem;
-  z-index: 1;
-  border-radius: 0 0 var(--radius) var(--radius);
-  background: linear-gradient(to bottom, transparent, rgb(0 0 0 / 55%) 1.25rem);
-  pointer-events: none;
-}
-@variant lg {
-  .home-preview-pending-shade {
-    grid-row-end: span 3;
-  }
-}
-.home-preview-pending-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  container-type: inline-size;
-  pointer-events: none;
-}
-.home-preview-pending-overlay::before {
-  content: '';
-  position: absolute;
-  inset: -0.875rem;
-  z-index: -1;
-  border-radius: var(--radius);
-  background: rgb(0 0 0 / 51.5%);
-  box-shadow: 0 12px 24px -12px var(--media-overlay);
-}
-.home-preview-pending-overlay > span {
-  color: var(--media-foreground);
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 13cqi, 4.5rem);
-  font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 1.1;
-  text-shadow: 0 0 0.45em var(--media-surface);
-  white-space: nowrap;
-  rotate: -26deg;
-}
 .learning-area-artwork {
   display: block;
   width: 100%;
   height: auto;
-  color: var(--primary);
+  color: var(--experiment-accent);
 }
 .learning-area-artwork .artwork-surface {
-  fill: var(--background);
-  stroke: var(--border);
-}
-.learning-area-artwork .artwork-detail {
-  stroke: var(--border);
+  fill: var(--card);
+  stroke: var(--control);
 }
 .learning-area-artwork .artwork-accent {
   stroke: currentColor;

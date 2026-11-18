@@ -1,14 +1,20 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { AnimateIcon } from '@animate-ui/react/icons';
+import { Slot } from '@animate-ui/react/primitives/radix-ui';
+import './card.css';
 
-function Card({ className, ...props }: React.ComponentProps<'div'>) {
+type CardProps = React.ComponentProps<'div'> & { rim?: 'neutral' | 'ruby'; asChild?: boolean };
+
+function Card({ className, rim = 'neutral', asChild = false, ...props }: CardProps) {
+  const Surface = asChild ? Slot.Root : 'div';
   return (
     <AnimateIcon animateOnHover animateOnTap className="contents">
-      <div
+      <Surface
         data-slot="card"
+        data-rim={rim}
         className={cn(
-          'flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm',
+          'relative flex flex-col gap-6 rounded-(--glass-radius) border [background:var(--card-surface)] py-6 text-card-foreground shadow-(--glass-highlight)',
           className,
         )}
         {...props}

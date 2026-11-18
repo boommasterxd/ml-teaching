@@ -7,8 +7,7 @@
   margin-inline: auto;
   padding-inline: clamp(1.25rem, 5vw, 4rem);
 }
-.landing-section,
-.landing-cta {
+.landing-section {
   padding-block: clamp(4rem, 7vw, 7rem);
 }
 .landing-section-heading {
@@ -47,12 +46,6 @@
   min-width: 0;
   gap: 0.75rem;
 }
-.landing-cta {
-  position: relative;
-  overflow: hidden;
-  text-align: center;
-  background: radial-gradient(ellipse at 50% 100%, rgb(var(--hero-glow) / 0.1), transparent 65%);
-}
 .landing-demo {
   position: relative;
   min-width: 0;
@@ -63,118 +56,123 @@
   align-items: center;
   gap: 1rem;
 }
-.hero-section {
+.hero-section,
+.hero-field {
   position: relative;
   isolation: isolate;
 }
 .hero-field {
-  --hero-parallax-depth: 16;
-  -webkit-user-select: none;
-  user-select: none;
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  place-items: center;
-  width: 100%;
-  min-height: calc(100svh - var(--header-height));
+  --hero-title-ink: linear-gradient(
+    112deg,
+    var(--primary-hover),
+    var(--primary) 44%,
+    color-mix(in srgb, var(--primary), var(--foreground) 12%) 76%,
+    var(--primary)
+  );
+}
+.dark .hero-field {
+  --hero-title-ink: linear-gradient(112deg, #ff9991, #ff535b 44%, #ff394b 76%, #ff6467);
 }
 .hero-field-backdrop {
+  --halo-x: 50%;
+  --halo-y: calc(var(--header-height) + clamp(0.5rem, 2vh, 1.4rem) + min(39vw, 19svh, 13.8rem));
+  --halo-width: min(68vw, 19rem);
+  --halo-height: min(48vw, 17rem);
   position: absolute;
   inset: calc(-1 * (var(--header-height) + var(--header-border-width))) 0 0;
   z-index: -1;
-  overflow: hidden;
-  background: var(--background);
+  background: radial-gradient(
+    ellipse var(--halo-width) var(--halo-height) at var(--halo-x) var(--halo-y),
+    rgb(222 30 58 / 24%),
+    rgb(202 18 44 / 14%) 44%,
+    rgb(152 9 31 / 5%) 72%,
+    transparent 100%
+  );
 }
-.hero-field-backdrop::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      ellipse at 50% 42%,
-      rgb(var(--hero-veil) / 0.92) 5%,
-      rgb(var(--hero-veil) / 0.72) 38%,
-      transparent 75%
-    ),
-    linear-gradient(
-      to bottom,
-      rgb(var(--hero-veil) / 0.35),
-      transparent 30%,
-      rgb(var(--hero-veil)) 100%
-    );
-}
-.hero-field-art {
-  position: absolute;
-  inset: -2rem;
-  z-index: -3;
-  pointer-events: none;
-  opacity: 0.8;
-}
-.hero-field-glow {
-  position: absolute;
-  inset: -15%;
-  z-index: -2;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 12% 30%, rgb(var(--hero-glow) / 0.23), transparent 45%),
-    radial-gradient(ellipse at 85% 65%, rgb(var(--hero-glow) / 0.18), transparent 40%);
-}
-.hero-field-poster {
-  position: absolute;
-  inset: 0;
-  background: rgb(var(--hero-line-color));
-  mask-image: url('/hero-contours-mobile.webp');
-  mask-size: 1024px 1536px;
-  mask-repeat: repeat;
-}
-.hero-field[data-enhanced='true'] .hero-field-poster {
-  display: none;
-}
-.hero-field-canvas {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.hero-field-canvas canvas {
-  width: 100%;
-  height: 100%;
+.hero-composition {
+  display: grid;
+  grid-template-areas: 'art' 'copy' 'playback';
+  justify-items: center;
+  align-items: center;
+  padding-block: clamp(0.5rem, 2vh, 1.4rem) 2rem;
 }
 .hero-copy {
-  position: relative;
+  grid-area: copy;
   z-index: 1;
   display: flex;
+  width: 100%;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
-  gap: 1.75rem;
-  padding-block: clamp(5rem, 12vh, 9rem) clamp(7rem, 15vh, 11rem);
   text-align: center;
+  container-type: inline-size;
 }
 .hero-title {
-  max-width: 70rem;
-  font-size: clamp(3.25rem, 8.7vw, 8rem);
-  line-height: 1.05;
-  letter-spacing: -0.065em;
+  font-size: clamp(2.6rem, 16cqi, 5.2rem);
+  font-weight: 570;
+  letter-spacing: -0.068em;
+  line-height: 1.04;
+  text-wrap: initial;
 }
 .hero-accent {
   display: inline-block;
-  max-width: 100%;
   color: var(--primary);
-  background-image: linear-gradient(to top, var(--primary-soft) 18%, transparent 18%);
-  background-repeat: no-repeat;
-  background-position: left center;
+  font-weight: 510;
+  background-color: var(--primary);
+  background-image: var(--hero-title-ink);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@media (forced-colors: active) {
+  .hero-accent {
+    -webkit-text-fill-color: CanvasText;
+  }
 }
 .hero-description {
-  max-width: 38rem;
-  line-height: 1.7;
+  max-width: 32ch;
+  margin-block-start: clamp(1rem, 2.5vw, 1.7rem);
+  color: var(--muted-foreground);
+  font-size: clamp(1.05rem, 1.55vw, 1.38rem);
+  line-height: 1.5;
+  letter-spacing: -0.025em;
+  text-wrap: pretty;
 }
 .hero-actions {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.65rem;
+  margin-top: clamp(1.35rem, 2.2vw, 2rem);
+}
+.hero-actions a {
+  min-height: 2.95rem;
+  padding-inline: 1.35rem;
+}
+@variant md {
+  .hero-field-backdrop {
+    --halo-x: calc(50% + min(23vw, 18rem));
+    --halo-y: calc(50% + var(--header-height) / 2);
+    --halo-width: min(43vw, 28rem);
+    --halo-height: min(39vw, 37svh, 24rem);
+  }
+  .hero-composition {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.04fr);
+    grid-template-areas: 'copy art' 'copy playback';
+    align-content: center;
+    min-height: clamp(34rem, 76svh, 48rem);
+    padding-block: clamp(1.75rem, 4vh, 3rem);
+  }
+  .hero-copy {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .hero-title {
+    font-size: clamp(3.05rem, 17.3cqi, 7.3rem);
+  }
+  .hero-actions {
+    justify-content: flex-start;
+  }
 }
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
   [data-entry-reveal='hero'][data-entry-initial='true'] {
@@ -183,12 +181,6 @@
   [data-entry-reveal='hero'][data-entry-initial='true']:focus-within {
     filter: none;
   }
-}
-.hero-field-controls {
-  position: absolute;
-  z-index: 2;
-  bottom: 1.5rem;
-  right: clamp(1.25rem, 5vw, 4rem);
 }
 @variant lg {
   .landing-technique-layout {
@@ -204,29 +196,11 @@
   .landing-technique-item:last-child {
     justify-content: space-between;
   }
-  .hero-field {
-    --hero-parallax-depth: 48;
-  }
 }
 @variant md {
-  .hero-field-poster {
-    mask-image: url('/hero-contours.webp');
-    mask-size: 5120px 2160px;
-  }
   .landing-tip-content {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
     align-items: center;
     gap: 2rem;
-  }
-}
-@variant max-sm {
-  .hero-actions {
-    /* Preserve the hero's height when its content sets the minimum on short screens. */
-    min-block-size: 5.75rem;
-    align-content: start;
-  }
-  .hero-actions a {
-    min-block-size: 2.75rem;
-    padding-inline: 0.75rem;
   }
 }

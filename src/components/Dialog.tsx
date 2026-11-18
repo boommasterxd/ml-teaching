@@ -37,11 +37,11 @@ export default function Dialog({
     }
   }, [isOpen, content]);
 
-  const Content = initialContent ? RadixDialog.Content : DialogContent;
   const surface = (
     <DialogOverlay animateEntry={!initialContent}>
-      <Content
+      <DialogContent
         ref={setContent}
+        initialContent={initialContent}
         asChild
         aria-modal="true"
         aria-labelledby={labelledBy}
@@ -58,7 +58,7 @@ export default function Dialog({
         onInteractOutside={(event) => event.preventDefault()}
       >
         {children}
-      </Content>
+      </DialogContent>
     </DialogOverlay>
   );
   return (

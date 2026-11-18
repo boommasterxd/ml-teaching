@@ -16,6 +16,12 @@ const turns = [
   { panel: 'reward', signal: 'cat', goal: 'treasure' },
 ] as const;
 
+function visibleStep(step: number, imageVisible: boolean, rewardVisible: boolean) {
+  if (imageVisible === rewardVisible) return step;
+  const visiblePanel = imageVisible ? 'image' : 'reward';
+  return turns[step % turns.length].panel === visiblePanel ? step : step + 1;
+}
+
 function useDogPhoto(prepare: boolean) {
   const [photo, setPhoto] = useState<'pending' | 'ready' | 'unavailable'>('pending');
   const pending = useRef<ReturnType<typeof prepareExample> | undefined>(undefined);
@@ -55,15 +61,18 @@ function usePreviewPlayback() {
   const showRewardMotion = available && rewardInView;
   const dogPhoto = useDogPhoto(showImageMotion);
   const imageTurn = turn.panel === 'image';
+  // Stacked cards use each turn for the illustration the reader is actually looking at.
+  const nextVisible = visibleStep(step, showImageMotion, showRewardMotion);
+  if (nextVisible !== step) setStep(nextVisible);
   const dogTurn = imageTurn && turn.signal === 'dog';
   const waitingForDog = dogTurn && imageInView && dogPhoto === 'pending';
   const playing = (showImageMotion || showRewardMotion) && !waitingForDog;
 
   useEffect(() => {
     if (!playing) return;
-    const timer = window.setInterval(() => setStep((current) => current + 1), previewIntervalMs);
-    return () => window.clearInterval(timer);
-  }, [playing]);
+    const timer = window.setTimeout(() => setStep(step + 1), previewIntervalMs);
+    return () => window.clearTimeout(timer);
+  }, [playing, step]);
 
   const animateImage =
     playing && showImageMotion && imageTurn && (!dogTurn || dogPhoto === 'ready');

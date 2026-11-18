@@ -5,7 +5,7 @@
 ## Anwendung
 
 - [Startseite](https://mlteaching.boomapps.de/): Allgemeiner Einstieg in maschinelles Lernen mit Beispielen, Aktionen und Belohnungen.
-- [Lernlabor](https://mlteaching.boomapps.de/lernen): Bildmodelle trainieren oder zwei Beispielwege für verschiedene Belohnungen vergleichen.
+- [Lernlabor](https://mlteaching.boomapps.de/lernen): Bildmodelle mit eigenen Fotos trainieren und über die Wirkung von Belohnungen nachdenken. Erklärung und Übung zu Q-Learning sind angekündigt.
 - [Bilderkennung verstehen](https://mlteaching.boomapps.de/lernen/bilderkennung): Bildverarbeitung als Animation, MobileNet und KNN sowie interaktive Quizze.
 - [Bildmodell trainieren](https://mlteaching.boomapps.de/lernen/bilderkennung/ausprobieren): Interaktive Bildklassifikation mit Kamera oder eigenen Bildern. Das vortrainierte MobileNet-Modell wird nach Zustimmung von Google geladen; Training und Bilderkennung erfolgen im Browser.
 

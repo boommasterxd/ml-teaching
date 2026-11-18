@@ -7,6 +7,7 @@ function gpu() {
     MAX_RENDERBUFFER_SIZE: 34024,
     MAX_VIEWPORT_DIMS: 3386,
     FRAMEBUFFER_COMPLETE: 36053,
+    LINK_STATUS: 0x8b82,
     getParameter: vi.fn((name: number): number | Int32Array =>
       name === 3386 ? new Int32Array([16384, 16384]) : 16384,
     ),
@@ -17,7 +18,9 @@ function gpu() {
     bindFramebuffer: vi.fn(),
     framebufferTexture2D: vi.fn(),
     checkFramebufferStatus: vi.fn(() => 36053),
-    getExtension: vi.fn(() => ({})),
+    getExtension: vi.fn((name: string): object | null =>
+      name === 'OES_standard_derivatives' ? {} : null,
+    ),
     createShader: vi.fn(() => ({})),
     shaderSource: vi.fn(),
     compileShader: vi.fn(),
@@ -27,7 +30,7 @@ function gpu() {
     attachShader: vi.fn(),
     detachShader: vi.fn(),
     linkProgram: vi.fn(),
-    getProgramParameter: vi.fn(() => true),
+    getProgramParameter: vi.fn<(program: object, name: number) => boolean>().mockReturnValue(true),
     deleteProgram: vi.fn(),
     createBuffer: vi.fn(() => ({})),
     createTexture: vi.fn(() => ({})),
@@ -40,14 +43,12 @@ function gpu() {
     enableVertexAttribArray: vi.fn(),
     vertexAttribPointer: vi.fn(),
     bindTexture: vi.fn(),
-    pixelStorei: vi.fn(),
     texImage2D: vi.fn<WebGLRenderingContext['texImage2D']>(),
     texParameteri: vi.fn(),
     getUniformLocation: vi.fn(() => null),
     uniform1i: vi.fn(),
     uniform1f: vi.fn(),
     uniform2f: vi.fn(),
-    uniform3f: vi.fn(),
     uniform4fv: vi.fn(),
     viewport: vi.fn(),
     clearColor: vi.fn(),
@@ -67,10 +68,9 @@ const frame = {
   lift: 1,
   hill: [300, 200] as [number, number],
   ripples: new Float32Array(16),
-  color: [1, 0, 0] as [number, number, number],
 };
 
-describe('optional contour GPU resources', () => {
+describe('optional glass GPU resources', () => {
   it('releases shaders after linking, disposes every retained allocation once and prevents later draws', () => {
     const { canvas, gl } = gpu();
     const renderer = createTopographyRenderer(canvas)!;
@@ -83,7 +83,6 @@ describe('optional contour GPU resources', () => {
       lift: 0,
       hill: [0, 0] as [number, number],
       ripples: new Float32Array(16),
-      color: [1, 0, 0] as [number, number, number],
     };
     renderer.draw(frame);
     expect(gl.drawArrays).toHaveBeenCalledTimes(2);
@@ -91,38 +90,57 @@ describe('optional contour GPU resources', () => {
     renderer.dispose();
     renderer.draw(frame);
     expect(gl.deleteBuffer).toHaveBeenCalledTimes(1);
-    expect(gl.deleteTexture).toHaveBeenCalledTimes(2);
+    expect(gl.deleteTexture).toHaveBeenCalledTimes(1);
     expect(gl.deleteFramebuffer).toHaveBeenCalledTimes(1);
     expect(gl.deleteProgram).toHaveBeenCalledTimes(2);
     expect(gl.drawArrays).toHaveBeenCalledTimes(2);
   });
 
-  it('fails back to the static scene and releases partial allocations when shader linking fails', () => {
+  it('waits for both asynchronous links before querying uniforms or drawing', () => {
     const { canvas, gl } = gpu();
-    gl.getProgramParameter.mockReturnValue(false);
-    expect(createTopographyRenderer(canvas)).toBeNull();
-    expect(gl.deleteShader).toHaveBeenCalledTimes(2);
-    expect(gl.deleteProgram).toHaveBeenCalledTimes(1);
-    expect(gl.createBuffer).not.toHaveBeenCalled();
+    const completion = 0x91b1;
+    gl.getExtension.mockImplementation((name) =>
+      name === 'KHR_parallel_shader_compile' ? { COMPLETION_STATUS_KHR: completion } : {},
+    );
+    const renderer = createTopographyRenderer(canvas)!;
+    expect(gl.linkProgram).toHaveBeenCalledTimes(2);
+    const output = gl.createProgram.mock.results[1]!.value;
+    gl.getProgramParameter.mockImplementation((program) => program !== output);
+    expect(renderer.draw(frame)).toBe('pending');
+    expect(gl.getProgramParameter.mock.calls.map(([, name]) => name)).toEqual([
+      completion,
+      completion,
+    ]);
+    expect(gl.getShaderParameter).not.toHaveBeenCalled();
+    expect(gl.getUniformLocation).not.toHaveBeenCalled();
+    expect(gl.useProgram).not.toHaveBeenCalled();
+    expect(gl.drawArrays).not.toHaveBeenCalled();
+    gl.getProgramParameter.mockReturnValue(true);
+    expect(renderer.draw(frame)).toBe(true);
+    expect(gl.drawArrays).toHaveBeenCalledTimes(2);
+    const polls = gl.getProgramParameter.mock.calls.length;
+    expect(renderer.draw(frame)).toBe(true);
+    expect(gl.getProgramParameter).toHaveBeenCalledTimes(polls);
+    renderer.dispose();
   });
 
-  it('uses a bounded scalar pass and sharp output while reusing allocations and lookups', () => {
+  it('uses a bounded optics pass and sharp output while reusing allocations and lookups', () => {
     const { canvas, gl } = gpu();
     const renderer = createTopographyRenderer(canvas)!;
-    const lookups = gl.getUniformLocation.mock.calls.length;
     expect(renderer.draw(frame)).toBe(true);
+    const lookups = gl.getUniformLocation.mock.calls.length;
     expect(gl.viewport.mock.calls).toEqual([
       [0, 0, 960, 540],
       [0, 0, 3840, 2160],
     ]);
-    expect(gl.texImage2D).toHaveBeenCalledTimes(2);
+    expect(gl.texImage2D).toHaveBeenCalledTimes(1);
     renderer.draw({ ...frame, time: 20 });
-    expect(gl.texImage2D).toHaveBeenCalledTimes(2);
+    expect(gl.texImage2D).toHaveBeenCalledTimes(1);
     expect(gl.getUniformLocation).toHaveBeenCalledTimes(lookups);
     renderer.draw({ ...frame, width: 7680 });
     const [, , , width, height] = gl.texImage2D.mock.calls.at(-1)!;
     expect(Number(width) * Number(height)).toBeLessThanOrEqual(600_000);
-    expect(gl.createTexture).toHaveBeenCalledTimes(2);
+    expect(gl.createTexture).toHaveBeenCalledTimes(1);
     renderer.dispose();
   });
 
@@ -134,7 +152,7 @@ describe('optional contour GPU resources', () => {
     expect(gl.drawArrays).not.toHaveBeenCalled();
     expect(gl.bindFramebuffer).toHaveBeenLastCalledWith(undefined, null);
     expect(renderer.draw(frame)).toBe(true);
-    expect(gl.texImage2D).toHaveBeenCalledTimes(3);
+    expect(gl.texImage2D).toHaveBeenCalledTimes(2);
     gl.isContextLost.mockReturnValue(true);
     expect(renderer.draw(frame)).toBe(false);
     expect(gl.drawArrays).toHaveBeenCalledTimes(2);
@@ -149,7 +167,7 @@ describe('optional contour GPU resources', () => {
     const renderer = createTopographyRenderer(canvas)!;
     expect(renderer.maxRasterDimension).toBe(2048);
     expect(renderer.draw(frame)).toBe(false);
-    expect(gl.texImage2D).toHaveBeenCalledTimes(1);
+    expect(gl.texImage2D).not.toHaveBeenCalled();
     renderer.dispose();
   });
 
@@ -157,18 +175,21 @@ describe('optional contour GPU resources', () => {
     const { canvas, gl } = gpu();
     gl.createFramebuffer.mockReturnValueOnce(null);
     expect(createTopographyRenderer(canvas)).toBeNull();
-    expect(gl.deleteTexture).toHaveBeenCalledTimes(2);
+    expect(gl.deleteTexture).toHaveBeenCalledTimes(1);
     expect(gl.deleteBuffer).toHaveBeenCalledTimes(1);
     expect(gl.deleteProgram).toHaveBeenCalledTimes(2);
     expect(gl.drawArrays).not.toHaveBeenCalled();
     expect(gl.bindFramebuffer).toHaveBeenLastCalledWith(undefined, null);
   });
 
-  it('cleans up the first program when the second program cannot link', () => {
+  it('releases both programs and keeps the static scene if one shader cannot link', () => {
     const { canvas, gl } = gpu();
     gl.getProgramParameter.mockReturnValueOnce(true).mockReturnValueOnce(false);
-    expect(createTopographyRenderer(canvas)).toBeNull();
+    const renderer = createTopographyRenderer(canvas)!;
+    expect(renderer.draw(frame)).toBe(false);
+    renderer.dispose();
     expect(gl.deleteProgram).toHaveBeenCalledTimes(2);
-    expect(gl.createBuffer).not.toHaveBeenCalled();
+    expect(gl.useProgram).not.toHaveBeenCalled();
+    expect(gl.getUniformLocation).not.toHaveBeenCalled();
   });
 });

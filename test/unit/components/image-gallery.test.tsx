@@ -64,14 +64,14 @@ describe('training image gallery', () => {
     const preview = await screen.findByRole('button', { name: 'Bild vergrößern' });
     expect(observers.size).toBeGreaterThan(0);
     expect(document.activeElement).toBe(region);
-    fireEvent.click(screen.getByRole('button', { name: 'Bilder auswählen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mehrere markieren' }));
     fireEvent.click(screen.getByRole('button', { name: 'Bild auswählen' }));
     expect(screen.getByText('1 ausgewählt')).toBeTruthy();
     rerender(<ImageGallery {...props} images={[]} />);
     expect(observers.size).toBe(0);
     expect(preview.isConnected).toBe(false);
     expect(screen.queryByText('1 ausgewählt')).toBeNull();
-    expect(screen.getByText(/Halte „Aufnehmen“ gedrückt/)).toBeTruthy();
+    expect(screen.getByText(/mindestens 10 Bilder desselben Motivs/)).toBeTruthy();
     rerender(<ImageGallery {...props} images={[image]} />);
     const restored = await screen.findByRole('button', { name: 'Bild vergrößern' });
     expect(observers.size).toBeGreaterThan(0);
@@ -79,7 +79,7 @@ describe('training image gallery', () => {
     expect(document.activeElement).toBe(restored);
     fireEvent.click(restored);
     expect(onImageClick).toHaveBeenCalledWith(image);
-    fireEvent.click(screen.getByRole('button', { name: 'Bilder auswählen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mehrere markieren' }));
     expect(screen.getByText('0 ausgewählt')).toBeTruthy();
   });
 
@@ -92,7 +92,7 @@ describe('training image gallery', () => {
     const previews = await screen.findAllByRole('button', { name: 'Bild vergrößern' });
     fireEvent.click(previews[1]);
     expect(onImageClick).toHaveBeenCalledWith(images[1]);
-    fireEvent.click(screen.getByRole('button', { name: 'Bilder auswählen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mehrere markieren' }));
     let choices = screen.getAllByRole('button', { name: 'Bild auswählen' });
     fireEvent.click(choices[0]);
     fireEvent.click(choices[2]);
@@ -101,15 +101,15 @@ describe('training image gallery', () => {
     expect(screen.getByText('1 ausgewählt')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Auswahl abbrechen' }));
     expect(onRemoveImages).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Bilder auswählen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mehrere markieren' }));
     choices = screen.getAllByRole('button', { name: 'Bild auswählen' });
     fireEvent.click(choices[0]);
     fireEvent.click(choices[1]);
     fireEvent.click(screen.getByRole('button', { name: '2 ausgewählte Bilder löschen' }));
     expect(onRemoveImages).toHaveBeenCalledWith(['first', 'second']);
     rerender(<ImageGallery {...props} images={[]} />);
-    expect(screen.queryByRole('button', { name: 'Bilder auswählen' })).toBeNull();
-    expect(screen.getByText(/Halte „Aufnehmen“ gedrückt/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Mehrere markieren' })).toBeNull();
+    expect(screen.getByText(/mindestens 10 Bilder desselben Motivs/)).toBeTruthy();
   });
 
   it('retains selection across virtual windows without rendering the full collection', async () => {
@@ -126,7 +126,7 @@ describe('training image gallery', () => {
     );
     const initial = await screen.findAllByRole('button', { name: 'Bild vergrößern' });
     expect(initial.length).toBeLessThan(images.length);
-    fireEvent.click(screen.getByRole('button', { name: 'Bilder auswählen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mehrere markieren' }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Bild auswählen' })[0]);
     const region = screen.getByRole('region', { name: label });
     region.scrollTop = 88 * 45;

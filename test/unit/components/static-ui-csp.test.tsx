@@ -11,8 +11,9 @@ import { AnimatedList, AnimatedListItem } from '@/components/ui/animated-list';
 import LandingPage from '@/screens/LandingPage';
 import ImageRecognitionPage from '@/screens/ImageRecognitionPage';
 import LearningHubPage from '@/screens/LearningHubPage';
+import RewardPracticePage from '@/screens/RewardPracticePage';
 import { learningPaths } from '@/lib/learning-paths';
-import ConsentModal from '@/components/modals/ConsentModal';
+import { SetupDialogFixture } from '../helpers/training-setup-dialog';
 import ImprintPage from '@/screens/ImprintPage';
 import PrivacyPage from '@/screens/PrivacyPage';
 import AccessibilityPage from '@/screens/AccessibilityPage';
@@ -43,17 +44,14 @@ describe('strict-CSP static UI', () => {
   });
 
   it('ships the real initial consent content and choices without inline styles or client-only portals', () => {
-    const markup = renderToStaticMarkup(
-      <ConsentModal isOpen onConfirm={() => {}} onDecline={() => {}} />,
-    );
+    const markup = renderToStaticMarkup(<SetupDialogFixture />);
     const document = new DOMParser().parseFromString(markup, 'text/html');
     expect(document.querySelector('[style], style, script')).toBeNull();
     const dialog = document.querySelector('[role="dialog"]');
     expect(dialog?.getAttribute('aria-modal')).toBe('true');
-    expect(dialog?.getAttribute('aria-labelledby')).toBe('consent-modal-title');
-    expect(dialog?.querySelector('#consent-modal-title')?.textContent).toBe(
-      'Einwilligung zur Datenverarbeitung',
-    );
+    const title = document.getElementById(dialog?.getAttribute('aria-labelledby') ?? '');
+    expect(dialog?.contains(title)).toBe(true);
+    expect(title?.textContent).toBe('Einwilligung zur Datenverarbeitung');
     expect(dialog?.querySelectorAll('[role="checkbox"][aria-checked="false"]')).toHaveLength(2);
     expect(dialog?.textContent).toContain('IP-Adresse an Google übertragen');
     expect(dialog?.querySelector('a[href="/datenschutz"]')).not.toBeNull();
@@ -99,15 +97,16 @@ describe('strict-CSP static UI', () => {
     );
     expect(reinforcement.textContent).toContain('Reinforcement Learning');
     expect(images.querySelector('h4')?.textContent).toBe('Willst du es selbst ausprobieren?');
+    expect(reinforcement.querySelector('h4')?.textContent).toBe(
+      'Willst du es selbst ausprobieren?',
+    );
     expect(images.querySelector(`a[href="${learningPaths.imagePractice}"]`)?.textContent).toContain(
       'Eigenes Bildmodell trainieren',
     );
     const rewardButton = reinforcement.querySelector('button[disabled]');
     assert.ok(rewardButton);
-    expect(rewardButton.textContent).toContain('Belohnungen ausprobieren');
-    expect(
-      document.getElementById(rewardButton.getAttribute('aria-describedby') ?? '')?.textContent,
-    ).toBe('Coming Soon');
+    expect(rewardButton.textContent?.trim()).toBe('Coming Soon');
+    expect(reinforcement.textContent?.match(/Coming Soon/g)).toHaveLength(1);
     expect(experiments.querySelector(`a[href="${learningPaths.qLearningPractice}"]`)).toBeNull();
     expect(
       experiments.querySelector('button:not([disabled]), [role="status"], [aria-live]'),
@@ -122,11 +121,22 @@ describe('strict-CSP static UI', () => {
     for (const [path, label] of [
       [learningPaths.imagePractice, 'Eigenes Bildmodell trainieren'],
       [learningPaths.images, 'Bilderkennung verstehen'],
-      [learningPaths.qLearningPractice, 'Belohnungen ausprobieren'],
     ]) {
       expect(document.querySelector(`a[href="${path}"]`)?.textContent).toContain(label);
     }
     expect(document.querySelector(`a[href="${learningPaths.qLearning}"]`)).toBeNull();
+    expect(document.querySelector(`a[href="${learningPaths.qLearningPractice}"]`)).toBeNull();
+    expect(document.querySelector('button[disabled]')?.textContent?.trim()).toBe('Coming Soon');
+  });
+
+  it('shows the reward availability notice and return link before hydration', () => {
+    const markup = renderToStaticMarkup(<RewardPracticePage />);
+    const document = new DOMParser().parseFromString(markup, 'text/html');
+    expect(document.body.textContent).toContain('Coming Soon');
+    expect(document.querySelector('button, [role="button"]')).toBeNull();
+    expect(document.querySelector(`a[href="${learningPaths.hub}"]`)?.textContent?.trim()).toBe(
+      'Zum Lernlabor',
+    );
   });
 
   it('ships the complete image explanation and local exercises before hydration', () => {
@@ -145,7 +155,7 @@ describe('strict-CSP static UI', () => {
       'section-steps',
     ]);
     expect(hero?.querySelector('h1')?.textContent?.trim()).toBeTruthy();
-    expect(hero?.querySelector(`a[href="${learningPaths.hub}"]`)).not.toBeNull();
+    expect(hero?.querySelector(`a[href="${learningPaths.hub}"]`)).toBeNull();
     expect(hero?.querySelector(`a[href="${learningPaths.imagePractice}"]`)?.textContent).toContain(
       'Eigenes Bildmodell trainieren',
     );

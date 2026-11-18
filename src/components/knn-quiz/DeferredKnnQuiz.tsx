@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ComponentType } from 'react';
 import Button from '@/components/Button';
 import { Users } from '@/components/icons/users';
 import { RotateCcw } from '@/components/icons/rotate-ccw';
+import { Card } from '@/components/ui/card';
 import {
   Empty,
   EmptyHeader,
@@ -63,23 +64,25 @@ export default function DeferredKnnQuiz() {
       {Quiz ? (
         <Quiz />
       ) : (
-        <Empty className="knn-quiz-placeholder border">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Users aria-hidden="true" />
-            </EmptyMedia>
-            <EmptyTitle>KNN selbst ausprobieren</EmptyTitle>
-            <EmptyDescription>
-              {failed ? 'Die Übung konnte nicht geladen werden.' : 'Die Übung wird vorbereitet.'}
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button variant="outline" onClick={activate}>
-              <RotateCcw data-icon="inline-start" aria-hidden="true" />
-              {failed ? 'Erneut versuchen' : 'Übung öffnen'}
-            </Button>
-          </EmptyContent>
-        </Empty>
+        <Card className="knn-quiz-placeholder">
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Users aria-hidden="true" />
+              </EmptyMedia>
+              <EmptyTitle>KNN selbst ausprobieren</EmptyTitle>
+              <EmptyDescription>
+                {failed ? 'Die Übung konnte nicht geladen werden.' : 'Die Übung wird vorbereitet.'}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button variant="outline" onClick={activate}>
+                <RotateCcw data-icon="inline-start" aria-hidden="true" />
+                {failed ? 'Erneut versuchen' : 'Übung öffnen'}
+              </Button>
+            </EmptyContent>
+          </Empty>
+        </Card>
       )}
     </div>
   );

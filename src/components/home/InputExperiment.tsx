@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, useIsPresent, usePresenceData } from 'motion/react';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
 import ExamplePhoto from '@/components/network/ExamplePhoto';
@@ -22,8 +22,10 @@ const examples = [
 ] as const;
 type Example = (typeof examples)[number];
 
+const signalConnectors = ['M174 134h48m-7-7 7 7-7 7', 'M376 134h48m-7-7 7 7-7 7'];
+
 function SignalHighlight() {
-  const timing = useTempoTransition({ duration: 0.6, ease: motionTokens.ease.draw });
+  const timing = useTempoTransition({ duration: 0.32, ease: motionTokens.ease.fill });
   return (
     <PreviewHighlight className="home-signal-active" fill="none" strokeWidth="2">
       {[
@@ -36,18 +38,18 @@ function SignalHighlight() {
           asChild
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
-          transition={{ ...timing, delay: index * 0.7 }}
+          transition={{ ...timing, delay: index * 0.44 }}
         >
           <rect x={x} y="63" width={width} height="142" rx="20" />
         </Effect>
       ))}
-      {['M176 134H222l-6-6 6 6-6 6', 'M378 134H424l-6-6 6 6-6 6'].map((d, index) => (
+      {signalConnectors.map((d, index) => (
         <Effect
           key={d}
           asChild
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
-          transition={{ ...timing, delay: 0.35 + index * 0.7 }}
+          transition={{ ...timing, delay: 0.22 + index * 0.44 }}
         >
           <path d={d} />
         </Effect>
@@ -63,6 +65,44 @@ function SignalDrawing({ animate, showMotion }: { animate: boolean; showMotion: 
   return <AnimatePresence>{animate && !settled && <SignalHighlight />}</AnimatePresence>;
 }
 
+function SignalExample({ example }: { example: Example }) {
+  const present = useIsPresent();
+  const animate = usePresenceData() === true;
+  const transition = useTempoTransition(animate ? motionTokens.transition.fade : { duration: 0 });
+  const patternOffset = examples.indexOf(example);
+
+  return (
+    <Effect asChild fade={animate} initial={animate ? 'hidden' : false} transition={transition}>
+      <g data-current-example={present || undefined} aria-hidden={!present || undefined}>
+        <foreignObject x="35" y="80" width="108" height="108">
+          <ExamplePhoto signal={example.id} decorative className="home-example-photo" />
+        </foreignObject>
+        <g className="home-signal-cells">
+          {Array.from({ length: 16 }, (_, index) => (
+            <rect
+              key={index}
+              x={265 + (index % 4) * 18}
+              y={99 + Math.floor(index / 4) * 18}
+              width="14"
+              height="14"
+              rx="3"
+              data-on={(index + patternOffset) % 3 !== 0}
+            />
+          ))}
+        </g>
+        <g className="home-signal-output" textAnchor="middle">
+          <text x="511" y="134" dominantBaseline="central">
+            {example.output}
+          </text>
+        </g>
+        <text className="home-signal-label" x="89" y="232" textAnchor="middle">
+          {example.input}
+        </text>
+      </g>
+    </Effect>
+  );
+}
+
 function SignalArtwork({
   example,
   sequence,
@@ -76,7 +116,6 @@ function SignalArtwork({
 }) {
   const titleId = useId();
   const descriptionId = useId();
-  const patternOffset = examples.indexOf(example);
 
   return (
     <svg
@@ -108,33 +147,14 @@ function SignalArtwork({
         </text>
       </g>
       <g className="home-signal-muted" strokeWidth="2">
-        <path d="M176 134H222M378 134H424" />
-      </g>
-      <foreignObject key={example.id} x="35" y="80" width="108" height="108">
-        <ExamplePhoto signal={example.id} decorative className="home-example-photo" />
-      </foreignObject>
-      <g className="home-signal-cells">
-        {Array.from({ length: 16 }, (_, index) => (
-          <rect
-            key={index}
-            x={265 + (index % 4) * 18}
-            y={99 + Math.floor(index / 4) * 18}
-            width="14"
-            height="14"
-            rx="3"
-            data-on={(index + patternOffset) % 3 !== 0}
-          />
+        {signalConnectors.map((d) => (
+          <path key={d} d={d} />
         ))}
       </g>
-      <g className="home-signal-output" textAnchor="middle">
-        <text x="511" y="134" dominantBaseline="central">
-          {example.output}
-        </text>
-      </g>
+      <AnimatePresence initial={false} custom={showMotion}>
+        <SignalExample key={example.id} example={example} />
+      </AnimatePresence>
       <g className="home-signal-label" textAnchor="middle">
-        <text x="89" y="232">
-          {example.input}
-        </text>
         <text x="300" y="232">
           Bildmerkmale
         </text>

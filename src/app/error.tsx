@@ -1,6 +1,9 @@
 'use client';
 import Button from '@/components/Button';
+import { Card } from '@/components/ui/card';
 import { EntryReveal } from '@/components/ui/entry-reveal';
+import { EmptyContent, EmptyDescription } from '@/components/ui/empty';
+import { Heading } from '@/components/ui/typography';
 
 export default function ErrorPage({
   reset,
@@ -9,19 +12,14 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   return (
-    <div
-      role="alert"
-      className="min-h-[60vh] flex flex-col items-center justify-center gap-6 p-6 text-center"
-    >
-      <h1 className="font-display text-3xl font-semibold tracking-tight">
-        Diese Seite konnte nicht geladen werden
-      </h1>
+    <Card role="alert" className="public-error-surface">
+      <Heading as="h1">Diese Seite konnte nicht geladen werden</Heading>
       <EntryReveal kind="text">
-        <div className="flex flex-col items-center gap-6">
-          <p>Bitte versuche es erneut.</p>
+        <EmptyContent>
+          <EmptyDescription>Bitte versuche es erneut.</EmptyDescription>
           <Button onClick={reset}>Erneut versuchen</Button>
-        </div>
+        </EmptyContent>
       </EntryReveal>
-    </div>
+    </Card>
   );
 }

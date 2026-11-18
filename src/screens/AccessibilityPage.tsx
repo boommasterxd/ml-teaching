@@ -25,6 +25,11 @@ export default function AccessibilityPage() {
           <li>Beschriftungen und Statusmeldungen für unterstützende Technologien</li>
           <li>Sichtbare Fokusindikatoren für die Tastaturnavigation</li>
           <li>Skip-Link zum Überspringen der Navigation</li>
+          <li>Direkte Tastatursprünge zu Bildersammlung, Training und Vorhersage</li>
+          <li>
+            Die Lernschleife und die automatischen Lernbeispiele auf der Startseite pausieren bei
+            der Systemeinstellung für reduzierte Bewegung.
+          </li>
           <li>Responsive Darstellung für verschiedene Bildschirmgrößen</li>
         </ul>
         <h2>Bekannte Einschränkungen</h2>
@@ -42,7 +47,7 @@ export default function AccessibilityPage() {
         </p>
         <h2>Stand</h2>
         <p>
-          Diese Seite wurde zuletzt im <time dateTime="2026-11-17">November 2026</time>{' '}
+          Diese Seite wurde zuletzt im <time dateTime="2026-11-18">November 2026</time>{' '}
           aktualisiert.
         </p>
         <p>

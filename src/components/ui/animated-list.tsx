@@ -10,6 +10,7 @@ import {
   type RefObject,
 } from 'react';
 import { AnimatePresence, motion, useIsPresent } from 'motion/react';
+import { cn } from '@/lib/utils';
 import {
   ReducedMotionConfig,
   spring,
@@ -21,10 +22,10 @@ const subscribe = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;
 
-export function AnimatedList({ children }: { children: ReactNode }) {
+export function AnimatedList({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <ReducedMotionConfig>
-      <div className="relative flex flex-col gap-6">
+      <div className={cn('relative flex flex-col gap-6', className)}>
         <AnimatePresence mode="sync" initial={false}>
           {children}
         </AnimatePresence>

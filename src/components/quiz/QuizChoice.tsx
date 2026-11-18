@@ -38,8 +38,8 @@ export default function QuizChoice({
 }) {
   const Icon = exampleIcons[example.icon];
   return (
-    <Card className="h-full gap-0 py-0">
-      <div className="relative flex-1">
+    <Card className="isolate h-full gap-0 py-0">
+      <div className="relative flex-1 overflow-clip rounded-(--quiz-inner-radius) [--quiz-inner-radius:calc(var(--glass-radius)-1px)]">
         <CardHeader className="min-h-48 pt-20 pb-6" aria-hidden={answered || undefined}>
           <CardTitle as="h3">{example.title}</CardTitle>
           <CardDescription>{example.description}</CardDescription>
@@ -61,10 +61,10 @@ export default function QuizChoice({
             aria-hidden="true"
           />
         </Button>
-        <AnimatePresence initial={false}>
-          {answered && <QuizResult key="result" example={example} />}
-        </AnimatePresence>
       </div>
+      <AnimatePresence initial={false}>
+        {answered && <QuizResult key="result" example={example} />}
+      </AnimatePresence>
     </Card>
   );
 }

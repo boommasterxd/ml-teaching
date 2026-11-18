@@ -1,4 +1,4 @@
-import HeaderLearningLink from './HeaderLearningLink';
+import SiteNavigation from './SiteNavigation';
 import SiteBrand from './SiteBrand';
 import SiteHeaderSurface from './SiteHeaderSurface';
 import { ThemeControl } from './theme/ThemeControl';
@@ -11,9 +11,9 @@ export default function SiteHeader() {
       <EntryReveal kind="shell" asChild>
         <nav className="site-header-inner" aria-label="Hauptnavigation">
           <SiteBrand />
+          <SiteNavigation />
           <div className="site-header-actions">
             <ThemeControl />
-            <HeaderLearningLink />
           </div>
         </nav>
       </EntryReveal>

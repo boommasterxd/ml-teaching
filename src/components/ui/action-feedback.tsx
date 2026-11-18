@@ -12,9 +12,11 @@ const serverSnapshot = () => false;
 export function ActionFeedback({
   children,
   disabled,
+  tapScale,
 }: {
   children: ReactElement;
   disabled?: boolean;
+  tapScale?: number;
 }) {
   const isClient = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
   const [focused, setFocused] = useState(false);
@@ -31,6 +33,7 @@ export function ActionFeedback({
       <ButtonPrimitive
         asChild
         disabled={disabled}
+        tapScale={tapScale}
         initial={false}
         style={isClient ? { transform: 'scale(1)' } : undefined}
       >

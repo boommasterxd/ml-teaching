@@ -1,6 +1,10 @@
 .landing-demo {
   container: network-demo / inline-size;
 }
+.network-header [data-slot='card-title'] {
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  letter-spacing: -0.035em;
+}
 .network-studio {
   --network-heading-height: 2.75rem;
   --network-visual-height: 12.5rem;
@@ -20,8 +24,12 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: radial-gradient(var(--border) 0.8px, transparent 0.8px);
-  background-size: 18px 18px;
+  background-image:
+    radial-gradient(color-mix(in srgb, var(--control) 36%, transparent) 0.8px, transparent 0.8px),
+    radial-gradient(ellipse at 50% 100%, var(--primary-soft), transparent 72%);
+  background-size:
+    18px 18px,
+    100% 100%;
   mask-image: linear-gradient(transparent, black 10% 90%, transparent);
 }
 .network-station {
@@ -39,6 +47,11 @@
   justify-content: center;
   gap: 0.5rem;
   min-height: var(--network-heading-height);
+}
+.network-station-heading > p {
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 530;
 }
 .network-station > [data-slot='text'] {
   max-width: 26rem;
@@ -128,6 +141,54 @@
   min-height: 5.25rem;
   margin-top: 1.5rem;
   text-align: center;
+}
+.network-result .network-verdict {
+  min-height: 5.25rem;
+  padding: 0.5rem clamp(0.65rem, 2.5cqi, 1.5rem);
+  column-gap: clamp(0.4rem, 2cqi, 1rem);
+  row-gap: 0;
+  text-align: left;
+}
+.network-verdict [data-slot='alert-title'] {
+  font-size: clamp(1.05rem, 2.4cqi, 1.45rem);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+.network-vote-graphic {
+  position: relative;
+  grid-area: 1 / 2 / span 2;
+  width: clamp(4.25rem, 25cqi, 10rem);
+  aspect-ratio: 152 / 60;
+}
+.network-vote-path {
+  stroke: var(--primary);
+  stroke-opacity: 0.65;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+.network-vote-trunk {
+  stroke: var(--primary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.network-winner-seal {
+  position: absolute;
+  inset: 8% 3% 8% auto;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--primary) 70%, white);
+  border-radius: 50%;
+  color: var(--primary-foreground);
+  background: radial-gradient(
+    circle at 28% 8%,
+    color-mix(in srgb, var(--primary) 70%, white),
+    var(--primary) 58%
+  );
+  box-shadow:
+    0 0 0 3px var(--primary-soft),
+    0 0 0 4px color-mix(in srgb, var(--primary) 30%, transparent),
+    0 2px 10px color-mix(in srgb, var(--primary) 32%, transparent);
 }
 .network-station:first-child .network-visual-slot {
   height: 7.5rem;

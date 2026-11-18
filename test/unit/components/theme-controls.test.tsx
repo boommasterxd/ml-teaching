@@ -5,9 +5,11 @@ import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { ThemeControl } from '@/components/theme/ThemeControl';
 import * as loader from '@/components/theme/theme-menu-loader';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
+import { toast } from '@/lib/toast';
 import { installThemeHost, restoreThemeHost } from '../helpers/theme-host';
 
 const actualLoad = loader.loadThemeMenu;
+vi.mock('@/lib/toast', () => ({ toast: { error: vi.fn(), info: vi.fn() } }));
 let host: ReturnType<typeof installThemeHost>;
 beforeEach(() => {
   host = installThemeHost();
@@ -157,13 +159,17 @@ describe('theme controls', () => {
       throw new DOMException('Blocked', 'SecurityError');
     });
     fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /für weitere Besuche/ }));
-    expect(screen.getByRole('status').textContent).toContain('nicht gelöscht');
+    expect(toast.error).toHaveBeenLastCalledWith(expect.stringContaining('nicht gelöscht'), {
+      id: 'theme-storage',
+    });
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('Full', 'QuotaExceededError');
     });
     fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /für weitere Besuche/ }));
-    expect(screen.getByRole('status').textContent).toContain('für diesen Aufruf');
+    expect(toast.error).toHaveBeenLastCalledWith(expect.stringContaining('für diesen Aufruf'), {
+      id: 'theme-storage',
+    });
     fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(darkSwitch());
     await waitFor(() => expect(document.documentElement.classList.contains('dark')).toBe(false));

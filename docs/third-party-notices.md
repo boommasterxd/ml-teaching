@@ -17,7 +17,7 @@ application, not a component library.
 ## shadcn/ui
 
 The adapted components in `src/components/ui/` include source from shadcn/ui's
-official Radix/new-york registry. Product variants, imports and Animate UI
+official Radix/new-york registry and the Base UI Toast registry item. Product variants, imports and Animate UI
 integration are adapted to this application. The upstream MIT notice follows.
 
 MIT License
@@ -50,6 +50,9 @@ The installed `@animate-ui/react` package and generated files in
 condition below. The original SVG paths and animation variants remain from the
 official Animate UI registry. Optional unused exports are removed; formatting and
 import paths are adapted to this application.
+
+The homepage's local WebGL renderer in `src/components/hero/` adapts Animate UI
+Topography. The adaptation renders the homepage's luminous glass loop in two passes.
 
 The PageTransition source comes from the official
 [Animate UI registry](https://animate-ui.com/r/components-page-transition.json).

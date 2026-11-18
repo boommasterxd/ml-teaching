@@ -1,21 +1,115 @@
 .learning-hub {
   padding-block: clamp(3rem, 6vw, 6rem);
 }
-.learning-areas {
-  display: grid;
-  gap: 1.5rem;
+.learning-hub-heading,
+.reward-practice-title {
+  margin: 0;
+  color: var(--foreground);
+  font-size: clamp(2.75rem, 6vw, 5.25rem);
+  font-weight: 560;
+  letter-spacing: -0.065em;
+  line-height: 1.04;
 }
-.home-reading-grid {
+.learning-hub-intro {
+  display: grid;
+  align-items: end;
+  gap: 1.25rem;
+  margin-block-end: clamp(2rem, 4.5vw, 3.5rem);
+}
+.learning-hub-intro p {
+  max-width: 46ch;
+  font-size: clamp(1.05rem, 1.4vw, 1.22rem);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+.learning-hub-ideas {
   display: grid;
   align-items: start;
-  gap: 2.5rem;
+  gap: clamp(1.75rem, 4vw, 4rem);
+  margin-block-start: clamp(3.5rem, 7vw, 6.5rem);
+  padding-block-start: clamp(2rem, 4vw, 3.5rem);
+  border-block-start: 1px solid var(--glass-line);
 }
-.home-reading-grid .landing-section-heading {
-  margin-bottom: 0;
+.learning-hub-ideas h2 {
+  border: 0;
+  padding: 0;
+  font-size: clamp(1.95rem, 3.4vw, 3.3rem);
+  line-height: 1.06;
+  font-weight: 530;
+  letter-spacing: -0.055em;
 }
-.learning-areas [data-slot='card-header'] {
-  gap: 1rem;
+.learning-hub-prompts {
+  display: grid;
+  gap: 1.8rem;
+  max-width: 60ch;
+}
+.learning-hub-prompts h3 {
+  font-size: clamp(1.18rem, 1.8vw, 1.55rem);
+  font-weight: 540;
+  line-height: 1.25;
+}
+.learning-hub-prompts p {
+  margin-top: 0.65rem;
+  line-height: 1.65;
+  color: var(--muted-foreground);
+}
+@variant lg {
+  .learning-hub-intro,
+  .learning-hub-ideas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(1.25rem, 2.5vw, 2rem);
+  }
+}
+.learning-areas {
+  display: grid;
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+}
+.learning-area-card {
+  --experiment-accent: var(--primary);
+  min-width: 0;
+  padding-block: clamp(1.25rem, 2.75vw, 2rem);
+}
+.learning-area-card[data-method='q-learning'] {
+  --experiment-accent: color-mix(in srgb, var(--foreground) 75%, var(--muted-foreground));
+}
+.learning-area-preview {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  aspect-ratio: 1.9;
+}
+.learning-area-card [data-slot='card-header'] {
+  gap: 0.65rem;
   align-content: start;
+}
+.learning-area-card [data-slot='card-title'] {
+  font-size: clamp(1.65rem, 3vw, 2.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+}
+.learning-area-card [data-slot='card-description'] {
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.learning-area-actions .mobile-action {
+  min-inline-size: 0;
+  max-inline-size: min(100%, 20rem);
+  text-align: center;
+}
+.learning-area-actions a.mobile-action {
+  flex: 1 1 15.5rem;
+}
+@variant max-md {
+  .learning-area-actions {
+    justify-content: center;
+  }
+}
+.learning-action-pending:disabled {
+  opacity: 1;
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  border: 1px solid var(--glass-line);
+  box-shadow: inset 0 1px 0 #ffffff0a;
 }
 .mobile-action-pair {
   display: flex;
@@ -45,15 +139,9 @@
     grid-template-rows: repeat(3, auto);
   }
   .learning-area-reveal,
-  .learning-area-card {
+  .learning-areas .learning-area-card {
     display: grid;
     grid-row: span 3;
     grid-template-rows: subgrid;
-  }
-}
-@variant lg {
-  .home-reading-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 4rem;
   }
 }

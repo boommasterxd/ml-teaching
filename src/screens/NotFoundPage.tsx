@@ -6,18 +6,13 @@ import { Home } from '../components/icons/home';
 import { AlertTriangle } from '../components/icons/alert-triangle';
 import { Heading } from '@/components/ui/typography';
 import { EntryReveal } from '@/components/ui/entry-reveal';
-import {
-  Empty,
-  EmptyHeader,
-  EmptyDescription,
-  EmptyContent,
-  EmptyMedia,
-} from '@/components/ui/empty';
+import { Card } from '@/components/ui/card';
+import { EmptyHeader, EmptyDescription, EmptyContent, EmptyMedia } from '@/components/ui/empty';
 
 /** Displays a 404 message with a button to navigate back to the home page. */
 export default function NotFoundPage() {
   return (
-    <Empty className="min-h-[80vh]">
+    <Card className="public-error-surface">
       <EmptyHeader>
         <EntryReveal kind="text" className="self-center">
           <EmptyMedia variant="icon">
@@ -40,6 +35,6 @@ export default function NotFoundPage() {
           </AnimatedLink>
         </EntryReveal>
       </EmptyContent>
-    </Empty>
+    </Card>
   );
 }

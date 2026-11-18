@@ -89,9 +89,12 @@ async function expectConnections(exercise: Locator) {
       return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
     };
     const query = center(section.querySelector('.knn-query-position')!);
-    const selected = [...section.querySelectorAll('.knn-point-control[aria-pressed="true"]')].map(
-      center,
-    );
+    const rings = [
+      ...section.querySelectorAll('.knn-point-control[aria-pressed="true"] circle[stroke]'),
+    ].map((circle) => ({
+      ...center(circle),
+      radius: circle.getBoundingClientRect().width / 2,
+    }));
     return [...section.querySelectorAll<SVGPathElement>('.knn-quiz-connections > path')].map(
       (path) => {
         const matrix = path.getScreenCTM()!;
@@ -99,7 +102,14 @@ async function expectConnections(exercise: Locator) {
         const end = path.getPointAtLength(path.getTotalLength()).matrixTransform(matrix);
         return {
           start: Math.hypot(start.x - query.x, start.y - query.y),
-          end: Math.min(...selected.map((point) => Math.hypot(end.x - point.x, end.y - point.y))),
+          end: Math.min(
+            ...rings.map((ring) => {
+              const dx = query.x - ring.x;
+              const dy = query.y - ring.y;
+              const scale = ring.radius / Math.hypot(dx, dy);
+              return Math.hypot(end.x - (ring.x + dx * scale), end.y - (ring.y + dy * scale));
+            }),
+          ),
         };
       },
     );

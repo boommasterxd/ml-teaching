@@ -7,8 +7,19 @@ import {
   useTempoTransition,
 } from '@animate-ui/react/utils/motion';
 import { ANIMATION, NETWORK_STAGES } from '@/constants';
+import type { KnnPosition } from '@/lib/knn';
 import { KNN_EXAMPLES, type ExampleSignal } from '@/lib/network-demo';
-import { KnnPlot, KnnQuery } from './KnnArtwork';
+import { KNN_RING_RADIUS, KnnPlot, KnnQuery } from './KnnArtwork';
+
+function connectionToRing(query: KnnPosition, point: KnnPosition) {
+  const dx = point.x - query.x;
+  const dy = point.y - query.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance <= KNN_RING_RADIUS) return undefined;
+
+  const inset = KNN_RING_RADIUS / distance;
+  return `M${query.x} ${query.y}L${point.x - dx * inset} ${point.y - dy * inset}`;
+}
 
 export default function KnnEngine({
   signal,
@@ -33,23 +44,29 @@ export default function KnnEngine({
           <g key={`${sequence}-${point.id}`}>
             <Effect
               asChild
-              initial={{ pathLength: 0 }}
+              initial={reduce ? false : { pathLength: 0 }}
               animate={{ pathLength: 1 }}
               transition={transition}
             >
               <path
-                d={`M${example.query.x} ${example.query.y}L${point.x} ${point.y}`}
+                d={connectionToRing(example.query, point)}
                 stroke="var(--primary)"
                 strokeWidth="1.5"
               />
             </Effect>
             <Effect
               asChild
-              initial={{ pathLength: 0 }}
+              initial={reduce ? false : { pathLength: 0 }}
               animate={{ pathLength: 1 }}
               transition={transition}
             >
-              <circle cx={point.x} cy={point.y} r="9" stroke="var(--primary)" strokeWidth="1.5" />
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r={KNN_RING_RADIUS}
+                stroke="var(--primary)"
+                strokeWidth="1.5"
+              />
             </Effect>
           </g>
         ))}

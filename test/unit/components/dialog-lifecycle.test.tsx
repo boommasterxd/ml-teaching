@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import ConfirmDialog from '@/components/modals/ConfirmDialog';
-import LoadingModal from '@/components/modals/LoadingModal';
+import { SetupDialogFixture } from '../helpers/training-setup-dialog';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
 beforeEach(installBrowserHost);
@@ -63,7 +63,10 @@ function FollowingDialogJourney() {
         description="Danach wird geladen."
         confirmLabel="Laden"
       />
-      <LoadingModal isOpen={step === 'loading'} loadingText="Modell wird geladen" />
+      <SetupDialogFixture
+        step={step === 'loading' ? 'loading' : null}
+        loadingText="Modell wird geladen"
+      />
     </>
   );
 }

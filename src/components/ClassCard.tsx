@@ -8,6 +8,7 @@ import type React from 'react';
 import { memo, useCallback } from 'react';
 import { Trash2 } from './icons/trash2';
 import { RotateCcw } from './icons/rotate-ccw';
+import { Check } from './icons/check';
 import { cn } from '../lib/utils';
 import { classColorClasses } from '../lib/class-colors';
 import { useClassCapture } from '../hooks/useClassCapture';
@@ -18,17 +19,14 @@ import CameraPreview from './CameraPreview';
 import ImageGallery from './ImageGallery';
 import Button from './Button';
 import { Input } from './ui/input';
-import { Card, CardAction, CardContent, CardHeader } from './ui/card';
+import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
 import { Field, FieldError, FieldLabel } from './ui/field';
-import { Separator } from './ui/separator';
 
 /**
  * Callback actions for the ClassCard component, grouped to reduce prop count.
  */
 export interface ClassCardActions extends CaptureActions {
-  /** Called when a new training frame is captured from the video element. */
-  onAddExample: (classId: string, video: HTMLVideoElement) => void;
   /** Called when a training image is added via file upload. */
   onAddImageExample: (classId: string, img: HTMLImageElement) => void | Promise<void>;
   /** Called to request removal of the entire class. */
@@ -72,7 +70,10 @@ function ClassHeader({
   isDuplicate,
   actions,
 }: Pick<ClassCardProps, 'cls' | 'position' | 'isDuplicate' | 'actions'>) {
-  const { onClear, onRemove, onUpdateName } = actions;
+  const { onUpdateName } = actions;
+  const count = cls.images.length;
+  const enoughImages = count >= ML.MIN_IMAGES_PER_CLASS;
+  const atLimit = count >= ML.MAX_IMAGES_PER_CLASS;
   const isEmpty = cls.name.trim() === '';
   const errorMsg = isEmpty
     ? 'Name darf nicht leer sein'
@@ -80,9 +81,9 @@ function ClassHeader({
       ? 'Name muss eindeutig sein'
       : null;
   return (
-    <CardHeader>
-      <Field data-invalid={!!errorMsg} className="col-span-full min-w-0 gap-2 sm:col-span-1">
-        <div className="flex min-w-0 items-center gap-3">
+    <CardHeader className="items-center px-4 @md/training-class:px-5">
+      <Field data-invalid={!!errorMsg} className="min-w-0 gap-2">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div
             className={cn(
               'size-2.5 shrink-0 rounded-full bg-[var(--btn-color)]',
@@ -100,7 +101,7 @@ function ClassHeader({
             value={cls.name}
             maxLength={ML.MAX_CLASS_NAME_LENGTH}
             onChange={(e) => onUpdateName(cls.id, e.target.value)}
-            className="w-full"
+            className="h-10 min-w-0 flex-1 rounded-xl bg-background/60 font-medium dark:bg-background/60"
             onPointerDown={(e) => {
               e.currentTarget.dataset.mouseFocused = '1';
             }}
@@ -111,47 +112,57 @@ function ClassHeader({
             aria-errormessage={errorMsg ? `error-${cls.id}` : undefined}
             aria-describedby={errorMsg ? `error-${cls.id}` : undefined}
           />
+          <Badge
+            variant="secondary"
+            className="max-w-[50%] whitespace-normal tabular-nums"
+            title={`Mindestens ${ML.MIN_IMAGES_PER_CLASS}, maximal ${ML.MAX_IMAGES_PER_CLASS} Bilder pro Klasse`}
+          >
+            {enoughImages && <Check aria-hidden="true" />}
+            <span>
+              {enoughImages ? `${count} Bilder` : `${count} / ${ML.MIN_IMAGES_PER_CLASS} Bilder`}
+              {atLimit && ' · Limit erreicht'}
+            </span>
+          </Badge>
         </div>
         {errorMsg && (
-          <FieldError id={`error-${cls.id}`} className="ml-[22px]">
+          <FieldError id={`error-${cls.id}`} className="ml-[18px] sm:ml-[22px]">
             {errorMsg}
           </FieldError>
         )}
       </Field>
-      <CardAction className="col-span-full row-span-1 row-start-2 w-full sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:w-auto">
-        <div className="flex min-w-0 items-center gap-2">
-          <Badge
-            variant={cls.images.length >= ML.MAX_IMAGES_PER_CLASS ? 'destructive' : 'secondary'}
-            className="mr-auto sm:mr-0"
-            title={
-              cls.images.length >= ML.MAX_IMAGES_PER_CLASS
-                ? `Limit von ${ML.MAX_IMAGES_PER_CLASS} Bildern erreicht`
-                : undefined
-            }
-          >
-            {cls.images.length} / {ML.MAX_IMAGES_PER_CLASS} Bilder
-          </Badge>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onClear(cls.id)}
-            title="Bilder dieser Klasse zurücksetzen"
-            aria-label={`Bilder der Klasse ${position}: ${cls.name.trim() || 'ohne Namen'} zurücksetzen`}
-          >
-            <RotateCcw data-icon="inline-start" aria-hidden="true" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onRemove(cls.id)}
-            title="Klasse löschen"
-            aria-label={`Klasse ${position}: ${cls.name.trim() || 'ohne Namen'} löschen`}
-          >
-            <Trash2 data-icon="inline-start" aria-hidden="true" />
-          </Button>
-        </div>
-      </CardAction>
     </CardHeader>
+  );
+}
+
+function ClassManagementActions({
+  cls,
+  position,
+  actions,
+}: Pick<ClassCardProps, 'cls' | 'position' | 'actions'>) {
+  const name = cls.name.trim() || 'ohne Namen';
+  return (
+    <>
+      <Button
+        variant="outline"
+        className="h-auto min-h-11 min-w-0 px-2"
+        onClick={() => actions.onClear(cls.id)}
+        title="Bilder dieser Klasse zurücksetzen"
+        aria-label={`Bilder der Klasse ${position}: ${name} zurücksetzen`}
+      >
+        <RotateCcw data-icon="inline-start" aria-hidden="true" />
+        <span className="hidden @md/training-class:inline">Zurücksetzen</span>
+      </Button>
+      <Button
+        variant="outline"
+        className="h-auto min-h-11 min-w-0 px-2 text-destructive hover:text-destructive"
+        onClick={() => actions.onRemove(cls.id)}
+        title="Klasse löschen"
+        aria-label={`Klasse ${position}: ${name} löschen`}
+      >
+        <Trash2 data-icon="inline-start" aria-hidden="true" />
+        <span className="hidden @md/training-class:inline">Löschen</span>
+      </Button>
+    </>
   );
 }
 
@@ -184,13 +195,16 @@ const ClassCard = memo(function ClassCard({
   );
 
   return (
-    <Card>
+    <Card className="@container/training-class gap-4 py-4">
       <ClassHeader cls={cls} position={position} isDuplicate={isDuplicate} actions={actions} />
-      <Separator />
-
-      <CardContent className="flex flex-col gap-5 sm:flex-row">
+      <CardContent
+        className={cn(
+          'grid min-w-0 gap-3 px-4 @md/training-class:px-5',
+          stream && '@xl/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]',
+        )}
+      >
         <CameraPreview
-          disabled={actions.captureDisabled}
+          disabled={actions.captureDisabled || cls.images.length >= ML.MAX_IMAGES_PER_CLASS}
           stream={stream}
           facingMode={facingMode}
           isRecording={isRecording}
@@ -198,8 +212,8 @@ const ClassCard = memo(function ClassCard({
           onStopRecording={stopRecording}
           onFileUpload={handleFileUpload}
           videoRef={videoRef}
+          fileActions={<ClassManagementActions cls={cls} position={position} actions={actions} />}
         />
-
         <ImageGallery
           label={`Trainingsbilder von Klasse ${position}: ${cls.name.trim() || 'ohne Namen'}, scrollbar`}
           images={cls.images}

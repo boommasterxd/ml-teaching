@@ -8,7 +8,7 @@ import type React from 'react';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import Button from '../Button';
-import { DialogTitle } from '../ui/dialog';
+import { DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
 
 /**
  * Props for the ConfirmDialog component.
@@ -32,7 +32,7 @@ interface ConfirmDialogProps {
   confirmLabel: string;
   /** Label for the cancel button. Defaults to 'Abbrechen'. */
   cancelLabel?: string;
-  /** Optional icon rendered in a circular badge above the title. */
+  /** Optional decorative icon beside the heading. */
   icon?: React.ReactNode;
 }
 
@@ -51,31 +51,23 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} labelledBy={titleId} describedBy={descId}>
-      <ModalContent maxWidth="md">
-        {icon && (
-          <div
-            className="size-12 bg-destructive-soft text-destructive rounded-xl flex items-center justify-center mb-5 [&_svg]:size-6"
-            aria-hidden="true"
-          >
-            {icon}
-          </div>
-        )}
-        <DialogTitle asChild>
-          <h3 id={titleId} className="mb-2">
+      <ModalContent maxWidth="md" className="gap-5">
+        <DialogTitle asChild icon={icon}>
+          <h3 id={titleId} className="text-balance text-2xl leading-tight tracking-tight">
             {title}
           </h3>
         </DialogTitle>
-        <p id={descId} className="text-muted-foreground mb-6 text-sm">
+        <DialogDescription id={descId} className="leading-relaxed [overflow-wrap:anywhere]">
           {description}
-        </p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Button variant="secondary" onClick={onClose} className="flex-1">
+        </DialogDescription>
+        <DialogFooter>
+          <Button variant="secondary" onClick={onClose}>
             {cancelLabel}
           </Button>
-          <Button variant="destructive" onClick={onConfirm} className="flex-1">
+          <Button variant="destructive" onClick={onConfirm}>
             {confirmLabel}
           </Button>
-        </div>
+        </DialogFooter>
       </ModalContent>
     </Dialog>
   );
