@@ -66,7 +66,7 @@ function trackPreviewSteps(previews: Locator) {
   });
 }
 
-test('visible home previews alternate in order without buttons or model requests', async ({
+test('visible home previews alternate automatically without model requests', async ({
   page,
   baseURL,
 }) => {
@@ -98,11 +98,17 @@ test('visible home previews alternate in order without buttons or model requests
   await expect(previews).toBeFocused();
   await expect.poll(() => scrollPositions.evaluate((positions) => positions.size)).toBe(2);
   await scrollPositions.dispose();
-  await expect(previews.getByRole('button')).toHaveCount(0);
+  await expect(previews.getByRole('button')).toHaveCount(1);
   await expect(previews.locator('[aria-live], [role="status"]')).toHaveCount(0);
 
   const images = previews.getByRole('region', { name: 'Bilderkennung', exact: true });
   const rewards = previews.getByRole('region', { name: 'Lernen durch Belohnung', exact: true });
+  const rewardAction = rewards.getByRole('button', {
+    name: 'Belohnungen ausprobieren',
+    exact: true,
+  });
+  await expect(rewardAction).toBeDisabled();
+  await expect(rewardAction).toHaveAccessibleDescription('Coming Soon');
   await expect(images.getByRole('img')).toBeInViewport({ ratio: 1 });
   await expect(rewards.getByRole('img')).toBeInViewport({ ratio: 1 });
   await expect
@@ -130,14 +136,13 @@ test('visible home previews alternate in order without buttons or model requests
   expect(failures).toEqual([]);
 });
 
-test('the reward experiment opens from both learning surfaces and keeps keyboard focus', async ({
+test('the reward experiment opens from the learning hub and keeps keyboard focus', async ({
   page,
 }) => {
   const failures = diagnostics(page);
-  await page.goto('/#lernbereiche');
-  const actions = page.getByRole('region', { name: 'Willst du es selbst ausprobieren?' });
+  await page.goto(learningPaths.hub);
   const practiceLink = { name: 'Belohnungen ausprobieren', exact: true };
-  await actions.getByRole('link', practiceLink).focus();
+  await page.getByRole('link', practiceLink).focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(learningPaths.qLearningPractice);
   await expect(
@@ -169,7 +174,5 @@ test('the reward experiment opens from both learning surfaces and keeps keyboard
 
   await page.getByRole('link', { name: 'Zum Lernlabor', exact: true }).click();
   await expect(page).toHaveURL(learningPaths.hub);
-  await page.getByRole('link', practiceLink).click();
-  await expect(page).toHaveURL(learningPaths.qLearningPractice);
   expect(failures).toEqual([]);
 });

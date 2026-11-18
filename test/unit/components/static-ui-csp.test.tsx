@@ -79,39 +79,39 @@ describe('strict-CSP static UI', () => {
       'home-experiments-title',
       'home-images-title',
       'home-q-learning-title',
-      'home-preview-actions-title',
     ];
     const readingOrder = Array.from(document.querySelectorAll('section[aria-labelledby]'))
       .map((section) => section.getAttribute('aria-labelledby') ?? '')
       .filter((title) => journey.includes(title));
     expect(readingOrder).toEqual(journey);
     const experiments = document.querySelector('#lernbereiche');
-    expect(experiments?.querySelector('h2#home-experiments-title')?.textContent).toBe(
+    assert.ok(experiments);
+    expect(experiments.querySelector('h2#home-experiments-title')?.textContent).toBe(
       'Zwei Arten, wie KI lernt',
     );
-    const images = experiments?.querySelector('section[aria-labelledby="home-images-title"]');
-    expect(images?.querySelector('h3#home-images-title')?.textContent).toBe('Bilderkennung');
-    const reinforcement = experiments?.querySelector('#reinforcement-learning');
-    expect(reinforcement?.querySelector('h3#home-q-learning-title')?.textContent).toBe(
+    const images = experiments.querySelector('section[aria-labelledby="home-images-title"]');
+    assert.ok(images);
+    expect(images.querySelector('h3#home-images-title')?.textContent).toBe('Bilderkennung');
+    const reinforcement = experiments.querySelector('#reinforcement-learning');
+    assert.ok(reinforcement);
+    expect(reinforcement.querySelector('h3#home-q-learning-title')?.textContent).toBe(
       'Lernen durch Belohnung',
     );
-    expect(reinforcement?.textContent).toContain('Reinforcement Learning');
-    const practice = experiments?.querySelector(
-      'section[aria-labelledby="home-preview-actions-title"]',
+    expect(reinforcement.textContent).toContain('Reinforcement Learning');
+    expect(images.querySelector('h4')?.textContent).toBe('Willst du es selbst ausprobieren?');
+    expect(images.querySelector(`a[href="${learningPaths.imagePractice}"]`)?.textContent).toContain(
+      'Eigenes Bildmodell trainieren',
     );
-    assert.ok(practice);
-    expect(practice.querySelector('h3#home-preview-actions-title')?.textContent).toBe(
-      'Willst du es selbst ausprobieren?',
-    );
-    const practiceLinks = Array.from(practice.querySelectorAll('a'), (link) => [
-      link.getAttribute('href'),
-      link.textContent?.trim(),
-    ]);
-    expect(practiceLinks).toEqual([
-      [learningPaths.imagePractice, 'Eigenes Bildmodell trainieren'],
-      [learningPaths.qLearningPractice, 'Belohnungen ausprobieren'],
-    ]);
-    expect(experiments?.querySelector('button, [role="status"], [aria-live]')).toBeNull();
+    const rewardButton = reinforcement.querySelector('button[disabled]');
+    assert.ok(rewardButton);
+    expect(rewardButton.textContent).toContain('Belohnungen ausprobieren');
+    expect(
+      document.getElementById(rewardButton.getAttribute('aria-describedby') ?? '')?.textContent,
+    ).toBe('Coming Soon');
+    expect(experiments.querySelector(`a[href="${learningPaths.qLearningPractice}"]`)).toBeNull();
+    expect(
+      experiments.querySelector('button:not([disabled]), [role="status"], [aria-live]'),
+    ).toBeNull();
   });
 
   it('ships the learning choices and introductions without consent or client-only navigation', () => {

@@ -30,8 +30,9 @@ not live in `src/pages/`, where Next.js would expose unintended routes.
 ## Shared shell and progressive enhancement
 
 The homepage links to the learning-area selection at `/lernen` and offers
-two automatic previews. The homepage and learning hub link directly to image
-training and reward practice. The hub also links to the image explanation.
+two automatic previews and links directly to image training. The homepage reward
+preview displays a coming-soon state and disables its practice action. The learning
+hub links to image training, the image explanation and reward practice.
 `/lernen/bilderkennung` contains the image-learning explanation, demonstrations and
 quizzes; `/lernen/bilderkennung/ausprobieren` owns the existing browser training
 workspace and its consent flow. Back links and consent rejection return to the

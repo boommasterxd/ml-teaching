@@ -14,9 +14,9 @@ to the browser's inherited font.
 `src/components/hero/hero.css` extends these tokens for the landing composition.
 The viewport-height shader hero is followed by a short AI introduction and the
 project's educational purpose.
-The two previews follow in one section, with centered illustrations within a
-shared row at `lg` and stacked panels below it. A single heading introduces both
-action links below the previews. Each preview explains the goal and typical
+The two previews follow in one section, with centered illustrations and aligned
+actions in shared rows at `lg`. On smaller screens each panel and its action stay
+together. Each preview explains the goal and typical
 learning process. The image preview uses the shared cat/dog photos and drawn
 signal paths, with red frame outlines following the same
 input-to-features-to-result sequence. Paths retain space from both adjoining frames.
@@ -32,6 +32,11 @@ If loading fails, the cat classification remains available and the cycle continu
 The previews use small, fixed SVGs and require no ML model or simulation.
 The homepage and learning hub share their topics and destinations through
 `src/content/learning-areas.ts`; route actions use the native intent links.
+On the homepage, `rewardPracticeComingSoon` in `home-learning-sections.tsx` controls
+the translucent black overlay, diagonal availability label and disabled practice
+button together. The underlying panel uses the page theme, and the reward board
+continues the shared preview cycle beneath the label. Setting the flag to `false`
+enables the practice link and removes the overlay.
 The hero's fragment link focuses the combined experiments section and uses smooth
 browser scrolling on activation. Reduced motion uses the native fragment jump.
 The opportunities, limitations and entry questions follow the previews.
@@ -50,7 +55,7 @@ bottom of both Cards. These links preserve native navigation and intent preparat
 their labels can wrap on narrow screens without extending beyond the Card padding.
 Each area pairs a short task description with a decorative preview and its
 destination. Image recognition links to training and offers a secondary explanation
-link. The rewards card and homepage reward preview link to the practice page.
+link. The rewards card in the learning hub links to the practice page.
 From `md`, native nested row subgrids align the headers, illustrations and footer
 actions across neighboring Cards without fixed content heights
 or JavaScript measurements. Below `md`, Cards stack at their natural heights.
