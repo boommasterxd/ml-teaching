@@ -30,7 +30,7 @@ test('static documents, native navigation and strict CSP preserve visible conten
     expect(html).not.toMatch(/\sstyle="/);
     if (path === learningPaths.hub) {
       expect(html).toContain(`href="${learningPaths.images}"`);
-      expect(html).toContain(`href="${learningPaths.qLearning}"`);
+      expect(html).toContain(`href="${learningPaths.qLearningPractice}"`);
       expect(html).not.toContain('Einwilligung zur Datenverarbeitung');
     }
     if (path === learningPaths.images) {
