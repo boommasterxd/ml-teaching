@@ -3,6 +3,52 @@ import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-
 import { expectHeaderLayout, settleLandingReveals } from './training-keyboard';
 import { learningPaths } from '../../src/lib/learning-paths';
 
+test('the brand scrolls to the top of an already open homepage without a page transition', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const start = document.startViewTransition;
+    if (!start) return;
+    document.startViewTransition = new Proxy(start, {
+      apply(target, thisArg, args) {
+        const { dataset } = document.documentElement;
+        dataset.observedViewTransitions = String(Number(dataset.observedViewTransitions ?? 0) + 1);
+        return Reflect.apply(target, thisArg, args);
+      },
+    });
+  });
+  await page.goto('/');
+  await settleEntryAnimations(page);
+  const header = page.getByRole('banner');
+  const brand = header.getByRole('link', { name: 'ML Teaching – Startseite', exact: true });
+  const documentRoot = page.locator('html');
+  const transitionCount = () => documentRoot.getAttribute('data-observed-view-transitions');
+  await brand.click();
+  await page.evaluate(() => scrollTo({ top: 120, behavior: 'instant' }));
+  const surface = header.locator('.site-header-surface');
+  await expect(surface).toHaveCSS('opacity', '1');
+  await brand.press('Enter');
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+  await expect(surface).toHaveCSS('opacity', '0');
+  expect(await transitionCount()).toBeNull();
+
+  const previews = page.getByRole('region', { name: 'Zwei Arten, wie KI lernt', exact: true });
+  await page.getByRole('link', { name: 'Mini-Experimente', exact: true }).click();
+  await expect(page).toHaveURL('/#lernbereiche');
+  await expect(previews).toBeFocused();
+  await expect
+    .poll(() => previews.evaluate((node) => node.getBoundingClientRect().top))
+    .toBeLessThan(300);
+  await settleEntryAnimations(page);
+  await expect(surface).toHaveCSS('opacity', '1');
+  const beforeBrand = await transitionCount();
+  await brand.press('Enter');
+  await expect(page).toHaveURL((url) => url.pathname === '/' && url.hash === '');
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+  await expect(surface).toHaveCSS('opacity', '0');
+  expect(await transitionCount()).toBe(beforeBrand);
+});
+
 test('the transparent home header lets the hero receive clicks and keeps its navigation', async ({
   page,
 }) => {

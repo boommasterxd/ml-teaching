@@ -271,6 +271,8 @@ SiteBrand is a small client boundary so Animate UI's press Slot receives a concr
 Link element. Passing the server-produced Link through that Slot can resolve to an
 opaque child during development and omit the brand. Header and Footer remain server
 compositions; header actions keep their logical end alignment independently.
+On the homepage, the brand returns to the top and clears any fragment without
+starting a route transition. From other pages it uses the standard route navigation.
 
 Dialogs have constrained viewport height and scrollable content. Radix owns
 focus trapping, Escape and inertness; react-remove-scroll owns scroll containment. Controlled dialog return
