@@ -7,9 +7,13 @@ dark text with an off-white background and white panels. Dark mode uses light
 text, a black background and smoked glass panels. Local Geist defines both headings
 and interface text. `src/lib/fonts.ts` preloads its Latin WOFF2 asset through
 `next/font/local`, without a remote font request. An optional display policy
-keeps the fallback readable and prevents a late font swap during a slow visit. Colors,
-theme pairs, typography, shared site/legal roles and media surfaces live in
-`src/index.css`; action variants live in `src/components/button-variants.ts`.
+keeps the fallback readable and prevents a late font swap during a slow visit.
+Shared colors, type and shell styles live in `src/site-foundation.css`. The App
+Router's `src/index.css` adds the content styles. The native 500 stylesheet
+`src/pages-error.css` scopes Tailwind detection to its error scene and shared shell,
+including the navigation and deferred appearance menus. Update its source globs
+when those components start using utilities from a new source file. Action
+variants live in `src/components/button-variants.ts`.
 The shared `--glass-surface`, `--glass-highlight` and `--glass-radius` tokens
 define panel backgrounds, edge highlights and corner radii.
 The shared shadcn `Card` has a neutral one-pixel glass rim with white and silver
@@ -43,8 +47,9 @@ signal paths. Direction arrows remain visible at rest, and highlights follow the
 input-to-features-to-result sequence.
 Both previews ship complete, style-free static scenes with stable accessible
 descriptions. The playback controller and animated SVGs load after scroll
-approach or keyboard focus. The hero's mini-experiments link prepares the same
-module on intent. The cards and their actions retain their identity as the
+approach or keyboard focus. Intent on the hero's mini-experiments link starts
+loading the same module and preparing the alternate photo in parallel. The cards
+and their actions retain their identity as the
 graphics switch to playback. On the reward board a ring marks the start, dotted guides show the
 two possible paths and hatching marks obstacles. A single Motion timeline advances
 the solid trail and samples that same rounded SVG path for the red agent's position.
@@ -133,18 +138,20 @@ Shared Alert, Empty, Card, Badge, Field, Label and Separator wrappers own recurr
 feedback, grouping and form semantics. Landing and training cards compose the same
 CardHeader, CardTitle, CardContent, CardAction and CardFooter parts. Do not recreate
 feature, explanation or open Card variants. For a card-shaped list or navigation
-landmark, use Card on the matching semantic element. Training
-dialogs reuse DialogContent, DialogTitle, DialogDescription and, for grouped
-actions, DialogFooter. ModalContent sets the product width on the dialog element.
+landmark, use Card on the matching semantic element. Training previews use Dialog.
+Destructive training confirmations use the Base Nova Alert Dialog with Animate UI.
+DialogFooter groups the actions and ModalContent sets the product width.
 The consent footer uses equal columns when each action has room for 7.5rem
 and stacks them when the available dialog width is smaller.
 DialogTitle places optional 1rem icons beside the first line of the heading.
-Confirmations use muted icons, and model loading uses an accent spinner in the same slot.
+Confirmations use muted icons. Model loading, training and the appearance menu use
+the shared shadcn Spinner with its Animate UI glyph. Retryable gallery and example
+loading errors use the shared Alert.
 The everyday quiz composes standard
 Cards, whole-card answer Buttons and contextual Alerts; notices use Alert. Badges use default, secondary, outline and
 destructive variants for their roles. Consent groups and class-name
 editors reuse FieldSet/Legend/Group/Label/Error as applicable, with shared Input
-and DialogTitle variants. Semantic color and state tokens remain in `src/index.css`.
+and DialogTitle variants. Semantic color and state tokens live in `src/site-foundation.css`.
 FieldLabel keeps descendant links underlined, including the required consent links,
 so they remain distinguishable without relying on color.
 
@@ -167,6 +174,8 @@ content wrapper fixes enabled-item opacity with an important utility to preserve
 text contrast during entry. Disabled items retain their separate opacity state.
 Base UI owns keyboard activation in dropdowns. Animate UI owns popup entry,
 exit and pointer feedback. A closing popup immediately becomes inert during exit.
+The appearance menu's checkbox uses a plain Lucide check path inside Animate UI's
+checkbox indicator. The indicator draws and erases the path from the checked state.
 `LearningCard` composes CardHeader, CardTitle and CardDescription for each of
 the three training steps. A red icon and step number share a row above the title.
 The image explanation presents the technique before its interactive animation
@@ -220,22 +229,19 @@ writes no browser storage.
 The KNN exercise uses the same dog circle, cat square, query diamond and drawn
 selection rings as the explanatory diagram. In both diagrams each line ends at
 the near edge of its neighbor's ring. Twelve separated targets keep the
-whole quiz plot operable on mobile. The current K neighbors form an
-isometric close group around the query, using the plot's shorter dimension.
-Outer points occupy the full rectangle; extending its longer axis can only move
-them farther from the query. The logical neighbor set therefore remains the
-visually closest set, with at least 16 percentage points of the shorter dimension
-separating their radius from the outer points. Native container units position the
-close group and size each accepted connection from the query to the fixed-size
-ring as the plot resizes. Changing K resets the arrangement and selections
-while retaining the input image. Standard Button hit areas remain separated and
+whole quiz plot operable on mobile. Native container units scale every point's
+distance to the query by the shorter side of the plot and size each line to the
+selected point's ring. Changing K clears selections and feedback within the
+same point arrangement and input image. A new round generates a new arrangement.
+Standard Button hit areas remain separated and
 44px wide; the glyph inside owns the official Animate UI field-error shake recipe.
 Wrong-point tooltips survive focus scrolling and dismiss on Escape, blur or an
 outside press; a subsequent valid selection clears the previous mistake.
 Animate UI Effect owns path drawing and its reduced-motion alternative; placement
 and Button press feedback remain separate properties/surfaces. The shared shadcn
-Slider uses Animate UI Base UI primitives for K=1/3/5, defaulting to 3; its accessible
-label/value belong to the actual thumb. Input/settings, plot and class actions stack
+Slider uses Animate UI Base UI primitives for K=1 through 10 in steps of one,
+defaulting to 3. The thumb owns the accessible label and value. The answer
+controls include a tie for equal vote counts. Input/settings, plot and class actions stack
 in that order below `lg`, with a plot that fills the Card's content width and caps
 only its height at 24rem, a 64px input image and compact spacing. The Card always
 fills its section's content width; standard side padding is retained.
@@ -275,13 +281,16 @@ shadcn Navigation Menu shares the header's moving Animate UI highlight across
 the full row. The links' hit areas meet between rows so crossing the spacing
 keeps the highlight moving directly between destinations. Base UI's `render`
 prop composes the links with native anchors and their current-page semantics.
+The desktop links and highlight items share a client boundary so Animate UI can
+attach its row refs during hydration. The surrounding layout renders on the server.
 Below `lg`, the toolbar pairs the back action with the Informationen dropdown.
 Back traverses the previous browser entry when available and uses the homepage for a direct entry.
 The dropdown's three native links use the shared Animate UI menu, including
 current-page semantics, shared intent-based native route prefetching and whole-control icon
 feedback. The header and the legal dropdown share the same root and trigger.
-The legal layout includes its three static items in the route, and the portal
-mounts only on activation. The appearance menu loads its popup and choice
+Pointer, keyboard focus and touch intent prepare the three legal items through
+one retryable module. The portal mounts on opening and owns focus and exit.
+The appearance menu loads its popup and choice
 components on intent through a separate entry point from the shared trigger.
 `PageContent` composes Card, CardHeader and CardContent around one semantic article
 and one h1. The reading column has a bounded width. Documents use the neutral
@@ -296,7 +305,11 @@ The static 404 and 500 documents and the App Router recovery screen share
 render. The 404 uses three separately modeled glass digits in the shared
 Topography renderer. The 500 and recovery screen use its ring. A local poster
 reserves the artwork's space and stays visible with reduced motion or unavailable
-WebGL. Error artwork prepares its playback module when its poster enters the viewport.
+WebGL. The static error documents keep the poster node when playback starts.
+The App Router recovery screen renders the poster immediately and loads the
+playback component when the recovery screen mounts. If playback fails to load,
+the poster and recovery actions stay available. Visible artwork or pointer
+intent prepares the shared renderer.
 Visible scenes support pointer, touch and keyboard impulses and a pause control.
 
 Official project-local Codex guidance lives in `.agents/skills/shadcn/` and
@@ -335,11 +348,17 @@ retain their larger touch targets on coarse-pointer devices.
 Below `md`, one Menü trigger exposes the same destinations. Unavailable learning items
 show their availability without a navigable URL. Enabled links use native intent preparation.
 Static markup and the interactive header share their menu items, links and triggers.
+Each responsive navigation has a React Activity boundary for selective hydration.
+Both trigger lists are delivered in static HTML and CSS selects the visible list
+at the shared breakpoint.
 Base UI owns keyboard navigation and the trigger-to-panel relationship.
 Animate UI owns the panel transitions and the moving row highlight.
-Header pointer, focus and touch intent load the navigation panels through one
-shared import. The initial document keeps the lightweight trigger available.
-Opening activates the portal and its positioning and focus lifecycle.
+Each header trigger keeps its static Lucide chevron through hydration. Its
+rotation uses the existing popup state and CSS reduced-motion rules.
+The small desktop and mobile navigation panel module ships with the header so
+opening can start without a script request. Base UI mounts the portal and its
+active rows on opening. Pointer, keyboard and touch intent on enabled links
+prepares their destination routes.
 The header list applies isolation through CSS because Animate UI's list would
 emit an inline style in the static document.
 Header, footer and legal pages share the legal destinations.
@@ -347,11 +366,16 @@ ThemeProvider and the shared header/footer sit outside the route
 ViewTransition. Theme changes update the root appearance without remounting the
 learning workspace. Three native fragment links mark the current training step and
 focus its section heading on activation. The class name fills the header beside
-the right-aligned image count. A full-width row groups upload, reset and removal.
+the right-aligned image count. An invalid name uses the field's error border and
+an anchored Animate UI tooltip on focus or hover. The field retains a live error
+description. The training status reserves space for its wrapped messages. A
+full-width row groups upload, reset and removal.
 Narrow cards retain more space for the upload label and show reset and removal
 as icons with accessible names. The gallery's fixed-height area includes its
 selection controls so collecting the first image keeps the card height stable.
-Class counters show progress toward the training minimum, then the collected total;
+The class marker, gallery illustration and selected thumbnail badge use the same
+theme-aware class accent. Class names identify each group. Class counters show
+progress toward the training minimum, then the collected total;
 the camera controls in the collection header enable live capture, and the prediction
 preview appears once a trained model and a stream are available. The workspace panels, dialogs, gallery and
 camera preview use shared theme and media tokens.
@@ -386,16 +410,20 @@ color and the favicon for the resolved theme. The default favicon SVG also
 follows the OS color scheme. An explicit
 theme wipe updates both when its existing completion applies the theme.
 
+The static switch takes its initial position, track color and glyph from the
+bootstrapped root theme. React adopts that position as it reads the preference.
 The lightweight switch and menu trigger remain available initially. Pointer/focus
 intent prepares one deduplicated, retryable ThemeMenu module; the supported public
 portal mounts its content only when opened. No hidden portal prerender is assumed.
 The menu trigger sets the shared Button's Animate UI tap scale to 1 so Base UI
 positions the panel against a stable rectangle during pointer and keyboard press.
-The toolbar defines the menu offset at its mobile and desktop breakpoints to
+The toolbar gives the brand and appearance controls equal inline insets from
+the rounded ends. It defines the menu offset at its mobile and desktop breakpoints to
 align the appearance menu with the navigation flyouts.
 Initial learning consent remains eager. The loading and camera steps mount on
-activation in the same dialog. The workspace mounts one active confirmation or
-image preview at a time, using the shared dialog primitives. Upload and capture
+activation in the same dialog. Intent on a confirmation or image-preview trigger
+prepares one shared module. The workspace mounts one active dialog at a time and
+supports cancelling a pending first opening with Escape. Upload and capture
 intent warm the thumbnail module. Its virtualizer mounts when there are images
 to display. The prediction video attaches when the model and camera are ready.
 TensorFlow and model imports remain consent-gated and are never prepared on intent.
@@ -404,25 +432,23 @@ TensorFlow and model imports remain consent-gated and are never prepared on inte
 
 `EntryReveal` composes Animate UI `Effect` for first arrival and one-time scroll
 admission. Shared roles use 6 px for reading/shell, 8 px for navigation, 10 px for
-text and 16 px for surfaces. Small peer groups stagger by 80 ms, capped at 160 ms;
-long lists never accumulate a page-length delay. Initially visible content remains
-opaque and readable and only shifts briefly. Primary page headings stay static.
-Hero supporting content uses a stationary 2 px-to-zero blur entrance. Its initial
-blur is present in the external stylesheet and SSG markup before hydration when
-scripting and motion are enabled. Animate UI continues from that computed filter
-without restarting it. No-script, reduced-motion and focused content remains sharp;
-internal navigation leaves the entrance to Flow. The SSG position remains its
-painted position throughout hydration and highlight startup.
-Offscreen surfaces may fade and clear a 2 px blur; reading groups only move gently.
+text and 16 px for surfaces on initial entry. Small peer groups stagger by 80 ms
+on entry and 50 ms on scroll, each capped at two steps. Initially visible content
+remains opaque and readable and only shifts briefly. Primary page headings stay static.
+The homepage headline, supporting text and actions remain sharp and in place
+from the first paint through hydration and highlight startup.
+On first arrival from below, cards, standalone headings and reading groups fade in
+with a short 14–16 px slide. Legal documents reveal by heading-led group, and the
+training and prediction sections enter independently after workspace setup.
+Scroll reveals animate opacity and translation. Virtualized thumbnails keep
+their existing list lifecycle.
 Reduced motion and keyboard focus reveal immediately without spatial movement.
 SSG and hydration start with visible content and no initial style attributes.
 The installed Animate UI Effect remounts its descendants when its reduced-motion
 setting changes. `EntryTarget` therefore isolates only that motion boundary with a
 fixed setting and restores the actual inherited Animate UI/Motion preference below
 it. EntryReveal applies the user's preference itself and retires completed load
-keyframes. The hero retains an explicit zero-blur target after completion, so
-retiring its keyframes cannot restore a blurred base value. Changing the preference
-neither remounts controls nor replays an entrance.
+keyframes. Changing the preference preserves controls and completed entries.
 
 The persistent PageTransition tracks document arrival versus subsequent pathname
 changes. Flow owns the initially visible content of internal navigation, so local
@@ -439,8 +465,11 @@ with its answer for scroll admission. Its main heading is stationary, and its
 introduction uses the reading role.
 Legal text is grouped at existing
 h2/h3 boundaries without changing controlled copy, while its H1 stays visible.
-Training panels enter after the consent-gated model is ready; their mounted controls,
-camera/model lifetime and existing class-list reflow remain independent. Virtual
+The training workspace keeps its geometry through setup and becomes interactive
+when the model is ready and the first dialog closes. Panels below the viewport
+admit scroll reveals once the workspace is ready. The withdrawal notice reserves
+its space through setup and becomes visible at the same handoff. Later camera
+prompts retain the workspace layout. Virtual
 thumbnails and live prediction updates never replay decorative entries. Dialogs,
 success feedback, icons and the educational sequence retain their existing owners.
 
@@ -457,11 +486,13 @@ Reduced motion uses the library's instant height change and opacity feedback.
 
 - The shared adaptation of Animate UI's `PageTransition` uses React 19.3
   ViewTransition directly so that snapshot eligibility follows the navigation
-  type. Next links tag forward navigation with `nav-forward`. The new page
-  travels 16 px in 240 ms as the previous page fades and travels 8 px in 160 ms.
-  The text stays sharp throughout. Explicit return links use
-  `nav-back` to mirror the direction. Header, footer and ThemeProvider remain outside
-  this persistent boundary. Query/hash changes and subsequent updates leave
+  type. Next links tag forward navigation with `nav-forward`. The Flow keyframes
+  use Animate UI's 30% horizontal slide, 12 px motion blur and opacity fade.
+  Content enters in 350 ms and exits in 250 ms. The registry component emits
+  inline styles and writes runtime rules into a style element. This integration
+  keeps the animation rules in external CSS for the static site's strict hash CSP.
+  Explicit return links use `nav-back` to mirror the direction. Header, footer
+  and ThemeProvider remain outside this persistent boundary. Query/hash changes and subsequent updates leave
   the main content out of capture. The legal Back control applies those same
   Flow layers to its native history traversal. The browser owns this capture
   because a cached history restore can bypass React's view transition. If the
@@ -481,25 +512,29 @@ Reduced motion uses the library's instant height change and opacity feedback.
   clicks during the wipe; keyboard selection and state updates remain immediate.
   Each pathname change alternates the main content's capture name. This keeps
   the departing and arriving pages at their own sizes and scroll positions.
-  External CSS animates their opacity and horizontal translation and excludes
+  External CSS animates their opacity, horizontal translation and blur and excludes
   the document root from route captures. Motion's exact constant reset style
   is emitted during SSG for the shared legal selection and covered by the hash CSP.
   Destination preparation uses the native Next router cache.
 - The hero adapts the Animate UI Topography WebGL renderer. The first pass computes
   the loop's reflections and refraction. The second resolves its edge coverage at
-  output resolution. The first tier caps device-pixel scaling at 0.8×, the field
-  at 40,000 texels and the output at 256,000 raster pixels. Sustained frame
-  cadence can raise both passes to 3× display scaling, 600,000 field texels and
-  8,294,400 output pixels, subject to GPU dimension limits. Sustained slow frames
-  lower the quality. After a reduction, six stable measurement windows allow
+  output resolution. Desktop homepage playback starts at up to 2× display
+  scaling, 300,000 field texels and 4,147,200 output pixels. Mobile and error artwork
+  start at up to 1.5× display scaling, 150,000 field texels and 2,073,600 output pixels.
+  Sustained frame cadence can raise
+  both passes to 3× display scaling, 600,000 field texels and 8,294,400 output pixels,
+  subject to GPU dimension limits. Sustained slow frames can lower the renderer
+  to 0.8× display scaling, 40,000 field texels and 256,000 output pixels.
+  After a reduction, six stable measurement windows allow
   the next higher tier to be tried again. Quality changes retain the Canvas
   and animation time.
-  The mobile and desktop posters, `public/hero-glass-mobile.webp` and
-  `public/hero-glass.webp`, preserve the shader's alpha channel so the themed
-  stage shows through and around the glass before WebGL starts. Next.js generates
-  responsive optimizer URLs for the homepage, 404, 500 and in-app recovery posters.
-  Each `<picture>` and its viewport-specific priority preloads share the same
-  candidates and sizes for the scene's layout.
+  The loop's cross-section varies gently around its circumference. Its mobile
+  and desktop WebP posters in `src/assets/hero/` show the shader's resting pose.
+  They preserve the alpha channel so the themed stage shows through the glass.
+  Next.js generates responsive optimizer URLs for the homepage, 404, 500 and
+  in-app recovery posters. Each `<picture>` and its viewport-specific priority
+  preloads share the candidates and sizes for the scene's layout. The Pages
+  Router 500 document emits its poster preloads in the head before startup scripts.
   Both themes use the same ruby glass material. The loop turns and the droplets
   drift with moving highlights at up to 30 frames per second during autonomous
   playback. Each droplet follows its own path with a visible gap from the loop.
@@ -514,12 +549,17 @@ Reduced motion uses the library's instant height change and opacity feedback.
   The poster remains visible while the two GPU programs link. Where parallel
   compilation is available, the renderer checks their readiness on its frame
   loop. The first successful draw hides the poster without an extra entrance fade.
-  Visibility and intent share one renderer import promise. The resolved component
-  mounts directly on the client after the static document loads and has a chance
-  to paint, and after any incoming page transition.
-  The poster returns on reduced motion, hidden or offscreen state, unsupported WebGL
-  or context loss. These states unmount the enhancement
-  and dispose its renderer. Explicit pause instead retains the current GPU image,
+  Visibility and intent share one renderer import promise. The homepage starts
+  preparing the renderer after the visible hero has had a chance to paint, even
+  while the document is still loading. Error artwork waits for document load.
+  The resolved component mounts directly on the client after any incoming page
+  transition.
+  The poster returns on reduced motion, a hidden tab, unsupported WebGL or
+  context loss. These states unmount the enhancement and dispose its renderer.
+  The homepage pauses the render loop when the artwork leaves the viewport
+  and retains its single bounded canvas for the active page. Scrolling back
+  resumes the same frame without reinitializing WebGL. Error artwork releases
+  its renderer offscreen. Explicit pause retains the current GPU image,
   stops frame, pointer-spring and ripple playback, and freezes parallax. Resuming
   continues the same animation time. Resizing can redraw the paused image without
   advancing time. No CPU animation fallback runs. The scene performs
@@ -658,11 +698,11 @@ These are explicit integrations for the installed Animate UI 2.4.6 and Motion
 Shared `ActionFeedback` keeps AnimateIcon in a layout-neutral `display: contents`
 parent and places ButtonPrimitive's press Slot directly on the native button or
 navigation anchor.
-`initial={false}` omits Motion's initial style from static HTML. After hydration,
-the public style prop provides the explicit `transform: scale(1)` rest state;
-the server snapshot omits it. This gives pressing and cancellation a truthful
-return target instead of deriving `scale(0)` from the CSS value `none`. The same
-Motion owner handles press and release; reduced motion disables the gesture.
+`initial={false}` keeps static HTML style-free. The numeric `whileTap.scale`
+uses the existing Animate UI press token and spring. Motion resolves the
+untransformed state to a scale of 1, so release and cancellation restore the
+control without a post-hydration style write. The shared reduced-motion
+preference disables the press transform.
 
 The shared dialog uses Animate UI for the popup and scrim and React Remove Scroll
 with `removeScrollBar={false}`, `inert={false}` and pinch zoom enabled.
@@ -674,13 +714,13 @@ time. Hydration promotes the existing element to modal with `showModal()` before
 paint. The original node remains mounted across the setup steps.
 Consent, model loading and the optional camera choice share one surface and scrim.
 Each step change focuses the incoming heading. The outgoing panel becomes inert
-as it slides out of the layout. The incoming Animate UI Effect uses the same
-horizontal offset and timing as the page Flow.
+as it slides out of the layout. The incoming Animate UI Effect uses a short
+horizontal offset for the step change.
 A measured height animation follows the active panel and can be interrupted by
 the next step. This preserves natural height in static HTML and bypasses the
 initial zero height of Animate UI's AutoHeight. Reduced motion skips both movements.
-Later-opening product dialogs use Base UI's Portal as mount owner and Animate UI
-for entry. Closing releases modality immediately and restores focus to the
-appropriate workspace control.
+Later-opening product dialogs use Animate UI's portal for entry and exit. Closing
+releases modality and restores focus to the appropriate workspace control while
+the inert visual exit completes.
 
 [Third-party notices](third-party-notices.md) preserve upstream license conditions.

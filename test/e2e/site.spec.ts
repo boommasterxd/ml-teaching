@@ -6,6 +6,8 @@ import { syntheticModel } from './synthetic-model';
 import { expectNetworkLayout } from './network-layout';
 import {
   captureSetupDialog,
+  classLayout,
+  expectStableNameValidation,
   expectCancelledResetKeepsImages,
   expectGalleryFocusAcrossResize,
   expectPreviewDeletion,
@@ -53,17 +55,6 @@ async function grantModelConsent(page: Page) {
   await checkboxes.nth(1).focus();
   await page.keyboard.press('Space');
   await dialog.getByRole('button', { name: 'Zustimmen', exact: true }).click();
-}
-
-async function classLayout(page: Page) {
-  const names = page.getByRole('textbox', { name: /^Name für Klasse / });
-  return names.evaluateAll((inputs) => {
-    const [first, next] = inputs.map((input) =>
-      input.closest('[data-slot="card"]')?.getBoundingClientRect(),
-    );
-    if (!first || !next) throw new Error('Two class cards are required.');
-    return { height: first.height, spacing: next.top - first.top };
-  });
 }
 
 async function uploadTrainingClasses(page: Page) {
@@ -274,7 +265,7 @@ test('consent can be withdrawn while a model download is pending', async ({ page
   );
   try {
     await page.goto(learningPaths.imagePractice);
-    const expectSameDialog = await captureSetupDialog(page);
+    const { expectSameDialog } = await captureSetupDialog(page);
     expect(pending).toHaveLength(0);
     await grantModelConsent(page);
     const loading = page.getByRole('dialog', { name: 'Lade KI-Modelle...' });
@@ -346,9 +337,14 @@ test('theme changes preserve navigation and require explicit remembering across 
   const remember = menu.getByRole('menuitemcheckbox', {
     name: 'Auswahl für weitere Besuche auf diesem Gerät merken',
   });
+  const checkPath = remember.locator('svg path');
+  await expect(remember).not.toBeChecked();
+  await remember.hover();
+  await expect(checkPath).toHaveCSS('opacity', '0');
   await remember.focus();
   await page.keyboard.press('Space');
   await expect(remember).toBeChecked();
+  await expect(checkPath).toHaveCSS('opacity', '1');
   expect(await page.evaluate(() => localStorage.getItem('ml-teaching-theme'))).toBe('dark');
   await page.keyboard.press('Escape');
   await expect(
@@ -373,6 +369,7 @@ test('theme changes preserve navigation and require explicit remembering across 
     await otherRemember.focus();
     await other.keyboard.press('Space');
     await expect(otherRemember).not.toBeChecked();
+    await expect(otherRemember.locator('svg path')).toHaveCSS('opacity', '0');
     await expect(otherTheme).toBeChecked();
     await expect(theme).not.toBeChecked();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'system');
@@ -411,14 +408,16 @@ test('local images train a real browser classifier, predict and reset without up
   );
   await page.goto(learningPaths.imagePractice);
   await page.setViewportSize({ width: 390, height: 844 });
-  const expectSameDialog = await captureSetupDialog(page);
+  const { expectSameDialog, expectStableWorkspace } = await captureSetupDialog(page);
   await grantModelConsent(page);
   const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
   await expect(camera).toBeVisible();
   await expectSameDialog();
   await camera.getByRole('button', { name: 'Ohne Kamera fortfahren' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expectStableWorkspace();
   await page.setViewportSize({ width: 320, height: 844 });
+  await expectStableNameValidation(page);
   const removeClass = page.getByRole('button', { name: 'Klasse 1: Klasse 1 löschen', exact: true });
   await removeClass.scrollIntoViewIfNeeded();
   const removeBounds = await removeClass.boundingBox();
@@ -427,8 +426,10 @@ test('local images train a real browser classifier, predict and reset without up
   expect(removeBounds!.x + removeBounds!.width).toBeLessThanOrEqual(320);
   await removeClass.focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('dialog')).toHaveCount(1);
+  const confirmRemoval = page.getByRole('alertdialog', { name: 'Klasse löschen?' });
+  await expect(confirmRemoval.getByRole('button', { name: 'Abbrechen' })).toBeFocused();
   await page.keyboard.press('Escape');
+  await expect(confirmRemoval).toHaveCount(0);
   await expect(removeClass).toBeFocused();
   await expect(page.locator('video')).toHaveCount(0);
   await uploadTrainingClasses(page);
@@ -465,7 +466,7 @@ test('local images train a real browser classifier, predict and reset without up
   await expect(page.getByRole('status').filter({ hasText: 'Bereit' })).toBeVisible();
   await expectPreviewDeletion(page, expectAccessible);
   await page.getByRole('button', { name: 'Alle Klassen und Bilder zurücksetzen' }).click();
-  const reset = page.getByRole('dialog', { name: 'Daten unwiderruflich löschen?' });
+  const reset = page.getByRole('alertdialog', { name: 'Daten unwiderruflich löschen?' });
   await expectAccessible(page);
   await reset.getByRole('button', { name: 'Unwiderruflich löschen', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Modell trainieren', exact: true })).toBeDisabled();

@@ -34,11 +34,11 @@ export const RING_PROFILE = `
 void ringProfile(vec2 u, float breath, out vec2 spine, out vec2 axes, out vec2 bank) {
   vec2 u2 = vec2(u.x * u.x - u.y * u.y, 2.0 * u.x * u.y);
   vec2 u3 = vec2(dot(u2, vec2(u.x, -u.y)), dot(u2, u.yx));
-  spine.x = 0.59 + dot(u3, vec2(0.035, -0.023)) + 0.055 * u2.y + 0.032 * breath * u2.x;
-  spine.y = 0.11 * u2.y + (0.085 + 0.065 * breath) * u3.x - 0.115 * u.x;
-  float angle = 0.42 + 0.86 * u2.x + 0.2 * breath * u.y;
+  spine.x = 0.59 + dot(u3, vec2(0.021, -0.014)) + 0.034 * u2.y + 0.018 * breath * u2.x;
+  spine.y = 0.089 * u2.y + (0.049 + 0.035 * breath) * u3.x - 0.115 * u.x;
+  float angle = 0.42 + 0.46 * u2.x + 0.13 * breath * u.y;
   bank = vec2(cos(angle), sin(angle));
-  axes = vec2(0.277 + (0.095 + 0.024 * breath) * u.y, 0.18 + 0.036 * u2.x);
+  axes = vec2(0.252 + (0.030 + 0.014 * breath) * u.y, 0.196 + 0.02 * u2.x);
 }
 `;
 

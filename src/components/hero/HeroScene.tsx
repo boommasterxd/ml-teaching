@@ -8,9 +8,9 @@ import { Pause } from '@/components/icons/pause';
 import { Play } from '@/components/icons/play';
 import { useHomePlayback } from '@/components/home/HomePlaybackProvider';
 import { useEntryViewportReady } from '@/components/ui/entry-policy';
-import StaticContourPoster from './StaticContourPoster';
-import { heroPosterImages } from './poster-assets';
 import { useGlassField } from './use-glass-field';
+
+type HeroSceneProps = { children?: ReactNode; poster?: ReactNode };
 
 function useParallax(root: RefObject<HTMLDivElement | null>, paused: boolean) {
   const { scrollYProgress } = useScroll({ target: root, offset: ['start start', 'end start'] });
@@ -53,7 +53,7 @@ function PlaybackControl({
   );
 }
 
-function Scene({ children }: { children?: ReactNode }) {
+function Scene({ children, poster }: HeroSceneProps) {
   const root = useRef<HTMLDivElement>(null);
   const viewportReady = useEntryViewportReady();
   const { paused, togglePause } = useHomePlayback();
@@ -61,13 +61,14 @@ function Scene({ children }: { children?: ReactNode }) {
     artwork,
     Field,
     available,
+    inView,
     failed,
     reduce,
     rendered,
     onRendered,
     onUnavailable,
     prepare,
-  } = useGlassField(paused, viewportReady);
+  } = useGlassField(paused, viewportReady, { waitForDocumentLoad: false, retainOffscreen: true });
   const { fieldY, capturePause } = useParallax(root, paused);
 
   return (
@@ -85,11 +86,16 @@ function Scene({ children }: { children?: ReactNode }) {
           <motion.div
             className="hero-field-art"
             initial={false}
-            style={available ? { y: fieldY } : undefined}
+            style={available && inView ? { y: fieldY } : undefined}
           >
-            <StaticContourPoster sources={heroPosterImages} />
+            {poster}
             {viewportReady && available && Field && (
-              <Field paused={paused} onUnavailable={onUnavailable} onRendered={onRendered} />
+              <Field
+                sharpDesktopStart
+                paused={paused || !inView}
+                onUnavailable={onUnavailable}
+                onRendered={onRendered}
+              />
             )}
           </motion.div>
         </div>
@@ -107,10 +113,10 @@ function Scene({ children }: { children?: ReactNode }) {
   );
 }
 
-export default function HeroScene({ children }: { children?: ReactNode }) {
+export default function HeroScene(props: HeroSceneProps) {
   return (
     <ReducedMotionConfig>
-      <Scene>{children}</Scene>
+      <Scene {...props} />
     </ReducedMotionConfig>
   );
 }

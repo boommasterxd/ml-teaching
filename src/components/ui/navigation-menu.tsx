@@ -3,8 +3,8 @@
 import { useRef, type ComponentProps, type ComponentType, type RefObject } from 'react';
 import { NavigationMenu as Primitive } from '@animate-ui/react/primitives/base-ui/navigation-menu';
 import { NavigationMenu as BaseNavigationMenu } from '@base-ui/react/navigation-menu';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ChevronDown } from '../icons/chevron-down';
 import { MenuHighlight } from './menu-highlight';
 
 export const navigationMenuTriggerStyle =
@@ -97,7 +97,8 @@ export function NavigationMenuTrigger({ children, onKeyDown, ...props }: Primiti
     >
       {children}
       <ChevronDown
-        className="ml-1 size-3 group-aria-busy:hidden motion-safe:transition-transform group-data-popup-open:rotate-180"
+        size={28}
+        className="ml-1 size-3 motion-safe:transition-transform group-data-popup-open:rotate-180"
         aria-hidden="true"
       />
     </Primitive.Trigger>

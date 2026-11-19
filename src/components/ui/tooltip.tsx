@@ -27,9 +27,9 @@ export function TooltipTrigger(props: ComponentProps<typeof Primitive.Trigger>) 
   const { id, open } = useTooltip();
   return (
     <Primitive.Trigger
-      {...props}
       id={id}
       aria-describedby={open ? `${id}-description` : undefined}
+      {...props}
     />
   );
 }

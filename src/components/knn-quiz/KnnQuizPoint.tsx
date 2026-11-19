@@ -14,7 +14,7 @@ import { KNN_RING_RADIUS, KnnPoint as PointGlyph } from '@/components/network/Kn
 export default function KnnQuizPoint({
   point,
   distance,
-  neighborOffset,
+  query,
   selected,
   errorAttempt,
   k,
@@ -23,7 +23,7 @@ export default function KnnQuizPoint({
 }: {
   point: KnnPoint;
   distance: number;
-  neighborOffset?: KnnPosition;
+  query: KnnPosition;
   selected: boolean;
   errorAttempt: number;
   k: number;
@@ -37,8 +37,8 @@ export default function KnnQuizPoint({
   const placement = {
     left: `${point.x}%`,
     top: `${point.y}%`,
-    '--knn-neighbor-offset-x': neighborOffset?.x ?? 0,
-    '--knn-neighbor-offset-y': neighborOffset?.y ?? 0,
+    '--knn-point-offset-x': point.x - query.x,
+    '--knn-point-offset-y': point.y - query.y,
   };
   return (
     // Feedback survives the browser's delayed focus scroll; only user dismissal clears it.

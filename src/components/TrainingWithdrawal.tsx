@@ -3,12 +3,15 @@ import Button from './Button';
 import { Text } from './ui/typography';
 import { EntryReveal } from './ui/entry-reveal';
 import { learningPaths } from '@/lib/learning-paths';
+import { cn } from '@/lib/utils';
 
 /** A native document reload retires the complete in-memory workspace and renews consent. */
 export default function TrainingWithdrawal({
   variant = 'workspace',
+  visible = true,
 }: {
   variant?: 'workspace' | 'dialog';
+  visible?: boolean;
 }) {
   const action = (
     <Button
@@ -26,8 +29,14 @@ export default function TrainingWithdrawal({
   );
   if (variant === 'dialog') return action;
   return (
-    <EntryReveal kind="text" asChild>
-      <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+    <EntryReveal kind="text" asChild active={visible} scrollOnly>
+      <div
+        aria-hidden={!visible || undefined}
+        className={cn(
+          'mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center',
+          !visible && 'invisible',
+        )}
+      >
         {action}
         <Text variant="muted">Lädt die Lernseite neu und verwirft deine Trainingsdaten.</Text>
       </div>

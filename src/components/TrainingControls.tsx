@@ -1,14 +1,17 @@
 import { Brain } from './icons/brain';
 import { CheckCircle2 } from './icons/check-circle2';
-import { Loader2 } from './icons/loader2';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import Button from './Button';
 import { CardAction, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
+import { EntryReveal } from './ui/entry-reveal';
+import { Spinner } from './ui/spinner';
+import { MessageSlot } from './ui/message-slot';
 import { Text } from './ui/typography';
 
 interface TrainingControlsProps {
+  entryReady?: boolean;
   classes: MLClass[];
   canTrain: boolean;
   hasPendingUploads: boolean;
@@ -19,15 +22,24 @@ interface TrainingControlsProps {
   onTrain: () => void;
 }
 
+const statusMessages = {
+  training: 'Bitte warten, das Modell wird trainiert...',
+  uploading: 'Bitte warte, bis alle ausgewählten Bilder vollständig verarbeitet sind.',
+  emptyNames: 'Bitte gib allen Klassen einen Namen.',
+  duplicateNames: 'Bitte gib allen Klassen einen eindeutigen Namen.',
+  missingImages: `Du brauchst mindestens ${ML.MIN_CLASSES} Klassen und mindestens ${ML.MIN_IMAGES_PER_CLASS} Bilder pro Klasse.`,
+  trained: 'Modell bereit.',
+  ready: 'Bereit zum Trainieren.',
+};
+const trainingStatusMessages = Object.values(statusMessages);
+
 function trainingStatus(props: TrainingControlsProps) {
-  if (props.isTraining) return 'Bitte warten, das Modell wird trainiert...';
-  if (props.hasPendingUploads)
-    return 'Bitte warte, bis alle ausgewählten Bilder vollständig verarbeitet sind.';
-  if (props.hasInvalidNames) return 'Bitte gib allen Klassen einen Namen.';
-  if (props.hasDuplicateNames) return 'Bitte gib allen Klassen einen eindeutigen Namen.';
-  if (!props.canTrain)
-    return `Du brauchst mindestens ${ML.MIN_CLASSES} Klassen und mindestens ${ML.MIN_IMAGES_PER_CLASS} Bilder pro Klasse.`;
-  return props.hasTrainedModel ? 'Modell bereit.' : 'Bereit zum Trainieren.';
+  if (props.isTraining) return statusMessages.training;
+  if (props.hasPendingUploads) return statusMessages.uploading;
+  if (props.hasInvalidNames) return statusMessages.emptyNames;
+  if (props.hasDuplicateNames) return statusMessages.duplicateNames;
+  if (!props.canTrain) return statusMessages.missingImages;
+  return props.hasTrainedModel ? statusMessages.trained : statusMessages.ready;
 }
 
 function TrainingSummary({ classes }: Pick<TrainingControlsProps, 'classes'>) {
@@ -55,45 +67,47 @@ function TrainingSummary({ classes }: Pick<TrainingControlsProps, 'classes'>) {
 export default function TrainingControls(props: TrainingControlsProps) {
   const { classes, canTrain, isTraining, hasTrainedModel, onTrain } = props;
   return (
-    <section className="training-stage" aria-labelledby="training-model">
-      <CardHeader className="items-center">
-        <CardTitle id="training-model" tabIndex={-1} className="workspace-heading">
-          Training
-        </CardTitle>
-        {hasTrainedModel && !isTraining && (
-          <CardAction>
-            <Badge variant="secondary" role="status">
-              <CheckCircle2 data-icon="inline-start" aria-hidden="true" /> Bereit
-            </Badge>
-          </CardAction>
-        )}
-      </CardHeader>
-      <CardContent className="grid gap-3">
-        <TrainingSummary classes={classes} />
-        <Text variant="muted" className="leading-relaxed" id="training-status" aria-live="polite">
-          {trainingStatus(props)}
-        </Text>
-      </CardContent>
-      <CardFooter>
-        <Button
-          onClick={onTrain}
-          size="lg"
-          disabled={isTraining || !canTrain}
-          className="w-full sm:w-auto"
-          aria-describedby="training-status"
-        >
-          {isTraining ? (
-            <>
-              <Loader2 data-icon="inline-start" animate loop aria-hidden="true" /> Trainiere...
-            </>
-          ) : (
-            <>
-              <Brain data-icon="inline-start" aria-hidden="true" />{' '}
-              {hasTrainedModel ? 'Modell neu trainieren' : 'Modell trainieren'}
-            </>
+    <EntryReveal asChild kind="reading" active={props.entryReady} scrollOnly>
+      <section className="training-stage" aria-labelledby="training-model">
+        <CardHeader className="items-center">
+          <CardTitle id="training-model" tabIndex={-1} className="workspace-heading">
+            Training
+          </CardTitle>
+          {hasTrainedModel && !isTraining && (
+            <CardAction>
+              <Badge variant="secondary" role="status">
+                <CheckCircle2 data-icon="inline-start" aria-hidden="true" /> Bereit
+              </Badge>
+            </CardAction>
           )}
-        </Button>
-      </CardFooter>
-    </section>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <TrainingSummary classes={classes} />
+          <Text variant="muted" className="leading-relaxed" id="training-status" aria-live="polite">
+            <MessageSlot messages={trainingStatusMessages}>{trainingStatus(props)}</MessageSlot>
+          </Text>
+        </CardContent>
+        <CardFooter>
+          <Button
+            onClick={onTrain}
+            size="lg"
+            disabled={isTraining || !canTrain}
+            className="w-full sm:w-auto"
+            aria-describedby="training-status"
+          >
+            {isTraining ? (
+              <>
+                <Spinner data-icon="inline-start" aria-hidden="true" /> Trainiere...
+              </>
+            ) : (
+              <>
+                <Brain data-icon="inline-start" aria-hidden="true" />{' '}
+                {hasTrainedModel ? 'Modell neu trainieren' : 'Modell trainieren'}
+              </>
+            )}
+          </Button>
+        </CardFooter>
+      </section>
+    </EntryReveal>
   );
 }

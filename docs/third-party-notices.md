@@ -46,7 +46,7 @@ SOFTWARE.
 
 The installed `@animate-ui/react` package and generated files in
 `src/components/animate-ui/icons/` and the adapted
-`src/components/animate-ui/components/page-transition.tsx` use the MIT license with the Commons Clause
+`src/components/animate-ui/components/page-transition.tsx` and its CSS use the MIT license with the Commons Clause
 condition below. The original SVG paths and animation variants remain from the
 official Animate UI registry. Optional unused exports are removed; formatting and
 import paths are adapted to this application.

@@ -206,19 +206,28 @@ for (const [width, colorScheme] of [
     await expect(exercise.getByRole('status')).toContainText('Neue Runde.');
     expect(await plottedData(exercise)).not.toEqual(before);
     await slider.focus();
+    const stablePoints = await plottedData(exercise);
     await page.keyboard.press('ArrowRight');
-    await expect(slider).toHaveAttribute('aria-valuenow', '5');
-    await expect(exercise.getByText('K = 5 · 0 von 5 gefunden')).toBeVisible();
-    const fiveNeighbors = await rankedTargets(exercise);
-    expect(fiveNeighbors[5].distance - fiveNeighbors[4].distance).toBeGreaterThan(
-      Math.min(plot.width, plot.height) * 0.14,
-    );
+    await expect(slider).toHaveAttribute('aria-valuenow', '4');
+    await expect(exercise.getByText('K = 4 · 0 von 4 gefunden')).toBeVisible();
+    await page.keyboard.press('End');
+    await expect(slider).toHaveAttribute('aria-valuenow', '10');
+    expect(await plottedData(exercise)).toEqual(stablePoints);
     if (width === 712) {
-      await expectOddNeighborVote(exercise, 5);
+      const nearest = (await rankedTargets(exercise)).slice(0, 10);
+      for (const point of nearest) await point.control.click();
+      await expect(exercise.getByText('K = 10 · 10 von 10 gefunden')).toBeVisible();
       await slider.focus();
       await page.keyboard.press('Home');
       await expect(slider).toHaveAttribute('aria-valuenow', '1');
       await expectOddNeighborVote(exercise, 1);
+      await slider.focus();
+      await page.keyboard.press('ArrowRight');
+      await expect(slider).toHaveAttribute('aria-valuenow', '2');
+      for (const point of (await rankedTargets(exercise)).slice(0, 2)) await point.control.click();
+      await exercise.getByRole('button', { name: 'Gleichstand', exact: true }).click();
+      await expect(exercise.getByRole('alert')).toContainText('Gleichstand erkannt!');
+      await expectAccessible(page);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
       false,
@@ -275,6 +284,6 @@ test('KNN keyboard intent prepares the hidden exercise and hands off opening foc
   const slider = exercise.getByRole('slider');
   await expect(slider).toBeFocused();
   await page.keyboard.press('ArrowRight');
-  await expect(slider).toHaveAttribute('aria-valuenow', '5');
+  await expect(slider).toHaveAttribute('aria-valuenow', '4');
   expect(failures).toEqual([]);
 });

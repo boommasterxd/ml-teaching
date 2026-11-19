@@ -1,15 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
-import { Dialog as BaseDialog } from '@base-ui/react/dialog';
+import type { ReactElement } from 'react';
 import {
   Dialog as DialogRoot,
   DialogContent,
-  DialogOverlay,
+  DialogBackdrop,
+  DialogPortal,
+  DialogViewport,
   InitialDialog,
   InitialDialogContent,
 } from './ui/dialog';
-import { canReturnFocus, getReturnFocusCandidates } from './dialog-state';
+import { useDialogReturnFocus } from './dialog-state';
 
 interface DialogProps {
   isOpen: boolean;
@@ -29,25 +30,7 @@ export default function Dialog({
   initialContent = false,
   children,
 }: DialogProps) {
-  const returnFocus = useRef<(HTMLElement | null)[]>([]);
-  const [content, setContent] = useState<HTMLDivElement | null>(null);
-  const rememberOpener = useCallback((node: HTMLDivElement | null) => {
-    if (node && returnFocus.current.length === 0) {
-      returnFocus.current = getReturnFocusCandidates(document.activeElement as HTMLElement);
-    }
-    setContent(node);
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen && !content && returnFocus.current.length > 0) {
-      const nextDialog = document.querySelector('[role="dialog"][data-open]');
-      if (!nextDialog && document.activeElement === document.body) {
-        const target = returnFocus.current.find(canReturnFocus);
-        if (target) target.focus({ preventScroll: true });
-      }
-      returnFocus.current = [];
-    }
-  }, [isOpen, content]);
+  const rememberOpener = useDialogReturnFocus(isOpen);
 
   const labels = {
     'aria-modal': true,
@@ -86,19 +69,18 @@ export default function Dialog({
         else details.cancel();
       }}
     >
-      {isOpen && (
-        <BaseDialog.Portal>
-          <DialogOverlay>
-            <DialogContent
-              {...labels}
-              ref={rememberOpener}
-              render={children}
-              initialFocus
-              finalFocus={false}
-            />
-          </DialogOverlay>
-        </BaseDialog.Portal>
-      )}
+      <DialogPortal>
+        <DialogBackdrop />
+        <DialogViewport lockScroll>
+          <DialogContent
+            {...labels}
+            ref={rememberOpener}
+            render={children}
+            initialFocus
+            finalFocus={false}
+          />
+        </DialogViewport>
+      </DialogPortal>
     </DialogRoot>
   );
 }

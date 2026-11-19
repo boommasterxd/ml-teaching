@@ -84,6 +84,42 @@ for (const path of publicRoutes) {
   });
 }
 
+for (const [path, systemTheme] of [
+  ['/', 'dark'],
+  ['/500', 'light'],
+] as const) {
+  test(`the theme switch starts in its dark position before hydration at ${path}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: systemTheme, reducedMotion: 'no-preference' });
+    if (systemTheme === 'light') {
+      await page.addInitScript(() => localStorage.setItem('ml-teaching-theme', 'dark'));
+    }
+    const scripts = await holdApplicationScripts(page);
+    try {
+      const response = await page.goto(path, { waitUntil: 'commit' });
+      expect(response?.status()).toBe(path === '/500' ? 500 : 200);
+      await scripts.expectHeld();
+      await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+
+      const theme = page.getByRole('switch', { name: 'Dunkle Darstellung' });
+      const thumbOffset = () =>
+        theme.evaluate((track) => {
+          const trackBox = track.getBoundingClientRect();
+          const thumb = track.querySelector('[data-slot="switch-thumb"]')!.getBoundingClientRect();
+          return thumb.x + thumb.width / 2 - (trackBox.x + trackBox.width / 2);
+        });
+      await expect.poll(thumbOffset).toBeGreaterThan(0);
+      const initialOffset = await thumbOffset();
+      scripts.release();
+      await expect(theme).toBeChecked();
+      expect(await thumbOffset()).toBeCloseTo(initialOffset);
+    } finally {
+      scripts.release();
+    }
+  });
+}
+
 test('the focused header trigger remains keyboard-operable across hydration', async ({ page }) => {
   const scripts = await holdApplicationScripts(page);
   try {
@@ -98,6 +134,47 @@ test('the focused header trigger remains keyboard-operable across hydration', as
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
     await page.keyboard.press('Escape');
     await expect(trigger).toBeFocused();
+  } finally {
+    scripts.release();
+  }
+});
+
+test('the static error header retains its triggers across hydration and a viewport change', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 412, height: 823 });
+  const scripts = await holdApplicationScripts(page);
+  try {
+    const response = await page.goto('/500', { waitUntil: 'commit' });
+    expect(response?.status()).toBe(500);
+    await scripts.expectHeld();
+    const mobile = page.getByRole('button', { name: 'Menü', exact: true });
+    const desktop = page.getByRole('button', {
+      name: 'Lernlabor',
+      exact: true,
+      includeHidden: true,
+    });
+    await expect(mobile).toBeVisible();
+    const mobileBefore = await mobile.elementHandle();
+    const desktopBefore = await desktop.elementHandle();
+    await mobile.focus();
+    scripts.release();
+    await page.waitForLoadState('load');
+    await expect(mobile).toBeFocused();
+    await mobile.press('Enter');
+    const overview = page.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
+    await expect(overview).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(mobile).toHaveAttribute('aria-expanded', 'false');
+
+    await page.setViewportSize({ width: 1280, height: 823 });
+    await expect(desktop).toBeVisible();
+    expect(await desktop.evaluate((node, first) => node === first, desktopBefore)).toBe(true);
+    expect(await mobileBefore.evaluate((node) => node.isConnected)).toBe(true);
+    await desktop.press('Enter');
+    await expect(overview).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(desktop).toBeFocused();
   } finally {
     scripts.release();
   }

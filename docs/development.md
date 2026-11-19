@@ -43,7 +43,7 @@ development startup. Consult the installed version's framework documentation und
 
 ## Appearance and optional clients
 
-Redline's shared light/dark tokens live in `src/index.css`, with landing rules
+Redline's shared light/dark tokens live in `src/site-foundation.css`, with landing rules
 in `src/components/hero/hero.css`. `src/lib/fonts.ts` loads the committed local Geist
 WOFF2 asset; no font account, key or runtime font service is required. Its notices
 are in [third-party notices](third-party-notices.md).
@@ -109,8 +109,11 @@ stable version and accepts the existing project-local Lighthouse only when its
 version matches. A missing, outdated or incompatible fallback fails with an error;
 the command does not install or update tools. Prepare any required local fallback
 separately under the repository's installation controls.
-It saves ignored lab reports under `test-results/lighthouse/`.
-Scores are measurements, not accessibility or ranking guarantees.
+The default run measures the homepage and saves reports under
+`test-results/lighthouse/`. With `--all`, the command reads the route list from the
+static CSP configuration and checks each HTML status, including the native 404 and 500. It runs each device profile sequentially and stores per-route reports under
+`test-results/lighthouse/routes/`. This mode exits unsuccessfully if any
+performance score falls below 100.
 
 ## Build and recovery
 

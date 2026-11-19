@@ -1,5 +1,6 @@
 import LearningAreas from '@/components/LearningAreas';
 import { LearningChapterIntro, LearningPrompt } from '@/components/LearningChapter';
+import { EntryReveal } from '@/components/ui/entry-reveal';
 import { Heading } from '@/components/ui/typography';
 
 /** Required learning-area selection stays available before client hydration. */
@@ -12,7 +13,9 @@ export default function LearningHubPage() {
       </LearningChapterIntro>
       <LearningAreas idPrefix="hub" />
       <section className="learning-hub-ideas" aria-labelledby="hub-ideas-title">
-        <Heading id="hub-ideas-title">Zum Weiterforschen</Heading>
+        <EntryReveal kind="text" asChild>
+          <Heading id="hub-ideas-title">Zum Weiterforschen</Heading>
+        </EntryReveal>
         <div className="learning-hub-prompts">
           <LearningPrompt title="Erkennt dein Modell die Tasse auch woanders?">
             Fotografiere eine Tasse auf einem Heft und einen Stift auf dem Tisch. Sammle für beide

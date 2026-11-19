@@ -12,10 +12,9 @@ import { AnimatedFeedback } from '@/components/ui/animated-feedback';
 import { Field, FieldLabel, FieldDescription, FieldSet, FieldLegend } from '@/components/ui/field';
 import { Slider } from '@/components/ui/slider';
 import { Text } from '@/components/ui/typography';
+import { KNN_MAX_NEIGHBORS, KNN_MIN_NEIGHBORS } from '@/lib/knn-quiz';
 import type { KnnQuizState } from './useKnnQuiz';
 import { KnnSuccessMedal } from './KnnSuccessMedal';
-
-const successTitle = 'Richtig zugeordnet!';
 
 export function KnnQuizInput({ state }: { state: KnnQuizState }) {
   const example = NETWORK_EXAMPLES[state.round.input];
@@ -36,21 +35,19 @@ export function KnnQuizInput({ state }: { state: KnnQuizState }) {
         </div>
       </div>
       <Field className="gap-1 lg:gap-3">
-        <FieldLabel id="knn-count-label">
-          1. Finde {state.k === 1 ? 'den nächsten Nachbarn' : `die ${state.k} nächsten Nachbarn`}.
-        </FieldLabel>
+        <FieldLabel id="knn-count-label">1. Finde die nächsten Nachbarn.</FieldLabel>
         <Slider
           id="knn-neighbor-count"
           aria-labelledby="knn-count-label"
           aria-valuetext={`${state.k} ${state.k === 1 ? 'Nachbar' : 'Nachbarn'}`}
-          min={1}
-          max={5}
-          step={2}
+          min={KNN_MIN_NEIGHBORS}
+          max={KNN_MAX_NEIGHBORS}
+          step={1}
           value={state.k}
           onValueChange={state.changeK}
           className="min-h-11"
         />
-        <FieldDescription>
+        <FieldDescription className="tabular-nums">
           K = {state.k} · {state.selected.length} von {state.k} gefunden
         </FieldDescription>
       </Field>
@@ -60,6 +57,7 @@ export function KnnQuizInput({ state }: { state: KnnQuizState }) {
 
 export function KnnQuizAnswer({ state }: { state: KnnQuizState }) {
   const ready = state.selected.length === state.k;
+  const successTitle = state.winner === null ? 'Gleichstand erkannt!' : 'Richtig zugeordnet!';
   return (
     <div className="min-w-0">
       <FieldSet className="gap-3 lg:gap-6">
@@ -82,6 +80,14 @@ export function KnnQuizAnswer({ state }: { state: KnnQuizState }) {
           >
             <Cat data-icon="inline-start" aria-hidden="true" />
             Katze
+          </Button>
+          <Button
+            variant="outline"
+            className="min-h-11"
+            disabled={!ready || state.result === 'correct'}
+            onClick={() => state.chooseClass(null)}
+          >
+            Gleichstand
           </Button>
         </div>
         <Text variant="muted">

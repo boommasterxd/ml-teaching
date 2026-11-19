@@ -29,14 +29,11 @@ async function observeBackFlow(page: Page) {
                   effect.pseudoElement === `${prefix}root)`
                 )
                   return false;
-                return effect
-                  .getKeyframes()
-                  .some(
-                    ({ transform }) =>
-                      typeof transform === 'string' &&
-                      transform !== 'none' &&
-                      new DOMMatrixReadOnly(transform).m41 * direction > 0,
-                  );
+                return effect.getKeyframes().some(({ transform }) => {
+                  const offset =
+                    typeof transform === 'string' && transform.match(/^translateX\(([-\d.]+)%\)$/);
+                  return offset && Number(offset[1]) * direction > 0;
+                });
               });
             return {
               back: transition.types.has('nav-back'),

@@ -3,6 +3,7 @@ import Button from './Button';
 import { Dog } from './icons/dog';
 import { Cat } from './icons/cat';
 import { NetworkScene } from './network/NetworkScene';
+import { Alert, AlertDescription } from './ui/alert';
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from './ui/card';
 
 const DEMO_SIGNALS = [
@@ -71,4 +72,16 @@ export function DiagramSurface({
 /** Static diagram preserves the educational layout without inline style attributes. */
 export function StaticNetworkDiagram() {
   return <NetworkScene />;
+}
+
+export function NetworkLoadAlert() {
+  return (
+    <div className="network-result">
+      <Alert variant="destructive">
+        <AlertDescription className="justify-items-center">
+          Laden fehlgeschlagen. Wähle das Beispiel erneut.
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
 }

@@ -1,16 +1,17 @@
 import type { ComponentProps } from 'react';
 import StaticContourPoster from './StaticContourPoster';
-import { errorDigitsPosterImages, errorRingPosterImages } from './poster-assets';
+import type { ContourSources } from './contour-poster';
 
 export default function ErrorGlassFrame({
-  digits,
+  sources,
   children,
+  preload,
   ...props
-}: ComponentProps<'div'> & { digits: boolean }) {
+}: ComponentProps<'div'> & { sources: ContourSources; preload?: boolean }) {
   return (
     <div id="error-glass-art" className="error-glass-viewport" {...props}>
       <div className="hero-field-art">
-        <StaticContourPoster sources={digits ? errorDigitsPosterImages : errorRingPosterImages} />
+        <StaticContourPoster sources={sources} preload={preload} />
         {children}
       </div>
     </div>

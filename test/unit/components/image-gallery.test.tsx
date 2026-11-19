@@ -74,7 +74,7 @@ describe('training image gallery', () => {
       );
       expect(screen.getByRole('status').textContent).toBe('Galerie wird geladen.');
       await act(async () => rows.reject(new Error('Gallery code temporarily unavailable')));
-      expect(screen.getByRole('status').textContent).toBe(
+      expect(screen.getByRole('alert').textContent).toBe(
         'Die Galerie konnte nicht geladen werden.',
       );
       vi.doUnmock('@/components/ImageGalleryRows');

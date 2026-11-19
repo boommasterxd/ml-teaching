@@ -17,9 +17,10 @@ const SLOW_FRAME_MS = 1000 / 27;
 const FAST_FRAME_MS = 1000 / 48;
 const RECOVERY_WINDOWS = 6;
 
-/** Start with small GPU targets and adjust both passes using sustained frame cadence. */
-export function createTopographyQuality() {
-  let level = 0;
+/** Adjust both passes using sustained frame cadence. */
+export function createTopographyQuality(sharpStart = false) {
+  const startLevel = sharpStart ? 2 : 1;
+  let level = startLevel;
   let promotionWindows = 1;
   let baselineFrameMs = FAST_FRAME_MS;
   let previous: number | undefined;
@@ -51,8 +52,8 @@ export function createTopographyQuality() {
       if (elapsed < SAMPLE_MS) return false;
 
       const average = elapsed / intervals;
-      // Learn the display cadence at the cheapest tier, so a steady 30 Hz can sharpen too.
-      if (level === 0 && slow === 0) baselineFrameMs = Math.min(1000 / 30, average);
+      // Learn the display cadence at startup and after a reduction, including steady 30 Hz.
+      if (level <= startLevel && slow === 0) baselineFrameMs = Math.min(1000 / 30, average);
       const overloaded = slow >= 2 && (slow * 5 >= intervals || average > slowFrameMs);
       const healthy = slow === 0 && average < Math.max(FAST_FRAME_MS, baselineFrameMs * 1.25);
       elapsed = intervals = slow = 0;

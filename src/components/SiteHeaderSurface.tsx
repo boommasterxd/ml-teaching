@@ -3,11 +3,8 @@
 import { useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
-import {
-  motionTokens,
-  useShouldReduceMotion,
-  useTempoTransition,
-} from '@animate-ui/react/utils/motion';
+import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
+import { useMotionPreference } from './ui/use-motion-preference';
 
 function subscribeToScroll(onChange: () => void) {
   window.addEventListener('scroll', onChange, { passive: true });
@@ -28,7 +25,7 @@ function HomeHeaderSurface() {
     readScrolled,
     readStaticScroll,
   );
-  const reduce = useShouldReduceMotion();
+  const { reduce } = useMotionPreference();
   const transition = useTempoTransition(motionTokens.transition.fade);
   const position = scrolled === null ? 'initial' : scrolled ? 'scrolled' : 'top';
 

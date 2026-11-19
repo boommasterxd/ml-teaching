@@ -3,6 +3,7 @@
 import { useEffect, type RefObject } from 'react';
 import { cancelFrame, frame, type MotionValue } from 'motion/react';
 import type { GlassImpulses } from './glass-impulses';
+import { contourMedia } from './contour-poster';
 import type { GlassShape } from './topography-gl';
 import { createTopographyRenderer } from './topography-renderer';
 import { createTopographyQuality, type TopographyQuality } from './topography-quality';
@@ -40,6 +41,15 @@ export interface FieldMotion {
   running: MotionValue<boolean>;
 }
 
+function centerPointer(
+  { x, y, lift }: FieldMotion,
+  { width, height }: { width: number; height: number },
+) {
+  if (lift.get() !== 0) return;
+  x.jump(width / 2);
+  y.jump(height / 2);
+}
+
 function observeCanvasSize(canvas: HTMLCanvasElement, resize: () => void) {
   const observer = new ResizeObserver(resize);
   const watchesDevicePixels =
@@ -74,9 +84,10 @@ export function useTopographyRenderer(
   onUnavailable: () => void,
   onRendered: (ready: boolean) => void,
   shape: GlassShape,
+  sharpDesktopStart: boolean,
 ) {
-  const { x, y, lift, ripples, running } = values;
   useEffect(() => {
+    const { x, y, lift, ripples, running } = values;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const renderer = createTopographyRenderer(canvas, shape);
@@ -84,7 +95,9 @@ export function useTopographyRenderer(
       onUnavailable();
       return;
     }
-    const quality = createTopographyQuality();
+    const quality = createTopographyQuality(
+      sharpDesktopStart && window.matchMedia(contourMedia.desktop).matches,
+    );
     let bounds = canvas.getBoundingClientRect();
     const updateRaster = () =>
       resizeRaster(canvas, bounds, renderer.maxRasterDimension, quality.current);
@@ -95,19 +108,13 @@ export function useTopographyRenderer(
     let clockOrigin: number | undefined;
     let painted = false;
     let retired = false;
-    const centerPointer = () => {
-      if (lift.get() === 0) {
-        x.jump(size.width / 2);
-        y.jump(size.height / 2);
-      }
-    };
     const resize = () => {
       bounds = canvas.getBoundingClientRect();
       const next = updateRaster();
       if (size.width === next.width && size.height === next.height && size.dpr === next.dpr) return;
       size = next;
       quality.resetSamples();
-      centerPointer();
+      centerPointer(values, size);
       if (painted || running.get()) draw();
     };
     const draw = () => {
@@ -162,9 +169,9 @@ export function useTopographyRenderer(
         frame.render(tick, true);
       }
     });
-    centerPointer();
+    centerPointer(values, size);
     draw();
     if (!retired && running.get()) frame.render(tick, true);
     return stop;
-  }, [canvasRef, x, y, lift, ripples, running, onUnavailable, onRendered, shape]);
+  }, [canvasRef, values, onUnavailable, onRendered, shape, sharpDesktopStart]);
 }

@@ -174,14 +174,6 @@
     justify-content: flex-start;
   }
 }
-@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
-  [data-entry-reveal='hero'][data-entry-initial='true'] {
-    filter: blur(2px);
-  }
-  [data-entry-reveal='hero'][data-entry-initial='true']:focus-within {
-    filter: none;
-  }
-}
 @variant lg {
   .landing-technique-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -1,5 +1,5 @@
-import { Loader2 } from '../icons/loader2';
 import { DialogDescription, DialogTitle } from '../ui/dialog';
+import { Spinner } from '../ui/spinner';
 import TrainingWithdrawal from '../TrainingWithdrawal';
 
 export default function LoadingStep({ loadingText }: { loadingText: string }) {
@@ -9,7 +9,7 @@ export default function LoadingStep({ loadingText }: { loadingText: string }) {
         <DialogTitle
           id="loading-modal-title"
           tabIndex={-1}
-          icon={<Loader2 animate loop className="text-primary" />}
+          icon={<Spinner aria-hidden="true" className="text-primary" />}
         >
           Lade KI-Modelle...
         </DialogTitle>

@@ -7,11 +7,13 @@ import { cn } from '../lib/utils';
 import type { MLClass, Prediction } from '../types/ml';
 import { CardAction, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
+import { EntryReveal } from './ui/entry-reveal';
 import { Alert, AlertDescription } from './ui/alert';
 import { Progress } from './ui/progress';
 import { Heading, Text } from './ui/typography';
 
 interface PredictionPanelProps {
+  entryReady?: boolean;
   hasCamera: boolean;
   classes: MLClass[];
   prediction: Prediction | null;
@@ -118,45 +120,47 @@ export default function PredictionPanel(props: PredictionPanelProps) {
   const { classes, prediction, isPredicting, hasTrainedModel, hasCamera } = props;
   const showVideo = hasTrainedModel && hasCamera;
   return (
-    <section className="training-stage" aria-labelledby="training-prediction">
-      <CardHeader className="items-center">
-        <CardTitle id="training-prediction" tabIndex={-1} className="workspace-heading">
-          Vorhersage
-        </CardTitle>
-        <CardAction className="flex items-center gap-2 text-muted-foreground">
-          {isPredicting ? (
-            <Badge variant="secondary">
-              <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
-              Live
-            </Badge>
-          ) : (
-            <Camera className="size-5" aria-hidden="true" />
-          )}
-        </CardAction>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        {showVideo && (
-          <CameraPreview facingMode={props.facingMode} predictVideoRef={props.predictVideoRef} />
-        )}
-        {isPredicting && <ConfidenceResults classes={classes} prediction={prediction} />}
-        {!isPredicting && !showVideo && (
-          <Text id="prediction-camera-hint" variant="muted" className="leading-relaxed">
-            {hasTrainedModel ? (
-              <>
-                <a href="#training-camera" className="font-medium underline underline-offset-4">
-                  Aktiviere die Kamera
-                </a>
-                , um die Live-Vorhersage zu starten.
-              </>
+    <EntryReveal asChild kind="reading" active={props.entryReady} scrollOnly index={1}>
+      <section className="training-stage" aria-labelledby="training-prediction">
+        <CardHeader className="items-center">
+          <CardTitle id="training-prediction" tabIndex={-1} className="workspace-heading">
+            Vorhersage
+          </CardTitle>
+          <CardAction className="flex items-center gap-2 text-muted-foreground">
+            {isPredicting ? (
+              <Badge variant="secondary">
+                <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
+                Live
+              </Badge>
             ) : (
-              'Trainiere zuerst dein Modell, um neue Kamerabilder zuzuordnen.'
+              <Camera className="size-5" aria-hidden="true" />
             )}
-          </Text>
-        )}
-      </CardContent>
-      <CardFooter>
-        <PredictionAction {...props} />
-      </CardFooter>
-    </section>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {showVideo && (
+            <CameraPreview facingMode={props.facingMode} predictVideoRef={props.predictVideoRef} />
+          )}
+          {isPredicting && <ConfidenceResults classes={classes} prediction={prediction} />}
+          {!isPredicting && !showVideo && (
+            <Text id="prediction-camera-hint" variant="muted" className="leading-relaxed">
+              {hasTrainedModel ? (
+                <>
+                  <a href="#training-camera" className="font-medium underline underline-offset-4">
+                    Aktiviere die Kamera
+                  </a>
+                  , um die Live-Vorhersage zu starten.
+                </>
+              ) : (
+                'Trainiere zuerst dein Modell, um neue Kamerabilder zuzuordnen.'
+              )}
+            </Text>
+          )}
+        </CardContent>
+        <CardFooter>
+          <PredictionAction {...props} />
+        </CardFooter>
+      </section>
+    </EntryReveal>
   );
 }

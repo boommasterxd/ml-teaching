@@ -3,7 +3,6 @@
 import type { MouseEvent } from 'react';
 import { useShouldReduceMotion } from '@animate-ui/react/utils/motion';
 import { Button } from '@/components/ui/button';
-import { prepareExample } from '@/components/network/prepare-example';
 import { useHomePlayback } from './HomePlaybackProvider';
 import { prepareHomePreviews } from './prepare-home-previews';
 
@@ -34,7 +33,12 @@ export default function ExperimentsLink() {
   const { paused } = useHomePlayback();
   const prepare = () => {
     if (reduce || paused) return;
-    void Promise.all([prepareHomePreviews(), prepareExample('dog')]).catch(() => {});
+    void Promise.all([
+      prepareHomePreviews(),
+      import('@/components/network/prepare-example').then(({ prepareExample }) =>
+        prepareExample('dog'),
+      ),
+    ]).catch(() => {});
   };
 
   return (

@@ -17,6 +17,7 @@ function InitialConsent() {
       <h1>Modell trainieren</h1>
       <p role="status">{open ? 'Einwilligung erforderlich' : 'Einwilligung erteilt'}</p>
       <SetupDialogFixture
+        initialContent={open}
         step={open ? 'consent' : null}
         onConfirmConsent={() => setOpen(false)}
         onDeclineConsent={() => setOpen(false)}

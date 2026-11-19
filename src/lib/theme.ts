@@ -17,10 +17,16 @@ export function systemPrefersDark(): boolean {
 }
 
 export function applyTheme(selection: ThemeSelection, resolved: ResolvedTheme): void {
-  document.documentElement.classList.toggle('dark', resolved === 'dark');
-  document.documentElement.dataset.theme = selection;
-  document.getElementById('site-favicon')?.setAttribute('href', `/favicon-${resolved}.svg`);
-  document.getElementById('site-theme-color')?.setAttribute('content', themeColors[resolved]);
+  const root = document.documentElement;
+  root.classList.toggle('dark', resolved === 'dark');
+  if (root.dataset.theme !== selection) root.dataset.theme = selection;
+  const favicon = document.getElementById('site-favicon');
+  const iconHref = `/favicon-${resolved}.svg`;
+  if (favicon && favicon.getAttribute('href') !== iconHref) favicon.setAttribute('href', iconHref);
+  const color = document.getElementById('site-theme-color');
+  if (color && color.getAttribute('content') !== themeColors[resolved]) {
+    color.setAttribute('content', themeColors[resolved]);
+  }
 }
 
 export function readRememberedTheme(): ThemeSelection | null {

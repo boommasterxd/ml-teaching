@@ -209,21 +209,21 @@ describe('training page integration', () => {
       screen.getByRole('button', { name: 'Bilder der Klasse 1: Tasse zurücksetzen' }),
     );
     fireEvent.click(await screen.findByRole('button', { name: 'Abbrechen' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect(screen.getByText('9 / 10 Bilder')).toBeTruthy();
     fireEvent.click(
       screen.getByRole('button', { name: 'Bilder der Klasse 1: Tasse zurücksetzen' }),
     );
-    const clear = await screen.findByRole('dialog', { name: 'Bilder dieser Klasse löschen?' });
+    const clear = await screen.findByRole('alertdialog', { name: 'Bilder dieser Klasse löschen?' });
     fireEvent.click(within(clear).getByRole('button', { name: 'Zurücksetzen' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect(screen.getByText('0 / 10 Bilder')).toBeTruthy();
     const removeClass = screen.getByRole('button', { name: 'Klasse 1: Tasse löschen' });
     act(() => removeClass.focus());
     fireEvent.click(removeClass);
-    const remove = await screen.findByRole('dialog', { name: 'Klasse löschen?' });
+    const remove = await screen.findByRole('alertdialog', { name: 'Klasse löschen?' });
     fireEvent.click(within(remove).getByRole('button', { name: 'Löschen' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect(screen.queryByRole('textbox', { name: 'Name für Klasse 1: Tasse' })).toBeNull();
     await waitFor(() =>
       expect(document.activeElement).toBe(
@@ -234,7 +234,7 @@ describe('training page integration', () => {
     expect(screen.getAllByRole('textbox')).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: 'Alle Klassen und Bilder zurücksetzen' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Unwiderruflich löschen' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect(
       screen.getAllByText('0 / 10 Bilder').filter((node) => !node.closest('[inert]')),
     ).toHaveLength(2);

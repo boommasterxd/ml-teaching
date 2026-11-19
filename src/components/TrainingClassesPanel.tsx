@@ -15,6 +15,7 @@ import { ML } from '../constants';
 import ClassCard from './ClassCard';
 import type { ClassCardActions } from './ClassCard';
 import Button from './Button';
+import { prepareTrainingDialogs } from './DeferredTrainingDialogs';
 import { Badge } from './ui/badge';
 import { Empty, EmptyDescription, EmptyHeader } from './ui/empty';
 import { AnimatedList, AnimatedListItem } from './ui/animated-list';
@@ -95,6 +96,10 @@ function CollectionHeader({
         <Button
           variant="ghost"
           size="icon"
+          aria-haspopup="dialog"
+          onPointerEnter={prepareTrainingDialogs}
+          onFocus={prepareTrainingDialogs}
+          onPointerDown={prepareTrainingDialogs}
           onClick={onShowClearConfirm}
           title="Alles zurücksetzen"
           aria-label="Alle Klassen und Bilder zurücksetzen"
@@ -131,7 +136,7 @@ export default function TrainingClassesPanel({
   return (
     <section aria-labelledby="training-images" className="flex min-w-0 flex-col gap-5">
       <CollectionHeader {...headerActions} count={classes.length} mainHeadingRef={mainHeadingRef} />
-      <EntryReveal kind="text" active={entryReady} activation>
+      <EntryReveal kind="text" active={entryReady} scrollOnly>
         <AnimatedList className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {classes.length === 0 ? (
             <Empty key="empty" className="col-span-full">

@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { Shine } from '@animate-ui/react/primitives/effects/shine';
 import { motionTokens, useShouldReduceMotion } from '@animate-ui/react/utils/motion';
+import { NetworkLoadAlert } from './NeuralNetFrame';
 import ResultFeedback from './network/ResultFeedback';
 import { Progress } from './ui/progress';
 import { Text } from './ui/typography';
@@ -147,19 +148,21 @@ export function NetworkDiagram({
           result: <ResultBars signal={signal} ready={animStep >= NETWORK_STAGES.OUTPUT} />,
         }}
       />
-      <div className="network-result" role={failed ? 'alert' : 'status'}>
-        {failed ? (
-          <Text variant="muted">Laden fehlgeschlagen. Wähle das Beispiel erneut.</Text>
-        ) : preparing ? (
-          <Text variant="muted">Beispiel wird geladen…</Text>
-        ) : result ? (
-          <ResultFeedback key={sequence} signal={signal} />
-        ) : (
-          <Text variant="muted">
-            {animating ? 'Signal wird verarbeitet…' : 'Wähle ein Beispiel.'}
-          </Text>
-        )}
-      </div>
+      {failed ? (
+        <NetworkLoadAlert />
+      ) : (
+        <div className="network-result" role="status">
+          {preparing ? (
+            <Text variant="muted">Beispiel wird geladen…</Text>
+          ) : result ? (
+            <ResultFeedback key={sequence} signal={signal} />
+          ) : (
+            <Text variant="muted">
+              {animating ? 'Signal wird verarbeitet…' : 'Wähle ein Beispiel.'}
+            </Text>
+          )}
+        </div>
+      )}
     </>
   );
 }

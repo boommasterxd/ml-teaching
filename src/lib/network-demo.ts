@@ -30,6 +30,7 @@ function createExample(query: { x: number; y: number }) {
   const neighbors = nearestNeighbors(KNN_POINTS, query, KNN_NEIGHBOR_COUNT);
   const votes = countVotes(neighbors);
   const winner = winningSignal(votes);
+  if (winner === null) throw new Error('The three-neighbor example requires a majority.');
   return { query, neighbors, votes, winner };
 }
 

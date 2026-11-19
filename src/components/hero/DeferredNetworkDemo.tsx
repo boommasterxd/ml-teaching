@@ -4,6 +4,7 @@ import { Activity, Suspense, lazy, useCallback, useEffect, useRef, useState } fr
 import {
   DiagramSurface,
   NetworkInputButtons,
+  NetworkLoadAlert,
   StaticNetworkDiagram,
 } from '@/components/NeuralNetFrame';
 import { useNeuralNetAnimation } from '@/hooks/useNeuralNetAnimation';
@@ -107,16 +108,13 @@ export default function DeferredNetworkDemo() {
         {!active && (
           <>
             <StaticNetworkDiagram />
-            <p
-              className="network-result text-sm text-muted-foreground"
-              role={failed ? 'alert' : 'status'}
-            >
-              {failed
-                ? 'Laden fehlgeschlagen. Wähle das Beispiel erneut.'
-                : pendingSignal
-                  ? 'Beispiel wird geladen…'
-                  : 'Wähle ein Beispiel.'}
-            </p>
+            {failed ? (
+              <NetworkLoadAlert />
+            ) : (
+              <p className="network-result text-sm text-muted-foreground" role="status">
+                {pendingSignal ? 'Beispiel wird geladen…' : 'Wähle ein Beispiel.'}
+              </p>
+            )}
           </>
         )}
         {prepared && (

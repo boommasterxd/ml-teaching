@@ -69,11 +69,7 @@ export default function KnnQuizPlot({ state }: { state: KnnQuizState }) {
               key={point.id}
               point={point}
               distance={Math.sqrt(squaredDistance(point, state.round.query))}
-              neighborOffset={
-                state.neighbors.some((neighbor) => neighbor.id === point.id)
-                  ? { x: point.x - state.round.query.x, y: point.y - state.round.query.y }
-                  : undefined
-              }
+              query={state.round.query}
               selected={state.selected.includes(point.id)}
               errorAttempt={state.error?.id === point.id ? state.error.attempt : 0}
               k={state.k}

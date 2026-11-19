@@ -3,6 +3,7 @@
 import AnimatedLink from '@/components/AnimatedLink';
 import Button from '@/components/Button';
 import PublicErrorScene from '@/components/PublicErrorScene';
+import AppErrorGlassArtwork from '@/components/hero/AppErrorGlassArtwork';
 
 export default function ErrorPage({
   reset,
@@ -12,6 +13,7 @@ export default function ErrorPage({
 }) {
   return (
     <PublicErrorScene
+      artwork={<AppErrorGlassArtwork />}
       title="Diese Seite konnte nicht geladen werden"
       description="Bitte versuche es erneut."
       announce

@@ -1,64 +1,79 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useInView } from 'motion/react';
-import { ReducedMotionConfig, useShouldReduceMotion } from '@animate-ui/react/utils/motion';
+import { useState } from 'react';
+import { ReducedMotionConfig } from '@animate-ui/react/utils/motion';
+import Button from '@/components/Button';
+import { Pause } from '@/components/icons/pause';
+import { Play } from '@/components/icons/play';
+import { useEntryViewportReady } from '@/components/ui/entry-policy';
 import ErrorGlassFrame from './ErrorGlassFrame';
+import type { ContourSources } from './contour-poster';
+import { useGlassField } from './use-glass-field';
 
-type Playback = typeof import('./ErrorGlassPlayback');
-
-let pending: Promise<Playback> | undefined;
-
-function preparePlayback() {
-  pending ??= import('./ErrorGlassPlayback').catch((error: unknown) => {
-    pending = undefined;
-    throw error;
-  });
-  return pending;
+interface ErrorGlassArtworkProps {
+  digits?: boolean;
+  sources: ContourSources;
+  preload?: boolean;
 }
 
-function ErrorGlassPoster({ digits }: { digits: boolean }) {
-  const viewport = useRef<HTMLDivElement>(null);
-  const inView = useInView(viewport, { amount: 0.05 });
-  const reduce = useShouldReduceMotion();
-  const [Playback, setPlayback] = useState<Playback['default'] | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    if (!inView || reduce || Playback) return;
-    let active = true;
-    void preparePlayback().then(
-      (module) => {
-        if (active) setPlayback(() => module.default);
-      },
-      () => {
-        if (active) setFailed(true);
-      },
-    );
-    return () => {
-      active = false;
-    };
-  }, [inView, reduce, Playback]);
+function ErrorGlassScene({ digits, sources, preload }: ErrorGlassArtworkProps) {
+  const [paused, setPaused] = useState(false);
+  const viewportReady = useEntryViewportReady();
+  const {
+    artwork,
+    Field,
+    available,
+    failed,
+    reduce,
+    rendered,
+    hasRendered,
+    onRendered,
+    onUnavailable,
+    prepare,
+  } = useGlassField(paused, viewportReady);
+  const Icon = paused ? Play : Pause;
 
   return (
-    <div ref={viewport} className="error-glass">
-      {Playback ? (
-        <Playback digits={digits} />
-      ) : (
-        <>
-          <ErrorGlassFrame digits={digits} data-field-unavailable={failed || undefined} />
-          <div className="error-glass-controls" />
-        </>
-      )}
+    <div className="error-glass">
+      <ErrorGlassFrame
+        sources={sources}
+        preload={preload}
+        ref={artwork}
+        data-enhanced={(available && rendered) || undefined}
+        data-paused={paused || undefined}
+        data-field-unavailable={failed || undefined}
+        onPointerEnter={prepare}
+      >
+        {viewportReady && available && Field && (
+          <Field
+            paused={paused}
+            shape={digits ? 'digits' : 'ring'}
+            onUnavailable={onUnavailable}
+            onRendered={onRendered}
+          />
+        )}
+      </ErrorGlassFrame>
+      <div className="error-glass-controls">
+        {hasRendered && !failed && !reduce && (
+          <Button
+            variant="outline"
+            size="sm"
+            aria-controls="error-glass-art"
+            onClick={() => setPaused((value) => !value)}
+          >
+            <Icon data-icon="inline-start" aria-hidden="true" />
+            {paused ? 'Animation fortsetzen' : 'Animation pausieren'}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
 
-/** Shared error documents paint their poster before loading optional playback. */
-export default function ErrorGlassArtwork({ digits }: { digits: boolean }) {
+export default function ErrorGlassArtwork(props: ErrorGlassArtworkProps) {
   return (
     <ReducedMotionConfig>
-      <ErrorGlassPoster digits={digits} />
+      <ErrorGlassScene {...props} />
     </ReducedMotionConfig>
   );
 }

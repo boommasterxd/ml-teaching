@@ -91,18 +91,12 @@ function HeaderMenuGroups({
 export function HeaderMenuPanel({
   groups,
   current,
-  onMount,
 }: {
   groups: readonly HeaderNavGroup[];
   current: string | null;
-  onMount: (element: HTMLElement | null) => void;
 }) {
   return (
-    <Primitive.Content
-      data-slot="navigation-menu-content"
-      className="header-menu-content"
-      ref={onMount}
-    >
+    <Primitive.Content data-slot="navigation-menu-content" className="header-menu-content">
       <HeaderMenuGroups groups={groups} current={current} />
     </Primitive.Content>
   );

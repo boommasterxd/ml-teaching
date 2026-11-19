@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { AlertCircle } from './icons/alert-circle';
 import { RotateCcw } from './icons/rotate-ccw';
 import { Trash2 } from './icons/trash2';
@@ -21,8 +20,7 @@ interface TrainingPageModalsProps {
   stopPredicting: () => void;
 }
 
-type ModalKind = ModalState['type'];
-type ConfirmationKind = Exclude<ModalKind, 'none' | 'imagePreview'>;
+type ConfirmationKind = Exclude<ModalState['type'], 'none' | 'imagePreview'>;
 
 function confirmation(kind: ConfirmationKind, className: string | undefined) {
   if (kind === 'clearConfirm')
@@ -64,7 +62,7 @@ function confirmation(kind: ConfirmationKind, className: string | undefined) {
   };
 }
 
-/** Mount the active dialog only, retaining its type for immediate focus restoration after close. */
+/** Each portal mounts on demand and retains its own content through exit. */
 export default function TrainingPageModals({
   modal,
   classes,
@@ -77,42 +75,39 @@ export default function TrainingPageModals({
   setHasTrainedModel,
   stopPredicting,
 }: TrainingPageModalsProps) {
-  const [lastKind, setLastKind] = useState<ModalKind>('none');
-  const isOpen = modal.type !== 'none';
-  if (isOpen && lastKind !== modal.type) setLastKind(modal.type);
-  const kind = isOpen ? modal.type : lastKind;
-  if (kind === 'none') return null;
-  if (kind === 'imagePreview')
-    return (
+  const preview = modal.type === 'imagePreview' ? modal : null;
+  const confirm = modal.type !== 'none' && modal.type !== 'imagePreview' ? modal : null;
+  const className =
+    confirm && 'classId' in confirm ? classes.find(({ id }) => id === confirm.classId)?.name : '';
+
+  return (
+    <>
       <ImagePreviewModal
-        isOpen={isOpen}
-        image={modal.type === 'imagePreview' ? modal.image : null}
+        isOpen={preview !== null}
+        image={preview?.image ?? null}
         onClose={closeModal}
         onDelete={() => {
-          if (modal.type !== 'imagePreview') return;
-          removeImage(modal.classId, modal.image.id);
+          if (!preview) return;
+          removeImage(preview.classId, preview.image.id);
           closeModal();
         }}
       />
-    );
-
-  const className = 'classId' in modal ? classes.find(({ id }) => id === modal.classId)?.name : '';
-  return (
-    <ConfirmDialog
-      {...confirmation(kind, className)}
-      isOpen={isOpen}
-      onClose={closeModal}
-      onConfirm={() => {
-        if (modal.type === 'clearClass') clearClass(modal.classId);
-        if (modal.type === 'removeClass') removeClass(modal.classId);
-        if (modal.type === 'clearConfirm') {
-          resetClasses();
-          setHasTrainedModel(false);
-          stopPredicting();
-          classifier?.clearAllClasses();
-        }
-        closeModal();
-      }}
-    />
+      <ConfirmDialog
+        {...confirmation(confirm?.type ?? 'clearConfirm', className)}
+        isOpen={confirm !== null}
+        onClose={closeModal}
+        onConfirm={() => {
+          if (confirm?.type === 'clearClass') clearClass(confirm.classId);
+          if (confirm?.type === 'removeClass') removeClass(confirm.classId);
+          if (confirm?.type === 'clearConfirm') {
+            resetClasses();
+            setHasTrainedModel(false);
+            stopPredicting();
+            classifier?.clearAllClasses();
+          }
+          closeModal();
+        }}
+      />
+    </>
   );
 }

@@ -45,16 +45,18 @@ export default function TopographyField({
   onRendered,
   paused = false,
   shape = 'ring',
+  sharpDesktopStart = false,
 }: {
   onUnavailable: () => void;
   onRendered: (ready: boolean) => void;
   paused?: boolean;
   shape?: GlassShape;
+  sharpDesktopStart?: boolean;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const { values, pointerX, pointerY, raised } = useFieldMotion(paused);
   const { ripples } = values;
-  useTopographyRenderer(canvas, values, onUnavailable, onRendered, shape);
+  useTopographyRenderer(canvas, values, onUnavailable, onRendered, shape, sharpDesktopStart);
   function point(event: PointerPoint, fromKeyboard = false) {
     const rect = canvas.current!.getBoundingClientRect();
     return fromKeyboard

@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type ComponentType } from 'react';
+import { Moon as InitialMoon } from 'lucide-react';
 import { ChevronDown } from '../icons/chevron-down';
-import { Loader2 } from '../icons/loader2';
 import { Moon } from '../icons/moon';
 import { Sun } from '../icons/sun';
 import Button from '../Button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Switch } from '../ui/switch';
 import { DropdownMenu, DropdownMenuTrigger } from '../ui/dropdown-menu-trigger';
+import { Spinner } from '../ui/spinner';
 import { loadThemeMenu } from './theme-menu-loader';
 import type { ThemeMenuProps } from './ThemeMenu';
 import { useTheme } from './ThemeProvider';
@@ -66,6 +67,7 @@ function useDeferredThemeMenu() {
 
 export function ThemeControl() {
   const { preference, select } = useTheme();
+  const initial = preference.revision === 0;
   const label = useId();
   const { trigger, area, Menu, open, failed, prepare, changeOpen } = useDeferredThemeMenu();
 
@@ -76,12 +78,18 @@ export function ThemeControl() {
       </span>
       <Switch
         data-theme-switch=""
+        data-theme-initial={initial || undefined}
         className="data-[size=default]:h-6 data-[size=default]:w-10 data-[size=default]:[&>[data-slot=switch-thumb]]:size-5"
         aria-labelledby={label}
         checked={preference.resolved === 'dark'}
         onCheckedChange={(dark) => select(dark ? 'dark' : 'light')}
       >
-        {preference.resolved === 'dark' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
+        {preference.resolved === 'dark' ? (
+          <Moon aria-hidden="true" />
+        ) : (
+          <Sun className="theme-switch-initial-sun" aria-hidden="true" />
+        )}
+        {initial && <InitialMoon className="theme-switch-initial-moon" aria-hidden="true" />}
       </Switch>
       <DropdownMenu modal={false} open={open} onOpenChange={changeOpen}>
         <DropdownMenuTrigger
@@ -94,7 +102,7 @@ export function ThemeControl() {
           onPointerDown={prepare}
         >
           {open && !Menu && !failed ? (
-            <Loader2 animate loop aria-hidden="true" />
+            <Spinner aria-hidden="true" />
           ) : (
             <ChevronDown aria-hidden="true" />
           )}

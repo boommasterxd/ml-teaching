@@ -58,7 +58,7 @@ function useTrainingResources() {
   const { cameraConsent, cameraDeclined, hasConsented } = consent;
   useEffect(() => {
     if ((cameraConsent || cameraDeclined) && hasConsented && canUseModels)
-      mainHeadingRef.current?.focus();
+      mainHeadingRef.current?.focus({ preventScroll: true });
   }, [cameraConsent, cameraDeclined, hasConsented, canUseModels]);
   return {
     modelError,

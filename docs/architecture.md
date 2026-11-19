@@ -21,9 +21,11 @@ React Router, API routes, database or authentication layer.
 - `csp/`: the adopted guarded native build adapter and artifact verifier.
 
 The only routed Pages Router entry is `src/pages/500.tsx`, a CSP-compatible native
-error output required by the adopted error integration. Its `_app.tsx` and
-`_document.tsx` helpers share global styles and the German document language. Ordinary screen components must
-not live in `src/pages/`, where Next.js would expose unintended routes.
+error output required by the adopted error integration. Its `_document.tsx`
+keeps the shared German document language. Its `_app.tsx` loads `pages-error.css`
+with the shared site foundation and the styles for the header, footer and
+error scene. Ordinary screen components live in `src/screens/` to avoid
+exposing them as Pages Router entries.
 
 ## Shared shell and progressive enhancement
 
@@ -54,6 +56,10 @@ static bootstrap applies a valid remembered light/dark/system selection or the
 operating-system preference. Only explicit remembering writes the single enum key;
 there is no theme service or server personalization. The local font and brand
 assets require no external font provider.
+
+Entry reveals, the Flow transition, the homepage header surface and glass
+artwork share one browser listener for the operating-system reduced-motion
+preference. They still resolve local Animate UI overrides before applying it.
 
 Shared `IntentLink` keeps native Next.js links and a fixed `prefetch={false}`
 while pointer entry, keyboard focus and pointer down call `router.prefetch` for
@@ -86,24 +92,34 @@ Direct entry serves the initial consent as part of the static HTML. Consent
 withdrawal uses a full document reload to discard the private workspace.
 The Pages Router's static 500 recovery action starts an App Router document
 navigation through the browser.
+App Router recovery renders its text, actions and responsive poster immediately.
+It requests the error artwork's playback module only when the recovery screen mounts.
 
 The first stylesheet includes the small shared surface rules and homepage layout
 rules. Bundling them together avoids separate render-blocking requests on the
-homepage and shares the stylesheet across internal navigation. Turbopack groups
-production JavaScript with a preference for fewer requests on direct homepage
-entry. Intent-loaded menus, experiments and WebGL retain their dynamic imports.
+homepage and shares the stylesheet across internal navigation. Tailwind derives
+its utilities from application sources under `src/`. Turbopack favors fewer
+JavaScript requests for direct homepage, error and privacy-page visits. It also
+emits the constituent chunks of merged files so client navigation can reuse
+code already loaded. Menus, experiments and WebGL remain dynamically loaded.
 
 The homepage hero includes its headline and a responsive full-color WebP of the
-glass loop and both droplets in static HTML. While the artwork and document are visible, motion is
-enabled and playback is unpaused, the client loads the optional local WebGL
+glass loop and both droplets in static HTML. The server supplies the poster markup to
+the interactive scene. Static asset imports give the native optimizer versioned poster
+URLs and let the browser reuse them across visits. Each source uses the first
+candidate that reaches its native resolution for higher display densities, so
+equivalent optimizer requests share a cache entry. While the artwork and document are
+visible, motion is enabled and playback is unpaused, the client loads the optional local WebGL
 renderer. Its first successful frame replaces the poster. Visibility and intent
 share the module import. The resolved component mounts directly on the client
 without a second Lazy/Suspense reveal that could trigger a page update transition.
 During playback, elapsed time turns the loop and moves the two droplets along
 separate paths outside it.
 Local input deforms their surfaces and lights the glass. Explicit pause retains the
-last GPU image and freezes playback. Resuming continues the same animation time. Hidden,
-offscreen and reduced-motion states release the enhancement and its resources.
+last GPU image and freezes playback. Scrolling the homepage artwork out of view
+also pauses playback, retaining one bounded canvas until the page exits, the tab
+is hidden or reduced motion is requested. Scrolling back resumes the same animation
+time. The error artwork releases its GPU resources when it scrolls out of view.
 This renderer is independent of consent-gated ML WebGL and processes no training
 data. The educational illustration starts with a server-rendered Input placeholder,
 labeled feature maps, neighbor points and class labels. Intent loads its animation module, prepares a
@@ -117,9 +133,11 @@ of three nearest neighbors once and derives the highlighted points, votes and
 output from the same examples. Its Euclidean plot is a simplified teaching schema;
 the live classifier uses the installed library's normalized feature similarity.
 The illustration never invokes the actual model or processes user images.
-Header menu intent shares a retryable panel module across desktop and mobile.
-The portal mounts on opening with Base UI positioning and focus and Animate UI
-entry and exit. The mobile panel takes its initial width from the toolbar anchor.
+The shared header ships its small panel module with the triggers so the first
+opening can start from the same state as later openings. Base UI mounts the
+portal and active rows on opening and handles positioning and focus.
+Animate UI owns entry and exit. The mobile panel takes its initial width from
+the toolbar anchor. Enabled rows prepare their destinations on navigation intent.
 Theme-menu intent loads its module, and the portal mounts on opening.
 
 The everyday recognition quiz samples three matching and three nonmatching examples
@@ -133,12 +151,12 @@ quiz state independently of model consent, theme preferences and the learning la
 
 The KNN exercise loads near the viewport, with pointer/focus/touch intent warming
 the same retryable module. Its twelve synthetic points and query use a bounded random
-construction, separated targets and a large radial gap between the active K nearest
-neighbors and the remaining points. Changing K regenerates the arrangement while
-preserving the input image and clearing previous answers. The explanatory animation
-and exercise share ranking/voting in `src/lib/knn.ts` and point glyphs. Children
-select the nearest 1, 3 or 5 points before choosing the majority class; mistakes
-remain retryable. Neither exercise loads TensorFlow or stores/sends answers.
+construction with separated targets. The round ranks its points once. Changing
+K clears the previous answer and selection within that round. The explanatory
+animation and exercise share ranking and voting in `src/lib/knn.ts` and point
+glyphs. Children select the nearest 1 to 10 points before choosing the majority
+class or a tie. Mistakes remain retryable. The exercise uses synthetic features
+and keeps selections in memory.
 
 ## Browser ML flow
 

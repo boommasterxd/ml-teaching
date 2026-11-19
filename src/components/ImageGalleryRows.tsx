@@ -11,6 +11,7 @@ import NextImage from 'next/image';
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
 import type { Range, VirtualItem, Virtualizer } from '@tanstack/react-virtual';
 import Button from './Button';
+import { prepareTrainingDialogs } from './DeferredTrainingDialogs';
 import { CheckCircle2 } from './icons/check-circle2';
 import { cn } from '../lib/utils';
 import { Badge } from './ui/badge';
@@ -55,9 +56,13 @@ const ImageThumbnail = memo(function ImageThumbnail({
       type="button"
       data-selection-mode={isSelectionMode || undefined}
       aria-pressed={isSelectionMode ? isSelected : undefined}
+      aria-haspopup={isSelectionMode ? undefined : 'dialog'}
       aria-label={
         isSelectionMode ? (isSelected ? 'Bild abwählen' : 'Bild auswählen') : 'Bild vergrößern'
       }
+      onPointerEnter={isSelectionMode ? undefined : prepareTrainingDialogs}
+      onFocus={isSelectionMode ? undefined : prepareTrainingDialogs}
+      onPointerDown={isSelectionMode ? undefined : prepareTrainingDialogs}
       onClick={() => (isSelectionMode ? onToggleSelect(img.id) : onImageClick(img))}
     >
       <NextImage
@@ -73,9 +78,9 @@ const ImageThumbnail = memo(function ImageThumbnail({
           variant="outline"
           aria-hidden="true"
           className={cn(
-            'absolute top-1 right-1 size-4 p-0',
+            'absolute top-1 right-1 size-4 p-0 transition-shadow',
             isSelected
-              ? 'text-primary-foreground bg-[var(--btn-color)] border-[var(--btn-color)]'
+              ? 'bg-[var(--class-on-surface)] text-card border-[var(--class-on-surface)]'
               : 'bg-background/80 border-input',
           )}
         >

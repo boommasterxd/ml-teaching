@@ -42,7 +42,7 @@ describe('class card', () => {
       'Name darf nicht leer sein',
     );
     rerender(<ClassCard {...props} cls={{ ...cls, name: 'Blau' }} isDuplicate />);
-    expect(screen.getByText('Name muss eindeutig sein')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Name muss eindeutig sein');
     rerender(<ClassCard {...props} />);
     expect(screen.getByRole('textbox').getAttribute('aria-invalid')).toBe('false');
     fireEvent.click(screen.getByRole('button', { name: 'Bilder der Klasse 1: Rot zurücksetzen' }));

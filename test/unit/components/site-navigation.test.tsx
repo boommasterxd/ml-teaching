@@ -8,7 +8,6 @@ vi.mock('next/navigation', () => ({
   useRouter: () => route.router,
 }));
 
-const menuPanel = '@/components/HeaderMenuPanel';
 const open = (trigger: HTMLElement) => fireEvent.click(trigger, { detail: 0 });
 
 beforeEach(() => {
@@ -29,7 +28,6 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   Reflect.deleteProperty(SVGElement.prototype, 'getAnimations');
-  vi.doUnmock(menuPanel);
   restoreThemeHost();
 });
 
@@ -38,32 +36,17 @@ async function renderNavigation() {
   return render(<SiteNavigation />);
 }
 
-function holdPanel() {
-  const { promise, resolve } = Promise.withResolvers<void>();
-  const load = vi.fn(async (actual: () => Promise<unknown>) => {
-    await promise;
-    return actual();
-  });
-  vi.doMock(menuPanel, load);
-  return { load, release: () => act(async () => resolve()) };
-}
-
-describe('header navigation panel preparation', () => {
-  it('shares focus and activation preparation, then transfers a pending ArrowDown to the first link', async () => {
-    const panel = holdPanel();
+describe('header navigation', () => {
+  it('opens on activation and transfers keyboard focus between the trigger and its links', async () => {
     await renderNavigation();
     const trigger = screen.getByRole('button', { name: 'Lernlabor' });
-    expect(panel.load).not.toHaveBeenCalled();
     act(() => trigger.focus());
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(trigger);
     open(trigger);
-    expect(screen.getByRole('status').textContent).toContain('Navigation wird geladen');
-    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
-    await panel.release();
 
     const overview = await screen.findByRole('link', { name: 'Lernlabor-Übersicht' });
-    expect(panel.load).toHaveBeenCalledOnce();
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
     expect(overview.getAttribute('aria-current')).toBe('page');
     expect(document.activeElement).toBe(overview);
     expect(screen.getByRole('link', { name: 'Bildmodell trainieren' })).toBeTruthy();
@@ -74,39 +57,17 @@ describe('header navigation panel preparation', () => {
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('cancels a cold activation on Escape and reuses the prepared links on reopening', async () => {
-    const panel = holdPanel();
-    await renderNavigation();
+  it('closes an open menu when the current page changes', async () => {
+    const { default: SiteNavigation } = await import('@/components/SiteNavigation');
+    const { rerender } = render(<SiteNavigation />);
     const trigger = screen.getByRole('button', { name: 'Menü' });
-    act(() => trigger.focus());
-    open(trigger);
-    expect(trigger.getAttribute('aria-busy')).toBe('true');
-    fireEvent.keyDown(document, { key: 'Escape' });
-    await panel.release();
-
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByRole('link', { name: 'Impressum' })).toBeNull();
-    expect(document.activeElement).toBe(trigger);
     open(trigger);
     expect(await screen.findByRole('link', { name: 'Impressum' })).toBeTruthy();
-    expect(panel.load).toHaveBeenCalledOnce();
-  });
-
-  it('shows a retry after a failed chunk and keeps the same opener through recovery', async () => {
-    vi.doMock(menuPanel, () => {
-      throw new Error('Navigation chunk unavailable');
-    });
-    await renderNavigation();
-    const trigger = screen.getByRole('button', { name: 'Rechtliches' });
-    act(() => trigger.focus());
+    route.pathname = '/impressum';
+    rerender(<SiteNavigation />);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
     open(trigger);
-    expect((await screen.findByRole('alert')).textContent).toContain('nicht geladen');
-
-    vi.doUnmock(menuPanel);
-    fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
-    expect(await screen.findByRole('link', { name: 'Datenschutz' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Rechtliches' })).toBe(trigger);
-    expect(document.activeElement).toBe(trigger);
-    expect(screen.queryByRole('alert')).toBeNull();
+    const imprint = await screen.findByRole('link', { name: 'Impressum' });
+    expect(imprint.getAttribute('aria-current')).toBe('page');
   });
 });

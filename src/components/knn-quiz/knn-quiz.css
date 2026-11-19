@@ -52,9 +52,9 @@
   translate: -50% -50%;
 }
 .knn-point-control {
-  /* Keep the close group isometric while outer points use the available plot width. */
-  translate: calc(-50% + var(--knn-neighbor-offset-x) * (1cqmin - 1cqw))
-    calc(-50% + var(--knn-neighbor-offset-y) * (1cqmin - 1cqh));
+  /* Keep every distance to the query proportional on rectangular plots. */
+  translate: calc(-50% + var(--knn-point-offset-x) * (1cqmin - 1cqw))
+    calc(-50% + var(--knn-point-offset-y) * (1cqmin - 1cqh));
 }
 .knn-query-position {
   display: grid;

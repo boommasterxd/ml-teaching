@@ -8,6 +8,7 @@ type TransitionSnapshot = {
   outgoingPages: number;
   incomingPages: number;
   back: boolean;
+  blurredPages: number;
 };
 type TransitionObserver = typeof window & {
   observedTransitions: Promise<TransitionSnapshot | 'skipped'>[];
@@ -25,18 +26,19 @@ async function observeViewTransitions(page: Page) {
         observedTransitions.push(
           transition.ready.then(
             () => {
-              const layers = new Set(
-                document.getAnimations().map((animation) => {
-                  const effect = animation.effect;
-                  return effect instanceof KeyframeEffect ? effect.pseudoElement : null;
-                }),
-              );
+              const effects = document
+                .getAnimations()
+                .map((animation) => animation.effect)
+                .filter((effect) => effect instanceof KeyframeEffect);
               const pageLayers = (side: 'old' | 'new') => {
                 const prefix = `::view-transition-${side}(`;
-                return [...layers].filter(
-                  (layer) => layer?.startsWith(prefix) && layer !== `${prefix}root)`,
-                ).length;
+                return effects.filter(
+                  ({ pseudoElement }) =>
+                    pseudoElement?.startsWith(prefix) && pseudoElement !== `${prefix}root)`,
+                );
               };
+              const outgoing = pageLayers('old');
+              const incoming = pageLayers('new');
               // The browser assigns a width to the captured root group even without an animation.
               const rootGroup = getComputedStyle(
                 document.documentElement,
@@ -44,9 +46,20 @@ async function observeViewTransitions(page: Page) {
               );
               return {
                 root: Number.isFinite(Number.parseFloat(rootGroup.width)),
-                outgoingPages: pageLayers('old'),
-                incomingPages: pageLayers('new'),
+                outgoingPages: new Set(outgoing.map(({ pseudoElement }) => pseudoElement)).size,
+                incomingPages: new Set(incoming.map(({ pseudoElement }) => pseudoElement)).size,
                 back: transition.types.has('nav-back'),
+                blurredPages: new Set(
+                  [...outgoing, ...incoming]
+                    .filter((effect) =>
+                      effect
+                        .getKeyframes()
+                        .some(
+                          ({ filter }) => typeof filter === 'string' && filter === 'blur(12px)',
+                        ),
+                    )
+                    .map(({ pseudoElement }) => pseudoElement),
+                ).size,
               };
             },
             () => 'skipped',
@@ -125,6 +138,86 @@ test('the brand scrolls to the top of an already open homepage without a page tr
   expect(await transitions()).toEqual([]);
 });
 
+test('canceling the first brand press restores the link without navigating', async ({ page }) => {
+  await page.goto('/500');
+  const brand = page
+    .getByRole('banner')
+    .getByRole('link', { name: 'ML Teaching – Startseite', exact: true });
+  const scale = () =>
+    brand.evaluate((node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).a);
+  await expect(brand).toBeVisible();
+  await brand.hover();
+  await page.mouse.down();
+  await expect.poll(scale).toBeLessThan(0.985);
+
+  await page.mouse.move(20, 160);
+  await page.mouse.up();
+  await expect.poll(scale).toBeCloseTo(1);
+  await expect(page).toHaveURL('/500');
+  await brand.press('Enter');
+  await expect(page).toHaveURL('/');
+});
+
+test('the homepage glass can start while its fallback image is still loading', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  let release!: () => void;
+  const pendingPoster = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let requestedPoster = false;
+  await page.route(
+    (url) =>
+      url.pathname === '/_next/image' &&
+      url.searchParams.get('url')?.includes('/hero-glass-mobile.') === true,
+    async (route) => {
+      requestedPoster = true;
+      await pendingPoster;
+      await route.continue();
+    },
+  );
+  try {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => requestedPoster).toBe(true);
+    await expect(page.locator('.hero-field')).toHaveAttribute('data-enhanced', 'true');
+    expect(await page.evaluate(() => document.readyState)).not.toBe('complete');
+  } finally {
+    release();
+  }
+  await page.waitForLoadState('load');
+
+  const impulse = page.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
+  await page.getByRole('button', { name: 'Animationen pausieren' }).press('Enter');
+  await expect(impulse).toBeDisabled();
+  await page.getByRole('button', { name: 'Animationen fortsetzen' }).press('Enter');
+  await expect(impulse).toBeEnabled();
+});
+
+test('the homepage glass resumes on the same canvas after scrolling it out of view', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  const hero = page.locator('.hero-field');
+  const canvas = hero.locator('canvas');
+  const impulse = page.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
+  await expect(hero).toHaveAttribute('data-enhanced', 'true');
+  const initialCanvas = await canvas.elementHandle();
+  await page.evaluate(() => scrollTo({ top: innerHeight * 2, behavior: 'instant' }));
+  await expect(impulse).toBeDisabled();
+  expect(await canvas.evaluate((node, initial) => node === initial, initialCanvas)).toBe(true);
+
+  await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+  await expect(impulse).toBeEnabled();
+  await expect(hero).toHaveAttribute('data-enhanced', 'true');
+  expect(await canvas.evaluate((node, initial) => node === initial, initialCanvas)).toBe(true);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(canvas).toHaveCount(0);
+  await expect(hero.locator('picture')).toBeVisible();
+});
+
 test('the transparent home header lets the hero receive clicks and keeps its navigation', async ({
   page,
 }) => {
@@ -189,8 +282,8 @@ test('the transparent home header lets the hero receive clicks and keeps its nav
   expect(await nav.evaluate((node, original) => node === original, initialNav)).toBe(true);
   await settleEntryAnimations(page);
   expect(await transitions()).toEqual([
-    { root: false, outgoingPages: 1, incomingPages: 1, back: false },
-    { root: false, outgoingPages: 1, incomingPages: 1, back: true },
+    { root: false, outgoingPages: 1, incomingPages: 1, back: false, blurredPages: 2 },
+    { root: false, outgoingPages: 1, incomingPages: 1, back: true, blurredPages: 2 },
   ]);
   expect(failures).toEqual([]);
 });
@@ -326,7 +419,7 @@ test('the header opens legal pages without a full reload and supports back navig
   await expect(privacyDocument.locator('[data-entry-admission="scroll"]').first()).toBeAttached();
   await settleEntryAnimations(page);
   expect(await transitions()).toEqual([
-    { root: false, outgoingPages: 1, incomingPages: 1, back: false },
+    { root: false, outgoingPages: 1, incomingPages: 1, back: false, blurredPages: 2 },
   ]);
 
   await page.goBack();

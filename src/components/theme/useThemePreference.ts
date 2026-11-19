@@ -91,14 +91,23 @@ export function useThemePreference() {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const applyExternal = (selection: ThemeSelection, remember: boolean) => {
       const resolved = resolveTheme(selection, media.matches);
-      update({
-        selection,
-        resolved,
-        applied: resolved,
-        remember,
-        revision: current.current.revision + 1,
-        animate: false,
-      });
+      const previous = current.current;
+      if (
+        previous.animate ||
+        previous.selection !== selection ||
+        previous.resolved !== resolved ||
+        previous.applied !== resolved ||
+        previous.remember !== remember
+      ) {
+        update({
+          selection,
+          resolved,
+          applied: resolved,
+          remember,
+          revision: previous.revision + 1,
+          animate: false,
+        });
+      }
       applyTheme(selection, resolved);
     };
     const stored = readRememberedTheme();

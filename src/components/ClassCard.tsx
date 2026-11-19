@@ -5,7 +5,7 @@
  * Orchestrates camera recording, image upload, and thumbnail gallery via subcomponents.
  */
 import type React from 'react';
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { Trash2 } from './icons/trash2';
 import { RotateCcw } from './icons/rotate-ccw';
 import { Check } from './icons/check';
@@ -16,12 +16,19 @@ import type { CaptureActions } from '../hooks/useClassCapture';
 import { ML } from '../constants';
 import type { MLClass, MLImage } from '../types/ml';
 import CameraPreview from './CameraPreview';
+import { prepareTrainingDialogs } from './DeferredTrainingDialogs';
 import ImageGallery, { prepareImageGallery } from './ImageGallery';
 import Button from './Button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
 import { Field, FieldError, FieldLabel } from './ui/field';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+
+const nameErrors = {
+  empty: 'Name darf nicht leer sein',
+  duplicate: 'Name muss eindeutig sein',
+};
 
 /**
  * Callback actions for the ClassCard component, grouped to reduce prop count.
@@ -60,6 +67,76 @@ interface ClassCardProps {
   actions: ClassCardActions;
 }
 
+function ClassNameInput({
+  id,
+  name,
+  error,
+  onChange,
+}: {
+  id: string;
+  name: string;
+  error: string | null;
+  onChange: (name: string) => void;
+}) {
+  const [showError, setShowError] = useState(false);
+  const errorId = `${id}-error`;
+  return (
+    <Tooltip
+      open={!!error && showError}
+      disabled={!error}
+      onOpenChange={(open, { reason }) => {
+        if (open || reason !== 'trigger-hover' || document.activeElement?.id !== id) {
+          setShowError(open);
+        }
+      }}
+    >
+      <TooltipTrigger
+        closeOnClick={false}
+        aria-describedby={undefined}
+        render={
+          <div className="min-w-0 flex-1">
+            <Input
+              id={id}
+              type="text"
+              autoComplete="off"
+              value={name}
+              maxLength={ML.MAX_CLASS_NAME_LENGTH}
+              onChange={(event) => {
+                onChange(event.currentTarget.value);
+                setShowError(true);
+              }}
+              onFocus={() => setShowError(true)}
+              onPointerDown={(event) => {
+                event.currentTarget.dataset.mouseFocused = '1';
+                setShowError(true);
+              }}
+              onBlur={(event) => {
+                delete event.currentTarget.dataset.mouseFocused;
+                setShowError(false);
+              }}
+              className="h-10 min-w-0 rounded-xl bg-background/60 font-medium dark:bg-background/60"
+              aria-invalid={!!error}
+              aria-errormessage={error ? errorId : undefined}
+              aria-describedby={error ? errorId : undefined}
+            />
+          </div>
+        }
+      />
+      <TooltipContent collisionPadding={12} aria-hidden="true">
+        {error}
+      </TooltipContent>
+      <FieldError
+        id={errorId}
+        role={error ? 'alert' : undefined}
+        aria-live="polite"
+        className="sr-only"
+      >
+        {error}
+      </FieldError>
+    </Tooltip>
+  );
+}
+
 /**
  * Displays a class card with its editable name, camera preview, recording controls, and image gallery.
  * Uses `memo` to prevent unnecessary re-renders when sibling class cards update.
@@ -75,18 +152,14 @@ function ClassHeader({
   const enoughImages = count >= ML.MIN_IMAGES_PER_CLASS;
   const atLimit = count >= ML.MAX_IMAGES_PER_CLASS;
   const isEmpty = cls.name.trim() === '';
-  const errorMsg = isEmpty
-    ? 'Name darf nicht leer sein'
-    : isDuplicate
-      ? 'Name muss eindeutig sein'
-      : null;
+  const errorMsg = isEmpty ? nameErrors.empty : isDuplicate ? nameErrors.duplicate : null;
   return (
     <CardHeader className="items-center px-4 @md/training-class:px-5">
       <Field data-invalid={!!errorMsg} className="min-w-0 gap-2">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div
             className={cn(
-              'size-2.5 shrink-0 rounded-full bg-[var(--btn-color)]',
+              'size-2.5 shrink-0 rounded-full bg-[var(--class-on-surface)]',
               classColorClasses(cls.color),
             )}
             aria-hidden="true"
@@ -94,23 +167,11 @@ function ClassHeader({
           <FieldLabel htmlFor={`class-name-${cls.id}`} className="sr-only">
             Name für Klasse {position}: {cls.name.trim() || 'ohne Namen'}
           </FieldLabel>
-          <Input
+          <ClassNameInput
             id={`class-name-${cls.id}`}
-            type="text"
-            autoComplete="off"
-            value={cls.name}
-            maxLength={ML.MAX_CLASS_NAME_LENGTH}
-            onChange={(e) => onUpdateName(cls.id, e.target.value)}
-            className="h-10 min-w-0 flex-1 rounded-xl bg-background/60 font-medium dark:bg-background/60"
-            onPointerDown={(e) => {
-              e.currentTarget.dataset.mouseFocused = '1';
-            }}
-            onBlur={(e) => {
-              delete e.currentTarget.dataset.mouseFocused;
-            }}
-            aria-invalid={!!errorMsg}
-            aria-errormessage={errorMsg ? `error-${cls.id}` : undefined}
-            aria-describedby={errorMsg ? `error-${cls.id}` : undefined}
+            name={cls.name}
+            error={errorMsg}
+            onChange={(name) => onUpdateName(cls.id, name)}
           />
           <Badge
             variant="secondary"
@@ -124,11 +185,6 @@ function ClassHeader({
             </span>
           </Badge>
         </div>
-        {errorMsg && (
-          <FieldError id={`error-${cls.id}`} className="ml-[18px] sm:ml-[22px]">
-            {errorMsg}
-          </FieldError>
-        )}
       </Field>
     </CardHeader>
   );
@@ -145,6 +201,10 @@ function ClassManagementActions({
       <Button
         variant="outline"
         className="h-auto min-h-11 min-w-0 px-2"
+        aria-haspopup="dialog"
+        onPointerEnter={prepareTrainingDialogs}
+        onFocus={prepareTrainingDialogs}
+        onPointerDown={prepareTrainingDialogs}
         onClick={() => actions.onClear(cls.id)}
         title="Bilder dieser Klasse zurücksetzen"
         aria-label={`Bilder der Klasse ${position}: ${name} zurücksetzen`}
@@ -155,6 +215,10 @@ function ClassManagementActions({
       <Button
         variant="outline"
         className="h-auto min-h-11 min-w-0 px-2 text-destructive hover:text-destructive"
+        aria-haspopup="dialog"
+        onPointerEnter={prepareTrainingDialogs}
+        onFocus={prepareTrainingDialogs}
+        onPointerDown={prepareTrainingDialogs}
         onClick={() => actions.onRemove(cls.id)}
         title="Klasse löschen"
         aria-label={`Klasse ${position}: ${name} löschen`}

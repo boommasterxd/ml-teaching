@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import ErrorGlassArtwork from '@/components/hero/ErrorGlassArtwork';
 import { Heading, Text } from '@/components/ui/typography';
 
 interface PublicErrorSceneProps {
@@ -8,6 +7,7 @@ interface PublicErrorSceneProps {
   description: string;
   children: ReactNode;
   announce?: boolean;
+  artwork: ReactNode;
 }
 
 export default function PublicErrorScene({
@@ -16,6 +16,7 @@ export default function PublicErrorScene({
   description,
   children,
   announce,
+  artwork,
 }: PublicErrorSceneProps) {
   return (
     <section className="public-error-scene" data-code={code} aria-labelledby="public-error-title">
@@ -36,7 +37,7 @@ export default function PublicErrorScene({
             {code}
           </span>
         )}
-        <ErrorGlassArtwork digits={code === '404'} />
+        {artwork}
       </div>
     </section>
   );

@@ -2,9 +2,9 @@
 
 import { useEffect, useState, ViewTransition, type ComponentProps, type Key } from 'react';
 import { usePathname } from 'next/navigation';
-import { useShouldReduceMotion } from '@animate-ui/react/utils/motion';
 import { cn } from '@/lib/utils';
 import { EntryViewportReadyContext, InitialEntryContext } from '@/components/ui/entry-policy';
+import { useMotionPreference } from '@/components/ui/use-motion-preference';
 
 // Exact trusted bytes emitted by Motion's AnimateView reset hook, also hashed during SSG.
 export const VIEW_TRANSITION_RESET = `
@@ -33,7 +33,7 @@ export function PageTransition({
 }: PageTransitionProps) {
   const pathname = usePathname();
   const page = pageKey ?? pathname;
-  const reduce = useShouldReduceMotion();
+  const { reduce } = useMotionPreference();
   const [arrival, setArrival] = useState({ page, initial: true, ready: true, alternate: false });
   const capture = arrival.alternate ? 'page-b' : 'page-a';
   // Separate snapshots keep each page's own scroll position and dimensions.

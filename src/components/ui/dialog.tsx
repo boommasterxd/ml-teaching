@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  cloneElement,
   useLayoutEffect,
   useRef,
   type ComponentProps,
@@ -10,16 +11,16 @@ import {
 } from 'react';
 import { Dialog as DialogPrimitive } from '@animate-ui/react/primitives/base-ui/dialog';
 import { useRender } from '@base-ui/react/use-render';
-import { Effect } from '@animate-ui/react/primitives/effects/effect';
+import { useIsPresent } from 'motion/react';
 import { RemoveScroll } from 'react-remove-scroll';
 import { cn } from '@/lib/utils';
 
 // Adapted from shadcn/ui's Base UI Dialog; the viewport supports tall mobile content.
-const dialogSurface =
+export const dialogSurface =
   'relative my-auto grid max-h-fit w-full gap-4 rounded-(--glass-radius) border border-(--glass-line) [background:var(--glass-surface)] p-6 text-foreground shadow-(--glass-highlight) outline-none';
 const dialogViewport =
   'pointer-events-auto fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain p-4';
-const dialogScrim = 'pointer-events-none fixed inset-0 bg-media-overlay';
+export const dialogScrim = 'pointer-events-none fixed inset-0 z-50 bg-media-overlay';
 
 function getDialogTabStops(dialog: HTMLDialogElement) {
   return Array.from(
@@ -45,6 +46,20 @@ function wrapDialogTab(event: KeyboardEvent<HTMLDialogElement>) {
 }
 
 export const Dialog = DialogPrimitive.Root;
+export const DialogPortal = DialogPrimitive.Portal;
+
+export function DialogBackdrop() {
+  return <DialogPrimitive.Backdrop className={dialogScrim} aria-hidden="true" />;
+}
+
+export function renderDialogSurface(element: ReactElement<ComponentProps<'div'>>) {
+  return (props: ComponentProps<'div'>, { open }: { open: boolean }) =>
+    cloneElement(element, {
+      ...props,
+      inert: !open || undefined,
+      'aria-hidden': !open || undefined,
+    });
+}
 
 export function DialogContent({
   className,
@@ -58,7 +73,7 @@ export function DialogContent({
     <DialogPrimitive.Popup
       data-slot="dialog-content"
       className={cn(dialogSurface, className, render.props.className)}
-      render={render}
+      render={renderDialogSurface(render)}
       {...props}
     />
   );
@@ -94,7 +109,7 @@ export function InitialDialog({ children, ...props }: ComponentProps<'dialog'>) 
           'm-0 h-full max-h-none w-full max-w-none bg-transparent backdrop:bg-transparent',
         )}
       >
-        <div className={dialogScrim} aria-hidden="true" />
+        <div className={cn(dialogScrim, 'z-auto')} aria-hidden="true" />
         {children}
       </dialog>
     </RemoveScroll>
@@ -155,7 +170,11 @@ export function DialogTitle({
       {...props}
     />
   );
-  if (!icon) return title;
+  return <DialogHeading icon={icon}>{title}</DialogHeading>;
+}
+
+export function DialogHeading({ icon, children }: { icon?: ReactNode; children: ReactNode }) {
+  if (!icon) return children;
   return (
     <div className="flex items-baseline gap-2">
       <span
@@ -164,16 +183,31 @@ export function DialogTitle({
       >
         {icon}
       </span>
-      {title}
+      {children}
     </div>
   );
 }
 
-export function DialogOverlay({ className, children, ...props }: ComponentProps<'div'>) {
+export function DialogViewport({
+  className,
+  children,
+  lockScroll = false,
+  ...props
+}: ComponentProps<'div'> & { lockScroll?: boolean }) {
+  const present = useIsPresent();
   return (
-    <RemoveScroll forwardProps removeScrollBar={false} inert={false} allowPinchZoom>
-      <div data-slot="dialog-overlay" className={cn(dialogViewport, className)} {...props}>
-        <Effect fade className={dialogScrim} aria-hidden="true" />
+    <RemoveScroll
+      enabled={lockScroll && present}
+      forwardProps
+      removeScrollBar={false}
+      inert={false}
+      allowPinchZoom
+    >
+      <div
+        data-slot="dialog-viewport"
+        className={cn(dialogViewport, !present && 'pointer-events-none', className)}
+        {...props}
+      >
         {children}
       </div>
     </RemoveScroll>

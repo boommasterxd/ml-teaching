@@ -64,6 +64,7 @@ function FollowingDialogJourney() {
         confirmLabel="Laden"
       />
       <SetupDialogFixture
+        initialContent={false}
         step={step === 'loading' ? 'loading' : null}
         loadingText="Modell wird geladen"
       />
@@ -84,15 +85,14 @@ describe('dialog close lifecycle', () => {
     const status = screen.getByRole('status');
     const next = screen.getByRole('button', { name: 'Weiterarbeiten' });
     const opener = openDeletion();
-    const dialog = screen.getByRole('dialog', { name: 'Daten löschen?' });
-    const confirm = within(dialog).getByRole('button', { name: 'Unwiderruflich löschen' });
-    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+    const dialog = screen.getByRole('alertdialog', { name: 'Daten löschen?' });
+    const cancel = within(dialog).getByRole('button', { name: 'Abbrechen' });
+    await waitFor(() => expect(document.activeElement).toBe(cancel));
 
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(dialog.isConnected).toBe(false);
-    expect(document.activeElement).toBe(opener);
-    fireEvent.keyDown(confirm, { key: 'Enter' });
-    fireEvent.click(confirm);
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    await waitFor(() => expect(document.activeElement).toBe(opener));
+    fireEvent.keyDown(opener, { key: 'Enter' });
     expect(status.textContent).toBe('1 Bilder');
     next.focus();
     await waitFor(() => expect(dialog.isConnected).toBe(false));
@@ -106,12 +106,12 @@ describe('dialog close lifecycle', () => {
       const status = screen.getByRole('status');
       const remainingClass = screen.getByRole('textbox', { name: 'Zweite Klasse' });
       openDeletion();
-      const dialog = screen.getByRole('dialog', { name: 'Daten löschen?' });
+      const dialog = screen.getByRole('alertdialog', { name: 'Daten löschen?' });
       await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
       fireEvent.click(within(dialog).getByRole('button', { name: 'Unwiderruflich löschen' }));
       expect(status.textContent).toBe('0 Bilder');
-      expect(dialog.isConnected).toBe(false);
-      expect(document.activeElement).toBe(remainingClass);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await waitFor(() => expect(document.activeElement).toBe(remainingClass));
     },
   );
 
@@ -120,16 +120,16 @@ describe('dialog close lifecycle', () => {
     const heading = screen.getByRole('heading', { name: 'Klassen' });
     openDeletion();
     fireEvent.click(screen.getByRole('button', { name: 'Unwiderruflich löschen' }));
-    expect(document.activeElement).toBe(heading);
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
   });
 
   it('restores the opener and permits confirming a reopened dialog', async () => {
     render(<DeletionJourney />);
     const opener = openDeletion();
-    const dialog = screen.getByRole('dialog', { name: 'Daten löschen?' });
+    const dialog = screen.getByRole('alertdialog', { name: 'Daten löschen?' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
-    expect(document.activeElement).toBe(opener);
+    await waitFor(() => expect(document.activeElement).toBe(opener));
     fireEvent.click(opener);
     fireEvent.click(screen.getByRole('button', { name: 'Unwiderruflich löschen' }));
     await waitFor(() => expect(screen.getByRole('status').textContent).toBe('0 Bilder'));
@@ -140,7 +140,7 @@ describe('dialog close lifecycle', () => {
     const opener = screen.getByRole('button', { name: 'Weiter' });
     opener.focus();
     fireEvent.click(opener);
-    const confirmation = screen.getByRole('dialog', { name: 'Fortfahren?' });
+    const confirmation = screen.getByRole('alertdialog', { name: 'Fortfahren?' });
     fireEvent.click(within(confirmation).getByRole('button', { name: 'Laden' }));
     const loading = screen.getByRole('dialog', { name: 'Lade KI-Modelle...' });
     await waitFor(() => expect(loading.contains(document.activeElement)).toBe(true));

@@ -1,9 +1,15 @@
-import { contourMedia, preloadContourPoster, type ContourSources } from './poster-assets';
+import { contourMedia, preloadContourPoster, type ContourSources } from './contour-poster';
 
 /** The first full-color glass frame is available before hydration and without WebGL. */
-export default function StaticContourPoster({ sources }: { sources: ContourSources }) {
+export default function StaticContourPoster({
+  sources,
+  preload = true,
+}: {
+  sources: ContourSources;
+  preload?: boolean;
+}) {
   const { mobile, desktop } = sources;
-  preloadContourPoster(sources);
+  if (preload) preloadContourPoster(sources);
   return (
     <picture className="hero-field-poster">
       <source
@@ -13,7 +19,7 @@ export default function StaticContourPoster({ sources }: { sources: ContourSourc
         width={desktop.width}
         height={desktop.height}
       />
-      <img {...mobile} fetchPriority="high" alt="" />
+      <img {...mobile} fetchPriority="high" decoding="async" alt="" />
     </picture>
   );
 }

@@ -35,9 +35,11 @@ export default function RewardPracticePage() {
         </div>
       </div>
       {!rewardPracticeComingSoon && (
-        <Card className="w-full max-w-[38rem] p-[clamp(1rem,3vw,2rem)]">
-          <RewardExperiment />
-        </Card>
+        <EntryReveal asChild>
+          <Card className="w-full max-w-[38rem] p-[clamp(1rem,3vw,2rem)]">
+            <RewardExperiment />
+          </Card>
+        </EntryReveal>
       )}
     </div>
   );

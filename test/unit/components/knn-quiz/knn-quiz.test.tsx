@@ -18,7 +18,7 @@ function rankedPoints() {
     .sort((left, right) => distance(left) - distance(right));
 }
 
-function classChoice(name: 'Hund' | 'Katze') {
+function classChoice(name: 'Hund' | 'Katze' | 'Gleichstand') {
   return screen.getByRole<HTMLButtonElement>('button', { name });
 }
 
@@ -34,6 +34,7 @@ function chooseNeighbors(count: number) {
   const points = rankedPoints().slice(0, count);
   for (const point of points) fireEvent.click(point);
   const dogs = points.filter((point) => point.getAttribute('aria-label')!.startsWith('Hund'));
+  if (dogs.length === count / 2) return 'Gleichstand';
   return dogs.length > count / 2 ? 'Hund' : 'Katze';
 }
 
@@ -101,7 +102,7 @@ describe('KNN neighbor exercise', () => {
     const winner = chooseNeighbors(3);
     fireEvent.click(classChoice(winner === 'Hund' ? 'Katze' : 'Hund'));
     expect(screen.getByText('Zähle noch einmal.')).toBeTruthy();
-    expect(screen.getByRole('status').textContent).toContain('Welche Klasse hat mehr Stimmen?');
+    expect(screen.getByRole('status').textContent).toContain('wie viele Stimmen');
     expect(classChoice(winner).disabled).toBe(false);
     fireEvent.click(classChoice(winner));
     expect(screen.getByText('Richtig zugeordnet!')).toBeTruthy();
@@ -125,7 +126,7 @@ describe('KNN neighbor exercise', () => {
     const slider = await screen.findByRole('slider');
     fireEvent.keyDown(slider, { key: 'Home' });
     expect(screen.getByText('K = 1 · 0 von 1 gefunden')).toBeTruthy();
-    expect(plottedData()).not.toEqual(initialPoints);
+    expect(plottedData()).toEqual(initialPoints);
     expect(screen.getByRole('img', { name: /Generiertes Beispielbild/ }).getAttribute('src')).toBe(
       inputImage,
     );
@@ -136,20 +137,31 @@ describe('KNN neighbor exercise', () => {
     expect(screen.getByRole('status').textContent).toBe(
       `Richtig zugeordnet! Der nächste Nachbar stimmt für ${singleNeighbor}.`,
     );
-    fireEvent.keyDown(slider, { key: 'End' });
-    expect(screen.getByText('K = 5 · 0 von 5 gefunden')).toBeTruthy();
+    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    expect(screen.getByText('K = 2 · 0 von 2 gefunden')).toBeTruthy();
     expect(screen.getByRole('img', { name: /Generiertes Beispielbild/ }).getAttribute('src')).toBe(
       inputImage,
     );
     expect(screen.queryByRole('alert')).toBeNull();
-    const winner = chooseNeighbors(5);
-    fireEvent.click(classChoice(winner));
+    expect(chooseNeighbors(2)).toBe('Gleichstand');
+    fireEvent.click(classChoice('Gleichstand'));
     expect(screen.getByRole('status').textContent).toBe(
-      `Richtig zugeordnet! 3 von 5 Nachbarn stimmen für ${winner}.`,
+      'Gleichstand erkannt! Hund und Katze haben je 1 Stimme.',
+    );
+    for (let k = 3; k <= 10; k += 1) {
+      fireEvent.keyDown(slider, { key: 'ArrowRight' });
+      expect(slider.getAttribute('aria-valuenow')).toBe(String(k));
+    }
+    expect(plottedData()).toEqual(initialPoints);
+    const answer = chooseNeighbors(10);
+    expect(classChoice(answer).disabled).toBe(false);
+    fireEvent.click(classChoice(answer));
+    expect(screen.getByRole('status').textContent).toMatch(
+      /^(Richtig zugeordnet!|Gleichstand erkannt!)/,
     );
     const previous = plottedData();
     fireEvent.click(screen.getByRole('button', { name: 'Neue Runde' }));
-    expect(screen.getByText('K = 5 · 0 von 5 gefunden')).toBeTruthy();
+    expect(screen.getByText('K = 10 · 0 von 10 gefunden')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(classChoice('Hund').disabled).toBe(true);
     expect(plottedData()).not.toEqual(previous);

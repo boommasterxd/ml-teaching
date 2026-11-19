@@ -5,6 +5,7 @@ import { Trash2 } from './icons/trash2';
 import { X } from './icons/x';
 import { cn } from '../lib/utils';
 import { classColorClasses } from '../lib/class-colors';
+import { Alert, AlertDescription } from './ui/alert';
 import { Empty, EmptyDescription, EmptyMedia } from './ui/empty';
 import { ML } from '../constants';
 import type { MLImage } from '../types/ml';
@@ -73,8 +74,10 @@ function DeferredGalleryRows(props: ImageGalleryRowsProps) {
       </p>
     );
   return (
-    <div className="grid justify-items-start gap-2 p-2 text-sm">
-      <p role="status">Die Galerie konnte nicht geladen werden.</p>
+    <div className="grid justify-items-start gap-2">
+      <Alert variant="destructive" className="p-2">
+        <AlertDescription>Die Galerie konnte nicht geladen werden.</AlertDescription>
+      </Alert>
       <Button
         size="sm"
         variant="outline"

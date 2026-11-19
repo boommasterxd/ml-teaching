@@ -35,10 +35,12 @@ export async function settleEntryAnimations(page: Page) {
 
 export async function expectAccessible(page: Page) {
   await settleEntryAnimations(page);
-  await expect(page.locator('[role="dialog"][data-closed]')).toHaveCount(0);
+  await expect(page.locator(':is([role="dialog"], [role="alertdialog"])[data-closed]')).toHaveCount(
+    0,
+  );
   for (const surface of await page
     .locator(
-      '[role="dialog"][data-open], [role="menu"][data-open], [data-slot="tooltip-content"][data-open], [data-slot="animated-feedback"]:not([aria-hidden="true"]) > div > div',
+      ':is([role="dialog"], [role="alertdialog"], [role="menu"], [data-slot="tooltip-content"])[data-open], [data-slot="animated-feedback"]:not([aria-hidden="true"]) > div > div',
     )
     .all()) {
     await expect(surface).toHaveCSS('opacity', '1');

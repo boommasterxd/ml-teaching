@@ -30,6 +30,7 @@ function ConsentJourney() {
           : 'Einwilligung erforderlich'}
       </p>
       <SetupDialogFixture
+        initialContent={false}
         step={step === 'privacy' ? 'consent' : step === 'camera' ? 'camera' : null}
         onConfirmConsent={() => setStep('camera')}
         onDeclineConsent={() => setStep('closed')}

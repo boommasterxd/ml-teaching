@@ -73,17 +73,17 @@ describe('active glass field ownership', () => {
     );
     const { container } = render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
     const canvas = container.querySelector('canvas')!;
-    expect([canvas.width, canvas.height]).toEqual([312, 675]);
+    expect([canvas.width, canvas.height]).toEqual([585, 1266]);
     rect.width = 3840;
     rect.height = 2160;
     act(resize);
-    expect(canvas.width * canvas.height).toBeLessThanOrEqual(256_000);
+    expect(canvas.width * canvas.height).toBeLessThanOrEqual(2_073_600);
     expect(host.draw.mock.lastCall![0].width).toBe(3840);
     expect(host.draw.mock.lastCall![0].height).toBe(2160);
     rect.width = 15360;
     rect.height = 1080;
     act(resize);
-    expect(canvas.width * canvas.height).toBeLessThanOrEqual(256_000);
+    expect(canvas.width * canvas.height).toBeLessThanOrEqual(2_073_600);
     const tick = activeFrame();
     for (let index = 0; index <= 100; index++) tick({ timestamp: (index * 1000) / 30 });
     expect(canvas.width).toBe(8192);
@@ -123,40 +123,54 @@ describe('active glass field ownership', () => {
     expect(host.draw.mock.calls.slice(-3).map(([frame]) => frame.time)).toEqual([1008, 1016, 1024]);
   });
 
-  it('sharpens both passes with steady pacing and recovers after sustained load', () => {
-    vi.stubGlobal('devicePixelRatio', 3);
-    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(
-      DOMRect.fromRect({ width: 580, height: 550 }),
-    );
-    const { container } = render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
-    const canvas = container.querySelector('canvas')!;
-    const tick = activeFrame();
-    let timestamp = 0;
-    const runFrames = (count: number, interval: number) => {
-      for (let index = 0; index < count; index++) {
-        timestamp += interval;
-        tick({ timestamp });
-      }
-    };
-    const lastDetail = () => host.draw.mock.lastCall![0].fieldScale;
-    expect(canvas.width).toBe(464);
-    expect(lastDetail()).toBe(0.65);
-    runFrames(200, 16);
-    expect(canvas.width).toBe(1740);
-    expect(lastDetail()).toBe(1.7);
-    runFrames(21, 55);
-    expect(canvas.width).toBe(1160);
-    expect(lastDetail()).toBe(1.35);
-    runFrames(20, 55);
-    expect(canvas.width).toBe(870);
-    expect(lastDetail()).toBe(1);
-    runFrames(220, 16);
-    expect(canvas.width).toBe(870);
-    expect(lastDetail()).toBe(1);
-    runFrames(330, 16);
-    expect(canvas.width).toBe(1740);
-    expect(lastDetail()).toBe(1.7);
-  });
+  it.each([false, true])(
+    'adjusts both passes around sustained load with desktop start %s',
+    (desktop) => {
+      vi.stubGlobal('devicePixelRatio', 3);
+      const match = vi.mocked(window.matchMedia);
+      const media = match.getMockImplementation()!;
+      match.mockImplementation((query) => {
+        const result = media(query);
+        return { ...result, matches: desktop && query === '(width >= 48rem)' };
+      });
+      vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(
+        DOMRect.fromRect({ width: 580, height: 550 }),
+      );
+      const { container } = render(
+        <TopographyField sharpDesktopStart onUnavailable={vi.fn()} onRendered={vi.fn()} />,
+      );
+      const canvas = container.querySelector('canvas')!;
+      const tick = activeFrame();
+      let timestamp = 0;
+      const runFrames = (count: number, interval: number) => {
+        for (let index = 0; index < count; index++) {
+          timestamp += interval;
+          tick({ timestamp });
+        }
+      };
+      const lastDetail = () => host.draw.mock.lastCall![0].fieldScale;
+      expect(canvas.width).toBe(desktop ? 1160 : 870);
+      expect(lastDetail()).toBe(desktop ? 1.35 : 1);
+      runFrames(200, 16);
+      expect(canvas.width).toBe(1740);
+      expect(lastDetail()).toBe(1.7);
+      runFrames(21, 55);
+      expect(canvas.width).toBe(1160);
+      expect(lastDetail()).toBe(1.35);
+      runFrames(20, 55);
+      expect(canvas.width).toBe(870);
+      expect(lastDetail()).toBe(1);
+      runFrames(20, 55);
+      expect(canvas.width).toBe(464);
+      expect(lastDetail()).toBe(0.65);
+      runFrames(220, 16);
+      expect(canvas.width).toBe(464);
+      expect(lastDetail()).toBe(0.65);
+      runFrames(330, 16);
+      expect(canvas.width).toBe(1740);
+      expect(lastDetail()).toBe(1.7);
+    },
+  );
 
   it('freezes the same GPU image and wave controls, then continues without counting paused time', () => {
     let resize = () => {};
@@ -248,7 +262,7 @@ describe('active glass field ownership', () => {
     const onRendered = vi.fn();
     const { unmount } = render(<TopographyField onUnavailable={vi.fn()} onRendered={onRendered} />);
     expect(onRendered).toHaveBeenCalledWith(true);
-    expect(host.draw.mock.calls[0]![0].dpr).toBe(0.8);
+    expect(host.draw.mock.calls[0]![0].dpr).toBe(1.5);
     const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
     for (let wave = 0; wave < 5; wave++)
       fireEvent.click(field, { detail: 1, clientX: 25, clientY: 25 });

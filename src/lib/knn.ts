@@ -30,6 +30,9 @@ export function countVotes(points: readonly KnnPoint[]) {
   return votes;
 }
 
-export function winningSignal(votes: Readonly<Record<ExampleSignal, number>>): ExampleSignal {
+export function winningSignal(
+  votes: Readonly<Record<ExampleSignal, number>>,
+): ExampleSignal | null {
+  if (votes.dog === votes.cat) return null;
   return votes.dog > votes.cat ? 'dog' : 'cat';
 }

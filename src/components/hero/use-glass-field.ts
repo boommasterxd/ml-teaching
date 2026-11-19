@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useInView } from 'motion/react';
-import { useShouldReduceMotion } from '@animate-ui/react/utils/motion';
 import { usePageVisible } from '@animate-ui/react/utils/use-page-visible';
+import { useMotionPreference } from '../ui/use-motion-preference';
 
 type FieldComponent = typeof import('./TopographyField').default;
 type RenderState = 'pending' | 'rendered' | 'released';
@@ -18,14 +18,14 @@ function prepareField() {
   return fieldModule;
 }
 
-function afterFirstPaint(prepare: () => void) {
+function afterFirstPaint(prepare: () => void, waitForDocumentLoad: boolean) {
   let frame = 0;
   const schedule = () => {
     frame = requestAnimationFrame(() => {
       frame = requestAnimationFrame(prepare);
     });
   };
-  if (document.readyState === 'complete') schedule();
+  if (!waitForDocumentLoad || document.readyState === 'complete') schedule();
   else window.addEventListener('load', schedule, { once: true });
   return () => {
     window.removeEventListener('load', schedule);
@@ -33,11 +33,18 @@ function afterFirstPaint(prepare: () => void) {
   };
 }
 
-export function useGlassField(paused: boolean, viewportReady: boolean) {
+export function useGlassField(
+  paused: boolean,
+  viewportReady: boolean,
+  {
+    waitForDocumentLoad = true,
+    retainOffscreen = false,
+  }: { waitForDocumentLoad?: boolean; retainOffscreen?: boolean } = {},
+) {
   const artwork = useRef<HTMLDivElement>(null);
-  const inView = useInView(artwork, { amount: 0.05 });
+  const inView = useInView(artwork, { amount: retainOffscreen ? 'some' : 0.05 });
   const visible = usePageVisible();
-  const reduce = useShouldReduceMotion();
+  const { reduce } = useMotionPreference();
   const [Field, setField] = useState<FieldComponent | null>(null);
   const [failed, setFailed] = useState(false);
   const [renderState, setRenderState] = useState<RenderState>('pending');
@@ -48,8 +55,9 @@ export function useGlassField(paused: boolean, viewportReady: boolean) {
       return state === 'rendered' ? 'released' : state;
     });
   }, []);
-  const available = inView && visible && !reduce && !failed;
-  const active = available && !paused && viewportReady;
+  const rendered = renderState === 'rendered';
+  const available = visible && !reduce && !failed && (inView || (retainOffscreen && rendered));
+  const active = inView && available && !paused && viewportReady;
 
   useEffect(() => {
     if (!active) return;
@@ -63,12 +71,12 @@ export function useGlassField(paused: boolean, viewportReady: boolean) {
         .catch(() => {
           if (current) setFailed(true);
         });
-    });
+    }, waitForDocumentLoad);
     return () => {
       current = false;
       cancel();
     };
-  }, [active]);
+  }, [active, waitForDocumentLoad]);
 
   const prepare = () => {
     if (!reduce && !failed) void prepareField().catch(() => {});
@@ -77,9 +85,10 @@ export function useGlassField(paused: boolean, viewportReady: boolean) {
     artwork,
     Field,
     available,
+    inView,
     failed,
     reduce,
-    rendered: renderState === 'rendered',
+    rendered,
     hasRendered: renderState !== 'pending',
     onRendered,
     onUnavailable,

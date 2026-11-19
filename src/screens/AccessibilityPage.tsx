@@ -27,8 +27,9 @@ export default function AccessibilityPage() {
           <li>Skip-Link zum Überspringen der Navigation</li>
           <li>Direkte Tastatursprünge zu Bildersammlung, Training und Vorhersage</li>
           <li>
-            Die Lernschleife und die automatischen Lernbeispiele auf der Startseite pausieren bei
-            der Systemeinstellung für reduzierte Bewegung.
+            Bei aktivierter Systemeinstellung für reduzierte Bewegung erscheinen Inhalte ohne
+            Einblendanimation. Die Lernschleife und die automatischen Lernbeispiele auf der
+            Startseite pausieren.
           </li>
           <li>Responsive Darstellung für verschiedene Bildschirmgrößen</li>
         </ul>
@@ -47,7 +48,7 @@ export default function AccessibilityPage() {
         </p>
         <h2>Stand</h2>
         <p>
-          Diese Seite wurde zuletzt im <time dateTime="2026-11-18">November 2026</time>{' '}
+          Diese Seite wurde zuletzt im <time dateTime="2026-11-19">November 2026</time>{' '}
           aktualisiert.
         </p>
         <p>

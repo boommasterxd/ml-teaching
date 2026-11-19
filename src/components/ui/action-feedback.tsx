@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useSyncExternalStore, type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { Button as ButtonPrimitive } from '@animate-ui/react/primitives/buttons/button';
 import { AnimateIcon } from '@animate-ui/react/icons';
+import { motionTokens } from '@animate-ui/react/utils/motion';
+import { useMotionPreference } from './use-motion-preference';
 
-const subscribe = () => () => {};
-const clientSnapshot = () => true;
-const serverSnapshot = () => false;
-
-/** Keep the press Slot directly on the control and supply its rest transform after hydration. */
+/** Keep Animate UI's press Slot and use Motion's numeric scale of 1 at rest. */
 export function ActionFeedback({
   children,
   disabled,
@@ -18,7 +16,7 @@ export function ActionFeedback({
   disabled?: boolean;
   tapScale?: number;
 }) {
-  const isClient = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
+  const { reduce } = useMotionPreference();
   const [focused, setFocused] = useState(false);
 
   return (
@@ -33,9 +31,8 @@ export function ActionFeedback({
       <ButtonPrimitive
         asChild
         disabled={disabled}
-        tapScale={tapScale}
         initial={false}
-        style={isClient ? { transform: 'scale(1)' } : undefined}
+        whileTap={disabled || reduce ? undefined : { scale: tapScale ?? motionTokens.scale.press }}
       >
         {children}
       </ButtonPrimitive>

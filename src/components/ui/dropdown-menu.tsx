@@ -3,7 +3,7 @@
 import type { ComponentProps, ReactElement } from 'react';
 import { Menu as Primitive } from '@animate-ui/react/primitives/base-ui/menu';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
-import { Check } from '../icons/check';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActionFeedback } from './action-feedback';
 import { MenuHighlight, MenuHighlightItem } from './menu-highlight';
@@ -108,6 +108,7 @@ export function DropdownMenuCheckboxItem({
       >
         <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
           <Primitive.CheckboxItemIndicator>
+            {/* The indicator draws this path when the selection changes. */}
             <Check aria-hidden="true" />
           </Primitive.CheckboxItemIndicator>
         </span>

@@ -22,21 +22,28 @@
 ::view-transition-group(.page-fade) {
   animation: none;
 }
+::view-transition-image-pair(.page-flow) {
+  overflow: clip;
+}
+
+/* Animate UI's Flow keyframes use the route's native content snapshots. */
 ::view-transition-new(.page-flow),
 ::view-transition-new(.page-fade) {
-  animation: page-arrive 240ms both;
+  animation: page-arrive 350ms both;
   animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1) !important;
 }
 ::view-transition-old(.page-flow),
 ::view-transition-old(.page-fade) {
-  animation: page-depart 160ms both;
+  animation: page-depart 250ms both;
   animation-timing-function: ease-out !important;
 }
 ::view-transition-new(.page-flow) {
-  --page-offset: calc(16px * var(--page-direction, 1));
+  --page-offset: calc(30% * var(--page-direction, 1));
+  --page-blur: 12px;
 }
 ::view-transition-old(.page-flow) {
-  --page-offset: calc(-8px * var(--page-direction, 1));
+  --page-offset: calc(-30% * var(--page-direction, 1));
+  --page-blur: 12px;
 }
 ::view-transition-new(.page-fade) {
   animation-duration: 120ms;
@@ -49,11 +56,13 @@
   from {
     opacity: 0;
     transform: translateX(var(--page-offset, 0px));
+    filter: blur(var(--page-blur, 0px));
   }
 }
 @keyframes page-depart {
   to {
     opacity: 0;
     transform: translateX(var(--page-offset, 0px));
+    filter: blur(var(--page-blur, 0px));
   }
 }

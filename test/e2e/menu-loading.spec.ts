@@ -1,50 +1,56 @@
 import { expect, test } from '@playwright/test';
 import { diagnostics, expectAccessible } from './browser-checks';
 
-test.use({
-  viewport: { width: 390, height: 844 },
-  hasTouch: true,
-  isMobile: true,
-  reducedMotion: 'reduce',
-});
-
-test('an outside tap dismisses a mobile menu while its first chunk is pending', async ({
+test('the first desktop opening after reload works without a late script request', async ({
   page,
 }) => {
   const failures = diagnostics(page);
-  await page.goto('/');
-  const scriptChunks = '**/_next/static/chunks/*.js';
-  const pending = Promise.withResolvers<void>();
-  let requests = 0;
-  await page.route(scriptChunks, async (route) => {
-    requests++;
-    await pending.promise;
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/lernen');
+  await page.reload();
+  const lateScripts = Promise.withResolvers<void>();
+  await page.route('**/_next/static/chunks/*.js', async (route) => {
+    await lateScripts.promise;
     await route.continue();
   });
   try {
+    const trigger = page.getByRole('button', { name: 'Lernlabor', exact: true });
+    const overview = page.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
+    await expect(overview).toHaveCount(0);
+    await trigger.hover();
+    await expect(overview).toBeVisible();
+    await expect(overview).toBeInViewport();
+    expect(failures).toEqual([]);
+  } finally {
+    lateScripts.resolve();
+    await page.unrouteAll({ behavior: 'wait' });
+  }
+});
+
+test.describe('mobile header menu', () => {
+  test.use({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+    reducedMotion: 'reduce',
+  });
+  test('an outside tap dismisses the menu and a second tap reopens it', async ({ page }) => {
+    const failures = diagnostics(page);
+    await page.goto('/');
     const trigger = page.getByRole('button', { name: 'Menü', exact: true });
     const overview = page.getByRole('link', { name: 'Lernlabor-Übersicht' });
-    await trigger.tap();
-    await expect(trigger).toHaveAttribute('aria-busy', 'true');
-    await expect.poll(() => requests).toBeGreaterThan(0);
-
-    await page.getByRole('heading', { level: 1 }).tap();
-    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-    const finished = page.waitForEvent('requestfinished', {
-      predicate: (request) =>
-        request.url().includes('/_next/static/chunks/') && request.url().endsWith('.js'),
-    });
-    pending.resolve();
-    await finished;
-    await expect(overview).toHaveCount(0);
-
-    const prepared = requests;
+    const bar = page.getByRole('navigation', { name: 'Hauptnavigation' });
+    const { x, width } = (await bar.boundingBox())!;
     await trigger.tap();
     await expect(overview).toBeVisible();
-    expect(requests).toBe(prepared);
-    const bar = page.getByRole('navigation', { name: 'Hauptnavigation' });
+
+    await page.touchscreen.tap(x / 2, 360);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(overview).toHaveCount(0);
+
+    await trigger.tap();
+    await expect(overview).toBeVisible();
     const panel = page.locator('.header-menu-panel-mobile');
-    const { x, width } = (await bar.boundingBox())!;
     await expect
       .poll(async () => {
         const bounds = await panel.boundingBox();
@@ -53,8 +59,5 @@ test('an outside tap dismisses a mobile menu while its first chunk is pending', 
       .toBe(true);
     await expectAccessible(page);
     expect(failures).toEqual([]);
-  } finally {
-    pending.resolve();
-    await page.unrouteAll({ behavior: 'wait' });
-  }
+  });
 });

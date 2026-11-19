@@ -9,10 +9,15 @@ const nextConfig = {
   images: { formats: ['image/avif', 'image/webp'] },
   experimental: {
     turbopackChunking: {
-      minChunkSize: 150_000,
-      maxChunkCountPerGroup: 6,
-      maxMergeChunkSize: 500_000,
-      priorityRoutes: [/^\/$/],
+      minChunkSize: 700_000,
+      maxChunkCountPerGroup: 2,
+      maxMergeChunkSize: 2_500_000,
+      firstPageLoadPriority: 1,
+      priorityBoost: 5,
+      requestCost: 1_500_000,
+      generateComponentChunks: true,
+      minComponentChunkSize: 100_000,
+      priorityRoutes: [/^\/$/, /^\/(?:500|_not-found|datenschutz)$/],
     },
   },
   async headers() {

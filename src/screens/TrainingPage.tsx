@@ -1,12 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTrainingWorkspace } from '../hooks/useTrainingWorkspace';
 import PageHeader from '../components/PageHeader';
 import Button from '../components/Button';
 import { Badge } from '../components/ui/badge';
 import TrainingPanels from '../components/TrainingPanels';
-import TrainingPageModals from '../components/TrainingPageModals';
+import DeferredTrainingDialogs from '../components/DeferredTrainingDialogs';
 import TrainingError from '../components/TrainingError';
 import TrainingSetupDialog from '../components/modals/TrainingSetupDialog';
 import TrainingWithdrawal from '../components/TrainingWithdrawal';
@@ -69,7 +70,10 @@ export default function TrainingPage() {
   const { modelError, consent, models, prediction } = resources;
   const { classes } = data;
   const setupStep = getSetupStep(resources);
-  const ready = Boolean(models.mobilenetModel) && !models.isModelLoading;
+  // The inline setup and the workspace handoff share the same first-close boundary.
+  const [initialSetup, setInitialSetup] = useState(setupStep === 'consent');
+  if (initialSetup && setupStep === null) setInitialSetup(false);
+  const ready = !initialSetup && Boolean(models.mobilenetModel) && !models.isModelLoading;
   const trainingStep = data.canTrain || data.training.isTraining ? 1 : 0;
   const currentStep = resources.hasTrainedModel && !data.training.isTraining ? 2 : trainingStep;
   const prepareReturn = () => prepareRoute(router, learningPaths.images);
@@ -89,10 +93,12 @@ export default function TrainingPage() {
             onReturnIntent={prepareReturn}
           />
         )}
-        <TrainingPanels workspace={workspace} />
-        {consent.hasConsented && !models.isModelLoading && <TrainingWithdrawal />}
+        <TrainingPanels workspace={workspace} ready={ready} />
+        <TrainingWithdrawal
+          visible={consent.hasConsented && !initialSetup && !models.isModelLoading}
+        />
       </div>
-      <TrainingPageModals
+      <DeferredTrainingDialogs
         modal={dialogs.modal}
         classes={classes.classes}
         classifier={models.classifier}
@@ -105,6 +111,7 @@ export default function TrainingPage() {
         stopPredicting={prediction.stopPredicting}
       />
       <TrainingSetupDialog
+        initialContent={initialSetup}
         step={setupStep}
         loadingText={models.loadingText}
         onDeclineConsent={declineConsent}
