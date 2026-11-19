@@ -16,8 +16,8 @@ export default function AnimatedLink({
   ...props
 }: AnimatedLinkProps) {
   return (
-    <Button asChild variant={variant} size={size} className={className}>
-      <Link {...props}>{children}</Link>
+    <Button variant={variant} size={size} className={className} render={<Link {...props} />}>
+      {children}
     </Button>
   );
 }

@@ -7,6 +7,14 @@ const nextConfig = {
   adapterPath: fileURLToPath(new URL('./csp/adapter.mjs', import.meta.url)),
   poweredByHeader: false,
   images: { formats: ['image/avif', 'image/webp'] },
+  experimental: {
+    turbopackChunking: {
+      minChunkSize: 150_000,
+      maxChunkCountPerGroup: 6,
+      maxMergeChunkSize: 500_000,
+      priorityRoutes: [/^\/$/],
+    },
+  },
   async headers() {
     return [
       {

@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import KnnQuiz from '@/components/knn-quiz/KnnQuiz';
-import { installBrowserHost, restoreBrowserHost } from '../../helpers/browser-host';
+import {
+  installBrowserHost,
+  installSliderLayout,
+  restoreBrowserHost,
+} from '../../helpers/browser-host';
 
 function rankedPoints() {
   const distance = (point: HTMLElement) => {
@@ -35,6 +39,7 @@ function chooseNeighbors(count: number) {
 
 beforeEach(() => {
   installBrowserHost();
+  installSliderLayout();
   let seed = 17;
   vi.spyOn(Math, 'random').mockImplementation(() => {
     seed = (seed * 16807) % 2147483647;
@@ -50,7 +55,7 @@ describe('KNN neighbor exercise', () => {
   it('starts with K=3 and explains rejected distant points without counting them', async () => {
     render(<KnnQuiz />);
     expect(screen.getByText('K = 3 · 0 von 3 gefunden')).toBeTruthy();
-    expect(screen.getByRole('slider').getAttribute('aria-valuenow')).toBe('3');
+    expect((await screen.findByRole('slider')).getAttribute('aria-valuenow')).toBe('3');
     expect(classChoice('Hund').disabled).toBe(true);
     expect(classChoice('Katze').disabled).toBe(true);
     const distant = rankedPoints().at(-1)!;
@@ -110,14 +115,14 @@ describe('KNN neighbor exercise', () => {
     expect(screen.getByText('K = 3 · 3 von 3 gefunden')).toBeTruthy();
   });
 
-  it('clears progress when K changes by keyboard and starts a fresh round with the chosen K', () => {
+  it('clears progress when K changes by keyboard and starts a fresh round with the chosen K', async () => {
     render(<KnnQuiz />);
     const inputImage = screen
       .getByRole('img', { name: /Generiertes Beispielbild/ })
       .getAttribute('src');
     const initialPoints = plottedData();
     fireEvent.click(classChoice(chooseNeighbors(3)));
-    const slider = screen.getByRole('slider');
+    const slider = await screen.findByRole('slider');
     fireEvent.keyDown(slider, { key: 'Home' });
     expect(screen.getByText('K = 1 · 0 von 1 gefunden')).toBeTruthy();
     expect(plottedData()).not.toEqual(initialPoints);

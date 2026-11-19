@@ -42,8 +42,8 @@
 - TensorFlow, ML WebGL and models load only after consent, in the browser. Never upload
   training images/features. Stop camera tracks and dispose model/classifier resources
   on teardown. Bound training, uploads, retries and one-frame prediction work.
-  The complete initial consent is SSG content. Preserve its shared inline native
-  Radix variant and style-free Checkbox hydration without a portal remount or entry replay.
+  The complete initial consent is SSG content. Preserve its shared inline dialog
+  and style-free checkbox hydration without a portal remount or entry replay.
   The decorative local hero WebGL is separate: start only while visible, without
   ML, user-data processing or external requests; retain a static fallback and
   respect reduced motion, pause and resource cleanup.
@@ -76,8 +76,10 @@
 
 - Use an off-white background with dark text in light mode and a black background
   with light text in dark mode. Both use rounded glass surfaces, red primary
-  actions and locally hosted Geist. Use official shadcn/ui
-  Radix/new-york components and Typography recipes with Tailwind 4 and Animate UI.
+  actions and locally hosted Geist. Use official shadcn/ui Base UI components and
+  Typography recipes with Tailwind 4 and Animate UI. The `base-nova` registry in
+  `components.json` selects the primitive family. Keep existing product styles and tokens
+  when adapting registry components.
   Prefer their standard variants and geometry; product Button variants cover
   image-gallery thumbnails and the quiz card/result controls. The homepage's
   red-lit glass loop moves independently during playback and responds to local pointer input.

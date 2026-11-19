@@ -3,7 +3,12 @@ import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-
 import { expectHeaderLayout, settleLandingReveals } from './training-keyboard';
 import { learningPaths } from '../../src/lib/learning-paths';
 
-type TransitionSnapshot = { root: boolean; outgoingPages: number; incomingPages: number };
+type TransitionSnapshot = {
+  root: boolean;
+  outgoingPages: number;
+  incomingPages: number;
+  back: boolean;
+};
 type TransitionObserver = typeof window & {
   observedTransitions: Promise<TransitionSnapshot | 'skipped'>[];
 };
@@ -41,6 +46,7 @@ async function observeViewTransitions(page: Page) {
                 root: Number.isFinite(Number.parseFloat(rootGroup.width)),
                 outgoingPages: pageLayers('old'),
                 incomingPages: pageLayers('new'),
+                back: transition.types.has('nav-back'),
               };
             },
             () => 'skipped',
@@ -51,6 +57,38 @@ async function observeViewTransitions(page: Page) {
     });
   });
   return () => page.evaluate(() => Promise.all((window as TransitionObserver).observedTransitions));
+}
+
+async function observeMenuShifts(page: Page) {
+  await page.evaluate(() => {
+    type LayoutShift = PerformanceEntry & { value: number; sources: { node: Node | null }[] };
+    const shifts: number[] = [];
+    const record = (entries: PerformanceEntry[]) => {
+      for (const entry of entries as LayoutShift[]) {
+        if (
+          entry.sources.some(
+            ({ node }) => node instanceof Element && node.matches('.header-menu-positioner'),
+          )
+        )
+          shifts.push(entry.value);
+      }
+    };
+    const observer = new PerformanceObserver((list) => record(list.getEntries()));
+    observer.observe({ type: 'layout-shift' });
+    Object.assign(window, {
+      finishMenuShiftObservation: () => {
+        record(observer.takeRecords());
+        observer.disconnect();
+        return shifts;
+      },
+    });
+  });
+  return () =>
+    page.evaluate(() =>
+      (
+        window as typeof window & { finishMenuShiftObservation: () => number[] }
+      ).finishMenuShiftObservation(),
+    );
 }
 
 test('the brand scrolls to the top of an already open homepage without a page transition', async ({
@@ -91,6 +129,8 @@ test('the transparent home header lets the hero receive clicks and keeps its nav
   page,
 }) => {
   const failures = diagnostics(page);
+  const transitions = await observeViewTransitions(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await settleEntryAnimations(page);
   const header = page.getByRole('banner');
@@ -128,9 +168,12 @@ test('the transparent home header lets the hero receive clicks and keeps its nav
   await expect.poll(pointerOwner).toEqual({ hero: true, header: false });
 
   const learning = nav.getByRole('button', { name: 'Lernlabor', exact: true });
-  await expect(learning).toHaveAttribute('data-state', 'closed');
+  await expect(learning).toHaveAttribute('aria-expanded', 'false');
+  const menuShifts = await observeMenuShifts(page);
   await learning.hover();
   const lab = nav.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
+  await lab.click({ trial: true });
+  expect(await menuShifts()).toEqual([]);
   await lab.click();
   await expect(page).toHaveURL(learningPaths.hub);
   await expect(page.getByRole('heading', { name: 'Dein Lernlabor', exact: true })).toBeVisible();
@@ -144,6 +187,11 @@ test('the transparent home header lets the hero receive clicks and keeps its nav
   ).toBeVisible();
   await expect(surface).toHaveCSS('opacity', '0');
   expect(await nav.evaluate((node, original) => node === original, initialNav)).toBe(true);
+  await settleEntryAnimations(page);
+  expect(await transitions()).toEqual([
+    { root: false, outgoingPages: 1, incomingPages: 1, back: false },
+    { root: false, outgoingPages: 1, incomingPages: 1, back: true },
+  ]);
   expect(failures).toEqual([]);
 });
 
@@ -223,7 +271,7 @@ test('static documents, native navigation and strict CSP preserve visible conten
     await serverError.close();
   }
   // Inject at the response boundary; DevTools evaluation has privileged CSP behavior.
-  await page.route('http://127.0.0.1:3100/', async (route) => {
+  await page.route(new URL('/', page.url()).href, async (route) => {
     const response = await route.fetch();
     const html = (await response.text()).replace(
       '</body>',
@@ -251,7 +299,7 @@ test('the header opens legal pages without a full reload and supports back navig
   });
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
   const legal = navigation.getByRole('button', { name: 'Rechtliches', exact: true });
-  await expect(legal).toHaveAttribute('data-state', 'closed');
+  await expect(legal).toHaveAttribute('aria-expanded', 'false');
   await legal.hover();
   const privacy = navigation.getByRole('link', { name: 'Datenschutz', exact: true });
   await expect(navigation.getByRole('link', { name: 'Impressum', exact: true })).toBeVisible();
@@ -277,11 +325,57 @@ test('the header opens legal pages without a full reload and supports back navig
   const privacyDocument = page.getByRole('region', { name: 'Datenschutzerklärung', exact: true });
   await expect(privacyDocument.locator('[data-entry-admission="scroll"]').first()).toBeAttached();
   await settleEntryAnimations(page);
-  expect(await transitions()).toEqual([{ root: false, outgoingPages: 1, incomingPages: 1 }]);
+  expect(await transitions()).toEqual([
+    { root: false, outgoingPages: 1, incomingPages: 1, back: false },
+  ]);
 
   await page.goBack();
   await expect(
     page.getByRole('heading', { name: /Du probierst\.\s*Deine KI lernt\./ }),
   ).toBeVisible();
+  expect(failures).toEqual([]);
+});
+
+test('the missing-page artwork supports keyboard playback and reduced-motion recovery', async ({
+  page,
+}) => {
+  const missingPath = '/this-page-does-not-exist';
+  const failures = diagnostics(page, missingPath);
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'no-preference' });
+  const response = await page.goto(missingPath);
+  expect(response?.status()).toBe(404);
+  const heading = page.getByRole('heading', { name: 'Seite nicht gefunden', exact: true });
+  await expect(heading).toBeVisible();
+
+  const artwork = page.locator('#error-glass-art');
+  await expect(artwork).toHaveAttribute('data-enhanced', 'true');
+  const home = page.getByRole('link', { name: 'Zurück zur Startseite', exact: true });
+  const impulse = page.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
+  const playback = page.getByRole('button', { name: /^Animation / });
+  await home.focus();
+  await page.keyboard.press('Tab');
+  await expect(impulse).toBeFocused();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Tab');
+  await expect(playback).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(impulse).toBeDisabled();
+  await expect(playback).toHaveAccessibleName('Animation fortsetzen');
+  await page.keyboard.press('Enter');
+  await expect(impulse).toBeEnabled();
+  await expectAccessible(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  const poster = artwork.locator('img');
+  await expect(poster).toBeVisible();
+  await expect
+    .poll(() => poster.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0);
+  await expect(impulse).toHaveCount(0);
+  await expect(playback).toHaveCount(0);
+  await expectAccessible(page);
+  await home.press('Enter');
+  await expect(page).toHaveURL('/');
   expect(failures).toEqual([]);
 });

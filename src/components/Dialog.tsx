@@ -1,8 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactElement } from 'react';
-import { Dialog as RadixDialog } from 'radix-ui';
-import { Dialog as DialogRoot, DialogContent, DialogOverlay } from './ui/dialog';
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import { Dialog as BaseDialog } from '@base-ui/react/dialog';
+import {
+  Dialog as DialogRoot,
+  DialogContent,
+  DialogOverlay,
+  InitialDialog,
+  InitialDialogContent,
+} from './ui/dialog';
 import { canReturnFocus, getReturnFocusCandidates } from './dialog-state';
 
 interface DialogProps {
@@ -11,10 +17,10 @@ interface DialogProps {
   labelledBy: string;
   describedBy?: string;
   initialContent?: boolean;
-  children: ReactElement;
+  children: ReactElement<{ className?: string }>;
 }
 
-/** Animate UI owns animation; Radix owns modal focus and RemoveScroll contains scrolling. */
+/** Animate UI owns entry motion, and the modal primitive owns focus. */
 export default function Dialog({
   isOpen,
   onClose,
@@ -25,10 +31,16 @@ export default function Dialog({
 }: DialogProps) {
   const returnFocus = useRef<(HTMLElement | null)[]>([]);
   const [content, setContent] = useState<HTMLDivElement | null>(null);
+  const rememberOpener = useCallback((node: HTMLDivElement | null) => {
+    if (node && returnFocus.current.length === 0) {
+      returnFocus.current = getReturnFocusCandidates(document.activeElement as HTMLElement);
+    }
+    setContent(node);
+  }, []);
 
   useEffect(() => {
     if (!isOpen && !content && returnFocus.current.length > 0) {
-      const nextDialog = document.querySelector('[role="dialog"][data-state="open"]');
+      const nextDialog = document.querySelector('[role="dialog"][data-open]');
       if (!nextDialog && document.activeElement === document.body) {
         const target = returnFocus.current.find(canReturnFocus);
         if (target) target.focus({ preventScroll: true });
@@ -37,38 +49,56 @@ export default function Dialog({
     }
   }, [isOpen, content]);
 
-  const surface = (
-    <DialogOverlay animateEntry={!initialContent}>
-      <DialogContent
-        ref={setContent}
-        initialContent={initialContent}
-        asChild
-        aria-modal="true"
-        aria-labelledby={labelledBy}
-        aria-describedby={describedBy}
-        onOpenAutoFocus={() => {
-          returnFocus.current = getReturnFocusCandidates(document.activeElement as HTMLElement);
-        }}
-        onCloseAutoFocus={(event) => {
-          event.preventDefault();
-        }}
-        onEscapeKeyDown={(event) => {
-          if (!onClose) event.preventDefault();
-        }}
-        onInteractOutside={(event) => event.preventDefault()}
-      >
-        {children}
-      </DialogContent>
-    </DialogOverlay>
-  );
+  const labels = {
+    'aria-modal': true,
+    'aria-labelledby': labelledBy,
+    'aria-describedby': describedBy,
+  } as const;
+
+  if (initialContent) {
+    return (
+      <DialogRoot open={false}>
+        {isOpen && (
+          <InitialDialog
+            {...labels}
+            role="dialog"
+            data-open=""
+            onCancel={(event) => {
+              event.preventDefault();
+              onClose?.();
+            }}
+          >
+            <InitialDialogContent render={children} />
+          </InitialDialog>
+        )}
+      </DialogRoot>
+    );
+  }
+
   return (
     <DialogRoot
       open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onClose?.();
+      modal="trap-focus"
+      disablePointerDismissal
+      onOpenChange={(open, details) => {
+        if (open) return;
+        if (onClose) onClose();
+        else details.cancel();
       }}
     >
-      {initialContent ? isOpen && surface : <RadixDialog.Portal>{surface}</RadixDialog.Portal>}
+      {isOpen && (
+        <BaseDialog.Portal>
+          <DialogOverlay>
+            <DialogContent
+              {...labels}
+              ref={rememberOpener}
+              render={children}
+              initialFocus
+              finalFocus={false}
+            />
+          </DialogOverlay>
+        </BaseDialog.Portal>
+      )}
     </DialogRoot>
   );
 }

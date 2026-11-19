@@ -9,6 +9,7 @@ export function useCameraStream(
   isModelLoading: boolean,
   predictVideoRef: React.RefObject<HTMLVideoElement | null>,
   onError: (category: Extract<ErrorCategory, 'camera'>, msg: string) => void,
+  canPreview = true,
 ) {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [camera, setCamera] = useState<{ stream: MediaStream; facingMode: string } | null>(null);
@@ -54,12 +55,12 @@ export function useCameraStream(
 
   useEffect(() => {
     const video = predictVideoRef.current;
-    if (!video) return;
+    if (!video || !canPreview) return;
     video.srcObject = stream;
     return () => {
       if (video.srcObject === stream) video.srcObject = null;
     };
-  }, [stream, isModelLoading, predictVideoRef]);
+  }, [stream, canPreview, predictVideoRef]);
 
   const toggleCamera = useCallback(() => {
     setFacingMode((previous) => (previous === 'user' ? 'environment' : 'user'));

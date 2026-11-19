@@ -1,28 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { motion, useInView, useMotionValue, useScroll, useTransform } from 'motion/react';
-import { ReducedMotionConfig, useShouldReduceMotion } from '@animate-ui/react/utils/motion';
-import { usePageVisible } from '@animate-ui/react/utils/use-page-visible';
+import { useRef, type ReactNode, type RefObject } from 'react';
+import { motion, useMotionValue, useScroll, useTransform } from 'motion/react';
+import { ReducedMotionConfig } from '@animate-ui/react/utils/motion';
 import Button from '@/components/Button';
 import { Pause } from '@/components/icons/pause';
 import { Play } from '@/components/icons/play';
 import { useHomePlayback } from '@/components/home/HomePlaybackProvider';
 import { useEntryViewportReady } from '@/components/ui/entry-policy';
 import StaticContourPoster from './StaticContourPoster';
-
-let fieldModule: ReturnType<typeof importField> | undefined;
-function importField() {
-  return import('./TopographyField');
-}
-function prepareField() {
-  fieldModule ??= importField().catch((error: unknown) => {
-    fieldModule = undefined;
-    throw error;
-  });
-  return fieldModule;
-}
-type FieldComponent = typeof import('./TopographyField').default;
+import { heroPosterImages } from './poster-assets';
+import { useGlassField } from './use-glass-field';
 
 function useParallax(root: RefObject<HTMLDivElement | null>, paused: boolean) {
   const { scrollYProgress } = useScroll({ target: root, offset: ['start start', 'end start'] });
@@ -67,39 +55,21 @@ function PlaybackControl({
 
 function Scene({ children }: { children?: ReactNode }) {
   const root = useRef<HTMLDivElement>(null);
-  const artwork = useRef<HTMLDivElement>(null);
-  const inView = useInView(artwork, { amount: 0.05 });
-  const visible = usePageVisible();
-  const reduce = useShouldReduceMotion();
   const viewportReady = useEntryViewportReady();
   const { paused, togglePause } = useHomePlayback();
-  const [Field, setField] = useState<FieldComponent | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [rendered, setRendered] = useState(false);
-  const unavailable = useCallback(() => setFailed(true), []);
-  const onRendered = useCallback((ready: boolean) => setRendered(ready), []);
-  const available = inView && visible && !reduce && !failed;
-  const active = available && !paused;
+  const {
+    artwork,
+    Field,
+    available,
+    failed,
+    reduce,
+    rendered,
+    onRendered,
+    onUnavailable,
+    prepare,
+  } = useGlassField(paused, viewportReady);
   const { fieldY, capturePause } = useParallax(root, paused);
 
-  useEffect(() => {
-    if (!active) return;
-    let current = true;
-    void prepareField()
-      .then((module) => {
-        if (current) setField(() => module.default);
-      })
-      .catch(() => {
-        if (current) setFailed(true);
-      });
-    return () => {
-      current = false;
-    };
-  }, [active]);
-
-  const prepare = () => {
-    if (!reduce && !failed) void prepareField().catch(() => {});
-  };
   return (
     <div
       ref={root}
@@ -117,9 +87,9 @@ function Scene({ children }: { children?: ReactNode }) {
             initial={false}
             style={available ? { y: fieldY } : undefined}
           >
-            <StaticContourPoster />
+            <StaticContourPoster sources={heroPosterImages} />
             {viewportReady && available && Field && (
-              <Field paused={paused} onUnavailable={unavailable} onRendered={onRendered} />
+              <Field paused={paused} onUnavailable={onUnavailable} onRendered={onRendered} />
             )}
           </motion.div>
         </div>

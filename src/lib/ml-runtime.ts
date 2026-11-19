@@ -19,8 +19,12 @@ export async function initializeBackend() {
   return backendReady;
 }
 
-export async function createClassifier() {
+export async function loadClassifierModule() {
   if (typeof window === 'undefined') throw new Error('Machine learning requires a browser.');
-  const knn = await import('@tensorflow-models/knn-classifier');
+  return import('@tensorflow-models/knn-classifier');
+}
+
+export async function createClassifier() {
+  const knn = await loadClassifierModule();
   return knn.create();
 }

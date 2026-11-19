@@ -17,11 +17,12 @@ export interface CameraPreviewProps {
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   fileActions?: React.ReactNode;
+  onCaptureIntent?: () => void;
 }
 
 type RecordButtonProps = Pick<
   CameraPreviewProps,
-  'isRecording' | 'onStartRecording' | 'onStopRecording' | 'disabled'
+  'isRecording' | 'onStartRecording' | 'onStopRecording' | 'disabled' | 'onCaptureIntent'
 > & { hintId: string };
 
 function RecordButton({
@@ -30,6 +31,7 @@ function RecordButton({
   isRecording,
   onStartRecording,
   onStopRecording,
+  onCaptureIntent,
 }: RecordButtonProps) {
   const keyboardRecording = useRef(false);
   const stopPointerRecording = () => {
@@ -43,9 +45,12 @@ function RecordButton({
       className="touch-none select-none [-webkit-touch-callout:none]"
       aria-pressed={isRecording}
       aria-describedby={hintId}
+      onPointerEnter={onCaptureIntent}
+      onFocus={onCaptureIntent}
       onPointerDown={(event) => {
         // Motion's Enter feedback dispatches pointer events without a pointer device.
         if (!event.pointerType) return;
+        onCaptureIntent?.();
         event.currentTarget.setPointerCapture(event.pointerId);
         keyboardRecording.current = false;
         onStartRecording();
@@ -63,6 +68,7 @@ function RecordButton({
         event.preventDefault();
         if (event.repeat) return;
         if (!isRecording) {
+          onCaptureIntent?.();
           keyboardRecording.current = true;
           onStartRecording();
         } else if (keyboardRecording.current) {
@@ -92,6 +98,7 @@ export default function CameraPreview(props: CameraPreviewProps) {
     videoRef,
     disabled,
     fileActions,
+    onCaptureIntent,
   } = props;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hintId = useId();
@@ -117,7 +124,13 @@ export default function CameraPreview(props: CameraPreviewProps) {
         <Button
           variant={stream ? 'outline' : 'default'}
           className="h-auto min-h-11 min-w-0 px-2 py-1.5 text-center whitespace-normal has-[>svg]:px-2"
-          onClick={() => fileInputRef.current?.click()}
+          onPointerEnter={onCaptureIntent}
+          onFocus={onCaptureIntent}
+          onPointerDown={onCaptureIntent}
+          onClick={() => {
+            onCaptureIntent?.();
+            fileInputRef.current?.click();
+          }}
           disabled={disabled}
         >
           <Upload data-icon="inline-start" aria-hidden="true" /> Bilder auswählen
@@ -126,7 +139,10 @@ export default function CameraPreview(props: CameraPreviewProps) {
           type="file"
           disabled={disabled}
           ref={fileInputRef}
-          onChange={onFileUpload}
+          onChange={(event) => {
+            if (event.currentTarget.files?.length) onCaptureIntent?.();
+            onFileUpload(event);
+          }}
           accept={IMAGE_INPUT_ACCEPT}
           multiple
           className="hidden"
@@ -154,6 +170,7 @@ export default function CameraPreview(props: CameraPreviewProps) {
             isRecording={isRecording}
             onStartRecording={onStartRecording}
             onStopRecording={onStopRecording}
+            onCaptureIntent={onCaptureIntent}
           />
           <p id={hintId} className="text-xs text-muted-foreground">
             Zum Aufnehmen gedrückt halten.

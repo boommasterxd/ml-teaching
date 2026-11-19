@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useMotionValue, useSpring } from 'motion/react';
 import Button from '@/components/Button';
 import { GlassImpulses } from './glass-impulses';
+import type { GlassShape } from './topography-gl';
 import { useTopographyRenderer } from './use-topography-renderer';
 
 interface PointerPoint {
@@ -43,15 +44,17 @@ export default function TopographyField({
   onUnavailable,
   onRendered,
   paused = false,
+  shape = 'ring',
 }: {
   onUnavailable: () => void;
   onRendered: (ready: boolean) => void;
   paused?: boolean;
+  shape?: GlassShape;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const { values, pointerX, pointerY, raised } = useFieldMotion(paused);
   const { ripples } = values;
-  useTopographyRenderer(canvas, values, onUnavailable, onRendered);
+  useTopographyRenderer(canvas, values, onUnavailable, onRendered, shape);
   function point(event: PointerPoint, fromKeyboard = false) {
     const rect = canvas.current!.getBoundingClientRect();
     return fromKeyboard

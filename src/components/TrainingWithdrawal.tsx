@@ -11,14 +11,17 @@ export default function TrainingWithdrawal({
   variant?: 'workspace' | 'dialog';
 }) {
   const action = (
-    <Button asChild variant="outline">
-      <a
-        href={learningPaths.imagePractice}
-        aria-label="Einwilligung widerrufen und lokale Trainingsdaten verwerfen"
-      >
-        <RotateCcw data-icon="inline-start" aria-hidden="true" />
-        Einwilligung widerrufen
-      </a>
+    <Button
+      variant="outline"
+      render={
+        <a
+          href={learningPaths.imagePractice}
+          aria-label="Einwilligung widerrufen und lokale Trainingsdaten verwerfen"
+        />
+      }
+    >
+      <RotateCcw data-icon="inline-start" aria-hidden="true" />
+      Einwilligung widerrufen
     </Button>
   );
   if (variant === 'dialog') return action;

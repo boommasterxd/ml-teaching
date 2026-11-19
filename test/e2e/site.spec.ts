@@ -202,7 +202,7 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
   await expect(page.getByRole('switch', { name: 'Dunkle Darstellung' })).toBeChecked();
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
   const menu = navigation.getByRole('button', { name: 'Menü', exact: true });
-  await expect(menu).toHaveAttribute('data-state', 'closed');
+  await expect(menu).toHaveAttribute('aria-expanded', 'false');
   await menu.click();
   await navigation.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${learningPaths.hub}$`));
@@ -430,12 +430,7 @@ test('local images train a real browser classifier, predict and reset without up
   await expect(page.getByRole('dialog')).toHaveCount(1);
   await page.keyboard.press('Escape');
   await expect(removeClass).toBeFocused();
-  expect(
-    await page
-      .locator('video')
-      .first()
-      .evaluate((element) => (element as HTMLVideoElement).srcObject),
-  ).toBeNull();
+  await expect(page.locator('video')).toHaveCount(0);
   await uploadTrainingClasses(page);
   await expectGalleryFocusAcrossResize(page);
   await expectCancelledResetKeepsImages(page);

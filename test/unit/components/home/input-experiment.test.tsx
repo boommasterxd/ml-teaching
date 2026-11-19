@@ -3,9 +3,9 @@ import type { ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HomePlaybackProvider, useHomePlayback } from '@/components/home/HomePlaybackProvider';
-import InputExperiment from '@/components/home/InputExperiment';
-import { PreviewCycleProvider } from '@/components/home/PreviewCycle';
-import { RewardPreview } from '@/components/home/RewardExperiment';
+import { DeferredHomePreviews, HomePreview } from '@/components/home/DeferredHomePreviews';
+import { RewardBoard, rewardPreviewDescription } from '@/components/home/RewardBoard';
+import { InputPreviewStill } from '@/components/home/SignalArtwork';
 import { prepareExample } from '@/components/network/prepare-example';
 import { installBrowserHost, restoreBrowserHost } from '../../helpers/browser-host';
 
@@ -23,8 +23,24 @@ function PauseControl() {
 function PreviewHost({ children }: { children: ReactNode }) {
   return (
     <HomePlaybackProvider>
-      <PreviewCycleProvider>{children}</PreviewCycleProvider>
+      <DeferredHomePreviews>{children}</DeferredHomePreviews>
     </HomePlaybackProvider>
+  );
+}
+
+function ImagePreview() {
+  return (
+    <HomePreview kind="image">
+      <InputPreviewStill />
+    </HomePreview>
+  );
+}
+
+function RewardPreview() {
+  return (
+    <HomePreview kind="reward">
+      <RewardBoard description={rewardPreviewDescription} />
+    </HomePreview>
   );
 }
 
@@ -53,7 +69,7 @@ describe('homepage input preview', () => {
     const document = new DOMParser().parseFromString(
       renderToStaticMarkup(
         <PreviewHost>
-          <InputExperiment />
+          <ImagePreview />
           <RewardPreview />
         </PreviewHost>,
       ),
@@ -75,17 +91,21 @@ describe('homepage input preview', () => {
     vi.mocked(prepareExample).mockReturnValueOnce(photo.promise);
     const { container } = render(
       <>
-        <InputExperiment />
+        <ImagePreview />
         <RewardPreview />
       </>,
       { wrapper: PreviewHost },
     );
+    await act(async () => vi.dynamicImportSettled());
     expect(prepareExample).toHaveBeenCalledWith('dog');
     advancePreview();
     expectPhoto('Katze', 'cat');
     expect(container.querySelector(activePreview)).toBeNull();
 
-    await act(async () => photo.resolve());
+    await act(async () => {
+      photo.resolve();
+      await vi.dynamicImportSettled();
+    });
     expectPhoto('Hund', 'dog');
     expect(container.querySelector(`${activePreview}.home-signal-active`)).not.toBeNull();
     advancePreview(3_999);
@@ -102,12 +122,16 @@ describe('homepage input preview', () => {
     vi.mocked(prepareExample).mockReturnValueOnce(photo.promise);
     const { container } = render(
       <>
-        <InputExperiment />
+        <ImagePreview />
         <RewardPreview />
       </>,
       { wrapper: PreviewHost },
     );
-    await act(async () => photo.reject(new Error('Example image unavailable')));
+    await act(async () => vi.dynamicImportSettled());
+    await act(async () => {
+      photo.reject(new Error('Example image unavailable'));
+      await vi.dynamicImportSettled();
+    });
 
     advancePreview();
     expectPhoto('Katze', 'cat');
@@ -116,20 +140,26 @@ describe('homepage input preview', () => {
 
   it('freezes the current result when paused or out of view and resumes on return', async () => {
     vi.useFakeTimers();
-    let setInView: (visible: boolean) => void = () => {};
+    const viewObservers: ((visible: boolean) => void)[] = [];
+    const setInView = (visible: boolean) => viewObservers.forEach((notify) => notify(visible));
     vi.stubGlobal(
       'IntersectionObserver',
       class {
-        constructor(private readonly notify: IntersectionObserverCallback) {}
+        constructor(
+          private readonly notify: IntersectionObserverCallback,
+          private readonly options?: IntersectionObserverInit,
+        ) {}
         observe(target: Element) {
           if (!target.classList.contains('home-input-experiment')) return;
-          setInView = (visible) =>
+          const update = (visible: boolean) =>
             this.notify(
               [
                 { target, isIntersecting: visible, intersectionRatio: Number(visible) },
               ] as IntersectionObserverEntry[],
               this as unknown as IntersectionObserver,
             );
+          viewObservers.push(update);
+          if (!this.options?.rootMargin) update(true);
         }
         unobserve() {}
         disconnect() {}
@@ -137,14 +167,17 @@ describe('homepage input preview', () => {
     );
     const { container } = render(
       <>
-        <InputExperiment />
+        <ImagePreview />
         <PauseControl />
       </>,
       { wrapper: PreviewHost },
     );
     advancePreview();
     expectPhoto('Katze', 'cat');
-    await act(async () => setInView(true));
+    await act(async () => {
+      setInView(true);
+      await vi.dynamicImportSettled();
+    });
     expectPhoto('Hund', 'dog');
     expect(container.querySelector(activePreview)).not.toBeNull();
     act(() => setInView(false));
@@ -164,9 +197,10 @@ describe('homepage input preview', () => {
     expect(container.querySelector('.home-signal-active')).toBeNull();
   });
 
-  it('starts the visible reward board without waiting for the offscreen image preview', () => {
+  it('starts the visible reward board without waiting for the offscreen image preview', async () => {
     vi.useFakeTimers();
     const { container } = render(<RewardPreview />, { wrapper: PreviewHost });
+    await act(async () => vi.dynamicImportSettled());
     expect(
       container.querySelector(`${activePreview} [data-goal="star"][data-rewarded="true"]`),
     ).not.toBeNull();
@@ -181,7 +215,7 @@ describe('homepage input preview', () => {
     vi.useFakeTimers();
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     vi.mocked(window.matchMedia).mockReturnValue({ ...media, matches: true });
-    const { container } = render(<InputExperiment />, { wrapper: PreviewHost });
+    const { container } = render(<ImagePreview />, { wrapper: PreviewHost });
     advancePreview();
     expectPhoto('Katze', 'cat');
     expect(container.querySelector('.home-signal-active')).toBeNull();

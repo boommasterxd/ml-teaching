@@ -93,17 +93,12 @@ function PredictionAction({
   );
 }
 
-/** The video stays mounted so an already authorized stream survives model training. */
 function CameraPreview({
-  visible,
   facingMode,
   predictVideoRef,
-}: Pick<PredictionPanelProps, 'facingMode' | 'predictVideoRef'> & { visible: boolean }) {
+}: Pick<PredictionPanelProps, 'facingMode' | 'predictVideoRef'>) {
   return (
-    <div
-      hidden={!visible}
-      className="aspect-video overflow-hidden rounded-2xl border border-border bg-media-surface"
-    >
+    <div className="aspect-video overflow-hidden rounded-2xl border border-border bg-media-surface">
       <video
         ref={predictVideoRef}
         autoPlay
@@ -140,11 +135,9 @@ export default function PredictionPanel(props: PredictionPanelProps) {
         </CardAction>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <CameraPreview
-          visible={showVideo}
-          facingMode={props.facingMode}
-          predictVideoRef={props.predictVideoRef}
-        />
+        {showVideo && (
+          <CameraPreview facingMode={props.facingMode} predictVideoRef={props.predictVideoRef} />
+        )}
         {isPredicting && <ConfidenceResults classes={classes} prediction={prediction} />}
         {!isPredicting && !showVideo && (
           <Text id="prediction-camera-hint" variant="muted" className="leading-relaxed">

@@ -3,6 +3,7 @@
 import { useCallback, type ComponentProps, type SyntheticEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { prepareRoute } from './prepare-route';
 
 type IntentLinkProps = ComponentProps<typeof Link> & { prepareOnIntent?: boolean };
 const forwardNavigation = ['nav-forward'];
@@ -28,7 +29,7 @@ export default function IntentLink({
       )
         return;
       const path = target.pathname + target.search;
-      router.prefetch(path.startsWith('//') ? target.origin + path : path);
+      prepareRoute(router, path.startsWith('//') ? target.origin + path : path, target.pathname);
     },
     [prepareOnIntent, router],
   );

@@ -14,6 +14,7 @@ import Button from '@/components/Button';
 import { Pause } from '@/components/icons/pause';
 import { Play } from '@/components/icons/play';
 import { useControlHydrated } from '@/components/ui/use-control-hydration';
+import { imageHeroCatSizes } from './hero-assets';
 
 function HeroScan({ active, hydrated }: { active: boolean; hydrated: boolean }) {
   const timing = useTempoTransition({
@@ -59,7 +60,7 @@ function HeroScene({ active, hydrated }: { active: boolean; hydrated: boolean })
         <ExamplePhoto
           signal="cat"
           decorative
-          sizes="(min-width: 1024px) 240px, (min-width: 640px) 200px, 45vw"
+          sizes={imageHeroCatSizes}
           className="image-hero-photo"
         />
       </foreignObject>

@@ -1,10 +1,17 @@
 // Adapted from Animate UI Topography; see docs/third-party-notices.md.
-import { configureTexture, queueGlassPrograms, rasterLimit } from './topography-gl';
+import {
+  configureTexture,
+  queueGlassPrograms,
+  rasterLimit,
+  type GlassShape,
+} from './topography-gl';
 
 interface FieldFrame {
   width: number;
   height: number;
   dpr: number;
+  fieldScale: number;
+  fieldTexels: number;
   time: number;
   lift: number;
   hill: [number, number];
@@ -39,8 +46,8 @@ function initializePrograms(gl: WebGLRenderingContext, programs: Programs) {
   return { field, glass };
 }
 
-function createResources(gl: WebGLRenderingContext) {
-  const programs = queueGlassPrograms(gl);
+function createResources(gl: WebGLRenderingContext, shape: GlassShape) {
+  const programs = queueGlassPrograms(gl, shape);
   if (!programs) return null;
   const buffer = gl.createBuffer();
   const fieldTexture = gl.createTexture();
@@ -70,14 +77,19 @@ function createResources(gl: WebGLRenderingContext) {
 function fieldDimensions(field: FieldFrame, limit: number) {
   // Resolve narrow studio highlights on compact stages without tracing at device density.
   const stride = Math.min(4, Math.max(1.5, Math.min(field.width, field.height) / 330));
-  const width = Math.max(1, Math.ceil(field.width / stride));
-  const height = Math.max(1, Math.ceil(field.height / stride));
-  const scale = Math.min(1, Math.sqrt(600_000 / (width * height)), limit / width, limit / height);
+  const width = Math.max(1, Math.ceil((field.width / stride) * field.fieldScale));
+  const height = Math.max(1, Math.ceil((field.height / stride) * field.fieldScale));
+  const scale = Math.min(
+    1,
+    Math.sqrt(field.fieldTexels / (width * height)),
+    limit / width,
+    limit / height,
+  );
   return [Math.max(1, Math.floor(width * scale)), Math.max(1, Math.floor(height * scale))] as const;
 }
 
 /** No fallback loop: failed or lost contexts retain the server-rendered poster. */
-export function createTopographyRenderer(canvas: HTMLCanvasElement) {
+export function createTopographyRenderer(canvas: HTMLCanvasElement, shape: GlassShape = 'ring') {
   const gl = canvas.getContext('webgl', {
     premultipliedAlpha: true,
     preserveDrawingBuffer: false,
@@ -89,7 +101,7 @@ export function createTopographyRenderer(canvas: HTMLCanvasElement) {
   // The reconstruction pass reads the signed silhouette from the alpha channel.
   gl.disable(gl.DITHER);
   const maxRasterDimension = rasterLimit(gl);
-  const resources = createResources(gl);
+  const resources = createResources(gl, shape);
   if (!resources) return null;
   const { programs, fieldTexture, framebuffer } = resources;
   let locations: ReturnType<typeof initializePrograms> | undefined;

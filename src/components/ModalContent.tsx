@@ -12,7 +12,7 @@ interface ModalContentProps extends React.ComponentProps<'div'> {
   children: React.ReactNode;
 }
 
-/** The same element receives Radix focus, dialog semantics and the product width. */
+/** Dialog composition applies the shared surface and product width to one element. */
 export default function ModalContent({
   maxWidth = 'md',
   className,

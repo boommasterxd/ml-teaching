@@ -1,5 +1,7 @@
 import { FIELD_FRAGMENT, GLASS_FRAGMENT, SCREEN_VERTEX, VERTEX } from './topography-shaders';
 
+export type GlassShape = 'ring' | 'digits';
+
 function compile(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
   if (!shader) return null;
@@ -32,13 +34,16 @@ function queueProgram(gl: WebGLRenderingContext, vertexSource: string, fragmentS
   return { program, releaseShaders };
 }
 
-export function queueGlassPrograms(gl: WebGLRenderingContext) {
+export function queueGlassPrograms(gl: WebGLRenderingContext, shape: GlassShape) {
   const parallel = gl.getExtension('KHR_parallel_shader_compile');
   // Reserve one vector per other field uniform, even on minimum-spec WebGL 1 devices.
   const freeVectors = gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) - 8;
   const rippleCapacity = Math.min(32, Math.max(4, freeVectors));
   const limits = `#define RIPPLE_CAPACITY ${rippleCapacity}\n`;
-  const field = queueProgram(gl, limits + VERTEX, limits + FIELD_FRAGMENT);
+  const field =
+    shape === 'digits'
+      ? queueProgram(gl, SCREEN_VERTEX, limits + '#define GLASS_DIGITS\n' + FIELD_FRAGMENT)
+      : queueProgram(gl, limits + VERTEX, limits + FIELD_FRAGMENT);
   if (!field) return null;
   const glass = queueProgram(gl, SCREEN_VERTEX, GLASS_FRAGMENT);
   if (!glass) {

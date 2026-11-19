@@ -1,41 +1,44 @@
 'use client';
 
-import type { ComponentProps } from 'react';
-import { Slot } from '@animate-ui/react/primitives/radix-ui';
+import type { ComponentProps, ReactElement } from 'react';
+import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import type { VariantProps } from 'class-variance-authority';
 import { ActionFeedback } from './action-feedback';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '../button-variants';
 
 interface ButtonProps extends ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
+  render?: ReactElement;
   tapScale?: number;
 }
 
 export function Button({
   variant = 'default',
   size = 'default',
-  asChild = false,
   className,
   children,
   disabled,
+  render,
+  role,
   tapScale,
   ...props
 }: ButtonProps) {
-  const Component = asChild ? Slot.Root : 'button';
   return (
     <ActionFeedback disabled={disabled} tapScale={tapScale}>
-      <Component
+      <ButtonPrimitive
+        render={render}
+        nativeButton={!render}
         data-slot="button"
         data-variant={variant}
         data-size={size}
         disabled={disabled}
         aria-disabled={disabled}
+        role={role}
         className={cn(buttonVariants({ variant, size }), className)}
         {...props}
       >
         {children}
-      </Component>
+      </ButtonPrimitive>
     </ActionFeedback>
   );
 }

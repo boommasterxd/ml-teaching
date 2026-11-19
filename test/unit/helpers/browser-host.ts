@@ -14,6 +14,18 @@ export function restoreBrowserHost() {
   }
 }
 
+/** Give Base UI's inset slider real control and thumb widths in JSDOM. */
+export function installSliderLayout() {
+  const getBounds = HTMLElement.prototype.getBoundingClientRect;
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    if (this.dataset.slot === 'slider-control') return new DOMRect(0, 0, 288, 44);
+    if (this.dataset.slot === 'slider-thumb') return new DOMRect(0, 0, 16, 16);
+    return getBounds.call(this);
+  });
+}
+
 /** JSDOM has no layout engine: supply a fixed gallery viewport, keeping Virtual's logic real. */
 export function installBrowserHost() {
   for (const name of pointerMethods)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ComponentType } from 'react';
+import { Activity, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Button from '@/components/Button';
 import { Users } from '@/components/icons/users';
 import { RotateCcw } from '@/components/icons/rotate-ccw';
@@ -26,28 +26,50 @@ function prepareQuiz() {
 /** Start a local exercise near the viewport; intent shares the same retryable chunk. */
 export default function DeferredKnnQuiz() {
   const area = useRef<HTMLDivElement>(null);
+  const openButton = useRef<HTMLButtonElement>(null);
+  const title = useRef<HTMLHeadingElement>(null);
+  const restoreFocus = useRef(false);
   const mounted = useRef(false);
-  const [Quiz, setQuiz] = useState<ComponentType | null>(null);
+  const [Quiz, setQuiz] = useState<typeof import('./KnnQuiz').default | null>(null);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
-  const prepare = () => {
-    void prepareQuiz().catch(() => {});
-  };
-  const activate = () => {
-    setFailed(false);
+  const load = (activate: boolean) => {
+    if (activate) {
+      setFailed(false);
+      setLoading(true);
+    }
     void prepareQuiz()
       .then((module) => {
-        if (mounted.current) setQuiz(() => module.default);
+        if (!mounted.current) return;
+        setQuiz(() => module.default);
+        if (activate) {
+          restoreFocus.current = document.activeElement === openButton.current;
+          setOpen(true);
+          setLoading(false);
+        }
       })
       .catch(() => {
-        if (mounted.current) setFailed(true);
+        if (mounted.current && activate) {
+          setFailed(true);
+          setLoading(false);
+        }
       });
   };
+  const prepare = () => {
+    if (!open) load(false);
+  };
+  useLayoutEffect(() => {
+    if (!open || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    title.current?.focus({ preventScroll: true });
+  }, [open]);
   useEffect(() => {
     mounted.current = true;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          activate();
+          load(true);
           observer.disconnect();
         }
       },
@@ -61,10 +83,13 @@ export default function DeferredKnnQuiz() {
   }, []);
   return (
     <div ref={area} onPointerEnter={prepare} onFocusCapture={prepare} onPointerDown={prepare}>
-      {Quiz ? (
-        <Quiz />
-      ) : (
-        <Card className="knn-quiz-placeholder">
+      {Quiz && (
+        <Activity mode={open ? 'visible' : 'hidden'}>
+          <Quiz titleRef={title} />
+        </Activity>
+      )}
+      {!open && (
+        <Card className="knn-quiz-placeholder" aria-busy={loading || undefined}>
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -76,7 +101,14 @@ export default function DeferredKnnQuiz() {
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <Button variant="outline" onClick={activate}>
+              <Button
+                ref={openButton}
+                variant="outline"
+                aria-disabled={loading || undefined}
+                onClick={() => {
+                  if (!loading) load(true);
+                }}
+              >
                 <RotateCcw data-icon="inline-start" aria-hidden="true" />
                 {failed ? 'Erneut versuchen' : 'Übung öffnen'}
               </Button>

@@ -1,11 +1,10 @@
-'use client';
-
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useInView } from 'motion/react';
 import { useShouldReduceMotion } from '@animate-ui/react/utils/motion';
 import { usePageVisible } from '@animate-ui/react/utils/use-page-visible';
 import { prepareExample } from '@/components/network/prepare-example';
 import { useHomePlayback } from './HomePlaybackProvider';
+import type { PreviewPlayback, PreviewSlots } from './preview-types';
 
 const previewIntervalMs = 4_000;
 
@@ -46,26 +45,30 @@ function useDogPhoto(prepare: boolean) {
   return photo;
 }
 
-function usePreviewPlayback() {
-  const imageRef = useRef<HTMLDivElement>(null);
-  const rewardRef = useRef<HTMLDivElement>(null);
-  const imageInView = useInView(imageRef, { amount: 0.2 });
-  const rewardInView = useInView(rewardRef, { amount: 0.2 });
+function usePreviewViewport({ image, reward }: PreviewSlots) {
+  const imageInView = useInView(image, { amount: 0.2 });
+  const rewardInView = useInView(reward, { amount: 0.2 });
   const visible = usePageVisible();
   const reduceMotion = useShouldReduceMotion();
   const { paused } = useHomePlayback();
+  const available = visible && !reduceMotion && !paused;
+  return {
+    showImageMotion: available && imageInView,
+    showRewardMotion: available && rewardInView,
+  };
+}
+
+function usePreviewPlayback(slots: PreviewSlots): PreviewPlayback {
+  const { showImageMotion, showRewardMotion } = usePreviewViewport(slots);
   const [step, setStep] = useState(0);
   const turn = turns[step % turns.length];
-  const available = visible && !reduceMotion && !paused;
-  const showImageMotion = available && imageInView;
-  const showRewardMotion = available && rewardInView;
   const dogPhoto = useDogPhoto(showImageMotion);
   const imageTurn = turn.panel === 'image';
   // Stacked cards use each turn for the illustration the reader is actually looking at.
   const nextVisible = visibleStep(step, showImageMotion, showRewardMotion);
   if (nextVisible !== step) setStep(nextVisible);
   const dogTurn = imageTurn && turn.signal === 'dog';
-  const waitingForDog = dogTurn && imageInView && dogPhoto === 'pending';
+  const waitingForDog = dogTurn && showImageMotion && dogPhoto === 'pending';
   const playing = (showImageMotion || showRewardMotion) && !waitingForDog;
 
   useEffect(() => {
@@ -77,30 +80,43 @@ function usePreviewPlayback() {
   const animateImage =
     playing && showImageMotion && imageTurn && (!dogTurn || dogPhoto === 'ready');
   const signal = dogPhoto === 'ready' ? turn.signal : 'cat';
-
-  return {
-    imageRef,
-    rewardRef,
-    signal,
-    imageSequence: imageTurn ? step : step - 1,
-    animateImage,
-    showImageMotion,
-    rewardGoal: turn.goal,
-    rewardSequence: imageTurn ? step - 1 : step,
-    animateReward: playing && showRewardMotion && !imageTurn,
-    showRewardMotion,
-  };
+  const imageSequence = imageTurn ? step : step - 1;
+  const rewardSequence = imageTurn ? step - 1 : step;
+  const animateReward = playing && showRewardMotion && !imageTurn;
+  const rewardGoal = turn.goal;
+  return useMemo(
+    () => ({
+      signal,
+      imageSequence,
+      animateImage,
+      showImageMotion,
+      rewardGoal,
+      rewardSequence,
+      animateReward,
+      showRewardMotion,
+    }),
+    [
+      signal,
+      imageSequence,
+      animateImage,
+      showImageMotion,
+      rewardGoal,
+      rewardSequence,
+      animateReward,
+      showRewardMotion,
+    ],
+  );
 }
 
-const PreviewCycleContext = createContext<ReturnType<typeof usePreviewPlayback> | null>(null);
-
-export function PreviewCycleProvider({ children }: { children: ReactNode }) {
-  const playback = usePreviewPlayback();
-  return <PreviewCycleContext value={playback}>{children}</PreviewCycleContext>;
-}
-
-export function usePreviewCycle() {
-  const playback = useContext(PreviewCycleContext);
-  if (!playback) throw new Error('Homepage previews require a PreviewCycleProvider.');
-  return playback;
+/** Starts the shared cycle without moving the server-rendered cards into a new tree. */
+export function PreviewCycle({
+  slots,
+  update,
+}: {
+  slots: PreviewSlots;
+  update: (value: PreviewPlayback) => void;
+}) {
+  const playback = usePreviewPlayback(slots);
+  useLayoutEffect(() => update(playback), [playback, update]);
+  return null;
 }

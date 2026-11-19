@@ -1,5 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
-import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-checks';
+import {
+  diagnostics,
+  expectAccessible,
+  expectMenuHighlight,
+  settleEntryAnimations,
+} from './browser-checks';
 
 type PageBackFlow = { back: boolean; outgoingRight: boolean; incomingLeft: boolean };
 type PageBackObserver = typeof window & { observedBackFlow: Promise<PageBackFlow | null>[] };
@@ -50,7 +55,7 @@ async function observeBackFlow(page: Page) {
 
 test('desktop legal navigation stays reachable while the document scrolls', async ({ page }) => {
   const failures = diagnostics(page);
-  await page.setViewportSize({ width: 1322, height: 900 });
+  await page.setViewportSize({ width: 2325, height: 1291 });
   await page.goto('/datenschutz');
   const sidebar = page.locator('.legal-sidebar');
   const navigation = sidebar.getByRole('navigation', { name: 'Informationsseiten' });
@@ -64,6 +69,16 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
   }
   await expectAccessible(page);
   const imprint = sidebar.getByRole('link', { name: 'Impressum', exact: true });
+  const current = sidebar.getByRole('link', { name: 'Datenschutz' });
+  const { background, activeColor } = await current.evaluate((link) => {
+    const style = getComputedStyle(link);
+    const swatch = document.createElement('span').style;
+    swatch.backgroundColor = style.getPropertyValue('--primary-soft');
+    return { background: swatch.backgroundColor, activeColor: style.color };
+  });
+  const neutral = await imprint.evaluate((link) => getComputedStyle(link).color);
+  expect(neutral).not.toBe(activeColor);
+  await expectMenuHighlight(current, background);
   const rightEdge = await navigation.evaluate((card) => {
     const style = getComputedStyle(card);
     return (
@@ -78,7 +93,20 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
     return top + height / 2;
   });
   await page.mouse.move(rightEdge, rowMiddle);
-  await expect(imprint.locator('[data-slot="trigger-highlight"]')).toBeVisible();
+  await expectMenuHighlight(imprint, background);
+  await expect(imprint).toHaveCSS('color', neutral);
+  await expect(current).toHaveCSS('color', activeColor);
+  await expect(current.locator('svg')).toHaveCSS('color', activeColor);
+  const imprintBottom = await imprint.evaluate((link) => link.getBoundingClientRect().bottom);
+  await page.mouse.move(rightEdge, imprintBottom + 1);
+  expect(
+    await page.evaluate(
+      ({ x, y }) => document.elementFromPoint(x, y)?.closest('a')?.getAttribute('href'),
+      { x: rightEdge, y: imprintBottom + 1 },
+    ),
+  ).toBe('/impressum');
+  await expectMenuHighlight(imprint, background);
+  await page.mouse.move(rightEdge, rowMiddle);
   await page.mouse.click(rightEdge, rowMiddle);
   await expect(page).toHaveURL(/\/impressum$/);
   await expect(page.getByRole('heading', { name: 'Impressum', exact: true })).toBeVisible();
@@ -94,7 +122,7 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
   // At the first entry there is only forward history.
   await expect(back).toHaveAttribute('href', '/');
   await back.click();
-  await expect(page).toHaveURL('http://127.0.0.1:3100/');
+  await expect(page).toHaveURL('/');
   expect(failures).toEqual([]);
 });
 

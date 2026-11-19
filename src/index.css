@@ -1,15 +1,17 @@
 @import 'tailwindcss';
 @import './components/hero/hero.css';
 @import './components/hero/hero-glass.css';
-@import './components/image-hero/image-hero.css';
 @import './components/learning-areas.css';
 @import './components/home/home-experiments.css';
 @import './components/home/reward-experiment.css';
-@import './components/legal.css';
+@import './components/public-error.css';
 @import './components/site-navigation.css';
 @import './components/animate-ui/components/page-transition.css';
-@import './components/network/network.css';
-@import './components/knn-quiz/knn-quiz.css';
+/* Keep the small surface and home layout rules in the first stylesheet for static entry. */
+@import './components/ui/alert.css';
+@import './components/ui/card.css';
+@import './content/landing/home-editorial.css';
+@import './content/landing/home-experiment-panels.css';
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {

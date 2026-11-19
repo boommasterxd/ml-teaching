@@ -1,147 +1,152 @@
 'use client';
 
-import type { ComponentProps } from 'react';
-import { DropdownMenu as Primitive } from '@animate-ui/react/primitives/radix-ui/dropdown-menu';
-import { useIsPresent } from 'motion/react';
+import type { ComponentProps, ReactElement } from 'react';
+import { Menu as Primitive } from '@animate-ui/react/primitives/base-ui/menu';
+import { Menu as BaseMenu } from '@base-ui/react/menu';
 import { Check } from '../icons/check';
 import { cn } from '@/lib/utils';
 import { ActionFeedback } from './action-feedback';
+import { MenuHighlight, MenuHighlightItem } from './menu-highlight';
 
-function MenuSurface({ children, ...props }: ComponentProps<'div'>) {
-  const present = useIsPresent();
-  return (
-    <div {...props} inert={!present || undefined} aria-hidden={!present || undefined}>
-      {children}
-    </div>
-  );
-}
+type MenuPosition = Pick<Primitive.Positioner.Props, 'sideOffset' | 'align'>;
+const menuItemClass =
+  'relative flex cursor-default items-center gap-2 rounded-xl text-sm outline-hidden select-none focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring forced-colors:focus-visible:[outline:auto] data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4';
 
 /** Retained exit content immediately loses keyboard and accessibility-tree participation. */
 export function DropdownMenuContent({
   className,
-  children,
   sideOffset = 4,
+  align,
+  selectedValue,
+  children,
   ...props
-}: ComponentProps<typeof Primitive.Content>) {
+}: Omit<Primitive.Popup.Props, 'render'> & MenuPosition & { selectedValue: string }) {
   return (
     <Primitive.Portal>
-      <Primitive.Content
-        {...props}
-        asChild
-        data-slot="dropdown-menu-content"
+      <Primitive.Positioner
+        align={align}
         sideOffset={sideOffset}
-        className={cn(
-          'z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] max-w-[calc(100vw-2rem)] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-none [&_[role^=menuitem]:not([data-disabled])]:opacity-100!',
-          className,
-        )}
+        collisionPadding={0}
+        positionMethod="fixed"
+        className="z-50"
       >
-        <MenuSurface>{children}</MenuSurface>
-      </Primitive.Content>
+        <Primitive.Popup
+          {...props}
+          data-slot="dropdown-menu-content"
+          className={cn(
+            'max-h-(--available-height) min-w-[8rem] max-w-[calc(100vw-2rem)] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-none [&_[role^=menuitem]:not([data-disabled])]:opacity-100!',
+            className,
+          )}
+          render={(surfaceProps, { open }) => (
+            <div {...surfaceProps} inert={!open || undefined} aria-hidden={!open || undefined} />
+          )}
+        >
+          <MenuHighlight current={selectedValue} insideAnimatedPopup>
+            {children}
+          </MenuHighlight>
+        </Primitive.Popup>
+      </Primitive.Positioner>
     </Primitive.Portal>
   );
 }
 
-export function DropdownMenuItem({ className, ...props }: ComponentProps<typeof Primitive.Item>) {
+export function DropdownMenuLinkItem({
+  className,
+  highlightValue,
+  ...props
+}: ComponentProps<typeof BaseMenu.LinkItem> & { highlightValue: string }) {
   return (
-    <ActionFeedback disabled={props.disabled}>
-      <Primitive.Item
+    <DropdownItemHighlight value={highlightValue}>
+      <BaseMenu.LinkItem
+        closeOnClick
         {...props}
         data-slot="dropdown-menu-item"
-        className={cn(
-          'relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground aria-[current=page]:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
-          className,
-        )}
+        className={cn(menuItemClass, 'px-2 py-1.5 aria-[current=page]:text-primary', className)}
       />
-    </ActionFeedback>
+    </DropdownItemHighlight>
   );
 }
 
 export function DropdownMenuRadioItem({
   className,
   children,
+  value,
   ...props
-}: ComponentProps<typeof Primitive.RadioItem>) {
+}: Omit<ComponentProps<typeof BaseMenu.RadioItem>, 'value'> & { value: string }) {
   return (
-    <ActionFeedback disabled={props.disabled}>
-      <Primitive.RadioItem
-        data-slot="dropdown-menu-radio-item"
-        className={cn(
-          'relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
-          className,
-        )}
+    <DropdownItemHighlight value={value} disabled={props.disabled}>
+      <BaseMenu.RadioItem
+        closeOnClick
+        value={value}
         {...props}
+        data-slot="dropdown-menu-radio-item"
+        className={cn(menuItemClass, 'py-1.5 pr-2 pl-8 aria-checked:text-primary', className)}
       >
         <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-          <Primitive.ItemIndicator>
+          <Primitive.RadioItemIndicator>
             <span aria-hidden="true" className="block size-2 rounded-full bg-current" />
-          </Primitive.ItemIndicator>
+          </Primitive.RadioItemIndicator>
         </span>
         {children}
-      </Primitive.RadioItem>
-    </ActionFeedback>
+      </BaseMenu.RadioItem>
+    </DropdownItemHighlight>
   );
 }
 
 export function DropdownMenuCheckboxItem({
   className,
   children,
+  highlightValue,
   ...props
-}: ComponentProps<typeof Primitive.CheckboxItem>) {
+}: ComponentProps<typeof BaseMenu.CheckboxItem> & { highlightValue: string }) {
   return (
-    <ActionFeedback disabled={props.disabled}>
-      <Primitive.CheckboxItem
-        data-slot="dropdown-menu-checkbox-item"
-        className={cn(
-          'relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
-          className,
-        )}
+    <DropdownItemHighlight value={highlightValue} disabled={props.disabled}>
+      <BaseMenu.CheckboxItem
         {...props}
+        data-slot="dropdown-menu-checkbox-item"
+        className={cn(menuItemClass, 'py-1.5 pr-2 pl-8', className)}
       >
         <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-          <Primitive.ItemIndicator>
+          <Primitive.CheckboxItemIndicator>
             <Check aria-hidden="true" />
-          </Primitive.ItemIndicator>
+          </Primitive.CheckboxItemIndicator>
         </span>
         {children}
-      </Primitive.CheckboxItem>
-    </ActionFeedback>
+      </BaseMenu.CheckboxItem>
+    </DropdownItemHighlight>
+  );
+}
+
+/** Measure the row without its press transform. The control retains its own gesture target. */
+function DropdownItemHighlight({
+  value,
+  disabled,
+  children,
+}: {
+  value: string;
+  disabled?: boolean;
+  children: ReactElement;
+}) {
+  return (
+    <MenuHighlightItem value={value}>
+      <div className={disabled ? 'pointer-events-none' : undefined}>
+        <ActionFeedback disabled={disabled}>{children}</ActionFeedback>
+      </div>
+    </MenuHighlightItem>
   );
 }
 
 export const DropdownMenuGroup = Primitive.Group;
 export const DropdownMenuRadioGroup = Primitive.RadioGroup;
-export const DropdownMenu = Primitive.Root;
-
-/** Let Radix handle Enter once while Motion retains its keyboard press feedback. */
-export function DropdownMenuTrigger({
-  onPointerDown,
-  ...props
-}: ComponentProps<typeof Primitive.Trigger>) {
-  return (
-    <Primitive.Trigger
-      {...props}
-      onPointerDown={(event) => {
-        // Motion emits an untyped synthetic pointer before Radix receives the Enter key.
-        if (!event.pointerType && !event.nativeEvent.isTrusted) {
-          event.preventDefault();
-          return;
-        }
-        onPointerDown?.(event);
-      }}
-    />
-  );
-}
 
 export function DropdownMenuLabel({
   className,
-  inset,
   ...props
-}: ComponentProps<typeof Primitive.Label> & { inset?: boolean }) {
+}: ComponentProps<typeof Primitive.GroupLabel>) {
   return (
-    <Primitive.Label
+    <Primitive.GroupLabel
       data-slot="dropdown-menu-label"
-      data-inset={inset}
-      className={cn('px-2 py-1.5 text-sm font-medium data-[inset]:pl-8', className)}
+      className={cn('px-2 py-1.5 text-sm font-medium', className)}
       {...props}
     />
   );

@@ -1,5 +1,3 @@
-@reference 'tailwindcss';
-
 .home-chapter,
 .home-editorial-cta {
   padding-block: clamp(3rem, 6vw, 6.5rem);

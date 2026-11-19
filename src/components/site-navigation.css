@@ -2,33 +2,46 @@
   display: none;
 }
 
-/* Inline panels follow their triggers in tab order. Radix also inserts a focus
-   proxy for detached viewports, which would add a hidden tab stop here. */
-[data-slot='inline-navigation-menu-list'] > li > button + span[aria-hidden='true'][tabindex='0'] {
-  display: none;
+.header-menu-positioner {
+  z-index: 50;
+  width: var(--positioner-width, max-content);
+  height: var(--positioner-height, auto);
 }
 
-.site-header-inner .header-menu-mobile,
-.header-menu-mobile > div {
+.site-header-inner .header-menu-mobile {
   /* Anchor the open mobile panel to the glass bar, across its available width. */
-  position: static !important;
+  position: static;
 }
 
 .header-menu-panel {
   --menu-inset: 0.625rem;
   --menu-icon: 1rem;
   --menu-gap: 0.625rem;
+  position: relative;
   pointer-events: auto;
+  width: var(--popup-width, auto);
+  height: var(--popup-height, auto);
   max-height: calc(100dvh - var(--header-height) - 1rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  border-color: var(--glass-line);
+  overflow: hidden;
+  border: 1px solid var(--glass-line);
   border-radius: 1.4rem;
-  padding: 0.5rem;
   background: var(--glass-surface);
+  color: var(--popover-foreground);
   box-shadow:
     var(--glass-highlight),
     0 1rem 2.5rem color-mix(in srgb, black 15%, transparent);
+  outline: none;
+}
+
+.header-menu-viewport {
+  position: relative;
+  max-height: calc(100dvh - var(--header-height) - 1rem - 2px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.header-menu-content {
+  padding: 0.5rem;
 }
 
 .header-menu-panel .header-menu-row {
@@ -48,40 +61,50 @@
   font-weight: 600;
 }
 
-:is(.header-menu-trigger, a.header-menu-row, a.legal-page-link) {
-  &:is(
-    :focus-visible,
-    :active,
-    [aria-current='page'],
-    [data-current-section],
-    [data-highlighted],
-    [aria-expanded='true']
-  ) {
-    color: var(--primary);
-  }
-
-  @media (hover: hover) {
-    &:hover {
-      color: var(--primary);
-    }
-  }
+.menu-highlight-container {
+  position: relative;
+  isolation: isolate;
 }
 
-.header-menu-highlight {
-  inset: 0;
+.menu-highlight-container:not(.menu-highlight-popup) [data-highlight='true'] {
+  position: relative;
+  z-index: 1;
+}
+
+.menu-highlight-surface {
   pointer-events: none;
-  border-radius: 0.75rem;
+  border-radius: var(--menu-highlight-radius, 0.75rem);
   background-color: var(--primary-soft);
 }
 
-:is(.header-menu-trigger, a.legal-page-link):is(
-  :hover,
-  :focus-visible,
-  [aria-expanded='true'],
-  [data-highlighted]
-),
-a.legal-page-link[data-slot='dropdown-menu-item'][aria-current='page'] {
+.menu-highlight-popup .menu-highlight-surface {
+  inset: 0;
+}
+
+.menu-highlight-container:not(:has(> .menu-highlight-surface))
+  :is(.header-menu-trigger, .legal-navigation .legal-page-link):is(
+    [aria-current='page'],
+    [data-current-section]
+  ) {
   background-color: var(--primary-soft);
+}
+
+:is(.header-menu-trigger, a.header-menu-row, .legal-navigation a.legal-page-link) {
+  background-color: transparent;
+  color: var(--foreground);
+  transition-property: none;
+}
+
+:is(.header-menu-trigger, a.header-menu-row, .legal-navigation a.legal-page-link):is(
+  [aria-current='page'],
+  [data-current-section]
+) {
+  color: var(--primary);
+}
+
+:is(.header-menu-desktop, .header-menu-mobile) > .menu-highlight-container,
+.legal-navigation .menu-highlight-container {
+  --menu-highlight-radius: 9999px;
 }
 
 .header-menu-label {
@@ -105,8 +128,13 @@ a.legal-page-link[data-slot='dropdown-menu-item'][aria-current='page'] {
   inset: -0.375rem 0;
 }
 
-.header-menu-panel-mobile {
-  inset-inline: 0;
+/* Size the mobile popup from the bar without waiting for the viewport to measure its links. */
+.header-menu-positioner:has(.header-menu-panel-mobile) {
+  width: var(--anchor-width, max-content);
+}
+
+.header-menu-panel-mobile,
+.header-menu-panel-mobile .header-menu-content {
   width: 100%;
 }
 
@@ -134,7 +162,7 @@ a.legal-page-link[data-slot='dropdown-menu-item'][aria-current='page'] {
   .header-menu-desktop {
     display: block;
   }
-  .header-menu-desktop [data-slot='inline-navigation-menu-list'] > li {
+  .header-menu-desktop [data-slot='navigation-menu-list'] > li {
     position: relative;
     display: flex;
     align-items: center;
@@ -144,15 +172,13 @@ a.legal-page-link[data-slot='dropdown-menu-item'][aria-current='page'] {
     /* Keep the pointer on the trigger while it crosses the gap into its panel. */
     bottom: -0.75rem;
   }
-  .header-menu-desktop .header-menu-panel {
-    left: 50%;
-    translate: -50% 0;
+  .header-menu-desktop .header-menu-content {
     width: max-content;
-    min-width: 13rem;
-    max-width: calc(100vw - 3rem);
+    min-width: calc(13rem - 2px);
+    max-width: calc(100vw - 3rem - 2px);
   }
-  .header-menu-desktop .header-menu-panel:has([data-overview]) {
-    width: 16.5rem;
+  .header-menu-desktop .header-menu-content:has([data-overview]) {
+    width: calc(16.5rem - 2px);
   }
   @media (pointer: fine) {
     .header-menu-panel .header-menu-row {

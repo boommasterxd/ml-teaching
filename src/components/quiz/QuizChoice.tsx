@@ -1,6 +1,7 @@
 'use client';
 
 import { AnimatePresence } from 'motion/react';
+import { useRef, type ComponentType } from 'react';
 import type { QuizExample } from '@/lib/recognition-quiz';
 import { Calculator } from '@/components/icons/calculator';
 import { Camera } from '@/components/icons/camera';
@@ -13,7 +14,6 @@ import { Smartphone } from '@/components/icons/smartphone';
 import { Timer } from '@/components/icons/timer';
 import Button from '@/components/Button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import QuizResult from './QuizResult';
 
 const exampleIcons = {
   animal: Cat,
@@ -30,13 +30,20 @@ const exampleIcons = {
 export default function QuizChoice({
   example,
   answered,
+  result: QuizResult,
+  feedbackFailed,
+  onIntent,
   onAnswer,
 }: {
   example: QuizExample;
   answered: boolean;
+  result?: ComponentType<{ example: QuizExample }>;
+  feedbackFailed: boolean;
+  onIntent: () => void;
   onAnswer: (example: QuizExample) => void;
 }) {
   const Icon = exampleIcons[example.icon];
+  const choice = useRef<HTMLButtonElement>(null);
   return (
     <Card className="isolate h-full gap-0 py-0">
       <div className="relative flex-1 overflow-clip rounded-(--quiz-inner-radius) [--quiz-inner-radius:calc(var(--glass-radius)-1px)]">
@@ -45,12 +52,16 @@ export default function QuizChoice({
           <CardDescription>{example.description}</CardDescription>
         </CardHeader>
         <Button
+          ref={choice}
           data-quiz-choice=""
           variant="quiz-card"
           size="quiz-card"
           data-result={answered ? (example.correct ? 'correct' : 'incorrect') : undefined}
           aria-label={'Auswählen: ' + example.title}
           aria-disabled={answered || undefined}
+          onPointerEnter={onIntent}
+          onFocus={onIntent}
+          onPointerDown={onIntent}
           onClick={() => {
             if (!answered) onAnswer(example);
           }}
@@ -62,8 +73,28 @@ export default function QuizChoice({
           />
         </Button>
       </div>
+      {answered && !QuizResult && (
+        <div className="pointer-events-none absolute inset-0 z-30 grid place-content-center px-6 text-sm">
+          <div className="rounded-xl bg-card p-3">
+            <p>{example.explanation}</p>
+            {feedbackFailed && (
+              <Button
+                className="pointer-events-auto mt-2"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  choice.current?.focus();
+                  onIntent();
+                }}
+              >
+                Rückmeldung erneut laden
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
       <AnimatePresence initial={false}>
-        {answered && <QuizResult key="result" example={example} />}
+        {answered && QuizResult && <QuizResult key="result" example={example} />}
       </AnimatePresence>
     </Card>
   );

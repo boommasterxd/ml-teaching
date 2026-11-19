@@ -70,7 +70,7 @@ describe('everyday recognition quiz', () => {
     }
   });
 
-  it('explains answers while preserving the choice and focus, and counts each correct answer once', () => {
+  it('explains answers while preserving the choice and focus, and counts each correct answer once', async () => {
     render(<EverydayQuiz />);
     const examples = currentExamples();
     expect(examples).toHaveLength(6);
@@ -86,7 +86,9 @@ describe('everyday recognition quiz', () => {
     expect(wrong.hasAttribute('aria-describedby')).toBe(false);
     expect(screen.queryByRole('tooltip')).toBeNull();
     expect(
-      screen.getByRole('button', { name: `Hier nicht: ${incorrect.title}. Erklärung anzeigen` }),
+      await screen.findByRole('button', {
+        name: `Hier nicht: ${incorrect.title}. Erklärung anzeigen`,
+      }),
     ).toBeTruthy();
     expect(screen.getByText('0 von 3 gefunden')).toBeTruthy();
     expect(
@@ -111,12 +113,12 @@ describe('everyday recognition quiz', () => {
     expect(screen.getByText('1 von 3 gefunden')).toBeTruthy();
   });
 
-  it('allows exploration after completion and starts a different round with reset answers and focus', () => {
+  it('allows exploration after completion and starts a different round with reset answers and focus', async () => {
     render(<EverydayQuiz />);
     const previous = currentExamples();
     for (const example of previous.filter((item) => item.correct))
       fireEvent.click(choice(example.title));
-    expect(screen.getByRole('heading', { name: 'Alle drei gefunden.' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Alle drei gefunden.' })).toBeTruthy();
     fireEvent.click(choice(previous.find((item) => !item.correct)!.title));
     expect(screen.getByRole('status').textContent).toContain('Hier nicht.');
     const replacement = QUIZ_EXAMPLES.find(

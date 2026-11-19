@@ -2,7 +2,6 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { AnimateIcon } from '@animate-ui/react/icons';
-import './alert.css';
 
 const alertVariants = cva('relative grid w-full border text-sm', {
   variants: {

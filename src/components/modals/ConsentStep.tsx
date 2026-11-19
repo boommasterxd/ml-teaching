@@ -14,10 +14,11 @@ import {
 
 interface ConsentStepProps {
   onDecline: () => void;
+  onDeclineIntent?: () => void;
   onConfirm: () => void;
 }
 
-export default function ConsentStep({ onDecline, onConfirm }: ConsentStepProps) {
+export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: ConsentStepProps) {
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [modelChecked, setModelChecked] = useState(false);
 
@@ -92,7 +93,13 @@ export default function ConsentStep({ onDecline, onConfirm }: ConsentStepProps) 
       </FieldDescription>
 
       <DialogFooter layout="auto-fit">
-        <Button variant="secondary" onClick={onDecline}>
+        <Button
+          variant="secondary"
+          onPointerEnter={onDeclineIntent}
+          onFocus={onDeclineIntent}
+          onPointerDown={onDeclineIntent}
+          onClick={onDecline}
+        >
           Abbrechen
         </Button>
         <Button variant="default" onClick={onConfirm} disabled={!canConfirm}>

@@ -10,6 +10,7 @@ const boundary = vi.hoisted(() => {
     tensor,
     load: vi.fn(),
     push: vi.fn(),
+    prefetch: vi.fn(),
     getUserMedia: vi.fn(),
     stopTrack: vi.fn(),
     toastError: vi.fn(),
@@ -17,9 +18,13 @@ const boundary = vi.hoisted(() => {
     model: { infer: vi.fn(tensor), dispose: vi.fn() },
   };
 });
-vi.mock('@/components/ToastHost', () => ({ prepareToastViewport: boundary.prepareToastViewport }));
+vi.mock('@/components/toast-loader', () => ({
+  prepareToastViewport: boundary.prepareToastViewport,
+}));
 vi.mock('@/lib/toast', () => ({ toast: { error: boundary.toastError } }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: boundary.push }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: boundary.push, prefetch: boundary.prefetch }),
+}));
 vi.mock('@tensorflow/tfjs-core', () => ({
   setBackend: vi.fn(async () => true),
   ready: vi.fn(async () => {}),
@@ -248,7 +253,12 @@ describe('training page integration', () => {
     expect(boundary.toastError).not.toHaveBeenCalled();
     expect(boundary.getUserMedia).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Seite neu laden' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Zur Bilderkennung' }));
+    const goToExplanation = screen.getByRole('button', { name: 'Zur Bilderkennung' });
+    expect(boundary.prefetch).not.toHaveBeenCalled();
+    fireEvent.focus(goToExplanation);
+    expect(boundary.prefetch).toHaveBeenCalledWith(learningPaths.images);
+    expect(boundary.push).not.toHaveBeenCalled();
+    fireEvent.click(goToExplanation);
     expect(boundary.push).toHaveBeenCalledWith(learningPaths.images, {
       transitionTypes: ['nav-back'],
     });
@@ -287,7 +297,12 @@ describe('training page integration', () => {
 
   it('returns to the image explanation when the general processing choice is declined', () => {
     render(<TrainingPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));
+    const decline = screen.getByRole('button', { name: 'Abbrechen' });
+    expect(boundary.prefetch).not.toHaveBeenCalled();
+    fireEvent.pointerDown(decline, { pointerType: 'touch' });
+    expect(boundary.prefetch).toHaveBeenCalledWith(learningPaths.images);
+    expect(boundary.push).not.toHaveBeenCalled();
+    fireEvent.click(decline);
     expect(boundary.push).toHaveBeenCalledWith(learningPaths.images, {
       transitionTypes: ['nav-back'],
     });

@@ -64,20 +64,34 @@ transition types remain native. Current path/search and fragment-only navigation
 do not prepare another route.
 
 The current complete static routes have no loading-only prefetch boundary. Native
-preparation includes their build-time initial content; no separate server-data
-warmer is needed. Next.js can restore cached history entries synchronously,
+preparation includes the route tree, leaf page and build-time initial content.
+The training setup's cancel action and the model-error return action warm the same
+image explanation route through native router prefetch. Their activation uses the
+existing backward transition type. Next.js can restore cached history entries synchronously,
 outside React's view transition. The legal sidebar's Back link starts a
 browser-owned Flow capture for a same-document traversal to another page.
 Next.js still restores the original entry. The link exposes the previous
-same-origin address, including query and fragment, when available. With no
-identifiable previous entry, it links to the homepage.
+same-origin address, including query and fragment, when available. Intent-based
+route preparation runs for the fallback homepage link. Actual history traversal
+reuses the browser's entry and the router's stored state.
 
 For App Router destinations, intent warms the build-rendered RSC payload and
-route assets, not a hidden mounted browser page. In particular, preparation does
-not run the learning consent dialog's autofocus or start camera/model effects.
-The initial consent remains available in SSG and mounts on actual navigation.
-Consent withdrawal intentionally uses a full document reload rather than this
-shared link, discarding the private workspace.
+the modules referenced by it. The home poster and image explanation photos use
+the same responsive asset selection during intent and destination rendering.
+React Flow creates the destination's browser tree
+on actual navigation within the current document. Browser speculation prerenders
+a separate document, which cannot supply that same-document transition. Dialog
+autofocus starts on arrival, and model and camera work follow explicit consent.
+Direct entry serves the initial consent as part of the static HTML. Consent
+withdrawal uses a full document reload to discard the private workspace.
+The Pages Router's static 500 recovery action starts an App Router document
+navigation through the browser.
+
+The first stylesheet includes the small shared surface rules and homepage layout
+rules. Bundling them together avoids separate render-blocking requests on the
+homepage and shares the stylesheet across internal navigation. Turbopack groups
+production JavaScript with a preference for fewer requests on direct homepage
+entry. Intent-loaded menus, experiments and WebGL retain their dynamic imports.
 
 The homepage hero includes its headline and a responsive full-color WebP of the
 glass loop and both droplets in static HTML. While the artwork and document are visible, motion is
@@ -103,8 +117,10 @@ of three nearest neighbors once and derives the highlighted points, votes and
 output from the same examples. Its Euclidean plot is a simplified teaching schema;
 the live classifier uses the installed library's normalized feature similarity.
 The illustration never invokes the actual model or processes user images.
-Theme-menu intent loads the module only;
-its public portal mounts on opening.
+Header menu intent shares a retryable panel module across desktop and mobile.
+The portal mounts on opening with Base UI positioning and focus and Animate UI
+entry and exit. The mobile panel takes its initial width from the toolbar anchor.
+Theme-menu intent loads its module, and the portal mounts on opening.
 
 The everyday recognition quiz samples three matching and three nonmatching examples
 from the 40-entry pool in `src/content/recognition-examples.ts`. Six complete choices
@@ -128,8 +144,10 @@ remain retryable. Neither exercise loads TensorFlow or stores/sends answers.
 
 1. The learning route starts with an explicit consent dialog. No TensorFlow runtime,
    model weights or camera stream is needed to render the page.
-2. After model consent, the same dialog shows loading progress while the browser imports TensorFlow.js and loads MobileNet.
-   The WebGL backend and compiled kernels are reusable within the document.
+2. After model consent, the same dialog shows loading progress while the browser
+   loads local MobileNet and KNN modules alongside TensorFlow.js backend initialization.
+   Model weights and classifier creation follow backend readiness. The WebGL backend
+   and compiled kernels are reusable within the document.
 3. When the models are ready, the dialog presents the optional camera choice.
    Camera access starts only after separate camera consent and browser permission.
    Selected local files and captures are resized for local feature extraction.
@@ -151,11 +169,14 @@ readers and image handlers are cleaned up on completion or cancellation. These
 limits bound input admission, not the browser's total memory or immediate native
 codec cancellation. HEIC/HEIF and other formats still require browser codec support.
 
-A model download is a consent-gated one-time asset load, not interactive server
-state: TanStack Query is therefore unnecessary. TanStack Virtual owns thumbnail
-windowing. Empty galleries keep their server-rendered region and hint without
-starting virtualizer measurements or column ResizeObservers; both activate when
-the first image arrives and are released when the gallery becomes empty.
+A model download is a consent-gated one-time asset load. TanStack Virtual owns
+thumbnail windowing. Empty galleries keep their server-rendered scroll region and
+hint. Pointer entry, keyboard focus and touch intent on the upload and capture
+controls prepare the shared row module. Direct file selection and the first
+collected image also start or reuse the same import. Rendering and measurement of
+real rows begin when image data is available and are released after the last
+image is removed. Prediction attaches its video once the camera stream and
+trained model are ready.
 There are no shared server entities, reactive joins or SQL operations
 that justify TanStack DB, Table, Drizzle or Turso. Class-name editing remains a
 small local field without a separate form submission or validation schema.
@@ -163,9 +184,9 @@ small local field without a separate form submission or validation schema.
 ## Delivery
 
 All nine public routes use SSG and fixed hash CSP, including the initially rendered
-learning workspace and complete initial consent. Its native Radix content remains
-inline through hydration, with focus and modality provided by Radix and no portal
-remount or entrance replay. Runtime ML remains in the browser. The native production
+learning workspace and complete initial consent. The initial HTML dialog stays
+inline through hydration and becomes modal on the same element. Base UI powers
+dialogs opened later. Runtime ML remains in the browser. The native production
 server and Vercel adapter own production delivery; no custom server, production
 Proxy or separate static export replaces native Next.js output. Development alone
 discovers `src/proxy.dev.ts` for nonce-based CSP Report-Only diagnostics with

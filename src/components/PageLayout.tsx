@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import LegalNavigation, { type LegalPage } from './LegalNavigation';
+import './legal.css';
 
 /** Shared legal reading layout beneath the persistent site shell. */
 export default function PageLayout({ children, page }: { children: ReactNode; page: LegalPage }) {

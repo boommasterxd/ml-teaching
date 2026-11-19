@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import { Slot } from '@animate-ui/react/primitives/radix-ui';
+import { useRender } from '@base-ui/react/use-render';
 
 import { AnimateIcon } from '@animate-ui/react/icons';
 
@@ -41,19 +41,18 @@ function Item({
   className,
   variant = 'default',
   size = 'default',
-  asChild = false,
+  render,
   ...props
-}: React.ComponentProps<'div'> & VariantProps<typeof itemVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot.Root : 'div';
+}: useRender.ComponentProps<'div'> & VariantProps<typeof itemVariants>) {
+  const element = useRender({
+    defaultTagName: 'div',
+    render,
+    state: { slot: 'item', variant, size },
+    props: { className: cn(itemVariants({ variant, size, className })), ...props },
+  });
   return (
     <AnimateIcon animateOnHover animateOnTap className="contents">
-      <Comp
-        data-slot="item"
-        data-variant={variant}
-        data-size={size}
-        className={cn(itemVariants({ variant, size, className }))}
-        {...props}
-      />
+      {element}
     </AnimateIcon>
   );
 }

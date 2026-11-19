@@ -8,9 +8,10 @@ import { Badge } from '../components/ui/badge';
 import TrainingPanels from '../components/TrainingPanels';
 import TrainingPageModals from '../components/TrainingPageModals';
 import TrainingError from '../components/TrainingError';
-import { TrainingSetupDialog } from '../components/modals';
+import TrainingSetupDialog from '../components/modals/TrainingSetupDialog';
 import TrainingWithdrawal from '../components/TrainingWithdrawal';
-import { prepareToastViewport } from '@/components/ToastHost';
+import { prepareToastViewport } from '@/components/toast-loader';
+import { prepareRoute } from '@/components/prepare-route';
 import { learningPaths } from '@/lib/learning-paths';
 import './training-workspace.css';
 
@@ -26,17 +27,22 @@ function TrainingPipeline({ currentStep, ready }: { currentStep: number; ready: 
       <ol className="flex max-w-full flex-wrap gap-1">
         {steps.map(({ id, label }, index) => (
           <li key={id}>
-            <Button asChild variant="ghost" size="sm" className="training-step">
-              <a href={`#${id}`} aria-current={index === currentStep ? 'step' : undefined}>
-                <Badge
-                  variant={index === currentStep ? 'default' : 'secondary'}
-                  className="size-[1.375rem] p-0 text-[0.7rem] tabular-nums"
-                  aria-hidden="true"
-                >
-                  {index + 1}
-                </Badge>
-                {label}
-              </a>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="training-step"
+              render={
+                <a href={`#${id}`} aria-current={index === currentStep ? 'step' : undefined} />
+              }
+            >
+              <Badge
+                variant={index === currentStep ? 'default' : 'secondary'}
+                className="size-[1.375rem] p-0 text-[0.7rem] tabular-nums"
+                aria-hidden="true"
+              >
+                {index + 1}
+              </Badge>
+              {label}
             </Button>
           </li>
         ))}
@@ -66,6 +72,7 @@ export default function TrainingPage() {
   const ready = Boolean(models.mobilenetModel) && !models.isModelLoading;
   const trainingStep = data.canTrain || data.training.isTraining ? 1 : 0;
   const currentStep = resources.hasTrainedModel && !data.training.isTraining ? 2 : trainingStep;
+  const prepareReturn = () => prepareRoute(router, learningPaths.images);
   const declineConsent = () => router.push(learningPaths.images, { transitionTypes: ['nav-back'] });
   return (
     <div className="bg-background text-foreground pb-16 sm:pb-24">
@@ -75,7 +82,13 @@ export default function TrainingPage() {
           description="Welche Motive soll dein Modell unterscheiden? Benenne die Klassen zum Beispiel „Tasse“ und „Stift“."
           rightSlot={<TrainingPipeline currentStep={currentStep} ready={ready} />}
         />
-        {modelError && <TrainingError message={modelError.message} onReturn={declineConsent} />}
+        {modelError && (
+          <TrainingError
+            message={modelError.message}
+            onReturn={declineConsent}
+            onReturnIntent={prepareReturn}
+          />
+        )}
         <TrainingPanels workspace={workspace} />
         {consent.hasConsented && !models.isModelLoading && <TrainingWithdrawal />}
       </div>
@@ -95,6 +108,7 @@ export default function TrainingPage() {
         step={setupStep}
         loadingText={models.loadingText}
         onDeclineConsent={declineConsent}
+        onDeclineConsentIntent={prepareReturn}
         onConfirmConsent={() => {
           prepareToastViewport();
           consent.grantConsent();

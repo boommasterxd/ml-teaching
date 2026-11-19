@@ -7,9 +7,11 @@ import { Alert, AlertDescription } from './ui/alert';
 export default function TrainingError({
   message,
   onReturn,
+  onReturnIntent,
 }: {
   message: string;
   onReturn: () => void;
+  onReturnIntent?: () => void;
 }) {
   const alertRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -23,7 +25,13 @@ export default function TrainingError({
           <p>{message}</p>
           <div className="mt-3 flex flex-wrap gap-3">
             <Button onClick={() => window.location.reload()}>Seite neu laden</Button>
-            <Button variant="secondary" onClick={onReturn}>
+            <Button
+              variant="secondary"
+              onPointerEnter={onReturnIntent}
+              onFocus={onReturnIntent}
+              onPointerDown={onReturnIntent}
+              onClick={onReturn}
+            >
               Zur Bilderkennung
             </Button>
           </div>

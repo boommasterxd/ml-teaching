@@ -1,117 +1,114 @@
 'use client';
 
-import { useCallback, useRef, type ComponentProps, type ReactNode } from 'react';
-import { NavigationMenu as Primitive } from '@animate-ui/react/primitives/radix-ui/navigation-menu';
+import { useRef, type ComponentProps, type ComponentType, type RefObject } from 'react';
+import { NavigationMenu as Primitive } from '@animate-ui/react/primitives/base-ui/navigation-menu';
+import { NavigationMenu as BaseNavigationMenu } from '@base-ui/react/navigation-menu';
 import { cn } from '@/lib/utils';
 import { ChevronDown } from '../icons/chevron-down';
-import { useControlHydrated } from './use-control-hydration';
+import { MenuHighlight } from './menu-highlight';
 
 export const navigationMenuTriggerStyle =
-  'header-menu-trigger group relative inline-flex min-h-8 w-max items-center justify-center rounded-full px-2.5 py-1 text-sm font-medium outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-accent';
+  'header-menu-trigger group relative inline-flex min-h-8 w-max items-center justify-center rounded-full px-2.5 py-1 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export function NavigationMenu({
   className,
   children,
+  Popup,
+  mobilePopup,
+  onValueChange,
   ...props
-}: ComponentProps<typeof Primitive.Root>) {
+}: Primitive.Root.Props<string> & {
+  Popup?: ComponentType<{ root: RefObject<HTMLDivElement | null>; mobile?: boolean }>;
+  mobilePopup?: boolean;
+}) {
+  const root = useRef<HTMLDivElement>(null);
   return (
-    <Primitive.Root asChild {...props}>
-      <div className={cn('relative max-w-max', className)}>{children}</div>
+    <Primitive.Root
+      render={<div ref={root} />}
+      className={cn('relative max-w-max', className)}
+      onValueChange={(value, details) => {
+        onValueChange?.(value, details);
+        const target = details.event.target;
+        if (
+          details.reason === 'escape-key' &&
+          !details.isCanceled &&
+          target instanceof Element &&
+          target.closest('.header-menu-panel')
+        ) {
+          // Restore keyboard focus while the closing visual remains mounted.
+          root.current
+            ?.querySelector<HTMLButtonElement>('button[aria-expanded="true"]')
+            ?.focus({ preventScroll: true });
+        }
+      }}
+      {...props}
+    >
+      {children}
+      {Popup && <Popup root={root} mobile={mobilePopup} />}
     </Primitive.Root>
   );
 }
 
-/** Radix positions its indicator track inline. Only mount it in the hydrated menu. */
+/** Apply Animate UI's list isolation through CSS for the static CSP. */
 export function NavigationMenuList({
-  children,
   className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  const hydrated = useControlHydrated();
-  const focusIndex = useRef(-1);
-  const listRef = useCallback(
-    (list: HTMLUListElement | null) => {
-      if (!list) return;
-      const controls = list.querySelectorAll<HTMLElement>('button, a[href]');
-      if (!hydrated) {
-        return () => {
-          focusIndex.current = Array.from(controls).findIndex(
-            (item) => item === document.activeElement,
-          );
-        };
-      }
-      if (focusIndex.current >= 0 && document.activeElement === document.body) {
-        controls[focusIndex.current]?.focus({ preventScroll: true });
-      }
-      focusIndex.current = -1;
-    },
-    [hydrated],
-  );
-  const List = hydrated ? Primitive.List : 'ul';
+  current,
+  ...props
+}: ComponentProps<typeof BaseNavigationMenu.List> & { current?: string | null }) {
   return (
-    <List
-      ref={listRef}
-      data-slot="inline-navigation-menu-list"
-      className={cn('group flex list-none items-center justify-center gap-1', className)}
-    >
-      {children}
-    </List>
+    <MenuHighlight current={current}>
+      <BaseNavigationMenu.List
+        data-slot="navigation-menu-list"
+        className={cn('group flex list-none items-center justify-center gap-1', className)}
+        {...props}
+      />
+    </MenuHighlight>
   );
 }
 
 export const NavigationMenuItem = Primitive.Item;
 
-export function NavigationMenuTrigger({
-  children,
-  ...props
-}: ComponentProps<typeof Primitive.Trigger>) {
+function firstNavigationMenuLink(trigger: HTMLButtonElement) {
+  const id = trigger.getAttribute('aria-controls');
+  if (!id) return null;
+  return trigger.ownerDocument
+    .getElementById(id)
+    ?.querySelector<HTMLAnchorElement>('[data-slot="navigation-menu-content"][data-open] a[href]');
+}
+
+export function NavigationMenuTrigger({ children, onKeyDown, ...props }: Primitive.Trigger.Props) {
   return (
-    <Primitive.Trigger type="button" className={navigationMenuTriggerStyle} {...props}>
+    <Primitive.Trigger
+      type="button"
+      render={(triggerProps) => <button {...triggerProps} />}
+      className={navigationMenuTriggerStyle}
+      onKeyDown={(event) => {
+        onKeyDown?.(event);
+        if (event.defaultPrevented || event.baseUIHandlerPrevented || event.key !== 'ArrowDown')
+          return;
+        const first = firstNavigationMenuLink(event.currentTarget);
+        if (first) {
+          event.preventDefault();
+          event.preventBaseUIHandler();
+          first.focus();
+        }
+      }}
+      {...props}
+    >
       {children}
       <ChevronDown
-        className="ml-1 size-3 motion-safe:transition-transform group-data-[state=open]:rotate-180"
+        className="ml-1 size-3 group-aria-busy:hidden motion-safe:transition-transform group-data-popup-open:rotate-180"
         aria-hidden="true"
       />
     </Primitive.Trigger>
   );
 }
 
-export function NavigationMenuContent({
-  className,
-  ...props
-}: ComponentProps<typeof Primitive.Content>) {
+export function NavigationMenuLink({ className, ...props }: Primitive.Link.Props) {
   return (
-    <Primitive.Content
-      data-slot="navigation-menu-content"
+    <BaseNavigationMenu.Link
       className={cn(
-        'absolute top-full z-50 mt-1.5 rounded-md border bg-popover p-2 text-popover-foreground shadow-md',
-        className,
-      )}
-      {...props}
-      onFocusOutside={(event) => {
-        props.onFocusOutside?.(event);
-        const { target, relatedTarget } = event.detail.originalEvent;
-        // Inline links remain in document order when Shift+Tab returns to their
-        // trigger. Detached viewports instead restore tab stops via a focus proxy.
-        if (
-          target instanceof Element &&
-          relatedTarget instanceof Element &&
-          target.getAttribute('aria-controls') ===
-            relatedTarget.closest('[data-slot="navigation-menu-content"]')?.id
-        )
-          event.preventDefault();
-      }}
-    />
-  );
-}
-
-export function NavigationMenuLink({ className, ...props }: ComponentProps<typeof Primitive.Link>) {
-  return (
-    <Primitive.Link
-      className={cn(
-        'block rounded-sm p-2 text-sm outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:font-semibold',
+        'block rounded-sm p-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:font-semibold',
         className,
       )}
       {...props}

@@ -1,3 +1,8 @@
+@reference 'tailwindcss';
+@import '../../components/image-hero/image-hero.css';
+@import '../../components/network/network.css';
+@import '../../components/knn-quiz/knn-quiz.css';
+
 .image-chapter .landing-section {
   padding-block: clamp(3.4rem, 6.3vw, 6rem);
 }

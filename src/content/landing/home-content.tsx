@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heading, Text } from '@/components/ui/typography';
 import { learningPaths } from '@/lib/learning-paths';
-import './home-editorial.css';
 
 export function HomeIntroduction() {
   return (

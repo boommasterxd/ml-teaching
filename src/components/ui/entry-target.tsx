@@ -1,7 +1,7 @@
 'use client';
 
-import type { ComponentProps } from 'react';
-import { Slot } from 'radix-ui';
+import type { ComponentProps, ReactElement } from 'react';
+import { useRender } from '@base-ui/react/use-render';
 import { MotionConfig } from 'motion/react';
 import { ReducedMotionContext, type ReducedMotion } from '@animate-ui/react/utils/motion';
 
@@ -9,14 +9,20 @@ import { ReducedMotionContext, type ReducedMotion } from '@animate-ui/react/util
 export function EntryTarget({
   asChild,
   preference,
+  children,
   ...props
-}: ComponentProps<'div'> & { asChild: boolean; preference: ReducedMotion }) {
-  const Target = asChild ? Slot.Root : 'div';
+}: ComponentProps<'div'> & {
+  asChild: boolean;
+  preference: ReducedMotion;
+  children: ReactElement;
+}) {
+  const target = useRender({
+    render: asChild ? children : undefined,
+    props: asChild ? props : { ...props, children },
+  });
   return (
     <ReducedMotionContext value={preference}>
-      <MotionConfig reducedMotion={preference}>
-        <Target {...props} />
-      </MotionConfig>
+      <MotionConfig reducedMotion={preference}>{target}</MotionConfig>
     </ReducedMotionContext>
   );
 }

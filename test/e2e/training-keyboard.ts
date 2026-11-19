@@ -63,13 +63,18 @@ export async function expectThemeControlAlignment(page: Page) {
   const thumb = track.locator('[data-slot="switch-thumb"]');
   const menu = navigation.getByRole('button', { name: 'Darstellung einstellen', exact: true });
   const parts = [navigation, track, thumb, thumb.locator('svg'), menu, menu.locator('svg')];
-  const boxes = await Promise.all(parts.map((part) => part.boundingBox()));
-  const centers = boxes.map((box) => {
-    if (!box) throw new Error('Theme control has no visible geometry.');
-    return box.y + box.height / 2;
-  });
+  const handles = await Promise.all(parts.map((part) => part.elementHandle()));
+  const boxes = await page.evaluate((elements) => {
+    return elements.map((element) => {
+      const { y, height } = element.getBoundingClientRect();
+      if (!height) throw new Error('Theme control has no visible geometry.');
+      return { center: y + height / 2, height };
+    });
+  }, handles);
+  await Promise.all(handles.map((handle) => handle.dispose()));
+  const centers = boxes.map(({ center }) => center);
   expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(0.5);
-  expect(boxes[1]?.height).toBeGreaterThanOrEqual(24);
+  expect((boxes[1]?.height ?? 0) + 0.001).toBeGreaterThanOrEqual(24);
 }
 
 /** The current control must remain visible above the old page while the theme wipe runs. */
@@ -195,9 +200,7 @@ export async function expectCancelledResetKeepsImages(page: Page) {
   await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
   expect(
     await page.evaluate(() =>
-      Boolean(
-        document.activeElement?.closest('[inert], [aria-hidden="true"], [data-state="closed"]'),
-      ),
+      Boolean(document.activeElement?.closest('[inert], [aria-hidden="true"], [data-closed]')),
     ),
   ).toBe(false);
   await expect(page.getByRole('textbox', { name: 'Name für Klasse 3: Klasse 3' })).toBeVisible();

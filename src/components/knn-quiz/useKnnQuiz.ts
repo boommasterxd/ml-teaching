@@ -44,8 +44,7 @@ export function useKnnQuiz() {
       };
     });
   };
-  const changeK = (value: number[]) => {
-    const k = value[0];
+  const changeK = (k: number) => {
     if (k !== 1 && k !== 3 && k !== 5) return;
     setState((current) =>
       k === current.k

@@ -52,8 +52,8 @@ export default function ImagePreviewModal({
     >
       <ModalContent maxWidth="sm">
         <div className="flex justify-between items-center">
-          <DialogTitle asChild>
-            <h3 id="image-modal-title">Bild Vorschau</h3>
+          <DialogTitle id="image-modal-title" render={<h3 />}>
+            Bild Vorschau
           </DialogTitle>
           <DialogDescription id="image-modal-desc" className="sr-only">
             Vergrößerte Ansicht eines Trainingsbildes mit Option zum Löschen.

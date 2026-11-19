@@ -1,13 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import DeferredKnnQuiz from '@/components/knn-quiz/DeferredKnnQuiz';
-import { installBrowserHost, restoreBrowserHost } from '../../helpers/browser-host';
+import {
+  installBrowserHost,
+  installSliderLayout,
+  restoreBrowserHost,
+} from '../../helpers/browser-host';
 
 let updateViewport: (visible: boolean) => void;
 let disconnect: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   installBrowserHost();
+  installSliderLayout();
   vi.stubGlobal(
     'IntersectionObserver',
     class {
@@ -42,7 +47,8 @@ describe('deferred KNN exercise', () => {
     expect(screen.getByRole('button', { name: 'Übung öffnen' })).toBe(open);
     expect(document.activeElement).toBe(open);
     fireEvent.click(open);
-    expect(await screen.findByRole('slider')).toBeTruthy();
+    const title = await screen.findByRole('heading', { name: 'Hund oder Katze?' });
+    expect(document.activeElement).toBe(title);
     expect(screen.getByText('K = 3 · 0 von 3 gefunden')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Übung öffnen' })).toBeNull();
   });

@@ -35,6 +35,40 @@ async function expectStableHeroHandoff(page: Page) {
   ).toBe(0);
 }
 
+test('a late Geist download keeps the first mobile headline in place', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 823 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const fontUrl = '**/_next/static/media/*.woff2';
+  let releaseFont!: () => void;
+  const heldFont = new Promise<void>((resolve) => {
+    releaseFont = resolve;
+  });
+  await page.route(fontUrl, async (route) => {
+    await heldFont;
+    await route.continue();
+  });
+
+  try {
+    await page.goto('/', { waitUntil: 'commit' });
+    const heading = page.getByRole('heading', { level: 1 });
+    await expect(heading).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(() => performance.getEntriesByName('first-contentful-paint').length),
+      )
+      .toBe(1);
+    const before = await heading.boundingBox();
+    const response = page.waitForResponse(fontUrl);
+    releaseFont();
+    expect((await response).ok()).toBe(true);
+    await page.evaluate(() => document.fonts.ready);
+    await settleEntryAnimations(page);
+    expect(await heading.boundingBox()).toEqual(before);
+  } finally {
+    releaseFont();
+  }
+});
+
 for (const [width, colorScheme, height] of [
   [700, 'dark', 1291],
   [430, 'light', 1291],

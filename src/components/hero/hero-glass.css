@@ -21,7 +21,7 @@
   object-fit: contain;
 }
 
-.hero-field[data-enhanced='true'] .hero-field-poster {
+:is(.hero-field, .error-glass-viewport)[data-enhanced='true'] .hero-field-poster {
   display: none;
 }
 

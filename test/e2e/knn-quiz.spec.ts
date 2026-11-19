@@ -226,3 +226,55 @@ for (const [width, colorScheme] of [
     expect(failures).toEqual([]);
   });
 }
+
+test('touch opens and dismisses an everyday quiz explanation', async ({ browser, baseURL }) => {
+  const page = await browser.newPage({
+    baseURL,
+    viewport: { width: 390, height: 960 },
+    isMobile: true,
+    hasTouch: true,
+    reducedMotion: 'reduce',
+  });
+  try {
+    await page.goto(learningPaths.images);
+    const quiz = page.getByRole('region', { name: 'Wo steckt Bilderkennung drin?' });
+    await quiz
+      .getByRole('button', { name: /^Auswählen:/ })
+      .first()
+      .tap();
+    const result = quiz.getByRole('button', { name: /Erklärung anzeigen$/ });
+    await result.tap();
+    const explanation = page.getByRole('tooltip');
+    await expect(explanation).toBeVisible();
+    await expect(result).toHaveAccessibleDescription((await explanation.textContent())!);
+    await page.keyboard.press('Escape');
+    await expect(explanation).toHaveCount(0);
+    await expect(result).toBeFocused();
+  } finally {
+    await page.close();
+  }
+});
+
+test('KNN keyboard intent prepares the hidden exercise and hands off opening focus', async ({
+  page,
+}) => {
+  const failures = diagnostics(page);
+  await page.goto(learningPaths.images);
+  const exercise = page.getByRole('region', { name: 'Welche Nachbarn zählen?' });
+  const open = exercise.getByRole('button', { name: 'Übung öffnen' });
+  // Keep the viewport out of range to exercise focus preparation by itself.
+  await open.evaluate((button) => button.focus({ preventScroll: true }));
+  await expect(exercise.locator('input[type="range"]')).toBeAttached();
+  await expect(exercise.getByRole('slider')).toHaveCount(0);
+  await expect(open).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(exercise.getByRole('heading', { name: 'Hund oder Katze?' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(exercise.getByRole('button', { name: 'Neue Runde' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  const slider = exercise.getByRole('slider');
+  await expect(slider).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(slider).toHaveAttribute('aria-valuenow', '5');
+  expect(failures).toEqual([]);
+});

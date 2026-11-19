@@ -66,10 +66,11 @@ export default function LegalBackLink() {
   const reduce = useShouldReduceMotion();
   const target = useSyncExternalStore(subscribeToBackTarget, getBackTarget, getServerBackTarget);
 
+  // Native traversal restores the history entry. Only the fallback opens a new route.
   return (
     <AnimatedLink
       href={target ?? '/'}
-      prepareOnIntent={target !== null}
+      prepareOnIntent={target === undefined}
       transitionTypes={['nav-back']}
       variant="ghost"
       size="sm"

@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { ThemeControl } from '@/components/theme/ThemeControl';
@@ -14,7 +14,10 @@ let host: ReturnType<typeof installThemeHost>;
 beforeEach(() => {
   host = installThemeHost();
 });
-afterEach(restoreThemeHost);
+afterEach(() => {
+  cleanup();
+  restoreThemeHost();
+});
 
 function App() {
   return (
@@ -26,10 +29,11 @@ function App() {
 }
 const darkSwitch = () => screen.getByRole('switch', { name: 'Dunkle Darstellung' });
 const trigger = () => screen.getByRole('button', { name: 'Darstellung einstellen' });
+const activate = (button: HTMLElement) => fireEvent.click(button, { detail: 0 });
 async function openMenu() {
   const button = trigger();
   act(() => button.focus());
-  fireEvent.keyDown(button, { key: 'Enter' });
+  activate(button);
   return screen.findByRole('menu', { name: 'Darstellung einstellen' });
 }
 
@@ -187,7 +191,7 @@ describe('theme controls', () => {
     act(() => button.focus());
     expect(document.activeElement).toBe(button);
     expect(screen.queryByRole('menu')).toBeNull();
-    fireEvent.keyDown(button, { key: 'Enter' });
+    activate(button);
     expect(screen.getByRole('status').textContent).toContain('wird geladen');
     fireEvent.keyDown(document, { key: 'Escape' });
     await act(async () => {
@@ -196,7 +200,7 @@ describe('theme controls', () => {
     expect(trigger()).toBe(button);
     expect(document.activeElement).toBe(button);
     expect(screen.queryByRole('menu')).toBeNull();
-    fireEvent.keyDown(button, { key: 'Enter' });
+    activate(button);
     await screen.findByRole('menu');
     expect(window.localStorage.length).toBe(0);
   });
@@ -207,7 +211,7 @@ describe('theme controls', () => {
       .mockRejectedValue(new Error('Chunk unavailable'));
     render(<App />);
     const button = trigger();
-    fireEvent.keyDown(button, { key: 'Enter' });
+    activate(button);
     await screen.findByRole('alert');
     load.mockImplementation(actualLoad);
     fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));

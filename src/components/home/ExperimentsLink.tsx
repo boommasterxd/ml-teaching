@@ -1,7 +1,11 @@
 'use client';
 
 import type { MouseEvent } from 'react';
+import { useShouldReduceMotion } from '@animate-ui/react/utils/motion';
 import { Button } from '@/components/ui/button';
+import { prepareExample } from '@/components/network/prepare-example';
+import { useHomePlayback } from './HomePlaybackProvider';
+import { prepareHomePreviews } from './prepare-home-previews';
 
 function scrollToExperiments(event: MouseEvent<HTMLAnchorElement>) {
   if (
@@ -26,11 +30,28 @@ function scrollToExperiments(event: MouseEvent<HTMLAnchorElement>) {
 }
 
 export default function ExperimentsLink() {
+  const reduce = useShouldReduceMotion();
+  const { paused } = useHomePlayback();
+  const prepare = () => {
+    if (reduce || paused) return;
+    void Promise.all([prepareHomePreviews(), prepareExample('dog')]).catch(() => {});
+  };
+
   return (
-    <Button asChild variant="outline" size="lg">
-      <a href="#lernbereiche" onClick={scrollToExperiments}>
-        Mini-Experimente
-      </a>
+    <Button
+      variant="outline"
+      size="lg"
+      render={
+        <a
+          href="#lernbereiche"
+          onClick={scrollToExperiments}
+          onPointerEnter={prepare}
+          onFocus={prepare}
+          onPointerDown={prepare}
+        />
+      }
+    >
+      Mini-Experimente
     </Button>
   );
 }

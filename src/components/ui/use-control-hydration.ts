@@ -4,7 +4,7 @@ const subscribe = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;
 
-/** Client-only indicator and form bridges never replace their interactive trigger. */
+/** Client-only enhancements never replace the initial controls. */
 export function useControlHydrated() {
   return useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
 }

@@ -1,8 +1,8 @@
 import LearningPracticeAction from '@/components/LearningPracticeAction';
 import ScrollReveal from '@/components/hero/ScrollReveal';
-import InputExperiment from '@/components/home/InputExperiment';
-import { PreviewCycleProvider } from '@/components/home/PreviewCycle';
-import { RewardPreview } from '@/components/home/RewardExperiment';
+import { DeferredHomePreviews, HomePreview } from '@/components/home/DeferredHomePreviews';
+import { RewardBoard, rewardPreviewDescription } from '@/components/home/RewardBoard';
+import { InputPreviewStill } from '@/components/home/SignalArtwork';
 import {
   Card,
   CardContent,
@@ -14,7 +14,6 @@ import {
 import { Heading, Text } from '@/components/ui/typography';
 import { learningAreas } from '@/content/learning-areas';
 import { rewardPreviewId } from '@/lib/learning-paths';
-import './home-experiment-panels.css';
 
 function ExperimentPanel({ area, index }: { area: (typeof learningAreas)[number]; index: number }) {
   const isRewardPreview = area.id === 'q-learning';
@@ -42,7 +41,15 @@ function ExperimentPanel({ area, index }: { area: (typeof learningAreas)[number]
           </CardHeader>
           <CardContent className="grid gap-6 lg:row-span-2 lg:grid-rows-subgrid">
             <div className="learning-area-preview home-experiment-art">
-              {isRewardPreview ? <RewardPreview /> : <InputExperiment />}
+              {isRewardPreview ? (
+                <HomePreview kind="reward">
+                  <RewardBoard description={rewardPreviewDescription} />
+                </HomePreview>
+              ) : (
+                <HomePreview kind="image">
+                  <InputPreviewStill />
+                </HomePreview>
+              )}
             </div>
             <Text className="text-muted-foreground">{area.explanation}</Text>
           </CardContent>
@@ -70,13 +77,11 @@ export default function HomeLearningSections() {
       <ScrollReveal kind="reading" asChild className="home-experiments-heading">
         <Heading id="home-experiments-title">Zwei Arten, wie KI lernt</Heading>
       </ScrollReveal>
-      <PreviewCycleProvider>
-        <div className="home-experiments-grid lg:grid-cols-2">
-          {learningAreas.map((area, index) => (
-            <ExperimentPanel key={area.id} area={area} index={index} />
-          ))}
-        </div>
-      </PreviewCycleProvider>
+      <DeferredHomePreviews>
+        {learningAreas.map((area, index) => (
+          <ExperimentPanel key={area.id} area={area} index={index} />
+        ))}
+      </DeferredHomePreviews>
     </section>
   );
 }

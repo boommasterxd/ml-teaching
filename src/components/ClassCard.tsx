@@ -16,7 +16,7 @@ import type { CaptureActions } from '../hooks/useClassCapture';
 import { ML } from '../constants';
 import type { MLClass, MLImage } from '../types/ml';
 import CameraPreview from './CameraPreview';
-import ImageGallery from './ImageGallery';
+import ImageGallery, { prepareImageGallery } from './ImageGallery';
 import Button from './Button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardHeader } from './ui/card';
@@ -212,6 +212,7 @@ const ClassCard = memo(function ClassCard({
           onStopRecording={stopRecording}
           onFileUpload={handleFileUpload}
           videoRef={videoRef}
+          onCaptureIntent={prepareImageGallery}
           fileActions={<ClassManagementActions cls={cls} position={position} actions={actions} />}
         />
         <ImageGallery

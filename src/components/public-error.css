@@ -1,0 +1,134 @@
+.public-error-scene {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  width: min(100%, 80rem);
+  margin-inline: auto;
+  padding: clamp(2rem, 6vw, 5rem) clamp(1.25rem, 5vw, 4rem);
+  text-align: center;
+}
+
+.public-error-copy,
+.public-error-message {
+  display: grid;
+  gap: 1rem;
+  justify-items: inherit;
+}
+
+.public-error-status {
+  width: fit-content;
+  border: 1px solid var(--glass-line);
+  border-radius: 9999px;
+  padding: 0.3rem 0.75rem;
+  background: var(--glass-surface);
+  color: var(--primary);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.public-error-message h1 {
+  max-width: 15ch;
+  font-size: clamp(2.4rem, 5vw, 4.75rem);
+  font-weight: 570;
+  letter-spacing: -0.065em;
+  line-height: 1.02;
+}
+
+.public-error-message [data-slot='text'] {
+  max-width: 36ch;
+  font-size: clamp(0.95rem, 1.4vw, 1.125rem);
+  line-height: 1.6;
+}
+
+.public-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.625rem;
+  margin-top: 0.5rem;
+}
+
+.public-error-actions [data-slot='button'],
+.error-glass-controls [data-slot='button'] {
+  min-height: 2.75rem;
+}
+
+.public-error-visual {
+  position: relative;
+  isolation: isolate;
+  container-type: inline-size;
+  width: min(100%, 35rem);
+}
+
+.public-error-orbit {
+  position: absolute;
+  inset: 6% 9% 17%;
+  z-index: -2;
+  border: 1px solid color-mix(in srgb, var(--primary) 19%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgb(var(--hero-glow) / 13%), transparent 70%);
+  pointer-events: none;
+}
+
+.public-error-display {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  z-index: -1;
+  translate: -53% -50%;
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--primary) 34%, transparent);
+  font-size: 46cqi;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.105em;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+[data-code='404'] .public-error-visual {
+  width: min(100%, 37.5rem);
+}
+
+[data-code='404'] .public-error-orbit {
+  inset: -24% 0 8%;
+  border: 0;
+  background: radial-gradient(ellipse, rgb(var(--hero-glow) / 13%), transparent 68%);
+}
+
+.error-glass-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.2;
+}
+
+[data-code='404'] .error-glass-viewport {
+  aspect-ratio: 2;
+}
+
+.error-glass-controls {
+  display: flex;
+  justify-content: center;
+  min-height: 2.75rem;
+}
+
+@variant md {
+  .public-error-scene {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    align-items: center;
+    justify-items: start;
+    min-height: 66svh;
+    text-align: left;
+  }
+
+  .public-error-actions {
+    justify-content: start;
+  }
+
+  .public-error-scene[data-code='404'] {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  }
+}

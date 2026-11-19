@@ -157,6 +157,9 @@ for (const [width, colorScheme] of [
       expect(await dialog.evaluate((node, original) => node === original, initialDialog)).toBe(
         true,
       );
+      await expect
+        .poll(() => dialog.evaluate((node) => node.contains(document.activeElement)))
+        .toBe(true);
       for (const [index, choice] of (await choices.all()).entries()) {
         expect(
           await choice.evaluate((node, original) => node === original, initialChoices[index]),

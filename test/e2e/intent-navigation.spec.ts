@@ -1,5 +1,10 @@
 import { expect, test, type Locator, type Page, type Request } from '@playwright/test';
-import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-checks';
+import {
+  diagnostics,
+  expectAccessible,
+  expectMenuHighlight,
+  settleEntryAnimations,
+} from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
 
 function isLearningPayload(request: Request) {
@@ -46,33 +51,6 @@ async function focusByKeyboard(page: Page, target: Locator) {
   throw new Error('Learning link is unreachable by keyboard.');
 }
 
-async function expectMenuHighlight(row: Locator, background: string) {
-  await expect
-    .poll(() =>
-      row.evaluate((link) => {
-        const panel = link.closest('[data-slot="navigation-menu-content"]');
-        if (!panel) throw new Error('The navigation row has no menu panel.');
-        const rowBounds = link.getBoundingClientRect();
-        return Array.from(panel.querySelectorAll('[data-slot="motion-highlight"]'), (surface) => {
-          const bounds = surface.getBoundingClientRect();
-          const style = getComputedStyle(surface);
-          const centerX = bounds.left + bounds.width / 2;
-          return {
-            background: style.backgroundColor,
-            opacity: style.opacity,
-            onRow:
-              bounds.width > 0 &&
-              bounds.height > 0 &&
-              centerX > rowBounds.left &&
-              centerX < rowBounds.right &&
-              Math.abs(bounds.top + bounds.bottom - rowBounds.top - rowBounds.bottom) <= 2,
-          };
-        });
-      }),
-    )
-    .toEqual([{ background, opacity: '1', onRow: true }]);
-}
-
 for (const intent of ['hover', 'keyboard', 'touch'] as const) {
   test.describe(`learning navigation with ${intent} intent`, () => {
     test.use({
@@ -97,7 +75,6 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
         });
         const link = navigation.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
         await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-        await expect(trigger).toHaveAttribute('data-state', 'closed');
         if (intent === 'hover') await trigger.hover();
         else if (intent === 'touch') await trigger.tap();
         else {
@@ -179,7 +156,7 @@ test('the mobile navigation marks the current page and moves its highlight on ho
   await expect(page.getByRole('contentinfo')).toBeVisible();
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
   const trigger = navigation.getByRole('button', { name: 'Menü', exact: true });
-  await expect(trigger).toHaveAttribute('data-state', 'closed');
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await expect(navigation.getByRole('button', { name: 'Lernlabor', exact: true })).toHaveCount(0);
   await focusByKeyboard(page, trigger);
   await page.keyboard.press('Enter');
@@ -212,8 +189,12 @@ test('the mobile navigation marks the current page and moves its highlight on ho
   await expectMenuHighlight(current, background);
   for (const name of ['Startseite', 'Lernlabor-Übersicht', 'Impressum']) {
     const row = panel.getByRole('link', { name, exact: true });
+    const neutral = await row.evaluate((link) => getComputedStyle(link).color);
+    expect(neutral).not.toBe(currentColor);
     await row.hover();
     await expectMenuHighlight(row, background);
+    await expect(row).toHaveCSS('color', neutral);
+    await expect(row.locator('svg').first()).toHaveCSS('color', neutral);
     await expect(current).toHaveAttribute('aria-current', 'page');
     await expect(current).toHaveCSS('color', currentColor);
   }
@@ -223,6 +204,12 @@ test('the mobile navigation marks the current page and moves its highlight on ho
   await expect(current).toHaveAttribute('aria-current', 'page');
   await expect(current).toHaveCSS('color', currentColor);
 
+  await navigation.getByRole('link', { name: 'Barrierefreiheit', exact: true }).focus();
+  await page.keyboard.press('Tab');
+  await expect(navigation.getByRole('switch')).toBeFocused();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await trigger.press('Enter');
+  await expect(navigation.getByRole('link', { name: 'Startseite', exact: true })).toBeVisible();
   await expectAccessible(page);
   await page.keyboard.press('Tab');
   const home = navigation.getByRole('link', { name: 'Startseite', exact: true });
@@ -235,8 +222,38 @@ test('the mobile navigation marks the current page and moves its highlight on ho
   await expect(trigger).toBeFocused();
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await page.keyboard.press('Enter');
+  await expect(home).toBeVisible();
   await page.keyboard.press('ArrowDown');
+  await expect(home).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL('/');
+  expect(failures).toEqual([]);
+});
+
+test('desktop navigation without a current page highlights only the hovered item', async ({
+  page,
+}) => {
+  const path = '/this-page-does-not-exist';
+  const failures = diagnostics(page, path);
+  await page.goto(path);
+  const toolbar = page.locator('.header-menu-desktop > .menu-highlight-container');
+  const learning = toolbar.getByRole('button', { name: 'Lernlabor', exact: true });
+  const neutral = await learning.evaluate((trigger) => getComputedStyle(trigger).color);
+  await expect(toolbar.locator('.menu-highlight-surface')).toHaveCount(0);
+  await learning.hover();
+  await expect(toolbar.locator('.menu-highlight-surface')).toHaveCount(1);
+  await expect(learning).toHaveCSS('color', neutral);
+
+  const panel = page.locator('[data-slot="navigation-menu-content"][data-open]');
+  const overview = panel.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
+  await expect(overview).toBeVisible();
+  await expect(panel.locator('.menu-highlight-surface')).toHaveCount(0);
+  await overview.hover();
+  await expect(toolbar.locator('.menu-highlight-surface')).toHaveCount(0);
+  await expect(panel.locator('.menu-highlight-surface')).toHaveCount(1);
+  await expect(overview).toHaveCSS('color', neutral);
+  await expect(overview.locator('svg').first()).toHaveCSS('color', neutral);
+  await panel.getByText('Bilderkennung', { exact: true }).hover();
+  await expect(panel.locator('.menu-highlight-surface')).toHaveCount(0);
   expect(failures).toEqual([]);
 });

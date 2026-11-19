@@ -1,10 +1,9 @@
 'use client';
 
-import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { Slider as SliderPrimitive } from '@animate-ui/react/primitives/radix-ui';
+import { Slider as SliderPrimitive } from '@animate-ui/react/primitives/base-ui/slider';
 
-function Slider({
+function Slider<Value extends number | readonly number[]>({
   className,
   defaultValue,
   value,
@@ -14,43 +13,47 @@ function Slider({
   'aria-labelledby': ariaLabelledBy,
   'aria-valuetext': ariaValueText,
   ...props
-}: React.ComponentProps<typeof SliderPrimitive.Root>) {
-  const values = React.useMemo(
-    () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
-    [value, defaultValue, min, max],
-  );
+}: Omit<SliderPrimitive.Root.Props<Value>, 'className'> & { className?: string }) {
+  const values = value ?? defaultValue;
+  const thumbCount = Array.isArray(values) ? values.length : 1;
   return (
-    <SliderPrimitive.Root
+    <SliderPrimitive.Root<Value>
       data-slot="slider"
       defaultValue={defaultValue}
       value={value}
       min={min}
       max={max}
-      className={cn(
-        'relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col',
-        className,
-      )}
+      thumbAlignment="edge-client-only"
       {...props}
     >
-      <SliderPrimitive.Track
-        data-slot="slider-track"
-        className="relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5"
+      <SliderPrimitive.Control
+        data-slot="slider-control"
+        className={cn(
+          'relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col',
+          className,
+        )}
       >
-        <SliderPrimitive.Range
-          data-slot="slider-range"
-          className="absolute bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
-        />
-      </SliderPrimitive.Track>
-      {Array.from({ length: values.length }, (_, index) => (
-        <SliderPrimitive.Thumb
-          aria-label={ariaLabel}
-          aria-labelledby={ariaLabelledBy}
-          aria-valuetext={ariaValueText}
-          key={index}
-          data-slot="slider-thumb"
-          className="block size-4 shrink-0 rounded-full border border-primary bg-background shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
-        />
-      ))}
+        <SliderPrimitive.Track
+          data-slot="slider-track"
+          className="relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5"
+        >
+          <SliderPrimitive.Indicator
+            data-slot="slider-range"
+            className="bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
+          />
+        </SliderPrimitive.Track>
+        {Array.from({ length: thumbCount }, (_, index) => (
+          <SliderPrimitive.Thumb
+            aria-label={ariaLabel}
+            aria-labelledby={ariaLabelledBy}
+            aria-valuetext={ariaValueText}
+            index={index}
+            key={index}
+            data-slot="slider-thumb"
+            className="block size-4 shrink-0 rounded-full border border-primary bg-background shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 has-[:focus-visible]:ring-4 data-[disabled]:pointer-events-none"
+          />
+        ))}
+      </SliderPrimitive.Control>
     </SliderPrimitive.Root>
   );
 }

@@ -1,31 +1,112 @@
 'use client';
 
-import type { ComponentProps, ReactNode } from 'react';
-import { Dialog as NativeDialog } from 'radix-ui';
-import { Dialog as DialogPrimitive } from '@animate-ui/react/primitives/radix-ui';
+import {
+  useLayoutEffect,
+  useRef,
+  type ComponentProps,
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
+import { Dialog as DialogPrimitive } from '@animate-ui/react/primitives/base-ui/dialog';
+import { useRender } from '@base-ui/react/use-render';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { RemoveScroll } from 'react-remove-scroll';
 import { cn } from '@/lib/utils';
 
-// Adapted from shadcn/ui's Radix Dialog; the overlay supports tall mobile content.
+// Adapted from shadcn/ui's Base UI Dialog; the viewport supports tall mobile content.
+const dialogSurface =
+  'relative my-auto grid max-h-fit w-full gap-4 rounded-(--glass-radius) border border-(--glass-line) [background:var(--glass-surface)] p-6 text-foreground shadow-(--glass-highlight) outline-none';
+const dialogViewport =
+  'pointer-events-auto fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain p-4';
+const dialogScrim = 'pointer-events-none fixed inset-0 bg-media-overlay';
+
+function getDialogTabStops(dialog: HTMLDialogElement) {
+  return Array.from(
+    dialog.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]'),
+  ).filter(
+    (element) =>
+      element.tabIndex >= 0 &&
+      !element.matches(':disabled') &&
+      !element.closest('[inert]') &&
+      element.getClientRects().length > 0,
+  );
+}
+
+function wrapDialogTab(event: KeyboardEvent<HTMLDialogElement>) {
+  if (event.defaultPrevented || event.key !== 'Tab') return;
+  const tabStops = getDialogTabStops(event.currentTarget);
+  const first = tabStops[0];
+  const last = tabStops.at(-1);
+  if (!first || !last || event.target !== (event.shiftKey ? first : last)) return;
+  // Keep the established wrap at the edges; native modality handles the rest.
+  event.preventDefault();
+  (event.shiftKey ? last : first).focus();
+}
+
 export const Dialog = DialogPrimitive.Root;
+
 export function DialogContent({
-  initialContent = false,
   className,
+  render,
   ...props
-}: ComponentProps<typeof NativeDialog.Content> & { initialContent?: boolean }) {
-  // The initially visible consent dialog keeps its style-free Radix hydration path.
-  const Content = initialContent ? NativeDialog.Content : DialogPrimitive.Content;
+}: Omit<ComponentProps<typeof DialogPrimitive.Popup>, 'className' | 'render'> & {
+  className?: string;
+  render: ReactElement<{ className?: string }>;
+}) {
   return (
-    <Content
+    <DialogPrimitive.Popup
       data-slot="dialog-content"
-      className={cn(
-        'relative my-auto grid max-h-fit w-full gap-4 rounded-(--glass-radius) border border-(--glass-line) [background:var(--glass-surface)] p-6 text-foreground shadow-(--glass-highlight) outline-none',
-        className,
-      )}
+      className={cn(dialogSurface, className, render.props.className)}
+      render={render}
       {...props}
     />
   );
+}
+
+// Base UI Popup requires a portal, which cannot render the already-visible SSG dialog.
+export function InitialDialog({ children, ...props }: ComponentProps<'dialog'>) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useLayoutEffect(() => {
+    const dialog = ref.current;
+    if (!dialog?.showModal) return;
+    const focused = document.activeElement;
+    const initialFocus =
+      focused instanceof HTMLElement && dialog.contains(focused)
+        ? focused
+        : getDialogTabStops(dialog)[0];
+    // Upgrade the server-rendered open dialog to modal on the same element, before paint.
+    dialog.removeAttribute('open');
+    dialog.showModal();
+    initialFocus?.focus({ preventScroll: true });
+    return () => dialog.close();
+  }, []);
+
+  return (
+    <RemoveScroll ref={ref} forwardProps removeScrollBar={false} inert={false} allowPinchZoom>
+      <dialog
+        {...props}
+        open
+        onKeyDown={wrapDialogTab}
+        data-slot="dialog-overlay"
+        className={cn(
+          dialogViewport,
+          'm-0 h-full max-h-none w-full max-w-none bg-transparent backdrop:bg-transparent',
+        )}
+      >
+        <div className={dialogScrim} aria-hidden="true" />
+        {children}
+      </dialog>
+    </RemoveScroll>
+  );
+}
+
+export function InitialDialogContent({ render }: { render: ReactElement<{ className?: string }> }) {
+  return useRender({
+    defaultTagName: 'div',
+    props: { 'data-slot': 'dialog-content', className: cn(dialogSurface, render.props.className) },
+    render,
+  });
 }
 export function DialogFooter({
   className,
@@ -50,7 +131,7 @@ export function DialogFooter({
 export function DialogDescription({
   className,
   ...props
-}: ComponentProps<typeof DialogPrimitive.Description>) {
+}: Omit<ComponentProps<typeof DialogPrimitive.Description>, 'className'> & { className?: string }) {
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
@@ -64,7 +145,10 @@ export function DialogTitle({
   icon,
   className,
   ...props
-}: ComponentProps<typeof DialogPrimitive.Title> & { icon?: ReactNode }) {
+}: Omit<ComponentProps<typeof DialogPrimitive.Title>, 'className'> & {
+  icon?: ReactNode;
+  className?: string;
+}) {
   const title = (
     <DialogPrimitive.Title
       className={cn('text-lg leading-none font-semibold', className)}
@@ -85,28 +169,11 @@ export function DialogTitle({
   );
 }
 
-export function DialogOverlay({
-  className,
-  children,
-  animateEntry = true,
-  ...props
-}: ComponentProps<'div'> & { animateEntry?: boolean }) {
-  const scrimClasses = 'pointer-events-none fixed inset-0 bg-media-overlay';
+export function DialogOverlay({ className, children, ...props }: ComponentProps<'div'>) {
   return (
     <RemoveScroll forwardProps removeScrollBar={false} inert={false} allowPinchZoom>
-      <div
-        data-slot="dialog-overlay"
-        className={cn(
-          'pointer-events-auto fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain p-4',
-          className,
-        )}
-        {...props}
-      >
-        {animateEntry ? (
-          <Effect fade className={scrimClasses} aria-hidden="true" />
-        ) : (
-          <div className={scrimClasses} aria-hidden="true" />
-        )}
+      <div data-slot="dialog-overlay" className={cn(dialogViewport, className)} {...props}>
+        <Effect fade className={dialogScrim} aria-hidden="true" />
         {children}
       </div>
     </RemoveScroll>

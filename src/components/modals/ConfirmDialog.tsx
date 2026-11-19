@@ -52,10 +52,13 @@ export default function ConfirmDialog({
   return (
     <Dialog isOpen={isOpen} onClose={onClose} labelledBy={titleId} describedBy={descId}>
       <ModalContent maxWidth="md" className="gap-5">
-        <DialogTitle asChild icon={icon}>
-          <h3 id={titleId} className="text-balance text-2xl leading-tight tracking-tight">
-            {title}
-          </h3>
+        <DialogTitle
+          id={titleId}
+          render={<h3 />}
+          icon={icon}
+          className="text-balance leading-tight tracking-tight"
+        >
+          {title}
         </DialogTitle>
         <DialogDescription id={descId} className="leading-relaxed [overflow-wrap:anywhere]">
           {description}

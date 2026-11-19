@@ -17,8 +17,8 @@ application, not a component library.
 ## shadcn/ui
 
 The adapted components in `src/components/ui/` include source from shadcn/ui's
-official Radix/new-york registry and the Base UI Toast registry item. Product variants, imports and Animate UI
-integration are adapted to this application. The upstream MIT notice follows.
+official registries and use Base UI primitives with Animate UI. Product variants
+retain this application's geometry and styling. The upstream MIT notice follows.
 
 MIT License
 

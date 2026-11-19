@@ -1,3 +1,5 @@
+@reference 'tailwindcss';
+
 .legal-layout {
   --legal-block-padding: clamp(1.5rem, 4vw, 3.25rem);
   display: grid;
@@ -28,13 +30,12 @@
 .legal-sidebar [data-slot='button'] {
   min-height: 2.75rem;
 }
-.legal-selection {
+
+/* Cover the gap between rows without changing the size of the moving highlight. */
+.legal-navigation .legal-page-link::after {
+  content: '';
   position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background-color: var(--primary-soft);
-  pointer-events: none;
+  inset: calc(var(--spacing) / -2) calc(var(--spacing) * -1.5);
 }
 .legal-section {
   min-width: 0;
@@ -129,8 +130,7 @@
 }
 .legal-content a:focus-visible,
 .legal-sidebar a:focus-visible,
-.legal-sidebar button:focus-visible,
-.public-error-surface :is(button, a):focus-visible {
+.legal-sidebar button:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 3px;
 }
@@ -171,46 +171,4 @@
   .legal-navigation-group {
     display: flex;
   }
-}
-
-.public-error-frame {
-  display: grid;
-  flex: 1;
-  align-items: center;
-}
-.public-error-surface {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(1.25rem, 3vw, 2rem);
-  width: min(calc(100% - 2rem), 52rem);
-  min-height: clamp(22rem, 48svh, 34rem);
-  margin: clamp(2rem, 7vw, 7rem) auto;
-  padding: clamp(1.75rem, 5vw, 5.5rem);
-  text-align: center;
-}
-.public-error-surface [data-slot='empty-header'] {
-  max-width: 36rem;
-  gap: 1rem;
-}
-.public-error-surface [data-slot='empty-icon'] {
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--primary) 11%, var(--card));
-  color: var(--primary);
-}
-.public-error-surface h1 {
-  max-width: 19ch;
-  color: var(--foreground);
-  font-size: clamp(2rem, 4vw, 3.4rem);
-  line-height: 1.09;
-  letter-spacing: -0.05em;
-  font-weight: 540;
-  text-wrap: balance;
-}
-.public-error-surface [data-slot='button'] {
-  min-height: 2.75rem;
 }

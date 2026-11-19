@@ -1,9 +1,8 @@
 'use client';
+
+import AnimatedLink from '@/components/AnimatedLink';
 import Button from '@/components/Button';
-import { Card } from '@/components/ui/card';
-import { EntryReveal } from '@/components/ui/entry-reveal';
-import { EmptyContent, EmptyDescription } from '@/components/ui/empty';
-import { Heading } from '@/components/ui/typography';
+import PublicErrorScene from '@/components/PublicErrorScene';
 
 export default function ErrorPage({
   reset,
@@ -12,14 +11,17 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   return (
-    <Card role="alert" className="public-error-surface">
-      <Heading as="h1">Diese Seite konnte nicht geladen werden</Heading>
-      <EntryReveal kind="text">
-        <EmptyContent>
-          <EmptyDescription>Bitte versuche es erneut.</EmptyDescription>
-          <Button onClick={reset}>Erneut versuchen</Button>
-        </EmptyContent>
-      </EntryReveal>
-    </Card>
+    <PublicErrorScene
+      title="Diese Seite konnte nicht geladen werden"
+      description="Bitte versuche es erneut."
+      announce
+    >
+      <Button size="lg" onClick={reset}>
+        Erneut versuchen
+      </Button>
+      <AnimatedLink href="/" transitionTypes={['nav-back']} variant="outline" size="lg">
+        Zur Startseite
+      </AnimatedLink>
+    </PublicErrorScene>
   );
 }

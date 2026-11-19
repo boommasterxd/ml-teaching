@@ -1,6 +1,6 @@
 import { createElement, createRef, type ComponentProps } from 'react';
 import type Link from 'next/link';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import IntentLink from '@/components/IntentLink';
@@ -69,6 +69,35 @@ describe('intent-only native navigation', () => {
     fireEvent.pointerDown(link);
     expect(cancel).toHaveBeenCalledTimes(3);
     expect(testRouter.prefetch).not.toHaveBeenCalled();
+  });
+
+  it('warms first-view images with the destination’s responsive selectors only on intent', async () => {
+    window.history.replaceState(null, '', '/impressum');
+    render(
+      <>
+        <IntentLink href="/">Startseite</IntentLink>
+        <IntentLink href="/lernen/bilderkennung">Bilderkennung</IntentLink>
+      </>,
+      { wrapper: AppRouterHost },
+    );
+    const posters = 'link[rel="preload"][imagesrcset*="hero-glass"]';
+    const photos = 'link[rel="preload"][imagesrcset]:not([imagesrcset*="hero-glass"])';
+    expect(document.head.querySelector(posters)).toBeNull();
+    expect(document.head.querySelector(photos)).toBeNull();
+    fireEvent.focus(screen.getByRole('link', { name: 'Startseite' }));
+    await waitFor(() => {
+      const hints = [...document.head.querySelectorAll(posters)];
+      expect(hints.map((link) => link.getAttribute('media'))).toEqual([
+        '(width < 48rem)',
+        '(width >= 48rem)',
+      ]);
+      expect(
+        hints.every((link) => link.getAttribute('imagesrcset')?.startsWith('/_next/image?')),
+      ).toBe(true);
+    });
+    fireEvent.pointerEnter(screen.getByRole('link', { name: 'Bilderkennung' }));
+    await waitFor(() => expect(document.head.querySelectorAll(photos)).toHaveLength(2));
+    expect(testRouter.prefetch.mock.calls).toEqual([['/'], ['/lernen/bilderkennung']]);
   });
 
   it('prepares only other same-origin HTTP routes, retaining search and excluding fragments', () => {

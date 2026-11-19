@@ -38,6 +38,7 @@ function useTrainingResources() {
     models.isModelLoading,
     predictVideoRef,
     reportOperationError,
+    hasTrainedModel,
   );
   const prediction = usePredictionLoop(
     models.classifier,

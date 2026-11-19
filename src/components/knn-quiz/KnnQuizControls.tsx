@@ -46,7 +46,7 @@ export function KnnQuizInput({ state }: { state: KnnQuizState }) {
           min={1}
           max={5}
           step={2}
-          value={[state.k]}
+          value={state.k}
           onValueChange={state.changeK}
           className="min-h-11"
         />

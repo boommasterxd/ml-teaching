@@ -1,59 +1,48 @@
 'use client';
 
 import type { ComponentProps } from 'react';
+import { Toggle } from '@animate-ui/react/primitives/base-ui/toggle';
+import { useShouldReduceMotion } from '@animate-ui/react/utils/motion';
 import { cn } from '@/lib/utils';
 import { Check as CheckIcon } from '../icons/check';
-import { Checkbox as CheckboxPrimitive } from '@animate-ui/react/primitives/radix-ui';
-import { useControlHydrated, useControlRef } from './use-control-hydration';
 
-function Checkbox({
-  className,
-  checked,
-  defaultChecked,
-  onCheckedChange,
-  name,
-  form,
-  required,
-  disabled,
-  value,
-  asChild,
-  ref,
-  ...props
-}: ComponentProps<typeof CheckboxPrimitive.Root>) {
-  const client = useControlHydrated();
-  const controlRef = useControlRef(ref);
+type CheckboxProps = Omit<ComponentProps<'button'>, 'value'> & {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+};
+
+// Consent Toggle renders a style-free labeled button. Base UI Checkbox emits an
+// inline-styled form input during server rendering.
+export function Checkbox({ className, checked, onCheckedChange, ...props }: CheckboxProps) {
+  const reduceMotion = useShouldReduceMotion();
+
   return (
-    <CheckboxPrimitive.unstable_Provider
-      checked={checked}
-      defaultChecked={defaultChecked}
-      onCheckedChange={onCheckedChange}
-      disabled={disabled}
-      name={name}
-      form={form}
-      required={required}
-      value={value}
+    <Toggle
+      {...props}
+      render={<button />}
+      role="checkbox"
+      aria-checked={checked}
+      aria-pressed={undefined}
+      pressed={checked}
+      onPressedChange={onCheckedChange}
+      onKeyDown={(event) => {
+        props.onKeyDown?.(event);
+        if (event.key === 'Enter') event.preventDefault();
+      }}
+      data-slot="checkbox"
+      className={cn(
+        'peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-checked:border-primary aria-checked:bg-primary aria-checked:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:aria-checked:bg-primary',
+        className,
+      )}
     >
-      <CheckboxPrimitive.unstable_Trigger
-        ref={controlRef}
-        data-slot="checkbox"
-        asChild={asChild}
-        className={cn(
-          'peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary',
-          className,
-        )}
-        {...props}
-      >
-        <CheckboxPrimitive.Indicator
-          asChild={!client}
+      {checked && (
+        <span
           data-slot="checkbox-indicator"
           className="grid place-content-center text-current transition-none"
         >
-          <CheckIcon className="size-3.5" aria-hidden="true" />
-        </CheckboxPrimitive.Indicator>
-      </CheckboxPrimitive.unstable_Trigger>
-      {client && Boolean(name || form || required) && <CheckboxPrimitive.unstable_BubbleInput />}
-    </CheckboxPrimitive.unstable_Provider>
+          <CheckIcon className="size-3.5" aria-hidden="true" animate={!reduceMotion} />
+        </span>
+      )}
+    </Toggle>
   );
 }
-
-export { Checkbox };

@@ -10,24 +10,8 @@ import {
 import { Alert, AlertDescription } from './ui/alert';
 import Button from './Button';
 import { X } from './icons/x';
+import { loadToaster } from './toast-loader';
 import './ui/toast.css';
-
-function importToaster() {
-  return import('./ui/toast');
-}
-
-let prepared: ReturnType<typeof importToaster> | undefined;
-
-function loadToaster() {
-  return (prepared ??= importToaster().catch((error: unknown) => {
-    prepared = undefined;
-    throw error;
-  }));
-}
-
-export function prepareToastViewport() {
-  void loadToaster().catch(() => {});
-}
 
 /** Only load the viewport after an action produces a notification. */
 export default function ToastHost() {
@@ -38,10 +22,9 @@ export default function ToastHost() {
   );
   const [Toaster, setToaster] = useState<ComponentType | null>(null);
   const [failed, setFailed] = useState(false);
-  const requested = pending.length > 0;
 
   useEffect(() => {
-    if (!requested || Toaster) return;
+    if (pending.length === 0 || Toaster) return;
     let active = true;
     void loadToaster().then(
       ({ Toaster }) => {
@@ -54,10 +37,10 @@ export default function ToastHost() {
     return () => {
       active = false;
     };
-  }, [requested, Toaster]);
+  }, [pending, Toaster]);
 
   if (Toaster) return <Toaster />;
-  if (!failed || !requested) return null;
+  if (!failed || pending.length === 0) return null;
 
   return (
     <div className="app-toast-viewport flex flex-col gap-3">

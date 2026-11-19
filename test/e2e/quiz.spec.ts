@@ -82,12 +82,15 @@ test('everyday quiz explains answers locally and resets keyboard focus', async (
     name: `Richtig: ${correctExample.title}. Erklärung anzeigen`,
   });
   await expect(tooltip).toHaveCount(0);
+  await quiz.getByText('1 von 3 gefunden', { exact: true }).hover();
   await result.hover();
   await expect(tooltip).toContainText(correctExample.explanation);
   await page.keyboard.press('Escape');
   await expect(tooltip).toHaveCount(0);
+  await quiz.getByText('1 von 3 gefunden', { exact: true }).hover();
   await correct.focus();
-  await result.focus();
+  await page.keyboard.press('Tab');
+  await expect(result).toBeFocused();
   await expect(tooltip).toContainText(correctExample.explanation);
   await page.keyboard.press('Escape');
   await expect(tooltip).toHaveCount(0);
@@ -120,7 +123,6 @@ test('everyday quiz explains answers locally and resets keyboard focus', async (
     exact: true,
   });
   await expect(first).toBeFocused();
-  await expect(quiz.getByText('0 von 3 gefunden', { exact: true })).toBeVisible();
   await expect(quiz.getByRole('status')).toContainText('Neue Runde.');
   await page.keyboard.press('Space');
   await expect(

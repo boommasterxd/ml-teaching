@@ -59,8 +59,7 @@ describe('training and prediction controls', () => {
       onStopPredicting,
     };
     const { rerender } = render(<PredictionPanel {...base} hasTrainedModel={false} hasCamera />);
-    const preview = base.predictVideoRef.current as HTMLVideoElement | null;
-    expect(preview?.closest('[hidden]')).toBeTruthy();
+    expect(base.predictVideoRef.current).toBeNull();
     expect(screen.getByRole('heading', { name: 'Vorhersage' }).id).toBe('training-prediction');
     expect(screen.getByText(/Trainiere zuerst dein Modell/)).toBeTruthy();
     rerender(<PredictionPanel {...base} />);
@@ -68,8 +67,8 @@ describe('training and prediction controls', () => {
     expect((start as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText(/Aktiviere die Kamera/)).toBeTruthy();
     rerender(<PredictionPanel {...base} hasCamera />);
+    const preview = screen.getByLabelText('Kameravorschau für Vorhersage');
     expect(base.predictVideoRef.current).toBe(preview);
-    expect(preview?.closest('[hidden]')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Starten' }));
     expect(onStartPredicting).toHaveBeenCalledOnce();
     rerender(<PredictionPanel {...base} hasCamera isPredicting />);
@@ -92,6 +91,9 @@ describe('training and prediction controls', () => {
     ).toBe('15');
     fireEvent.click(screen.getByRole('button', { name: 'Stoppen' }));
     expect(onStopPredicting).toHaveBeenCalledOnce();
+    rerender(<PredictionPanel {...base} hasCamera={false} />);
+    expect(preview.isConnected).toBe(false);
+    expect(base.predictVideoRef.current).toBeNull();
   });
 
   it('focuses model failures and offers a route back without forcing a permission prompt', () => {

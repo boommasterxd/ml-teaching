@@ -12,10 +12,41 @@ import {
 import Button from '@/components/Button';
 import { RotateCcw } from '@/components/icons/rotate-ccw';
 import { Badge } from '@/components/ui/badge';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { EntryReveal } from '@/components/ui/entry-reveal';
 import QuizChoice from './QuizChoice';
-import QuizCompletion from './QuizCompletion';
+
+type Feedback = typeof import('./quiz-feedback');
+let feedbackPromise: Promise<Feedback> | undefined;
+
+function prepareFeedback() {
+  feedbackPromise ??= import('./quiz-feedback').catch((error: unknown) => {
+    feedbackPromise = undefined;
+    throw error;
+  });
+  return feedbackPromise;
+}
+
+function useQuizFeedback() {
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [failed, setFailed] = useState(false);
+  const inFlight = useRef(false);
+  const prepare = () => {
+    if (feedback || inFlight.current) return;
+    inFlight.current = true;
+    setFailed(false);
+    void prepareFeedback().then(
+      (module) => {
+        inFlight.current = false;
+        setFeedback(module);
+      },
+      () => {
+        inFlight.current = false;
+        setFailed(true);
+      },
+    );
+  };
+  return { feedback, failed, prepare };
+}
 
 interface QuizState {
   answers: QuizId[];
@@ -31,6 +62,7 @@ const serverSnapshot = () => INITIAL_QUIZ_ROUND;
 export default function EverydayQuiz() {
   const initialRound = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
   const [state, setState] = useState<QuizState>({ answers: [], announcement: '' });
+  const { feedback, failed, prepare } = useQuizFeedback();
   const round = state.round ?? initialRound;
   const choices = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -41,6 +73,7 @@ export default function EverydayQuiz() {
     (example) => example.correct && state.answers.includes(example.id),
   ).length;
   const answer = (example: QuizExample) => {
+    prepare();
     setState((current) => {
       if (current.answers.includes(example.id)) return current;
       const answers = [...current.answers, example.id];
@@ -65,51 +98,55 @@ export default function EverydayQuiz() {
       announcement: 'Neue Runde. 0 von 3 gefunden.',
     });
   };
+  const QuizCompletion = feedback?.QuizCompletion;
 
   return (
-    <TooltipProvider>
-      <div className="flex flex-col gap-6">
-        <EntryReveal kind="text" asChild>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Badge variant="secondary">
-              {correctCount} von {QUIZ_CORRECT_COUNT} gefunden
-            </Badge>
-            <Button
-              variant="ghost"
-              className="min-h-11"
-              disabled={!state.answers.length}
-              onClick={reset}
-            >
-              <RotateCcw data-icon="inline-start" aria-hidden="true" /> Nochmal spielen
-            </Button>
-          </div>
-        </EntryReveal>
-        <div>
-          <div ref={choices} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {round.map((example, index) => (
-              <EntryReveal
-                key={example.id}
-                index={index % 3}
-                activation={Boolean(state.round)}
-                className="h-full"
-              >
-                <QuizChoice
-                  example={example}
-                  answered={state.answers.includes(example.id)}
-                  onAnswer={answer}
-                />
-              </EntryReveal>
-            ))}
-          </div>
-          <AnimatePresence initial={false}>
-            {correctCount === QUIZ_CORRECT_COUNT && <QuizCompletion key="complete" />}
-          </AnimatePresence>
+    <div className="flex flex-col gap-6">
+      <EntryReveal kind="text" asChild>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Badge variant="secondary">
+            {correctCount} von {QUIZ_CORRECT_COUNT} gefunden
+          </Badge>
+          <Button
+            variant="ghost"
+            className="min-h-11"
+            disabled={!state.answers.length}
+            onClick={reset}
+          >
+            <RotateCcw data-icon="inline-start" aria-hidden="true" /> Nochmal spielen
+          </Button>
         </div>
-        <p role="status" aria-atomic="true" className="sr-only">
-          {state.announcement}
-        </p>
-        <noscript>Aktiviere JavaScript, um deine Auswahl zu prüfen.</noscript>
+      </EntryReveal>
+      <div>
+        <div ref={choices} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {round.map((example, index) => (
+            <EntryReveal
+              key={example.id}
+              index={index % 3}
+              activation={Boolean(state.round)}
+              className="h-full"
+            >
+              <QuizChoice
+                example={example}
+                answered={state.answers.includes(example.id)}
+                result={feedback?.QuizResult}
+                feedbackFailed={failed}
+                onIntent={prepare}
+                onAnswer={answer}
+              />
+            </EntryReveal>
+          ))}
+        </div>
+        <AnimatePresence initial={false}>
+          {correctCount === QUIZ_CORRECT_COUNT && QuizCompletion && (
+            <QuizCompletion key="complete" />
+          )}
+        </AnimatePresence>
       </div>
-    </TooltipProvider>
+      <p role="status" aria-atomic="true" className="sr-only">
+        {state.announcement}
+      </p>
+      <noscript>Aktiviere JavaScript, um deine Auswahl zu prüfen.</noscript>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useState, type RefObject } from 'react';
+import type { RefObject } from 'react';
 import { Sun } from '../icons/sun';
 import { Moon } from '../icons/moon';
 import { Smartphone } from '../icons/smartphone';
@@ -20,32 +20,22 @@ export interface ThemeMenuProps {
   trigger: RefObject<HTMLButtonElement | null>;
 }
 
-/** Mounted only after intent; Radix/Animate UI mount the actual portal only when opened. */
+/** Warmed after intent; Base UI and Animate UI own the portal's opening and exit. */
 export function ThemeMenu({ trigger }: ThemeMenuProps) {
   const { preference, select, setRemember } = useTheme();
-  const [sideOffset, setSideOffset] = useState(12);
-  useLayoutEffect(() => {
+  const sideOffset = () => {
     const button = trigger.current;
-    if (!button) return;
-    const updateOffset = () => {
-      const offset = Number.parseFloat(
-        getComputedStyle(button).getPropertyValue('--theme-menu-offset'),
-      );
-      if (Number.isFinite(offset)) setSideOffset(offset);
-    };
-    updateOffset();
-    window.addEventListener('resize', updateOffset);
-    return () => window.removeEventListener('resize', updateOffset);
-  }, [trigger]);
+    const value = button && getComputedStyle(button).getPropertyValue('--theme-menu-offset');
+    return Number.parseFloat(value || '') || 12;
+  };
 
   return (
     <DropdownMenuContent
       align="end"
       sideOffset={sideOffset}
+      selectedValue={preference.selection}
       data-theme-menu=""
       aria-label="Darstellung einstellen"
-      onEscapeKeyDown={() => trigger.current?.focus({ preventScroll: true })}
-      onCloseAutoFocus={(event) => event.preventDefault()}
     >
       <DropdownMenuGroup>
         <DropdownMenuLabel>Darstellung</DropdownMenuLabel>
@@ -73,9 +63,9 @@ export function ThemeMenu({ trigger }: ThemeMenuProps) {
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <DropdownMenuCheckboxItem
+          highlightValue="remember"
           checked={preference.remember}
-          onCheckedChange={(checked) => setRemember(checked === true)}
-          onSelect={(event) => event.preventDefault()}
+          onCheckedChange={setRemember}
         >
           Auswahl für weitere Besuche auf diesem Gerät merken
         </DropdownMenuCheckboxItem>

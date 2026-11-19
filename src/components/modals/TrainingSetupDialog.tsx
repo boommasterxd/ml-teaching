@@ -12,6 +12,7 @@ interface TrainingSetupDialogProps {
   step: SetupStep | null;
   loadingText: string;
   onDeclineConsent: () => void;
+  onDeclineConsentIntent?: () => void;
   onConfirmConsent: () => void;
   onDeclineCamera: () => void;
   onConfirmCamera: () => void;
@@ -21,6 +22,7 @@ export default function TrainingSetupDialog({
   step,
   loadingText,
   onDeclineConsent,
+  onDeclineConsentIntent,
   onConfirmConsent,
   onDeclineCamera,
   onConfirmCamera,
@@ -43,7 +45,11 @@ export default function TrainingSetupDialog({
         {step && (
           <SetupStepTransition step={step}>
             {step === 'consent' && (
-              <ConsentStep onDecline={onDeclineConsent} onConfirm={onConfirmConsent} />
+              <ConsentStep
+                onDecline={onDeclineConsent}
+                onDeclineIntent={onDeclineConsentIntent}
+                onConfirm={onConfirmConsent}
+              />
             )}
             {step === 'loading' && <LoadingStep loadingText={loadingText} />}
             {step === 'camera' && (

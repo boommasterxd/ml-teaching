@@ -1,40 +1,18 @@
-/**
- * 404 Not Found page shown when a user navigates to a non-existent route.
- */
 import AnimatedLink from '@/components/AnimatedLink';
-import { Home } from '../components/icons/home';
-import { AlertTriangle } from '../components/icons/alert-triangle';
-import { Heading } from '@/components/ui/typography';
-import { EntryReveal } from '@/components/ui/entry-reveal';
-import { Card } from '@/components/ui/card';
-import { EmptyHeader, EmptyDescription, EmptyContent, EmptyMedia } from '@/components/ui/empty';
+import { Home } from '@/components/icons/home';
+import PublicErrorScene from '@/components/PublicErrorScene';
 
-/** Displays a 404 message with a button to navigate back to the home page. */
 export default function NotFoundPage() {
   return (
-    <Card className="public-error-surface">
-      <EmptyHeader>
-        <EntryReveal kind="text" className="self-center">
-          <EmptyMedia variant="icon">
-            <AlertTriangle aria-hidden="true" />
-          </EmptyMedia>
-        </EntryReveal>
-        <Heading as="h1">404 - Seite nicht gefunden</Heading>
-        <EntryReveal kind="text" index={1} asChild>
-          <EmptyDescription>
-            Hoppla! Die Seite, nach der du suchst, scheint nicht zu existieren oder wurde
-            verschoben.
-          </EmptyDescription>
-        </EntryReveal>
-      </EmptyHeader>
-      <EmptyContent>
-        <EntryReveal kind="text" index={2}>
-          <AnimatedLink href="/" transitionTypes={['nav-back']} variant="default" size="lg">
-            <Home data-icon="inline-start" aria-hidden="true" />
-            Zurück zur Startseite
-          </AnimatedLink>
-        </EntryReveal>
-      </EmptyContent>
-    </Card>
+    <PublicErrorScene
+      code="404"
+      title="Seite nicht gefunden"
+      description="Vielleicht wurde die Seite verschoben oder der Link ist veraltet."
+    >
+      <AnimatedLink href="/" transitionTypes={['nav-back']} size="lg">
+        <Home data-icon="inline-start" aria-hidden="true" />
+        Zurück zur Startseite
+      </AnimatedLink>
+    </PublicErrorScene>
   );
 }

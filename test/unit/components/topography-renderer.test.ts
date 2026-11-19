@@ -64,6 +64,8 @@ const frame = {
   width: 3840,
   height: 2160,
   dpr: 1,
+  fieldScale: 1,
+  fieldTexels: 600_000,
   time: 10,
   lift: 1,
   hill: [300, 200] as [number, number],
@@ -79,6 +81,8 @@ describe('optional glass GPU resources', () => {
       width: 720,
       height: 620,
       dpr: 2,
+      fieldScale: 1.35,
+      fieldTexels: 300_000,
       time: 0,
       lift: 0,
       hill: [0, 0] as [number, number],
@@ -137,9 +141,14 @@ describe('optional glass GPU resources', () => {
     renderer.draw({ ...frame, time: 20 });
     expect(gl.texImage2D).toHaveBeenCalledTimes(1);
     expect(gl.getUniformLocation).toHaveBeenCalledTimes(lookups);
-    renderer.draw({ ...frame, width: 7680 });
-    const [, , , width, height] = gl.texImage2D.mock.calls.at(-1)!;
-    expect(Number(width) * Number(height)).toBeLessThanOrEqual(600_000);
+    for (const [fieldScale, fieldTexels] of [
+      [0.65, 40_000],
+      [1.7, 600_000],
+    ] as const) {
+      renderer.draw({ ...frame, width: 7680, fieldScale, fieldTexels });
+      const [, , , width, height] = gl.texImage2D.mock.calls.at(-1)!;
+      expect(Number(width) * Number(height)).toBeLessThanOrEqual(fieldTexels);
+    }
     expect(gl.createTexture).toHaveBeenCalledTimes(1);
     renderer.dispose();
   });

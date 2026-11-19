@@ -10,6 +10,9 @@ export default function ErrorApp({ Component, pageProps }: AppProps) {
   return (
     <div className={[geist.variable, 'app-body'].join(' ')}>
       <ThemeProvider>
+        <a href="#main-content" className="skip-link">
+          Zum Inhalt springen
+        </a>
         <SiteHeader />
         <Component {...pageProps} />
         <Footer />

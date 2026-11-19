@@ -8,7 +8,7 @@ import { Sun } from '../icons/sun';
 import Button from '../Button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Switch } from '../ui/switch';
-import { DropdownMenu, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger } from '../ui/dropdown-menu-trigger';
 import { loadThemeMenu } from './theme-menu-loader';
 import type { ThemeMenuProps } from './ThemeMenu';
 import { useTheme } from './ThemeProvider';
@@ -84,23 +84,20 @@ export function ThemeControl() {
         {preference.resolved === 'dark' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
       </Switch>
       <DropdownMenu modal={false} open={open} onOpenChange={changeOpen}>
-        <DropdownMenuTrigger asChild ref={trigger}>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            tapScale={1}
-            aria-label="Darstellung einstellen"
-            aria-busy={open && !Menu && !failed}
-            onPointerEnter={prepare}
-            onFocus={prepare}
-            onPointerDown={prepare}
-          >
-            {open && !Menu && !failed ? (
-              <Loader2 animate loop aria-hidden="true" />
-            ) : (
-              <ChevronDown aria-hidden="true" />
-            )}
-          </Button>
+        <DropdownMenuTrigger
+          ref={trigger}
+          render={<Button variant="ghost" size="icon-sm" tapScale={1} />}
+          aria-label="Darstellung einstellen"
+          aria-busy={open && !Menu && !failed}
+          onPointerEnter={prepare}
+          onFocus={prepare}
+          onPointerDown={prepare}
+        >
+          {open && !Menu && !failed ? (
+            <Loader2 animate loop aria-hidden="true" />
+          ) : (
+            <ChevronDown aria-hidden="true" />
+          )}
         </DropdownMenuTrigger>
         {Menu && <Menu trigger={trigger} />}
       </DropdownMenu>

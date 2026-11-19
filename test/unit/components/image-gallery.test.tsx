@@ -49,7 +49,64 @@ function trackActiveResizeObservers() {
   return active;
 }
 
+async function galleryWithPendingRows() {
+  vi.resetModules();
+  const rows = Promise.withResolvers<typeof import('@/components/ImageGalleryRows')>();
+  vi.doMock('@/components/ImageGalleryRows', () => rows.promise);
+  const { default: Gallery } = await import('@/components/ImageGallery');
+  return { Gallery, rows };
+}
+
 describe('training image gallery', () => {
+  it('keeps a collected photo through a gallery load failure and restores access on retry', async () => {
+    const { Gallery, rows } = await galleryWithPendingRows();
+    const image = makeImage('saved');
+    const onImageClick = vi.fn();
+    try {
+      render(
+        <Gallery
+          label={label}
+          images={[image]}
+          color="#dc2626"
+          onImageClick={onImageClick}
+          onRemoveImages={vi.fn()}
+        />,
+      );
+      expect(screen.getByRole('status').textContent).toBe('Galerie wird geladen.');
+      await act(async () => rows.reject(new Error('Gallery code temporarily unavailable')));
+      expect(screen.getByRole('status').textContent).toBe(
+        'Die Galerie konnte nicht geladen werden.',
+      );
+      vi.doUnmock('@/components/ImageGalleryRows');
+      fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
+      expect(document.activeElement).toBe(screen.getByRole('region', { name: label }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Bild vergrößern' }));
+      expect(onImageClick).toHaveBeenCalledExactlyOnceWith(image);
+    } finally {
+      vi.doUnmock('@/components/ImageGalleryRows');
+    }
+  });
+
+  it('keeps gallery measurement inactive if the last photo is cleared before the module arrives', async () => {
+    const { Gallery, rows } = await galleryWithPendingRows();
+    const observers = trackActiveResizeObservers();
+    const props = { label, color: '#dc2626', onImageClick: vi.fn(), onRemoveImages: vi.fn() };
+    try {
+      const { rerender } = render(<Gallery {...props} images={[makeImage('first')]} />);
+      expect(screen.getByRole('status').textContent).toBe('Galerie wird geladen.');
+      rerender(<Gallery {...props} images={[]} />);
+      const galleryRows = await vi.importActual<typeof import('@/components/ImageGalleryRows')>(
+        '@/components/ImageGalleryRows',
+      );
+      await act(async () => rows.resolve(galleryRows));
+      expect(observers.size).toBe(0);
+      expect(screen.queryByRole('button', { name: 'Bild vergrößern' })).toBeNull();
+      expect(screen.getByText(/mindestens 10 Bilder desselben Motivs/)).toBeTruthy();
+    } finally {
+      vi.doUnmock('@/components/ImageGalleryRows');
+    }
+  });
+
   it('releases empty-gallery measurement and restores usable previews with a fresh selection', async () => {
     const observers = trackActiveResizeObservers();
     const image = makeImage('first');

@@ -42,59 +42,62 @@ export default function KnnQuizPoint({
   };
   return (
     // Feedback survives the browser's delayed focus scroll; only user dismissal clears it.
-    <Tooltip open={Boolean(errorAttempt)}>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-lg"
-          className="knn-point-control size-(--knn-point-size)"
-          style={placement}
-          aria-label={`${point.signal === 'dog' ? 'Hund' : 'Katze'}, Punkt ${point.id.replace('point-', '')}, Abstand zur Raute: ${distance.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Einheiten`}
-          aria-pressed={selected}
-          aria-invalid={Boolean(errorAttempt) || undefined}
-          onClick={() => onChoose(point.id)}
-          onBlur={() => {
-            if (errorAttempt) onDismiss();
-          }}
-        >
-          <Effect
-            asChild
-            initial={false}
-            animate={{
-              x: errorAttempt && !reduce ? [0, -shake, shake, -shake * 0.66, shake * 0.66, 0] : 0,
+    <Tooltip
+      open={Boolean(errorAttempt)}
+      onOpenChange={(open, { reason }) => {
+        if (!open && (reason === 'escape-key' || reason === 'outside-press')) onDismiss();
+      }}
+    >
+      <TooltipTrigger
+        closeOnClick={false}
+        render={
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            className="knn-point-control size-(--knn-point-size)"
+            style={placement}
+            aria-label={`${point.signal === 'dog' ? 'Hund' : 'Katze'}, Punkt ${point.id.replace('point-', '')}, Abstand zur Raute: ${distance.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Einheiten`}
+            aria-pressed={selected}
+            aria-invalid={Boolean(errorAttempt) || undefined}
+            onClick={() => onChoose(point.id)}
+            onBlur={() => {
+              if (errorAttempt) onDismiss();
             }}
-            transition={timing}
-            key={errorAttempt}
           >
-            <svg viewBox="-12 -12 24 24" className="size-full" aria-hidden="true">
-              <PointGlyph x={0} y={0} signal={point.signal} />
-              {selected && (
-                <Effect
-                  asChild
-                  initial={reduce ? false : { pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={draw}
-                >
-                  <circle
-                    cx="0"
-                    cy="0"
-                    r={KNN_RING_RADIUS}
-                    fill="none"
-                    stroke="var(--primary)"
-                    strokeWidth="1"
-                  />
-                </Effect>
-              )}
-            </svg>
-          </Effect>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent
-        sideOffset={6}
-        collisionPadding={12}
-        onEscapeKeyDown={onDismiss}
-        onPointerDownOutside={onDismiss}
-      >
+            <Effect
+              asChild
+              initial={false}
+              animate={{
+                x: errorAttempt && !reduce ? [0, -shake, shake, -shake * 0.66, shake * 0.66, 0] : 0,
+              }}
+              transition={timing}
+              key={errorAttempt}
+            >
+              <svg viewBox="-12 -12 24 24" className="size-full" aria-hidden="true">
+                <PointGlyph x={0} y={0} signal={point.signal} />
+                {selected && (
+                  <Effect
+                    asChild
+                    initial={reduce ? false : { pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={draw}
+                  >
+                    <circle
+                      cx="0"
+                      cy="0"
+                      r={KNN_RING_RADIUS}
+                      fill="none"
+                      stroke="var(--primary)"
+                      strokeWidth="1"
+                    />
+                  </Effect>
+                )}
+              </svg>
+            </Effect>
+          </Button>
+        }
+      />
+      <TooltipContent sideOffset={6} collisionPadding={12}>
         Dieser Punkt gehört nicht zu den {k} nächsten. Suche näher an der Raute.
       </TooltipContent>
     </Tooltip>

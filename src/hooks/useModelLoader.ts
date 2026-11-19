@@ -1,7 +1,12 @@
 /** Loads browser ML code and model weights only after explicit consent. */
 import { useState, useEffect, useRef, useCallback, useEffectEvent } from 'react';
 import { ML, MODEL_LOAD_RETRY } from '../constants';
-import { createClassifier, initializeBackend, loadTensorFlow } from '../lib/ml-runtime';
+import {
+  createClassifier,
+  initializeBackend,
+  loadClassifierModule,
+  loadTensorFlow,
+} from '../lib/ml-runtime';
 import type { ErrorCategory } from '../types/errors';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
 
@@ -94,33 +99,36 @@ const initTfBackend: LoadingStep<void> = async (setText, signal) => {
   signal.throwIfAborted();
 };
 
-const createKnnClassifier: LoadingStep<Classifier> = async (setText, signal) => {
-  setText('Erstelle KNN Klassifikator...');
-  signal.throwIfAborted();
-  return createClassifier();
-};
+async function prepareClassifier(): Promise<LoadingStep<Classifier>> {
+  const { create } = await loadClassifierModule();
+  return async (setText, signal) => {
+    setText('Erstelle KNN Klassifikator...');
+    signal.throwIfAborted();
+    return create();
+  };
+}
 
-const loadMobileNet: LoadingStep<FeatureExtractor> = async (setText, signal) => {
-  signal.throwIfAborted();
+async function prepareMobileNet(): Promise<LoadingStep<FeatureExtractor>> {
   const mobilenet = await import('@tensorflow-models/mobilenet');
-  signal.throwIfAborted();
-  setText('Lade MobileNet (Feature Extractor)...');
-  return loadWithRetry(
-    () =>
-      awaitModel(
-        mobilenet.load({
-          version: ML.MOBILENET_VERSION,
-          alpha: ML.MOBILENET_ALPHA,
-        }),
-        signal,
-      ),
-    {
-      maxAttempts: MODEL_LOAD_RETRY.MAX_ATTEMPTS,
-      baseDelayMs: MODEL_LOAD_RETRY.BASE_DELAY_MS,
-    },
-    signal,
-  );
-};
+  return (setText, signal) => {
+    setText('Lade MobileNet (Feature Extractor)...');
+    return loadWithRetry(
+      () =>
+        awaitModel(
+          mobilenet.load({
+            version: ML.MOBILENET_VERSION,
+            alpha: ML.MOBILENET_ALPHA,
+          }),
+          signal,
+        ),
+      {
+        maxAttempts: MODEL_LOAD_RETRY.MAX_ATTEMPTS,
+        baseDelayMs: MODEL_LOAD_RETRY.BASE_DELAY_MS,
+      },
+      signal,
+    );
+  };
+}
 
 async function warmupKnnShaders(model: FeatureExtractor, signal: AbortSignal) {
   const tf = await loadTensorFlow();
@@ -189,14 +197,16 @@ export function useModelLoader(
 
     async function initModels() {
       try {
-        await (loaders?.initBackend ?? initTfBackend)(setText, signal);
+        // Resources remain consent-gated. Only local code can load in parallel with backend setup.
+        const [, loadClassifier, loadFeatureExtractor] = await Promise.all([
+          (loaders?.initBackend ?? initTfBackend)(setText, signal),
+          loaders?.createClassifier ?? prepareClassifier(),
+          loaders?.loadFeatureExtractor ?? prepareMobileNet(),
+        ]);
         signal.throwIfAborted();
-        pendingClassifier = await (loaders?.createClassifier ?? createKnnClassifier)(
-          setText,
-          signal,
-        );
+        pendingClassifier = await loadClassifier(setText, signal);
         signal.throwIfAborted();
-        model = await (loaders?.loadFeatureExtractor ?? loadMobileNet)(setText, signal);
+        model = await loadFeatureExtractor(setText, signal);
         signal.throwIfAborted();
         setText('Optimiere GPU-Performance...');
         await (loaders?.warmup ?? warmupKnnShaders)(model, signal);

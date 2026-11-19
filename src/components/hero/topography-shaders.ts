@@ -1,4 +1,5 @@
 // Adapted from the official Animate UI Topography registry. See docs/third-party-notices.md.
+import { DIGIT_GEOMETRY, DIGIT_SCENE } from './glass-digit-geometry';
 import { LENS, RING_BOUND, RING_PROFILE, SCENE_VARYINGS } from './topography-geometry';
 
 export { VERTEX } from './topography-geometry';
@@ -21,6 +22,10 @@ uniform vec2 hill;
 uniform vec4 ripples[RIPPLE_CAPACITY];
 uniform float reach;
 uniform float rippleWidth;
+
+#ifdef GLASS_DIGITS
+${DIGIT_GEOMETRY}
+#else
 ${SCENE_VARYINGS}
 ${LENS}
 ${RING_BOUND}
@@ -100,6 +105,7 @@ vec3 traceFront(vec3 origin, vec3 direction, float breath, out float closest) {
   }
   return hit;
 }
+#endif
 
 vec3 traceExit(vec3 front, vec3 direction, float breath) {
   float travel = 0.006;
@@ -183,6 +189,9 @@ vec3 glass(vec3 n, vec3 back, float thickness, vec2 pulse) {
   return pow(1.0 - exp(-radiance * 1.85), vec3(0.60));
 }
 
+#ifdef GLASS_DIGITS
+${DIGIT_SCENE}
+#else
 vec3 dropletLight(vec3 normal, float beat, float inputForce) {
   vec3 key = normalize(vec3(-0.54 + 0.29 * sin(beat), 0.45 + 0.24 * cos(beat), 0.76));
   float shine = max(0.0, dot(normal, key));
@@ -231,6 +240,7 @@ void main() {
   if (traceSmall) color += dropletLight(frontView, phase * 3.1 + 1.4, smallStretch.w);
   gl_FragColor = vec4(color, clamp(0.5 - 12.0 * closest, 0.0, 1.0));
 }
+#endif
 `;
 
 export const GLASS_FRAGMENT = `

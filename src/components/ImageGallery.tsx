@@ -1,24 +1,14 @@
-/**
- * ImageGallery.tsx
- *
- * Scrollable thumbnail gallery for collected ML training images. Supports a
- * selection mode that lets users mark and bulk-delete multiple images at once.
- */
-import { memo, useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import NextImage from 'next/image';
+import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import Button from './Button';
-import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
-import type { Range, VirtualItem, Virtualizer } from '@tanstack/react-virtual';
-import { CheckCircle2 } from './icons/check-circle2';
 import { Image as ImageIcon } from './icons/image';
 import { Trash2 } from './icons/trash2';
 import { X } from './icons/x';
 import { cn } from '../lib/utils';
 import { classColorClasses } from '../lib/class-colors';
 import { Empty, EmptyDescription, EmptyMedia } from './ui/empty';
-import { Badge } from './ui/badge';
 import { ML } from '../constants';
 import type { MLImage } from '../types/ml';
+import type { ImageGalleryRowsProps } from './ImageGalleryRows';
 
 /**
  * Props for the ImageGallery component.
@@ -36,95 +26,68 @@ interface ImageGalleryProps {
   onRemoveImages: (ids: string[]) => void;
 }
 
-/** Internal props for the ImageThumbnail component. */
-interface ImageThumbnailProps {
-  /** The training image to render. */
-  img: MLImage;
-  /** Zero-based position in the image list, used for the alt text. */
-  imgIndex: number;
-  /** Whether the gallery is currently in bulk-selection mode. */
-  isSelectionMode: boolean;
-  /** Whether this specific thumbnail is currently selected. */
-  isSelected: boolean;
-  /** Called with the image ID when the user toggles its selection state. */
-  onToggleSelect: (id: string) => void;
-  /** Called with the full image object when clicked outside of selection mode. */
-  onImageClick: (img: MLImage) => void;
+type GalleryRowsComponent = typeof import('./ImageGalleryRows').default;
+
+let pendingRows: Promise<GalleryRowsComponent> | undefined;
+
+function loadGalleryRows() {
+  pendingRows ??= import('./ImageGalleryRows')
+    .then(({ default: Rows }) => Rows)
+    .catch((error: unknown) => {
+      pendingRows = undefined;
+      throw error;
+    });
+  return pendingRows;
 }
 
-/**
- * Renders a single training image thumbnail with an optional selection overlay.
- *
- * In selection mode the thumbnail shows a colored checkbox indicator and calls
- * `onToggleSelect` on click. Outside selection mode it calls `onImageClick`.
- *
- * @param props - See {@link ImageThumbnailProps}.
- */
-const ImageThumbnail = memo(function ImageThumbnail({
-  img,
-  imgIndex,
-  isSelectionMode,
-  isSelected,
-  onToggleSelect,
-  onImageClick,
-}: ImageThumbnailProps) {
-  return (
-    <Button
-      variant="thumbnail"
-      size="thumbnail"
-      type="button"
-      data-selection-mode={isSelectionMode || undefined}
-      aria-pressed={isSelectionMode ? isSelected : undefined}
-      aria-label={
-        isSelectionMode ? (isSelected ? 'Bild abwählen' : 'Bild auswählen') : 'Bild vergrößern'
-      }
-      onClick={() => (isSelectionMode ? onToggleSelect(img.id) : onImageClick(img))}
-    >
-      <NextImage
-        src={img.dataUrl}
-        alt={`Trainingsbeispiel ${imgIndex + 1}`}
-        width={224}
-        height={224}
-        unoptimized
-        className="w-full h-full object-cover"
-      />
-      {isSelectionMode && (
-        <Badge
-          variant="outline"
-          aria-hidden="true"
-          className={cn(
-            'absolute top-1 right-1 size-4 p-0',
-            isSelected
-              ? 'text-primary-foreground bg-[var(--btn-color)] border-[var(--btn-color)]'
-              : 'bg-background/80 border-input',
-          )}
-        >
-          {isSelected && <CheckCircle2 data-icon aria-hidden="true" />}
-        </Badge>
-      )}
-    </Button>
-  );
-});
+/** Warm the same local chunk from file selection and capture controls. */
+export function prepareImageGallery() {
+  void loadGalleryRows().catch(() => {});
+}
 
-/** Read the centralized Tailwind breakpoint rule used by the rendered gallery. */
-function useColumnCount(ref: React.RefObject<HTMLDivElement | null>, enabled: boolean): number {
-  const [cols, setCols] = useState(4);
+function DeferredGalleryRows(props: ImageGalleryRowsProps) {
+  const [Rows, setRows] = useState<GalleryRowsComponent>();
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    const element = ref.current;
-    if (!element || !enabled) return;
-    const update = () => {
-      const value = Number.parseInt(
-        getComputedStyle(element).getPropertyValue('--gallery-columns'),
-        10,
-      );
-      if (Number.isInteger(value) && value >= 1 && value <= 6) setCols(value);
+    if (Rows) return;
+    // Wait until the scroll host is committed before mounting the virtualizer.
+    let active = true;
+    void loadGalleryRows().then(
+      (loaded) => {
+        if (active) setRows(() => loaded);
+      },
+      () => {
+        if (active) setFailed(true);
+      },
+    );
+    return () => {
+      active = false;
     };
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    update();
-    return () => observer.disconnect();
-  }, [ref, enabled]);
-  return cols;
+  }, [attempt, Rows]);
+  if (Rows) return <Rows {...props} />;
+  if (!failed)
+    return (
+      <p role="status" className="p-2 text-sm">
+        Galerie wird geladen.
+      </p>
+    );
+  return (
+    <div className="grid justify-items-start gap-2 p-2 text-sm">
+      <p role="status">Die Galerie konnte nicht geladen werden.</p>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          props.scrollContainerRef.current?.focus();
+          setFailed(false);
+          setAttempt((previous) => previous + 1);
+        }}
+      >
+        Erneut versuchen
+      </Button>
+    </div>
+  );
 }
 
 /**
@@ -182,101 +145,6 @@ function GalleryToolbar({
   );
 }
 
-interface GalleryRowsProps extends Pick<
-  ImageThumbnailProps,
-  'isSelectionMode' | 'onToggleSelect' | 'onImageClick'
-> {
-  images: MLImage[];
-  columnCount: number;
-  virtualRows: VirtualItem[];
-  selectedIds: Set<string>;
-}
-
-function GalleryRows({
-  images,
-  columnCount,
-  virtualRows,
-  selectedIds,
-  isSelectionMode,
-  onToggleSelect,
-  onImageClick,
-}: GalleryRowsProps) {
-  return (
-    <>
-      {virtualRows.flatMap((virtualRow) => {
-        const startIndex = virtualRow.index * columnCount;
-        const rowImages = images.slice(startIndex, startIndex + columnCount);
-        return rowImages.map((img, colIdx) => (
-          <div
-            key={img.id}
-            data-image-id={img.id}
-            className="pb-1.5"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: `${virtualRow.size}px`,
-              transform: `translateY(${virtualRow.start}px)`,
-              gridColumn: `${colIdx + 1} / ${colIdx + 2}`,
-            }}
-          >
-            <ImageThumbnail
-              img={img}
-              imgIndex={startIndex + colIdx}
-              isSelectionMode={isSelectionMode}
-              isSelected={selectedIds.has(img.id)}
-              onToggleSelect={onToggleSelect}
-              onImageClick={onImageClick}
-            />
-          </div>
-        ));
-      })}
-    </>
-  );
-}
-
-/** Keep the focused image mounted when responsive columns change its row. */
-function useGalleryFocus(images: MLImage[], columnCount: number) {
-  const [focusedId, setFocusedId] = useState<string | null>(null);
-  const focusedIndex = images.findIndex((image) => image.id === focusedId);
-  const focusedRow = focusedIndex < 0 ? -1 : Math.floor(focusedIndex / columnCount);
-  const rangeExtractor = useCallback(
-    (range: Range) => {
-      const rows = defaultRangeExtractor(range);
-      if (focusedRow < 0 || rows.includes(focusedRow)) return rows;
-      return [...rows, focusedRow].sort((first, second) => first - second);
-    },
-    [focusedRow],
-  );
-
-  return {
-    focusedRow,
-    rangeExtractor,
-    onFocusCapture: (event: React.FocusEvent<HTMLDivElement>) => {
-      const image = (event.target as HTMLElement).closest<HTMLElement>('[data-image-id]');
-      setFocusedId(image?.dataset.imageId ?? null);
-    },
-    onBlurCapture: (event: React.FocusEvent<HTMLDivElement>) => {
-      if (!event.currentTarget.contains(event.relatedTarget)) setFocusedId(null);
-    },
-  };
-}
-
-function useFocusedRowVisibility(
-  columnCount: number,
-  focusedRow: number,
-  virtualizer: Virtualizer<HTMLDivElement, Element>,
-) {
-  const previousColumns = useRef(columnCount);
-  useLayoutEffect(() => {
-    if (previousColumns.current !== columnCount && focusedRow >= 0) {
-      virtualizer.scrollToIndex(focusedRow, { align: 'auto' });
-    }
-    previousColumns.current = columnCount;
-  }, [columnCount, focusedRow, virtualizer]);
-}
-
 function GalleryEmpty() {
   return (
     <Empty className="h-full gap-3 p-2 md:p-2">
@@ -309,8 +177,6 @@ const ImageGallery = memo(function ImageGallery({
   }
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const hasImages = images.length > 0;
-  const columnCount = useColumnCount(scrollContainerRef, hasImages);
-  const focus = useGalleryFocus(images, columnCount);
 
   /** Adds or removes an image ID from the current selection set. */
   const toggleImageSelection = useCallback((id: string) => {
@@ -333,19 +199,6 @@ const ImageGallery = memo(function ImageGallery({
     setIsSelectionMode(false);
   };
 
-  const rowCount = Math.ceil(images.length / columnCount);
-
-  const virtualizer = useVirtualizer({
-    enabled: hasImages,
-    count: rowCount,
-    getScrollElement: () => scrollContainerRef.current,
-    estimateSize: () => 88,
-    overscan: 3,
-    rangeExtractor: focus.rangeExtractor,
-  });
-
-  useFocusedRowVisibility(columnCount, focus.focusedRow, virtualizer);
-
   return (
     <div className={cn('@container/gallery min-w-0', classColorClasses(color))}>
       <div className="flex h-36 min-w-0 flex-col @sm/gallery:h-44">
@@ -366,28 +219,17 @@ const ImageGallery = memo(function ImageGallery({
           tabIndex={hasImages ? 0 : -1}
           role="region"
           aria-label={label}
-          onFocusCapture={focus.onFocusCapture}
-          onBlurCapture={focus.onBlurCapture}
           className="gallery-region min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto rounded-2xl bg-muted/60 p-1.5 dark:bg-background/40"
         >
           {hasImages ? (
-            <div
-              className="relative grid w-full gap-x-2"
-              style={{
-                height: `${virtualizer.getTotalSize()}px`,
-                gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
-              }}
-            >
-              <GalleryRows
-                images={images}
-                columnCount={columnCount}
-                virtualRows={virtualizer.getVirtualItems()}
-                selectedIds={selectedIds}
-                isSelectionMode={isSelectionMode}
-                onToggleSelect={toggleImageSelection}
-                onImageClick={onImageClick}
-              />
-            </div>
+            <DeferredGalleryRows
+              images={images}
+              selectedIds={selectedIds}
+              isSelectionMode={isSelectionMode}
+              onToggleSelect={toggleImageSelection}
+              onImageClick={onImageClick}
+              scrollContainerRef={scrollContainerRef}
+            />
           ) : (
             <GalleryEmpty />
           )}

@@ -1,13 +1,13 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { AnimateIcon } from '@animate-ui/react/icons';
-import { Slot } from '@animate-ui/react/primitives/radix-ui';
-import './card.css';
 
-type CardProps = React.ComponentProps<'div'> & { rim?: 'neutral' | 'ruby'; asChild?: boolean };
+type CardProps = React.ComponentProps<'div'> & {
+  rim?: 'neutral' | 'ruby';
+  as?: 'div' | 'nav';
+};
 
-function Card({ className, rim = 'neutral', asChild = false, ...props }: CardProps) {
-  const Surface = asChild ? Slot.Root : 'div';
+function Card({ className, rim = 'neutral', as: Surface = 'div', ...props }: CardProps) {
   return (
     <AnimateIcon animateOnHover animateOnTap className="contents">
       <Surface
