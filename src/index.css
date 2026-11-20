@@ -1,104 +1,69 @@
-/*
- * index.css
- *
- * Global stylesheet for the Teachable Machine application.
- * Imports Tailwind CSS, defines base resets (scrollbar, focus indicators),
- * custom animation utilities, and reduced-motion overrides.
- */
+@import 'tailwindcss' source('./');
+@import './components/hero/hero.css';
+@import './components/hero/hero-glass.css';
+@import './components/learning-areas.css';
+@import './components/home/home-experiments.css';
+@import './components/home/reward-experiment.css';
+@import './components/public-error.css';
+@import './components/site-navigation.css';
+@import './components/animate-ui/components/page-transition.css';
+/* Keep the small surface and home layout rules in the first stylesheet for static entry. */
+@import './components/ui/alert.css';
+@import './components/ui/card.css';
+@import './content/landing/home-editorial.css';
+@import './content/landing/home-experiment-panels.css';
+@import './site-foundation.css';
 
-@import "tailwindcss";
-
-@layer base {
-  html, body {
-    /* Clip any horizontal overflow to prevent layout widening on mobile
-       (e.g. from elements with minimum intrinsic widths exceeding the viewport). */
-    overflow-x: clip;
-    /* Scroll padding compensates for the sticky header (h-16 = 64px) so
-       keyboard-focused elements are never hidden behind it (WCAG 2.4.11) */
-    scroll-padding-top: 4.5rem;
-  }
-
-  /* Custom scrollbar styling only for pointer devices (desktop).
-     On mobile (touch), browsers use overlay scrollbars that don't affect layout.
-     Applying scrollbar-width: thin on mobile can force a non-overlay scrollbar
-     that steals width from the content area and causes asymmetric margins. */
-  @media (hover: hover) and (pointer: fine) {
-    html, body {
-      scrollbar-width: thin;
-      scrollbar-color: #a1a1aa transparent;
-    }
-    html::-webkit-scrollbar {
-      width: 6px;
-    }
-    html::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    html::-webkit-scrollbar-thumb {
-      background: #a1a1aa;
-      border-radius: 3px;
-    }
-  }
+.eyebrow {
+  display: block;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--primary);
 }
-
-@layer base {
-  /* Only show focus outlines for keyboard navigation. */
-  :focus:not(:focus-visible) {
-    outline: none !important;
-    box-shadow: none !important;
-  }
-
-  /* Global fallback focus indicator for keyboard navigation (WCAG 2.4.7) */
-  :focus-visible {
-    outline: 3px solid #2563eb;
-    outline-offset: 2px;
-  }
-
-  /* Suppress outline for inputs focused via pointer (mouse/touch) */
-  input[data-mouse-focused]:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
+.display-heading,
+.section-heading,
+.workspace-heading {
+  font-family: var(--font-display);
+  color: var(--foreground);
+  font-weight: 600;
+  letter-spacing: -0.05em;
 }
-
-
-/* Custom utility class that triggers the node-glow animation. */
-@layer utilities {
-  .animate-node-glow {
-    animation: node-glow 1s ease-in-out forwards;
-  }
+.workspace-heading {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  line-height: 1.25;
 }
-
-/* Pulse-and-scale animation used by the neural-network node visualization on the landing page. */
-@keyframes node-glow {
-  0% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.5);
-    opacity: 1;
-    box-shadow: 0 0 20px currentColor;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
+.page-layout {
+  min-width: 0;
+  padding-bottom: 5rem;
 }
-
-/* Respects the OS-level "reduce motion" preference (WCAG 2.3.3 / 2.2.2).
-   Disables all Tailwind animation helpers and cuts all transition durations to
-   near-zero so no motion occurs, while preserving layout and interaction. */
-@media (prefers-reduced-motion: reduce) {
-  .animate-node-glow,
-  .animate-spin,
-  .animate-pulse,
-  .animate-bounce,
-  .animate-ping {
-    animation: none;
+.gallery-empty-symbol {
+  position: relative;
+  isolation: isolate;
+  margin: 0;
+  color: var(--class-on-surface);
+  background: color-mix(in srgb, var(--class-on-surface) 12%, var(--card));
+}
+.gallery-empty-symbol::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0.15rem;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--class-on-surface) 8%, var(--card));
+  transform: translate(-0.3rem, -0.13rem) rotate(-10deg);
+}
+.gallery-region {
+  --gallery-columns: 3;
+  @container gallery (min-width: 18rem) {
+    --gallery-columns: 4;
   }
-  /* Disable all CSS transitions for users who prefer reduced motion (WCAG 2.2.2) */
-  *, *::before, *::after {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
+  @container gallery (min-width: 24rem) {
+    --gallery-columns: 5;
+  }
+  @container gallery (min-width: 30rem) {
+    --gallery-columns: 6;
   }
 }

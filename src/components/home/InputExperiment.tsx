@@ -1,0 +1,61 @@
+import { useState } from 'react';
+import { AnimatePresence, useIsPresent, usePresenceData } from 'motion/react';
+import { Effect } from '@animate-ui/react/primitives/effects/effect';
+import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
+import {
+  examples,
+  signalConnectors,
+  SignalArtwork,
+  SignalExampleContent,
+  type Example,
+} from './SignalArtwork';
+import { SignalHighlight } from './preview-motion';
+import type { PreviewPlayback } from './preview-types';
+
+function SignalDrawing({ animate, showMotion }: { animate: boolean; showMotion: boolean }) {
+  const [settled, setSettled] = useState(!animate);
+  if (!animate && !settled) setSettled(true);
+  if (!showMotion) return null;
+  return (
+    <AnimatePresence>
+      {animate && !settled && <SignalHighlight connectors={signalConnectors} />}
+    </AnimatePresence>
+  );
+}
+
+function SignalExample({ example }: { example: Example }) {
+  const present = useIsPresent();
+  const animate = usePresenceData() === true;
+  const transition = useTempoTransition(animate ? motionTokens.transition.fade : { duration: 0 });
+  return (
+    <Effect asChild fade={animate} initial={animate ? 'hidden' : false} transition={transition}>
+      <g data-current-example={present || undefined} aria-hidden={!present || undefined}>
+        <SignalExampleContent example={example} />
+      </g>
+    </Effect>
+  );
+}
+
+export default function InputExperiment({
+  signal,
+  imageSequence,
+  animateImage,
+  showImageMotion,
+}: PreviewPlayback) {
+  const example = examples[signal === 'dog' ? 1 : 0];
+  return (
+    <SignalArtwork
+      overlay={
+        <SignalDrawing
+          key={`${imageSequence}-${example.id}`}
+          animate={animateImage}
+          showMotion={showImageMotion}
+        />
+      }
+    >
+      <AnimatePresence initial={false} custom={showImageMotion}>
+        <SignalExample key={example.id} example={example} />
+      </AnimatePresence>
+    </SignalArtwork>
+  );
+}

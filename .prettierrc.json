@@ -1,0 +1,17 @@
+{
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "overrides": [
+    {
+      "files": [
+        ".github/scripts/cache-lifecycle/core.cjs",
+        ".github/scripts/cache-lifecycle/github.cjs",
+        ".github/scripts/cache-lifecycle/planner.cjs",
+        ".github/scripts/cache-lifecycle/recovery.cjs",
+        ".github/scripts/cache-lifecycle/run.cjs"
+      ],
+      "options": { "singleQuote": false }
+    }
+  ]
+}

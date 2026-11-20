@@ -1,0 +1,61 @@
+[data-slot='card'] {
+  --card-reflection: light-dark(#999, #ddd);
+  --card-surface: var(--glass-surface);
+}
+
+[data-slot='card'][data-rim='ruby'] {
+  --card-reflection: var(--primary);
+  --card-surface:
+    radial-gradient(
+      ellipse at 87% 116%,
+      color-mix(in srgb, var(--card-reflection) 14%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(ellipse at 11% -24%, rgb(255 255 255 / 10%), transparent 55%), var(--card);
+}
+
+@supports (mask-composite: exclude) {
+  @media (forced-colors: none) {
+    [data-slot='card']::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      padding: 1px;
+      border-radius: inherit;
+      pointer-events: none;
+      background:
+        radial-gradient(
+          ellipse 43% 70% at 28% 0%,
+          white 0%,
+          color-mix(in srgb, white 74%, var(--card-reflection)) 32%,
+          transparent 100%
+        ),
+        radial-gradient(ellipse 48% 85% at 94% 97%, var(--card-reflection), transparent 86%);
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      mask-composite: exclude;
+      opacity: 0.62;
+    }
+
+    [data-slot='card']:focus-within::before {
+      background-color: color-mix(in srgb, var(--card-reflection) 23%, transparent);
+      opacity: 1;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      [data-slot='card']:hover::before {
+        background-color: color-mix(in srgb, var(--card-reflection) 23%, transparent);
+        opacity: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      [data-slot='card']::before {
+        transition:
+          opacity 180ms ease-out,
+          background-color 180ms ease-out;
+      }
+    }
+  }
+}

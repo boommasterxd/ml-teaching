@@ -1,264 +1,168 @@
-/**
- * NeuralNetViz.tsx
- *
- * Animated neural network visualization for the landing page.
- * Renders a 4-layer network (input → hidden1 → hidden2 → output) with
- * SVG connection lines and circular nodes that light up step-by-step
- * during forward propagation. Users trigger the animation by clicking
- * the dog or cat button.
- */
-import { useMemo } from 'react';
-import { Dog, Cat } from 'lucide-react';
-import { cn } from '../lib/utils';
-import { useNeuralNetAnimation } from '../hooks/useNeuralNetAnimation';
-import { NEURAL_NET_VIZ } from '../constants';
-import { LAYERS, STATIC_CONNECTIONS, getNodeY } from './neuralNetViz.utils';
-import type { Signal, SvgConnection } from './neuralNetViz.utils';
+'use client';
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
+import { useEffect } from 'react';
+import { Effect } from '@animate-ui/react/primitives/effects/effect';
+import { Shine } from '@animate-ui/react/primitives/effects/shine';
+import { motionTokens, useShouldReduceMotion } from '@animate-ui/react/utils/motion';
+import { NetworkLoadAlert } from './NeuralNetFrame';
+import ResultFeedback from './network/ResultFeedback';
+import { Progress } from './ui/progress';
+import { Text } from './ui/typography';
+import { ANIMATION, NETWORK_STAGES } from '../constants';
+import { KNN_EXAMPLES, KNN_NEIGHBOR_COUNT } from '../lib/network-demo';
+import type { useNeuralNetAnimation } from '../hooks/useNeuralNetAnimation';
+import FeatureEngine from './network/FeatureEngine';
+import KnnEngine from './network/KnnEngine';
+import { FLOW_HEAD_PATHS, FLOW_PATHS, NetworkScene } from './network/NetworkScene';
+import { NETWORK_EXAMPLES, type ExampleSignal } from './network/examples';
 
-/** Props for the InputButtons component. */
-interface InputButtonsProps {
-  /** The currently active signal class, or null if no animation has been triggered yet. */
-  activeSignal: Signal;
-  /** Whether a forward-propagation animation is currently running. Disables both buttons while true. */
-  animating: boolean;
-  /** Callback invoked when the user clicks a trigger button. */
-  onTrigger: (type: 'dog' | 'cat') => void;
-}
-
-/**
- * Renders the dog and cat input buttons that start a forward-propagation animation.
- * Each button calls `onTrigger` with its class identifier, which kicks off the
- * step-based animation in `useNeuralNetAnimation`. Buttons are disabled while an
- * animation runs to prevent overlapping states. The icon elements carry
- * `aria-hidden` because the visible text label already conveys the action;
- * the button itself needs no additional aria-label.
- */
-function InputButtons({ activeSignal, animating, onTrigger }: InputButtonsProps) {
+function SignalFlow({ active, sequence }: { active: boolean; sequence: number }) {
+  const reduce = useShouldReduceMotion();
+  const duration = active && !reduce ? ANIMATION.STEP_DURATION_MS / 1000 : 0;
   return (
-    <div className="flex justify-center gap-6 mb-12 relative z-10">
-      <button
-        onClick={() => onTrigger('dog')}
-        disabled={animating}
-        className={cn(
-          "flex flex-col items-center p-4 rounded-2xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-800",
-          activeSignal === 'dog' ? "border-red-500 bg-red-500/20" : "border-zinc-600 hover:border-zinc-500 bg-zinc-700/50",
-          animating && activeSignal !== 'dog' ? "opacity-50" : ""
-        )}
-      >
-        <Dog className="w-12 h-12 mb-2 text-red-400" aria-hidden="true" />
-        <span className="font-medium">Hundebild zeigen</span>
-      </button>
-      <button
-        onClick={() => onTrigger('cat')}
-        disabled={animating}
-        className={cn(
-          "flex flex-col items-center p-4 rounded-2xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-800",
-          activeSignal === 'cat' ? "border-blue-500 bg-blue-500/20" : "border-zinc-600 hover:border-zinc-500 bg-zinc-700/50",
-          animating && activeSignal !== 'cat' ? "opacity-50" : ""
-        )}
-      >
-        <Cat className="w-12 h-12 mb-2 text-blue-400" aria-hidden="true" />
-        <span className="font-medium">Katzenbild zeigen</span>
-      </button>
-    </div>
-  );
-}
-
-/** Props for the SvgConnections component. */
-interface SvgConnectionsProps {
-  /** Pre-computed list of connection descriptors, including coordinates, color, and opacity. */
-  connections: SvgConnection[];
-}
-
-/**
- * Renders all inter-layer connection lines as a full-bleed SVG overlay.
- * SVG is used because fractional pixel coordinates from `getNodeY` map
- * directly to SVG geometry without layout reflows. The wrapper div carries
- * `pointer-events-none` so clicks pass through to the node buttons beneath,
- * and `aria-hidden` hides the decorative lines from screen readers entirely.
- */
-function SvgConnections({ connections }: SvgConnectionsProps) {
-  return (
-    <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
-      <svg width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">
-        {connections.map(({ key, x1, y1, x2, y2, color, opacity }) => (
-          <line
-            key={key}
-            x1={x1} y1={y1}
-            x2={x2} y2={y2}
-            stroke={color} strokeWidth="2"
-            opacity={opacity}
-            style={{ transition: 'opacity 0.4s ease' }}
-          />
-        ))}
-      </svg>
-    </div>
-  );
-}
-
-/** Props for the LayerNodes component. */
-interface LayerNodesProps {
-  /** The currently active signal class, determines which output node and glow color to highlight. */
-  activeSignal: Signal;
-  /** Current animation step (0–7). Controls which layers and nodes appear lit up. */
-  animStep: number;
-}
-
-/**
- * Renders all four layer columns with their circular nodes.
- * Node activation is gated by `animStep`: input lights up at step 0,
- * hidden1 at step 2, hidden2 at step 4, and only the target output node
- * (matching `activeSignal`) activates at step 6. This sequential threshold
- * simulates forward propagation through the network. Inactive nodes render
- * at reduced opacity; active nodes scale up and glow in the signal color.
- */
-function LayerNodes({ activeSignal, animStep }: LayerNodesProps) {
-  return (
-    <>
-      {LAYERS.map((layer, layerIdx) => (
-        <div
-          key={layer.id}
-          className="absolute top-0 bottom-0 flex flex-col items-center z-10"
-          style={{
-            left: `${NEURAL_NET_VIZ.LAYER_OFFSET_PERCENT + layerIdx * NEURAL_NET_VIZ.LAYER_WIDTH_PERCENT}%`,
-            width: `${NEURAL_NET_VIZ.LAYER_WIDTH_PERCENT}%`,
+    <svg
+      viewBox="0 0 120 100"
+      fill="none"
+      className="network-signal-flow"
+      stroke="var(--primary)"
+      strokeWidth="5"
+      aria-hidden="true"
+    >
+      {FLOW_PATHS.map((d, index) => (
+        <Effect
+          asChild
+          key={`${sequence}-${index}`}
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: active ? 1 : 0 }}
+          transition={{
+            duration: duration * 0.7,
+            ease: motionTokens.ease.draw,
           }}
         >
-          <div className="text-[10px] sm:text-xs font-mono text-zinc-300 mt-2 uppercase tracking-wider absolute -top-8 whitespace-nowrap">{layer.label}</div>
-
-          {Array.from({ length: layer.nodes }).map((_, nodeIdx) => {
-            const isOutput = layer.id === 'output';
-            // KNN returns a single winning class, so only the output node matching
-            // that class lights up — not all outputs simultaneously.
-            const isTargetNode = isOutput && ((activeSignal === 'dog' && nodeIdx === 0) || (activeSignal === 'cat' && nodeIdx === 1));
-
-            // Each layer lights up at a different animation step to simulate
-            // sequential forward propagation through the network.
-            let isNodeActive = false;
-            if (layer.id === 'input' && animStep >= 0) isNodeActive = true;
-            if (layer.id === 'hidden1' && animStep >= 2) isNodeActive = true;
-            if (layer.id === 'hidden2' && animStep >= 4) isNodeActive = true;
-            if (layer.id === 'output' && animStep >= 6 && isTargetNode) isNodeActive = true;
-
-            const glowColor = activeSignal === 'dog' ? 'shadow-red-500/80 bg-red-400' : 'shadow-blue-500/80 bg-blue-400';
-            const yPos = getNodeY(layer.nodes, nodeIdx);
-
-            return (
-              <div
-                key={`${layer.id}-${nodeIdx}`}
-                className="absolute w-6 h-6"
-                style={{ top: yPos - 12, left: 'calc(50% - 12px)' }}
-              >
-                <div
-                  className={cn(
-                    "w-full h-full rounded-full transition-[opacity,transform] duration-500",
-                    isNodeActive
-                      ? glowColor + " shadow-[0_0_15px_rgba(0,0,0,0.5)] border-transparent scale-110 opacity-100"
-                      : "bg-zinc-500 border-2 border-zinc-400 opacity-60"
-                  )}
-                />
-                {isOutput && (
-                  <span className={cn(
-                    "absolute left-full ml-4 top-1/2 -translate-y-1/2 whitespace-nowrap font-medium transition-all duration-500",
-                    animStep >= 7 && isTargetNode
-                      ? (activeSignal === 'dog' ? "text-red-400 opacity-100 translate-x-0" : "text-blue-300 opacity-100 translate-x-0")
-                      : "text-zinc-400 opacity-100 translate-x-0"
-                  )}>
-                    {nodeIdx === 0 ? 'Hund' : 'Katze'}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
+          <path d={d} data-flow-part="shaft" />
+        </Effect>
       ))}
-    </>
-  );
-}
-
-/** Props for the AnimationResult component. */
-interface AnimationResultProps {
-  /** The prediction label to display after animation completes, or null if no result is available yet. */
-  result: string | null;
-  /** Whether the animation is currently running; shows a processing hint when true. */
-  animating: boolean;
-  /** The active signal class, used to apply the correct color theme to the result label. */
-  activeSignal: Signal;
-}
-
-/**
- * Displays the prediction outcome at the end of an animation cycle.
- * Three mutually exclusive states are rendered inside a fixed-height container
- * to prevent layout shifts: when `result` is set (animation finished), a
- * colored badge with the predicted class appears; while `animating` is true
- * but no result exists yet, a pulsing processing hint is shown; otherwise an
- * idle call-to-action prompts the user to click an input button. The wrapper
- * uses `aria-live="polite"` so screen readers announce the result automatically
- * without requiring focus to move to this region.
- */
-function AnimationResult({ result, animating, activeSignal }: AnimationResultProps) {
-  return (
-    <div className="mt-12 text-center h-16" aria-live="polite">
-      {result ? (
-        <div className={cn(
-          "inline-block px-6 py-3 rounded-xl text-xl font-bold animate-in fade-in slide-in-from-bottom-4",
-          activeSignal === 'dog' ? "bg-red-500/20 text-red-300 border border-red-500/30" : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-        )}>
-          {result}
-        </div>
-      ) : animating ? (
-        <div className="text-zinc-300 animate-pulse">Verarbeite Signal...</div>
-      ) : (
-        <div className="text-zinc-300">Klicke auf ein Icon, um den Prozess zu starten</div>
+      {FLOW_HEAD_PATHS.map((d, index) => (
+        <Effect
+          asChild
+          key={`${sequence}-head-${index}`}
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: active ? 1 : 0 }}
+          transition={{
+            duration: duration * 0.3,
+            delay: duration * 0.7,
+            ease: motionTokens.ease.draw,
+          }}
+        >
+          <path d={d} data-flow-part="head" />
+        </Effect>
+      ))}
+      {active && !reduce && (
+        <Effect
+          asChild
+          key={`${sequence}-packet`}
+          initial={{ pathLength: 0.15, pathOffset: 0, opacity: 0 }}
+          animate={{ pathOffset: [0, 0.85], opacity: [0, 1, 0] }}
+          transition={{ duration: duration * 0.7, ease: 'linear' }}
+        >
+          <path d={FLOW_PATHS[0]} strokeWidth="8" strokeLinecap="round" />
+        </Effect>
       )}
+    </svg>
+  );
+}
+
+function ResultBars({ signal, ready }: { signal: ExampleSignal; ready: boolean }) {
+  return (
+    <div className="network-readout">
+      {(['dog', 'cat'] as const).map((type) => {
+        const example = KNN_EXAMPLES[signal];
+        const winner = type === example.winner;
+        const votes = example.votes[type];
+        const value = ready ? Math.round((votes / KNN_NEIGHBOR_COUNT) * 100) : 0;
+        return (
+          <div key={type} className="network-score" data-winner={(ready && winner) || undefined}>
+            <div className="flex items-center justify-between gap-4">
+              <Text variant="small">{NETWORK_EXAMPLES[type].name}</Text>
+              <Text variant="small" className="font-mono tabular-nums">
+                {ready ? `${votes} ${votes === 1 ? 'Stimme' : 'Stimmen'}` : '—'}
+              </Text>
+            </div>
+            <Progress
+              value={value}
+              aria-label={`Nachbarstimmen ${NETWORK_EXAMPLES[type].name}`}
+              aria-valuetext={
+                ready ? `${votes} von ${KNN_NEIGHBOR_COUNT} Stimmen` : 'Noch keine Stimmen'
+              }
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+type NetworkState = ReturnType<typeof useNeuralNetAnimation>;
 
-/**
- * Renders an interactive neural network animation with dog/cat input buttons.
- *
- * Composes `useNeuralNetAnimation` to drive a step-based animation state.
- * SVG connection lines and node circles activate sequentially as `animStep`
- * advances through the forward-propagation stages.
- */
-export default function NeuralNetViz() {
-  const { activeSignal, animStep, animating, result, triggerAnimation } = useNeuralNetAnimation();
-
-  // Memoized list of SVG line descriptors for all inter-layer connections.
-  // Each connection object carries its start/end coordinates plus the
-  // current stroke color and opacity driven by `animStep` and `activeSignal`.
-  // Connections between layers activate at specific animation steps:
-  //   - input → hidden1: step >= 1
-  //   - hidden1 → hidden2: step >= 3
-  //   - hidden2 → output: step >= 5 (only for the target output node)
-  const svgConnections = useMemo(() => {
-    // Red for dog signal, blue for cat signal; muted grey when inactive.
-    const activeColor = activeSignal === 'dog' ? NEURAL_NET_VIZ.COLORS.DOG : NEURAL_NET_VIZ.COLORS.CAT;
-    return STATIC_CONNECTIONS.map(conn => {
-      const isActive = conn.groupIndex === 0 ? animStep >= 1
-        : conn.groupIndex === 1 ? animStep >= 3
-        : animStep >= 5 && ((activeSignal === 'dog' && conn.targetNodeIndex === 0) || (activeSignal === 'cat' && conn.targetNodeIndex === 1));
-      return {
-        key: conn.key, x1: conn.x1, y1: conn.y1, x2: conn.x2, y2: conn.y2,
-        color: isActive ? activeColor : NEURAL_NET_VIZ.COLORS.INACTIVE,
-        opacity: isActive ? NEURAL_NET_VIZ.OPACITY.ACTIVE : NEURAL_NET_VIZ.OPACITY.INACTIVE,
-      };
-    });
-  }, [animStep, activeSignal]);
-
+export function NetworkDiagram({
+  activeSignal,
+  animStep,
+  animating,
+  result,
+  sequence,
+  onReady,
+  preparing = false,
+  failed = false,
+  requestedSignal,
+}: Omit<NetworkState, 'triggerAnimation'> & {
+  onReady?: () => void;
+  preparing?: boolean;
+  failed?: boolean;
+  requestedSignal?: ExampleSignal;
+}) {
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
+  const signal = activeSignal ?? requestedSignal ?? 'dog';
   return (
-    <div className="bg-zinc-800 p-8 rounded-3xl border border-zinc-700 relative overflow-hidden">
-      <InputButtons activeSignal={activeSignal} animating={animating} onTrigger={triggerAnimation} />
-      <div className="relative h-80 max-w-4xl mx-auto">
-        <SvgConnections connections={svgConnections} />
-        <LayerNodes activeSignal={activeSignal} animStep={animStep} />
-      </div>
-      <AnimationResult result={result} animating={animating} activeSignal={activeSignal} />
-    </div>
+    <>
+      <NetworkScene
+        signal={activeSignal ?? requestedSignal ?? null}
+        effects={{
+          engine: <FeatureEngine step={animStep} sequence={sequence} signal={signal} />,
+          neighbors: <KnnEngine step={animStep} sequence={sequence} signal={signal} />,
+          scan: (
+            <Shine
+              key={sequence}
+              enable={animStep >= 0}
+              loop={false}
+              duration={ANIMATION.STEP_DURATION_MS}
+              color="var(--primary)"
+              opacity={0.45}
+              style={{ position: 'absolute', inset: 0 }}
+            />
+          ),
+          inbound: <SignalFlow active={animStep >= NETWORK_STAGES.INBOUND} sequence={sequence} />,
+          matching: <SignalFlow active={animStep >= NETWORK_STAGES.MATCHING} sequence={sequence} />,
+          outbound: <SignalFlow active={animStep >= NETWORK_STAGES.OUTBOUND} sequence={sequence} />,
+          result: <ResultBars signal={signal} ready={animStep >= NETWORK_STAGES.OUTPUT} />,
+        }}
+      />
+      {failed ? (
+        <NetworkLoadAlert />
+      ) : (
+        <div className="network-result" role="status">
+          {preparing ? (
+            <Text variant="muted">Beispiel wird geladen…</Text>
+          ) : result ? (
+            <ResultFeedback key={sequence} signal={signal} />
+          ) : (
+            <Text variant="muted">
+              {animating ? 'Signal wird verarbeitet…' : 'Wähle ein Beispiel.'}
+            </Text>
+          )}
+        </div>
+      )}
+    </>
   );
 }

@@ -1,8 +1,7 @@
 /**
  * useConsentFlow.ts
  *
- * Manages the two-step consent flow: GDPR/privacy consent followed by camera
- * access consent. Derives modal visibility flags from the underlying state.
+ * Manages the two-step consent flow: Image/model consent followed by optional camera access. Derives modal visibility flags from the underlying state.
  */
 import { useState, useCallback } from 'react';
 
@@ -19,23 +18,32 @@ import { useState, useCallback } from 'react';
  *   - `grantConsent` — callback to accept the GDPR/privacy notice.
  *   - `grantCameraConsent` — callback to grant camera access.
  *   - `showConsentModal` — true while GDPR consent is still pending.
- *   - `showCameraModal` — true after GDPR consent but before camera consent.
+ *   - `showCameraModal` — true while the optional camera choice is pending.
  *   - `isFullyConsented` — true once both consents have been granted.
  */
 export function useConsentFlow() {
   const [hasConsented, setHasConsented] = useState(false);
   const [cameraConsent, setCameraConsent] = useState(false);
+  const [cameraDeclined, setCameraDeclined] = useState(false);
 
   const grantConsent = useCallback(() => setHasConsented(true), []);
-  const grantCameraConsent = useCallback(() => setCameraConsent(true), []);
+  const grantCameraConsent = useCallback(() => {
+    setCameraConsent(true);
+    setCameraDeclined(false);
+  }, []);
+  const declineCameraConsent = useCallback(() => setCameraDeclined(true), []);
+  const requestCameraConsent = useCallback(() => setCameraDeclined(false), []);
 
   return {
     hasConsented,
     cameraConsent,
+    cameraDeclined,
     grantConsent,
     grantCameraConsent,
+    declineCameraConsent,
+    requestCameraConsent,
     showConsentModal: !hasConsented,
-    showCameraModal: hasConsented && !cameraConsent,
+    showCameraModal: hasConsented && !cameraConsent && !cameraDeclined,
     isFullyConsented: hasConsented && cameraConsent,
   };
 }

@@ -22,6 +22,8 @@ export interface MLImage {
  * and all training images collected for that class.
  */
 export interface MLClass {
+  /** Incremented when clearing images so pending local captures cannot restore them. */
+  captureVersion?: number;
   /** Unique identifier for the class. */
   id: string;
   /** Human-readable label shown in the UI and used as the KNN class key. */
@@ -47,4 +49,4 @@ export interface Prediction {
  * Fixed color palette for assigning distinct colors to user-defined classes.
  * Supports up to six simultaneous classes before cycling would be needed.
  */
-export const COLORS = ['#dc2626', '#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777'];
+export const COLORS = ['#dc2626', '#2563eb', '#047857', '#b45309', '#7c3aed', '#db2777'];

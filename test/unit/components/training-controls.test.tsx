@@ -1,0 +1,155 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import TrainingControls from '@/components/TrainingControls';
+import PredictionPanel from '@/components/PredictionPanel';
+import TrainingError from '@/components/TrainingError';
+import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
+import { makeClasses } from '../helpers/training-data';
+
+beforeEach(installBrowserHost);
+afterEach(restoreBrowserHost);
+
+describe('training and prediction controls', () => {
+  it('keeps training blocked until uploads and label validation are complete, then exposes retraining', () => {
+    const onTrain = vi.fn();
+    const onPredict = vi.fn();
+    const base = {
+      classes: makeClasses(10),
+      canTrain: false,
+      progress: null,
+      hasTrainedModel: false,
+      hasInvalidNames: false,
+      hasDuplicateNames: false,
+      hasPendingUploads: true,
+      onTrain,
+      onPredict,
+    };
+    const { rerender } = render(<TrainingControls {...base} />);
+    expect(
+      (screen.getByRole('button', { name: 'Modell trainieren' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(screen.getByText(/alle ausgewählten Bilder vollständig/)).toBeTruthy();
+    rerender(<TrainingControls {...base} hasPendingUploads={false} hasInvalidNames />);
+    expect(screen.getByText('Bitte gib allen Klassen einen Namen.')).toBeTruthy();
+    rerender(<TrainingControls {...base} hasPendingUploads={false} hasDuplicateNames />);
+    expect(screen.getByText('Bitte gib allen Klassen einen eindeutigen Namen.')).toBeTruthy();
+    rerender(<TrainingControls {...base} hasPendingUploads={false} canTrain />);
+    const train = screen.getByRole<HTMLButtonElement>('button', { name: 'Modell trainieren' });
+    train.focus();
+    fireEvent.click(train);
+    expect(onTrain).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Weiter zur Vorhersage' })).toBeNull();
+    rerender(
+      <TrainingControls
+        {...base}
+        hasPendingUploads={false}
+        progress={{ processed: 0, total: 20 }}
+      />,
+    );
+    expect(screen.getByText('Das Modell wird vorbereitet.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Trainiere/ })).toBe(train);
+    expect(document.activeElement).toBe(train);
+    expect(train.disabled).toBe(false);
+    expect(train.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(train);
+    expect(onTrain).toHaveBeenCalledOnce();
+    rerender(
+      <TrainingControls
+        {...base}
+        hasPendingUploads={false}
+        progress={{ processed: 16, total: 20 }}
+      />,
+    );
+    const progress = screen.getByRole('progressbar', { name: 'Trainingsfortschritt' });
+    expect(progress.getAttribute('aria-valuetext')).toBe('16 von 20 Bildern verarbeitet');
+    expect(screen.getByRole('status').textContent).toContain('Training läuft');
+    rerender(<TrainingControls {...base} hasPendingUploads={false} hasTrainedModel canTrain />);
+    expect(screen.getByRole('status').textContent).toContain('Training abgeschlossen');
+    expect(document.activeElement).toBe(train);
+    fireEvent.click(screen.getByRole('button', { name: 'Weiter zur Vorhersage' }));
+    expect(onPredict).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: 'Modell neu trainieren' }));
+    expect(onTrain).toHaveBeenCalledTimes(2);
+  });
+
+  it('requires a camera for live prediction and exposes class confidence and stop controls', () => {
+    const onStartPredicting = vi.fn();
+    const onStopPredicting = vi.fn();
+    const stream = {} as MediaStream;
+    const base = {
+      classes: makeClasses(10),
+      prediction: null,
+      isPredicting: false,
+      hasTrainedModel: true,
+      stream: null,
+      facingMode: 'user' as const,
+      predictVideoRef: { current: null },
+      onStartPredicting,
+      onStopPredicting,
+      onEnableCamera: vi.fn(),
+      cameraPending: false,
+      subscribeToFeatures: () => () => {},
+    };
+    const { rerender } = render(
+      <PredictionPanel {...base} hasTrainedModel={false} stream={stream} />,
+    );
+    expect(base.predictVideoRef.current).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Vorhersage' }).id).toBe('training-prediction');
+    expect(screen.getByText(/Trainiere zuerst dein Modell/)).toBeTruthy();
+    rerender(<PredictionPanel {...base} />);
+    expect(screen.queryByRole('button', { name: 'Live-Vorhersage starten' })).toBeNull();
+    expect(screen.getByText(/Aktiviere die Kamera/)).toBeTruthy();
+    rerender(<PredictionPanel {...base} onEnableCamera={undefined} />);
+    expect(screen.queryByRole('button', { name: 'Kamera aktivieren' })).toBeNull();
+    rerender(<PredictionPanel {...base} stream={stream} />);
+    expect(base.predictVideoRef.current).toBeNull();
+    const start = screen.getByRole('button', { name: 'Live-Vorhersage starten' });
+    const frame = start.closest('[data-slot="prediction-camera"]');
+    expect(frame).not.toBeNull();
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    fireEvent.click(start);
+    expect(onStartPredicting).toHaveBeenCalledOnce();
+    rerender(<PredictionPanel {...base} stream={stream} isPredicting />);
+    const preview = screen.getByLabelText('Kameravorschau für Vorhersage');
+    expect(base.predictVideoRef.current).toBe(preview);
+    expect((preview as HTMLVideoElement).srcObject).toBe(stream);
+    expect(frame?.contains(preview)).toBe(true);
+    expect(screen.getByText('Die Vorhersage wird vorbereitet.')).toBeTruthy();
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Live-Vorhersage stoppen' })).toBe(start);
+    rerender(
+      <PredictionPanel
+        {...base}
+        stream={stream}
+        isPredicting
+        prediction={{ label: 'red', confidences: { red: 0.85, blue: 0.15 } }}
+      />,
+    );
+    const result = screen.getByRole('heading', { name: 'Rot' });
+    expect(result.closest('[role="status"]')).not.toBeNull();
+    expect(
+      screen.getByRole('progressbar', { name: 'Konfidenz für Rot' }).getAttribute('aria-valuenow'),
+    ).toBe('85');
+    expect(
+      screen.getByRole('progressbar', { name: 'Konfidenz für Blau' }).getAttribute('aria-valuenow'),
+    ).toBe('15');
+    fireEvent.click(screen.getByRole('button', { name: 'Live-Vorhersage stoppen' }));
+    expect(onStopPredicting).toHaveBeenCalledOnce();
+    rerender(<PredictionPanel {...base} stream={stream} />);
+    expect(preview.isConnected).toBe(false);
+    expect(frame?.contains(screen.getByRole('button', { name: 'Live-Vorhersage starten' }))).toBe(
+      true,
+    );
+    expect((preview as HTMLVideoElement).srcObject).toBeNull();
+    expect(base.predictVideoRef.current).toBeNull();
+  });
+
+  it('focuses model failures and offers a route back without forcing a permission prompt', () => {
+    const onReturn = vi.fn();
+    render(<TrainingError message="Modell konnte nicht geladen werden." onReturn={onReturn} />);
+    expect(document.activeElement).toBe(screen.getByRole('alert'));
+    expect(screen.getByRole('button', { name: 'Seite neu laden' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Zur Bilderkennung' }));
+    expect(onReturn).toHaveBeenCalledOnce();
+  });
+});

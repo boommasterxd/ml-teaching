@@ -1,0 +1,89 @@
+name: Dependency cache reconciliation
+
+on:
+  schedule:
+    - cron: '23 11 * * *'
+
+permissions: {}
+
+concurrency:
+  group: dependency-cache-reconciliation-main
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: Check the current npm cache
+    if: >-
+      github.repository == 'boommasterxd/ml-teaching' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.repository.default_branch == 'main'
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      missing: ${{ steps.confirm.outputs.missing }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26.x'
+          check-latest: true
+          package-manager-cache: false
+      - name: Resolve compatible npm cache
+        id: cache-config
+        run: node .github/scripts/cache.ts configure
+        env:
+          CACHE_INPUT_HASH: ${{ hashFiles('package.json', 'package-lock.json', '.npmrc', '.github/scripts/cache.ts', '.github/workflows/ci.yml', '.github/workflows/dependency-cache.yml') }}
+      - name: Look up the exact cache without downloading it
+        id: lookup
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.cache-config.outputs.path }}
+          key: ${{ steps.cache-config.outputs.key }}
+          lookup-only: true
+      - name: Confirm the miss on current main
+        id: confirm
+        if: >-
+          steps.lookup.outputs.cache-hit == '' &&
+          steps.lookup.outputs.cache-primary-key == steps.cache-config.outputs.key
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CACHE_KEY: ${{ steps.cache-config.outputs.key }}
+        run: |
+          set -euo pipefail
+          main_sha=$(timeout 30s gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')
+          [[ "$main_sha" =~ ^[a-f0-9]{40}$ ]]
+          if [[ "$main_sha" != "$GITHUB_SHA" ]]; then
+            echo 'Main advanced during the cache check.'
+            exit 0
+          fi
+          cache_state=$(timeout 30s gh api -X GET "repos/$GITHUB_REPOSITORY/actions/caches" \
+            -f ref=refs/heads/main -f key="$CACHE_KEY" |
+            jq -er --arg key "$CACHE_KEY" '
+              if .total_count == 0 and .actions_caches == [] then "missing"
+              elif any(.actions_caches[]; .key == $key and .ref == "refs/heads/main" and .size_in_bytes > 0)
+              then "present"
+              else error("Cache absence could not be confirmed") end')
+          if [[ "$cache_state" == missing ]]; then
+            echo 'missing=true' >> "$GITHUB_OUTPUT"
+          fi
+
+  request-warmup:
+    name: Request the default-branch cache producer
+    needs: probe
+    if: needs.probe.outputs.missing == 'true'
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Start the existing trusted warmup
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          timeout 30s gh api -X POST "repos/$GITHUB_REPOSITORY/actions/workflows/dependency-cache.yml/dispatches" -f ref=main

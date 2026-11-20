@@ -1,209 +1,177 @@
-/**
- * Hook that loads TensorFlow.js, MobileNet, and the KNN classifier once the user consents.
- * Includes retry logic with exponential backoff for network-dependent model loading.
- * Uses an AbortSignal to cancel pending retries on unmount or consent change.
- */
-import { useState, useEffect, useRef } from 'react';
-import * as tf from '@tensorflow/tfjs-core';
-import '@tensorflow/tfjs-backend-webgl';
-import * as mobilenet from '@tensorflow-models/mobilenet';
-import * as knnClassifier from '@tensorflow-models/knn-classifier';
+/** Loads browser ML code and model weights only after explicit consent. */
+import { useState, useEffect, useRef, useCallback, useEffectEvent } from 'react';
 import { ML, MODEL_LOAD_RETRY } from '../constants';
+import {
+  createClassifier,
+  initializeBackend,
+  loadClassifierModule,
+  loadTensorFlow,
+  retainModel,
+  retireModel,
+} from '../lib/ml-runtime';
 import type { ErrorCategory } from '../types/errors';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
 
-// Module-level cache: MobileNet is re-used across in-app resets without re-downloading.
-// Cleared on page reload (JS context reset), but TF.js IndexedDB cache prevents re-download anyway.
-let cachedMobilenet: FeatureExtractor | null = null;
-let tfBackendInitialized = false;
-
-/**
- * Configuration options for `loadWithRetry`.
- */
 export interface RetryOptions {
-  /** Maximum number of attempts before re-throwing the last error. */
   maxAttempts: number;
-  /** Base delay in milliseconds; doubled on each successive attempt (exponential backoff). */
   baseDelayMs: number;
 }
 
-/**
- * Retries an async operation with exponential backoff until it succeeds or the
- * maximum number of attempts is reached. Aborts cleanly when the provided
- * AbortSignal fires, rejecting the delay promise immediately.
- *
- * @param fn - Async factory that performs the operation to retry.
- * @param options - Retry configuration: `maxAttempts` and `baseDelayMs`.
- * @param signal - AbortSignal used to cancel any pending retry delay.
- * @returns The resolved value of `fn` on the first successful attempt.
- * @throws The last error thrown by `fn`, or the abort reason if the signal fires.
- */
+/** Sequential retries; an aborted or timed-out request is never duplicated. */
 export async function loadWithRetry<T>(
   fn: () => Promise<T>,
   options: RetryOptions,
   signal: AbortSignal,
 ): Promise<T> {
-  const { maxAttempts, baseDelayMs } = options;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+  for (let attempt = 1; attempt <= options.maxAttempts; attempt++) {
     signal.throwIfAborted();
     try {
       return await fn();
-    } catch (err) {
-      if (signal.aborted) throw signal.reason as Error;
-      if (attempt === maxAttempts) throw err;
+    } catch (error) {
+      signal.throwIfAborted();
+      if (
+        attempt === options.maxAttempts ||
+        (error instanceof DOMException && error.name === 'TimeoutError')
+      )
+        throw error;
       await new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(resolve, baseDelayMs * Math.pow(2, attempt - 1));
-        signal.addEventListener('abort', () => {
+        const abort = () => {
           clearTimeout(timer);
           reject(signal.reason);
-        }, { once: true });
+        };
+        const timer = setTimeout(
+          () => {
+            signal.removeEventListener('abort', abort);
+            resolve();
+          },
+          options.baseDelayMs * 2 ** (attempt - 1),
+        );
+        signal.addEventListener('abort', abort, { once: true });
       });
     }
   }
-  throw new Error('Unreachable');
+  throw new Error('No model load attempts configured.');
 }
 
-/**
- * Initializes the TensorFlow.js WebGL backend and waits until it is ready.
- *
- * @param setLoadingText - Callback to update the human-readable loading status string.
- * @param signal - AbortSignal used to cancel the initialization if consent is revoked or the component unmounts.
- */
-async function initTfBackend(
-  setLoadingText: (text: string) => void,
-  signal: AbortSignal,
-): Promise<void> {
-  if (tfBackendInitialized) return;
-  setLoadingText('Lade TensorFlow.js Backend...');
-  await tf.setBackend('webgl');
-  await tf.ready();
-  if (signal.aborted) throw signal.reason as Error;
-  tfBackendInitialized = true;
-}
+type LoadingStep<T> = (setText: (text: string) => void, signal: AbortSignal) => Promise<T>;
 
-/**
- * Creates a new KNN classifier instance.
- *
- * @param setLoadingText - Callback to update the human-readable loading status string.
- * @param signal - AbortSignal used to cancel the operation if consent is revoked or the component unmounts.
- * @returns The created KNN classifier.
- */
-async function createKnnClassifier(
-  setLoadingText: (text: string) => void,
-  signal: AbortSignal,
-): Promise<Classifier> {
-  setLoadingText('Erstelle KNN Klassifikator...');
-  const knn = knnClassifier.create();
-  if (signal.aborted) throw signal.reason as Error;
-  return knn;
-}
+type MobileNetLoader = (signal: AbortSignal) => Promise<FeatureExtractor>;
+let pendingModelLoad: Promise<FeatureExtractor> | undefined;
 
-/**
- * Downloads and initializes the MobileNet feature extractor with retry logic.
- *
- * @param setLoadingText - Callback to update the human-readable loading status string.
- * @param signal - AbortSignal forwarded to `loadWithRetry` to abort pending retry delays.
- * @returns The loaded MobileNet instance.
- */
-async function loadMobileNet(
-  setLoadingText: (text: string) => void,
-  signal: AbortSignal,
-): Promise<FeatureExtractor> {
-  if (cachedMobilenet) return cachedMobilenet;
-  const model = await loadWithRetry(
-    async () => {
-      if (signal.aborted) throw signal.reason as Error;
-      setLoadingText('Lade MobileNet (Feature Extractor)...');
-      return Promise.race([
-        mobilenet.load({
-          version: ML.MOBILENET_VERSION,
-          alpha: ML.MOBILENET_ALPHA,
-        }),
-        new Promise<never>((_, reject) => {
-          const timer = setTimeout(
-            () => reject(new Error('MobileNet load timed out')),
-            MODEL_LOAD_RETRY.LOAD_TIMEOUT_MS,
-          );
-          signal.addEventListener('abort', () => clearTimeout(timer), { once: true });
-        }),
-      ]);
-    },
-    { maxAttempts: MODEL_LOAD_RETRY.MAX_ATTEMPTS, baseDelayMs: MODEL_LOAD_RETRY.BASE_DELAY_MS },
-    signal,
-  );
-  cachedMobilenet = model;
-  return model;
-}
-
-/**
- * Pre-compiles WebGL shaders for the KNN training and prediction operations by running
- * a dummy forward pass through MobileNet + KNN. Without this warmup, shader compilation
- * happens on the user's first training run, causing visible UI lag. After warmup the
- * compiled shaders are cached in the WebGL context and all subsequent calls are fast.
- *
- * Uses `tf.tidy` to ensure all intermediate tensors are freed automatically.
- *
- * @param model - The already-loaded MobileNet instance.
- * @param signal - AbortSignal to cancel the warmup if consent is revoked or the component unmounts.
- */
-async function warmupKnnShaders(model: FeatureExtractor, signal: AbortSignal): Promise<void> {
-  if (signal.aborted) return;
-  const dummyClassifier = knnClassifier.create();
+async function loadWhenIdle(load: MobileNetLoader, signal: AbortSignal) {
+  // An already-started GPU warmup cannot be cancelled. Do not start another
+  // graph download until the abandoned attempt has finished releasing it.
+  while (pendingModelLoad) {
+    await pendingModelLoad.catch(() => {});
+    signal.throwIfAborted();
+  }
+  signal.throwIfAborted();
+  pendingModelLoad = load(signal);
   try {
-    // Run two dummy examples (two different class IDs) so that predictClass has
-    // at least one example per class and compiles the full distance-computation path.
-    for (let classId = 0; classId < 2; classId++) {
-      const features = tf.tidy(() => {
-        const dummyImg = tf.zeros([224, 224, 3]) as tf.Tensor3D;
-        return model.infer(dummyImg, true);
-      });
-      dummyClassifier.addExample(features, String(classId));
+    return await pendingModelLoad;
+  } finally {
+    pendingModelLoad = undefined;
+  }
+}
+
+/** Cancel the HTTP requests while allowing an already-started GPU read to finish. */
+function awaitModel(loadModel: MobileNetLoader, parent: AbortSignal): Promise<FeatureExtractor> {
+  const controller = new AbortController();
+  const signal = AbortSignal.any([parent, controller.signal]);
+  return new Promise((resolve, reject) => {
+    let finished = false;
+    const finish = () => {
+      finished = true;
+      clearTimeout(timer);
+      signal.removeEventListener('abort', abort);
+      controller.abort();
+    };
+    const abort = () => {
+      finish();
+      reject(signal.reason);
+    };
+    const timer = setTimeout(
+      () => controller.abort(new DOMException('MobileNet load timed out', 'TimeoutError')),
+      MODEL_LOAD_RETRY.LOAD_TIMEOUT_MS,
+    );
+    signal.addEventListener('abort', abort, { once: true });
+    if (signal.aborted) abort();
+    loadWhenIdle(loadModel, signal).then(
+      (model) => {
+        if (finished) {
+          retireModel(model);
+          return;
+        }
+        finish();
+        resolve(model);
+      },
+      (error) => {
+        if (finished) return;
+        finish();
+        reject(error);
+      },
+    );
+  });
+}
+
+const initTfBackend: LoadingStep<void> = async (setText, signal) => {
+  setText('Lade TensorFlow.js Backend...');
+  await initializeBackend();
+  signal.throwIfAborted();
+};
+
+async function prepareClassifier(): Promise<LoadingStep<Classifier>> {
+  const { create } = await loadClassifierModule();
+  return async (setText, signal) => {
+    setText('Erstelle KNN Klassifikator...');
+    signal.throwIfAborted();
+    return create();
+  };
+}
+
+async function prepareMobileNet(): Promise<LoadingStep<FeatureExtractor>> {
+  const { loadMobileNetEmbedding } = await import('../lib/mobilenet-embedding');
+  return (setText, signal) => {
+    setText('Lade MobileNet (Feature Extractor)...');
+    return loadWithRetry(
+      () => awaitModel(loadMobileNetEmbedding, signal),
+      {
+        maxAttempts: MODEL_LOAD_RETRY.MAX_ATTEMPTS,
+        baseDelayMs: MODEL_LOAD_RETRY.BASE_DELAY_MS,
+      },
+      signal,
+    );
+  };
+}
+
+async function warmupKnnShaders(model: FeatureExtractor, signal: AbortSignal) {
+  const tf = await loadTensorFlow();
+  signal.throwIfAborted();
+  const knn = await createClassifier();
+  try {
+    signal.throwIfAborted();
+    const features = tf.tidy(() =>
+      model.infer(tf.zeros([ML.FEATURE_CANVAS_SIZE, ML.FEATURE_CANVAS_SIZE, 3])),
+    );
+    try {
+      knn.addExample(features, '0');
+      knn.addExample(features, '1');
+      await knn.predictClass(features);
+    } finally {
       features.dispose();
     }
-    if (signal.aborted) return;
-    // Trigger predictClass to compile the distance-computation shaders.
-    const dummyInput = tf.tidy(() => {
-      const img = tf.zeros([224, 224, 3]) as tf.Tensor3D;
-      return model.infer(img, true);
-    });
-    try {
-      await dummyClassifier.predictClass(dummyInput);
-    } finally {
-      dummyInput.dispose();
-    }
   } finally {
-    dummyClassifier.dispose();
+    knn.dispose();
   }
 }
 
-/**
- * Optional dependency-injection interface for the three model-loading steps.
- * Provide this in tests to avoid real TF.js / network calls.
- */
 export interface ModelLoaderFunctions {
-  initBackend: typeof initTfBackend;
-  createClassifier: typeof createKnnClassifier;
-  loadFeatureExtractor: typeof loadMobileNet;
+  initBackend: LoadingStep<void>;
+  createClassifier: LoadingStep<Classifier>;
+  loadFeatureExtractor: LoadingStep<FeatureExtractor>;
+  warmup?: typeof warmupKnnShaders;
 }
 
-/**
- * Loads and initializes the TensorFlow.js WebGL backend, a KNN classifier, and
- * the MobileNet v2 feature extractor once the user has given consent. Exposes
- * loading state and the ready model instances to the caller.
- *
- * @param hasConsented - When `true`, triggers the model loading sequence.
- *   Setting this back to `false` aborts any in-progress load.
- * @param onError - Called with category `'model'` and a human-readable message
- *   if any step of the loading sequence fails permanently.
- * @param loaderFns - Optional overrides for the three loading steps; intended
- *   for unit tests to inject stubs instead of real TF.js / network calls.
- * @returns An object containing:
- *   - `classifier` — the KNN classifier instance, or `null` while loading.
- *   - `setClassifier` — state setter to reset or replace the classifier externally.
- *   - `mobilenetModel` — the loaded MobileNet instance, or `null` while loading.
- *   - `isModelLoading` — `true` until all models are ready or an error occurred.
- *   - `loadingText` — human-readable status string describing the current loading step.
- */
 export function useModelLoader(
   hasConsented: boolean,
   onError: (category: Extract<ErrorCategory, 'model'>, msg: string) => void,
@@ -211,60 +179,75 @@ export function useModelLoader(
 ) {
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [loadingText, setLoadingText] = useState('Initialisiere TensorFlow.js...');
-  const [classifier, setClassifier] = useState<Classifier | null>(null);
+  const [classifier, updateClassifier] = useState<Classifier | null>(null);
   const [mobilenetModel, setMobilenetModel] = useState<FeatureExtractor | null>(null);
-  const onErrorRef = useRef(onError);
-  onErrorRef.current = onError;
+  const classifierRef = useRef<Classifier | null>(null);
+  const reportError = useEffectEvent(onError);
+  const getLoaders = useEffectEvent(() => loaderFns);
 
-  // Keep loaderFns in a ref so the effect always calls the latest injected
-  // functions without needing loaderFns in the dependency array. Adding an
-  // object to deps would cause infinite re-runs if the caller passes an inline
-  // object literal on every render.
-  const loaderFnsRef = useRef(loaderFns);
-  loaderFnsRef.current = loaderFns;
+  const setClassifier = useCallback((next: Classifier | null) => {
+    const previous = classifierRef.current;
+    if (previous === next) return;
+    classifierRef.current = next;
+    updateClassifier(next);
+    if (previous) retireModel(previous);
+  }, []);
 
   useEffect(() => {
     if (!hasConsented) return;
-
     const controller = new AbortController();
     const { signal } = controller;
-
-    const _initBackend = loaderFnsRef.current?.initBackend ?? initTfBackend;
-    const _createClassifier = loaderFnsRef.current?.createClassifier ?? createKnnClassifier;
-    const _loadFeatureExtractor = loaderFnsRef.current?.loadFeatureExtractor ?? loadMobileNet;
+    const loaders = getLoaders();
+    let model: FeatureExtractor | null = null;
+    let pendingClassifier: Classifier | null = null;
+    const setText = (text: string) => {
+      if (!signal.aborted) setLoadingText(text);
+    };
 
     async function initModels() {
       try {
-        await _initBackend(setLoadingText, signal);
-        if (signal.aborted) return;
-
-        const knn = await _createClassifier(setLoadingText, signal);
-        if (signal.aborted) return;
-        setClassifier(knn);
-
-        const mn = await _loadFeatureExtractor(setLoadingText, signal);
-        if (signal.aborted) return;
-        setMobilenetModel(mn);
-
-        setLoadingText('Optimiere GPU-Performance...');
-        await warmupKnnShaders(mn, signal);
-        if (signal.aborted) return;
-
+        // Resources remain consent-gated. Only local code can load in parallel with backend setup.
+        const [, loadClassifier, loadFeatureExtractor] = await Promise.all([
+          (loaders?.initBackend ?? initTfBackend)(setText, signal),
+          loaders?.createClassifier ?? prepareClassifier(),
+          loaders?.loadFeatureExtractor ?? prepareMobileNet(),
+        ]);
+        signal.throwIfAborted();
+        pendingClassifier = await loadClassifier(setText, signal);
+        signal.throwIfAborted();
+        model = await loadFeatureExtractor(setText, signal);
+        signal.throwIfAborted();
+        setText('Optimiere GPU-Performance...');
+        const release = retainModel(model);
+        try {
+          await (loaders?.warmup ?? warmupKnnShaders)(model, signal);
+        } finally {
+          release?.();
+        }
+        signal.throwIfAborted();
+        setClassifier(pendingClassifier);
+        pendingClassifier = null;
+        setMobilenetModel(model);
         setIsModelLoading(false);
-      } catch (err) {
+      } catch {
+        pendingClassifier?.dispose();
+        pendingClassifier = null;
+        if (model) retireModel(model);
+        model = null;
         if (signal.aborted) return;
-        console.error('Error loading models:', err);
-        onErrorRef.current('model', 'Fehler beim Laden der KI-Modelle. Bitte lade die Seite neu.');
+        reportError('model', 'Fehler beim Laden der KI-Modelle. Bitte lade die Seite neu.');
         setIsModelLoading(false);
       }
     }
-
-    initModels();
-
+    void initModels();
     return () => {
       controller.abort(new DOMException('Model loading cancelled', 'AbortError'));
+      setClassifier(null);
+      if (model) retireModel(model);
+      setMobilenetModel(null);
+      setIsModelLoading(true);
     };
-  }, [hasConsented]);
+  }, [hasConsented, setClassifier]);
 
   return { classifier, setClassifier, mobilenetModel, isModelLoading, loadingText };
 }

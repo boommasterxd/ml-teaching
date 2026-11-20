@@ -1,0 +1,106 @@
+.knn-quiz-card,
+.knn-quiz-placeholder {
+  --knn-plot-max: 24rem;
+  width: 100%;
+}
+.knn-quiz-header,
+.knn-quiz-layout {
+  width: 100%;
+  margin-inline: auto;
+}
+.knn-quiz-header [data-slot='card-title'] {
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  letter-spacing: -0.035em;
+}
+.knn-quiz-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+.knn-quiz-figure {
+  container-type: inline-size;
+  width: 100%;
+  min-width: 0;
+  justify-self: center;
+}
+.knn-quiz-plot {
+  --knn-point-size: calc(var(--spacing) * 11);
+  container-type: size;
+  position: relative;
+  width: 100%;
+  height: min(100cqw, var(--knn-plot-max));
+  border-radius: calc(var(--glass-radius) * 0.7);
+  background:
+    radial-gradient(
+        color-mix(in srgb, var(--muted-foreground) 35%, transparent) 0.8px,
+        transparent 0.8px
+      )
+      0 0 / 18px 18px,
+    radial-gradient(ellipse at 48% 46%, var(--muted), var(--background));
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.knn-quiz-connections {
+  position: absolute;
+  height: 0.4cqmin;
+  transform-origin: left center;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+.knn-point-control,
+.knn-query-position {
+  position: absolute;
+  translate: -50% -50%;
+}
+.knn-point-control {
+  /* Keep every distance to the query proportional on rectangular plots. */
+  translate: calc(-50% + var(--knn-point-offset-x) * (1cqmin - 1cqw))
+    calc(-50% + var(--knn-point-offset-y) * (1cqmin - 1cqh));
+}
+.knn-query-position {
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.knn-quiz-placeholder {
+  min-height: 45rem;
+}
+@variant lg {
+  .knn-quiz-card,
+  .knn-quiz-placeholder {
+    --knn-plot-max: 42rem;
+  }
+  .knn-quiz-header,
+  .knn-quiz-layout {
+    width: 100%;
+    max-width: 66rem;
+    margin-inline: auto;
+  }
+  .knn-quiz-layout {
+    grid-template-columns: minmax(0, 18rem) minmax(0, 42rem);
+    grid-template-rows: min-content 1fr;
+    justify-content: center;
+    gap: 3rem;
+    align-items: start;
+  }
+  .knn-quiz-placeholder {
+    min-height: 35rem;
+  }
+  .knn-quiz-figure {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    max-width: 42rem;
+    width: 100%;
+    justify-self: end;
+  }
+}
+.knn-success-medal {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  grid-row: span 2;
+  width: 3.5rem;
+  aspect-ratio: 1;
+  color: var(--success);
+  background: radial-gradient(circle, var(--success-border), transparent 68%);
+}

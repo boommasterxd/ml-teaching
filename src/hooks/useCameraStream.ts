@@ -1,89 +1,126 @@
-/**
- * useCameraStream.ts
- *
- * Hook that manages the camera MediaStream lifecycle: setup, teardown, and
- * facing mode toggle between front and rear camera.
- */
-import { useState, useEffect, useRef, useCallback } from 'react';
-import type React from 'react';
+/** Camera tracks belong to one consent/facing-mode effect, including late requests. */
+import { useState, useEffect, useRef, useCallback, useEffectEvent } from 'react';
 import { CAMERA } from '../constants';
 import type { ErrorCategory } from '../types/errors';
 
-/**
- * Manages the WebRTC camera stream, attaches it to a video element, and
- * exposes controls for toggling between front and rear cameras.
- *
- * @param cameraConsent - Whether the user has granted camera permission. No stream is started until this is `true`.
- * @param isModelLoading - Whether the ML model is still loading. Used as a dependency to re-attach the stream once the video element appears in the DOM.
- * @param predictVideoRef - Ref to the `<video>` element that receives the camera stream as its `srcObject`.
- * @param onError - Callback invoked with category `'camera'` and a human-readable message when camera access fails.
- * @returns An object containing `facingMode`, the active `stream`, a `streamRef` for imperative access, and `toggleCamera`.
- */
+interface CameraRequest {
+  active: boolean;
+  facingMode: 'user' | 'environment';
+  switching: boolean;
+}
+
+async function openCamera(facingMode: CameraRequest['facingMode']) {
+  return navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode,
+      width: { ideal: CAMERA.IDEAL_WIDTH },
+      height: { ideal: CAMERA.IDEAL_HEIGHT },
+    },
+    audio: false,
+  });
+}
+
 export function useCameraStream(
   cameraConsent: boolean,
   isModelLoading: boolean,
-  predictVideoRef: React.RefObject<HTMLVideoElement | null>,
-  onError: (category: Extract<ErrorCategory, 'camera'>, msg: string) => void
+  onError: (category: Extract<ErrorCategory, 'camera'>, msg: string) => void,
 ) {
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const cameraActive = cameraConsent && !isModelLoading;
+  const [request, setRequest] = useState<CameraRequest>({
+    active: cameraActive,
+    facingMode: 'user',
+    switching: false,
+  });
+  const [result, setResult] = useState<{ request: CameraRequest; stream: MediaStream | null }>();
+  if (request.active !== cameraActive) {
+    setRequest({ active: cameraActive, facingMode: request.facingMode, switching: false });
+    setResult(undefined);
+  }
+  const { facingMode } = request;
+  const stream = cameraActive && result?.request === request ? result.stream : null;
+  const isPending = cameraActive && result?.request !== request;
+  const isSwitching = isPending && request.switching;
+  const hasFailed = cameraActive && result?.request === request && result.stream === null;
   const streamRef = useRef<MediaStream | null>(null);
+  const failedRequestRef = useRef<CameraRequest | null>(null);
+  const reportError = useEffectEvent(onError);
 
-  /**
-   * Requests a new camera stream with the current `facingMode`, stops any
-   * previously active tracks first to avoid resource leaks, and stores the
-   * result in both state and the ref.
-   */
-  const setupWebcam = useCallback(async () => {
-    if (!cameraConsent) return;
-
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-        }
-
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode, width: { ideal: CAMERA.IDEAL_WIDTH }, height: { ideal: CAMERA.IDEAL_HEIGHT } },
-          audio: false,
-        });
-        streamRef.current = mediaStream;
-        setStream(mediaStream);
-      } catch (err) {
-        console.error('Error accessing webcam:', err);
-        onError('camera', 'Kamerazugriff verweigert oder keine Kamera gefunden.');
-      }
-    }
-  }, [facingMode, cameraConsent, onError]);
-
-  /**
-   * Initializes the webcam stream on mount and whenever `setupWebcam` changes.
-   * Stops all media tracks on cleanup to release the camera hardware.
-   */
   useEffect(() => {
-    setupWebcam();
+    if (!request.active) return;
+    let active = true;
+    let ownedStream: MediaStream | null = null;
+    let tracks: MediaStreamTrack[] = [];
+
+    function releaseCamera() {
+      if (streamRef.current === ownedStream) streamRef.current = null;
+      ownedStream = null;
+      for (const track of tracks) {
+        track.removeEventListener('ended', handleTrackEnded);
+        track.stop();
+      }
+      tracks = [];
+    }
+
+    function fail(message: string) {
+      failedRequestRef.current = request;
+      setResult({ request, stream: null });
+      reportError('camera', message);
+    }
+
+    function handleTrackEnded() {
+      if (!active || !ownedStream) return;
+      releaseCamera();
+      fail('Die Kameraverbindung wurde unterbrochen.');
+    }
+
+    async function requestCamera() {
+      const mediaStream = await openCamera(request.facingMode).catch(() => null);
+      if (!mediaStream) {
+        if (active) fail('Kamerazugriff verweigert oder keine Kamera gefunden.');
+        return;
+      }
+      if (!active) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      tracks = mediaStream.getTracks();
+      ownedStream = mediaStream;
+      streamRef.current = mediaStream;
+      for (const track of tracks) track.addEventListener('ended', handleTrackEnded);
+      if (tracks.some((track) => track.readyState === 'ended')) handleTrackEnded();
+      else setResult({ request, stream: mediaStream });
+    }
+    void requestCamera();
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
+      active = false;
+      releaseCamera();
+      if (failedRequestRef.current === request) failedRequestRef.current = null;
     };
-  }, [setupWebcam]);
+  }, [request]);
 
-  /**
-   * Attaches the active stream to the prediction video element.
-   * `isModelLoading` is listed as a dependency because the video element is
-   * only mounted in the DOM after the model loading phase completes.
-   */
-  useEffect(() => {
-    if (predictVideoRef.current && stream) {
-      predictVideoRef.current.srcObject = stream;
-    }
-  }, [stream, isModelLoading, predictVideoRef]);
-
-  /** Toggles between front and rear camera. */
   const toggleCamera = useCallback(() => {
-    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+    const switching = streamRef.current !== null;
+    setResult(undefined);
+    setRequest((previous) => ({
+      active: previous.active,
+      facingMode: previous.facingMode === 'user' ? 'environment' : 'user',
+      switching,
+    }));
   }, []);
 
-  return { facingMode, stream, streamRef, toggleCamera };
+  const retryCamera = useCallback(() => {
+    const failed = failedRequestRef.current;
+    setRequest((previous) => (previous === failed ? { ...previous, switching: false } : previous));
+  }, []);
+
+  return {
+    facingMode,
+    stream,
+    streamRef,
+    isPending,
+    isSwitching,
+    hasFailed,
+    toggleCamera,
+    retryCamera,
+  };
 }

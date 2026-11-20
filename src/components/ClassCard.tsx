@@ -5,22 +5,38 @@
  * Orchestrates camera recording, image upload, and thumbnail gallery via subcomponents.
  */
 import type React from 'react';
-import { memo, useState, useRef, useEffect, useCallback } from 'react';
-import { Trash2, RotateCcw } from 'lucide-react';
+import { memo, useCallback, useState } from 'react';
+import { Trash2 } from './icons/trash2';
+import { RotateCcw } from './icons/rotate-ccw';
+import { Check } from './icons/check';
 import { cn } from '../lib/utils';
-import { CAMERA, ML } from '../constants';
+import { classColorClasses } from '../lib/class-colors';
+import { useClassCapture } from '../hooks/useClassCapture';
+import type { CaptureActions } from '../hooks/useClassCapture';
+import { ML } from '../constants';
 import type { MLClass, MLImage } from '../types/ml';
 import CameraPreview from './CameraPreview';
-import ImageGallery from './ImageGallery';
+import type { CameraPreviewProps } from './CameraPreview';
+import { prepareTrainingDialogs } from './DeferredTrainingDialogs';
+import ImageGallery, { prepareImageGallery } from './ImageGallery';
+import Button from './Button';
+import { Input } from './ui/input';
+import { Card, CardContent, CardHeader } from './ui/card';
+import { Badge } from './ui/badge';
+import { Field, FieldError, FieldLabel } from './ui/field';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+
+const nameErrors = {
+  empty: 'Name darf nicht leer sein',
+  duplicate: 'Name muss eindeutig sein',
+};
 
 /**
  * Callback actions for the ClassCard component, grouped to reduce prop count.
  */
-export interface ClassCardActions {
-  /** Called when a new training frame is captured from the video element. */
-  onAddExample: (classId: string, video: HTMLVideoElement) => void;
+export interface ClassCardActions extends CaptureActions {
   /** Called when a training image is added via file upload. */
-  onAddImageExample: (classId: string, img: HTMLImageElement) => void;
+  onAddImageExample: (classId: string, img: HTMLImageElement) => void | Promise<void>;
   /** Called to request removal of the entire class. */
   onRemove: (classId: string) => void;
   /** Called to clear all images from the class without removing it. */
@@ -38,198 +54,247 @@ export interface ClassCardActions {
 /**
  * Props for the ClassCard component.
  */
-export interface ClassCardProps {
+interface ClassCardProps extends Pick<
+  CameraPreviewProps,
+  'stream' | 'facingMode' | 'isCameraSwitching' | 'onSwitchCamera'
+> {
+  position: number;
+  cameraFallback?: React.ReactNode;
   /** The ML class data to display and manage. */
   cls: MLClass;
   /** Whether the class name conflicts with another class name. */
   isDuplicate: boolean;
-  /** Active camera stream to render in the preview. `null` if no camera is available. */
-  stream: MediaStream | null;
-  /** Which camera to use: `'user'` for front-facing, `'environment'` for rear-facing. */
-  facingMode: 'user' | 'environment';
   /** Grouped callback actions for class management and user interactions. */
   actions: ClassCardActions;
+}
+
+function ClassNameInput({
+  id,
+  name,
+  error,
+  onChange,
+}: {
+  id: string;
+  name: string;
+  error: string | null;
+  onChange: (name: string) => void;
+}) {
+  const [showError, setShowError] = useState(false);
+  const errorId = `${id}-error`;
+  return (
+    <Tooltip
+      open={!!error && showError}
+      disabled={!error}
+      onOpenChange={(open, { reason }) => {
+        if (open || reason !== 'trigger-hover' || document.activeElement?.id !== id) {
+          setShowError(open);
+        }
+      }}
+    >
+      <TooltipTrigger
+        closeOnClick={false}
+        aria-describedby={undefined}
+        render={
+          <div className="min-w-0 flex-1">
+            <Input
+              id={id}
+              type="text"
+              autoComplete="off"
+              value={name}
+              maxLength={ML.MAX_CLASS_NAME_LENGTH}
+              onChange={(event) => {
+                onChange(event.currentTarget.value);
+                setShowError(true);
+              }}
+              onFocus={() => setShowError(true)}
+              onPointerDown={(event) => {
+                event.currentTarget.dataset.mouseFocused = '1';
+                setShowError(true);
+              }}
+              onBlur={(event) => {
+                delete event.currentTarget.dataset.mouseFocused;
+                setShowError(false);
+              }}
+              className="h-10 min-w-0 rounded-xl bg-background/60 font-medium dark:bg-background/60"
+              aria-invalid={!!error}
+              aria-errormessage={error ? errorId : undefined}
+              aria-describedby={error ? errorId : undefined}
+            />
+          </div>
+        }
+      />
+      <TooltipContent collisionPadding={12} aria-hidden="true">
+        {error}
+      </TooltipContent>
+      <FieldError
+        id={errorId}
+        role={error ? 'alert' : undefined}
+        aria-live="polite"
+        className="sr-only"
+      >
+        {error}
+      </FieldError>
+    </Tooltip>
+  );
 }
 
 /**
  * Displays a class card with its editable name, camera preview, recording controls, and image gallery.
  * Uses `memo` to prevent unnecessary re-renders when sibling class cards update.
  */
+function ClassHeader({
+  cls,
+  position,
+  isDuplicate,
+  actions,
+}: Pick<ClassCardProps, 'cls' | 'position' | 'isDuplicate' | 'actions'>) {
+  const { onUpdateName } = actions;
+  const count = cls.images.length;
+  const enoughImages = count >= ML.MIN_IMAGES_PER_CLASS;
+  const atLimit = count >= ML.MAX_IMAGES_PER_CLASS;
+  const isEmpty = cls.name.trim() === '';
+  const errorMsg = isEmpty ? nameErrors.empty : isDuplicate ? nameErrors.duplicate : null;
+  return (
+    <CardHeader className="items-center px-4 @md/training-class:px-5">
+      <Field data-invalid={!!errorMsg} className="min-w-0 gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <div
+            className={cn(
+              'size-2.5 shrink-0 rounded-full bg-[var(--class-on-surface)]',
+              classColorClasses(cls.color),
+            )}
+            aria-hidden="true"
+          />
+          <FieldLabel htmlFor={`class-name-${cls.id}`} className="sr-only">
+            Name für Klasse {position}: {cls.name.trim() || 'ohne Namen'}
+          </FieldLabel>
+          <ClassNameInput
+            id={`class-name-${cls.id}`}
+            name={cls.name}
+            error={errorMsg}
+            onChange={(name) => onUpdateName(cls.id, name)}
+          />
+          <Badge
+            variant="secondary"
+            className="min-h-7 max-w-[50%] px-2.5 whitespace-normal tabular-nums"
+            title={`Mindestens ${ML.MIN_IMAGES_PER_CLASS}, maximal ${ML.MAX_IMAGES_PER_CLASS} Bilder pro Klasse`}
+          >
+            {enoughImages && <Check aria-hidden="true" />}
+            <span>
+              {enoughImages ? `${count} Bilder` : `${count} / ${ML.MIN_IMAGES_PER_CLASS} Bilder`}
+              {atLimit && ' · Limit erreicht'}
+            </span>
+          </Badge>
+        </div>
+      </Field>
+    </CardHeader>
+  );
+}
+
+function ClassManagementActions({
+  cls,
+  position,
+  actions,
+}: Pick<ClassCardProps, 'cls' | 'position' | 'actions'>) {
+  const name = cls.name.trim() || 'ohne Namen';
+  return (
+    <>
+      <Button
+        variant="outline"
+        className="h-auto min-h-11 min-w-0 px-2"
+        aria-haspopup="dialog"
+        onPointerEnter={prepareTrainingDialogs}
+        onFocus={prepareTrainingDialogs}
+        onPointerDown={prepareTrainingDialogs}
+        onClick={() => actions.onClear(cls.id)}
+        title="Bilder dieser Klasse zurücksetzen"
+        aria-label={`Bilder der Klasse ${position}: ${name} zurücksetzen`}
+      >
+        <RotateCcw data-icon="inline-start" aria-hidden="true" />
+        <span className="hidden @md/training-class:inline">Zurücksetzen</span>
+      </Button>
+      <Button
+        variant="outline"
+        className="h-auto min-h-11 min-w-0 px-2 text-destructive hover:text-destructive"
+        aria-haspopup="dialog"
+        onPointerEnter={prepareTrainingDialogs}
+        onFocus={prepareTrainingDialogs}
+        onPointerDown={prepareTrainingDialogs}
+        onClick={() => actions.onRemove(cls.id)}
+        title="Klasse löschen"
+        aria-label={`Klasse ${position}: ${name} löschen`}
+      >
+        <Trash2 data-icon="inline-start" aria-hidden="true" />
+        <span className="hidden @md/training-class:inline">Löschen</span>
+      </Button>
+    </>
+  );
+}
+
 const ClassCard = memo(function ClassCard({
   cls,
+  position,
   isDuplicate,
-  stream,
-  facingMode,
   actions,
+  cameraFallback,
+  ...camera
 }: ClassCardProps) {
-  const { onAddExample, onAddImageExample, onRemove, onClear, onRemoveImages, onUpdateName, onImageClick, onError } = actions;
-  const [isRecording, setIsRecording] = useState(false);
-  const recordIntervalRef = useRef<number | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  /** Begins continuous frame capture at a fixed interval. */
-  const startRecording = () => {
-    if (!videoRef.current || isRecording) return;
-    setIsRecording(true);
-
-    if (recordIntervalRef.current) {
-      clearInterval(recordIntervalRef.current);
-    }
-
-    onAddExample(cls.id, videoRef.current);
-
-    recordIntervalRef.current = window.setInterval(() => {
-      if (videoRef.current) {
-        onAddExample(cls.id, videoRef.current);
-      }
-    }, CAMERA.CAPTURE_INTERVAL_MS);
-  };
-
-  /** Stops continuous frame capture. */
-  const stopRecording = () => {
-    setIsRecording(false);
-    if (recordIntervalRef.current) {
-      clearInterval(recordIntervalRef.current);
-      recordIntervalRef.current = null;
-    }
-  };
-
-  // Clear the capture interval on unmount to prevent state updates on an unmounted component.
-  useEffect(() => {
-    return () => {
-      if (recordIntervalRef.current) {
-        clearInterval(recordIntervalRef.current);
-      }
-    };
-  }, []);
-
-  /** Reads uploaded image files and passes each to the feature extractor. */
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    Array.from(files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result;
-        if (typeof result !== 'string') return;
-        const img = new Image();
-        img.onload = () => {
-          onAddImageExample(cls.id, img);
-        };
-        img.onerror = () => {
-          onError(`"${file.name}" konnte nicht als Bild geladen werden.`);
-        };
-        img.src = result;
-      };
-      reader.onerror = () => {
-        onError(`"${file.name}" konnte nicht gelesen werden.`);
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // Reset the input value so the same file can be re-selected after upload.
-    if (e.target) {
-      e.target.value = '';
-    }
-  };
+  const { onRemoveImages, onImageClick } = actions;
+  const showCamera = camera.stream || camera.isCameraSwitching;
+  const { videoRef, isRecording, startRecording, stopRecording, handleFileUpload } =
+    useClassCapture(cls, actions);
 
   /** Forwards an image click to the parent with the current class ID. */
-  const handleImageClick = useCallback((img: MLImage) => {
-    onImageClick(cls.id, img);
-  }, [onImageClick, cls.id]);
+  const handleImageClick = useCallback(
+    (img: MLImage) => {
+      onImageClick(cls.id, img);
+    },
+    [onImageClick, cls.id],
+  );
 
   /** Forwards a bulk image removal request to the parent with the current class ID. */
-  const handleRemoveImages = useCallback((ids: string[]) => {
-    onRemoveImages(cls.id, ids);
-  }, [onRemoveImages, cls.id]);
-
-  const isEmpty = cls.name.trim() === '';
-  const errorMsg = isEmpty ? 'Name darf nicht leer sein' : isDuplicate ? 'Name muss eindeutig sein' : null;
+  const handleRemoveImages = useCallback(
+    (ids: string[]) => {
+      onRemoveImages(cls.id, ids);
+    },
+    [onRemoveImages, cls.id],
+  );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-zinc-300 overflow-hidden flex flex-col transition-all hover:shadow-md">
-
-      <div className="px-4 py-3 border-b border-zinc-100 flex justify-between items-start sm:items-center bg-zinc-50/50">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: cls.color }} aria-hidden="true" />
-            <input
-              id={`class-name-${cls.id}`}
-              type="text"
-              autoComplete="off"
-              value={cls.name}
-              maxLength={ML.MAX_CLASS_NAME_LENGTH}
-              onChange={(e) => onUpdateName(cls.id, e.target.value)}
-              className={cn(
-                'font-semibold bg-transparent border-b border-transparent focus:ring-0 focus:ring-offset-0 p-0 w-[120px] sm:w-[160px] text-sm transition-colors',
-                errorMsg ? 'border-red-500 text-red-600' : 'text-zinc-800 focus:border-zinc-500'
-              )}
-              onPointerDown={(e) => { e.currentTarget.dataset.mouseFocused = '1'; }}
-              onBlur={(e) => { delete e.currentTarget.dataset.mouseFocused; }}
-              aria-label={`Name für Klasse ${cls.name || 'ohne Namen'}`}
-              aria-invalid={!!errorMsg}
-              aria-errormessage={errorMsg ? `error-${cls.id}` : undefined}
-              aria-describedby={errorMsg ? `error-${cls.id}` : undefined}
-            />
-          </div>
-          {errorMsg && (
-            <span id={`error-${cls.id}`} className="text-[10px] text-red-500 mt-1 ml-[22px]">
-              {errorMsg}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-0 flex-shrink-0 min-w-0">
-          <span
-            className={cn(
-              'text-xs font-mono px-2 py-1 rounded-md whitespace-nowrap',
-              cls.images.length >= ML.MAX_IMAGES_PER_CLASS
-                ? 'bg-amber-100 text-amber-700 font-semibold'
-                : 'bg-zinc-100 text-zinc-600'
-            )}
-            title={cls.images.length >= ML.MAX_IMAGES_PER_CLASS ? `Limit von ${ML.MAX_IMAGES_PER_CLASS} Bildern erreicht` : undefined}
-          >
-            {cls.images.length} / {ML.MAX_IMAGES_PER_CLASS} Bilder
-          </span>
-          <button
-            onClick={() => onClear(cls.id)}
-            className="p-2 rounded-md text-zinc-500 hover:text-indigo-500 transition-colors"
-            title="Bilder dieser Klasse zurücksetzen"
-            aria-label={`Bilder der Klasse ${cls.name || 'ohne Namen'} zurücksetzen`}
-          >
-            <RotateCcw className="w-4 h-4" aria-hidden="true" />
-          </button>
-          <button
-            onClick={() => onRemove(cls.id)}
-            className="p-2 rounded-md text-zinc-500 hover:text-red-500 transition-colors"
-            title="Klasse löschen"
-            aria-label={`Klasse ${cls.name || 'ohne Namen'} löschen`}
-          >
-            <Trash2 className="w-4 h-4" aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-
-      <div className="p-4 flex flex-col sm:flex-row gap-4">
+    <Card className="@container/training-class gap-4 py-4 lg:h-full">
+      <ClassHeader cls={cls} position={position} isDuplicate={isDuplicate} actions={actions} />
+      <CardContent
+        className={cn(
+          'grid min-w-0 gap-3 px-4 @md/training-class:px-5',
+          showCamera
+            ? '@xl/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]'
+            : 'lg:flex-1 lg:content-between',
+        )}
+      >
         <CameraPreview
-          stream={stream}
-          facingMode={facingMode}
-          color={cls.color}
+          {...camera}
+          disabled={actions.captureDisabled || cls.images.length >= ML.MAX_IMAGES_PER_CLASS}
           isRecording={isRecording}
           onStartRecording={startRecording}
           onStopRecording={stopRecording}
           onFileUpload={handleFileUpload}
           videoRef={videoRef}
+          onCaptureIntent={prepareImageGallery}
+          fileActions={<ClassManagementActions cls={cls} position={position} actions={actions} />}
         />
-
+        {cameraFallback && <div className="col-span-full">{cameraFallback}</div>}
         <ImageGallery
+          className={
+            showCamera ? '@xl/training-class:h-auto @xl/training-class:[contain:size]' : undefined
+          }
+          label={`Trainingsbilder von Klasse ${position}: ${cls.name.trim() || 'ohne Namen'}, scrollbar`}
           images={cls.images}
           color={cls.color}
           onImageClick={handleImageClick}
           onRemoveImages={handleRemoveImages}
         />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 });
 

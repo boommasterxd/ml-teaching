@@ -1,144 +1,307 @@
-/**
- * PredictionPanel.tsx
- *
- * Live prediction panel showing the camera feed, per-class confidence bars,
- * and start/stop controls. Disabled and visually dimmed when no trained model is available.
- */
 import type React from 'react';
-import { useMemo } from 'react';
-import { Camera, Play, Square } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
+import type { SubscribePredictionFeatures } from '@/hooks/usePredictionLoop';
+import { Camera } from './icons/camera';
+import { Play } from './icons/play';
+import { Square } from './icons/square';
+import Button from './Button';
 import { cn } from '../lib/utils';
 import type { MLClass, Prediction } from '../types/ml';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
+import { EntryReveal } from './ui/entry-reveal';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from './ui/empty';
+import { Progress } from './ui/progress';
+import { Spinner } from './ui/spinner';
+import { MessageSlot } from './ui/message-slot';
+import { Heading, Text } from './ui/typography';
+import { DeferredPredictionSpace, useDeferredPredictionSpace } from './DeferredPredictionSpace';
+import PredictionDiagram from './PredictionDiagram';
 
-/**
- * Props for the PredictionPanel component.
- */
 interface PredictionPanelProps {
-  /** All ML classes defined by the user, used to render per-class confidence bars. */
+  entryReady?: boolean;
+  stream: MediaStream | null;
   classes: MLClass[];
-  /** The latest prediction result from the KNN inference loop, or null if not yet available. */
   prediction: Prediction | null;
-  /** Whether the prediction loop is currently running. */
   isPredicting: boolean;
-  /** Whether a trained KNN model is available. Controls the disabled/dimmed state of the panel. */
   hasTrainedModel: boolean;
-  /** Camera facing direction — mirrors the video horizontally when set to 'user'. */
   facingMode: 'user' | 'environment';
-  /** Ref attached to the video element used for the prediction camera feed. */
   predictVideoRef: React.RefObject<HTMLVideoElement | null>;
-  /** Called when the user clicks the start button to begin prediction. */
   onStartPredicting: () => void;
-  /** Called when the user clicks the stop button to halt prediction. */
   onStopPredicting: () => void;
+  onEnableCamera?: () => void;
+  cameraPending: boolean;
+  cameraFailed?: boolean;
+  subscribeToFeatures: SubscribePredictionFeatures;
 }
 
-/**
- * Renders the live prediction panel with a camera feed overlay and confidence bars.
- * The panel becomes inert and semi-transparent when no trained model exists.
- */
-export default function PredictionPanel({
+const pendingPrediction = 'Die Vorhersage wird vorbereitet.';
+const unknownClass = 'Unbekannt';
+
+function ConfidenceResults({
   classes,
   prediction,
   isPredicting,
-  hasTrainedModel,
+}: Pick<PredictionPanelProps, 'classes' | 'prediction' | 'isPredicting'>) {
+  const resultNames = useMemo(
+    () => [...new Set([pendingPrediction, unknownClass, ...classes.map(({ name }) => name)])],
+    [classes],
+  );
+  const result = prediction
+    ? (classes.find((cls) => cls.id === prediction.label)?.name ?? unknownClass)
+    : isPredicting
+      ? pendingPrediction
+      : '—';
+  return (
+    <div className="flex flex-col gap-4">
+      <div role="status" className="min-w-0">
+        <Text variant="muted">Ergebnis</Text>
+        <Heading as="h3" className="max-w-full text-lg wrap-anywhere text-foreground">
+          <MessageSlot messages={resultNames}>{result}</MessageSlot>
+        </Heading>
+      </div>
+      <div className="flex flex-col gap-2.5" aria-hidden={!prediction || undefined}>
+        {classes.map((cls) => {
+          const confidence = prediction?.confidences[cls.id] ?? 0;
+          const percentage = Number.isFinite(confidence)
+            ? Math.round(Math.max(0, Math.min(1, confidence)) * 100)
+            : 0;
+          return (
+            <div key={cls.id} className="flex items-center text-xs">
+              <span className="w-20 truncate font-semibold text-muted-foreground">{cls.name}</span>
+              <Progress
+                value={percentage}
+                aria-label={`Konfidenz für ${cls.name}`}
+                className="mx-3 flex-1"
+              />
+              <span className="w-10 text-right font-mono font-medium text-muted-foreground tabular-nums">
+                {prediction ? `${percentage}%` : '—'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function PredictionAction({
+  isPredicting,
+  onStartPredicting,
+  onStopPredicting,
+  onStartIntent,
+}: Pick<PredictionPanelProps, 'isPredicting' | 'onStartPredicting' | 'onStopPredicting'> & {
+  onStartIntent: () => void;
+}) {
+  const Icon = isPredicting ? Square : Play;
+  const prepare = isPredicting ? undefined : onStartIntent;
+  return (
+    <Button
+      variant={isPredicting ? 'secondary' : 'default'}
+      onClick={isPredicting ? onStopPredicting : onStartPredicting}
+      onPointerEnter={prepare}
+      onPointerDown={prepare}
+      onFocus={prepare}
+      className="min-h-11 min-w-28 shadow-sm"
+      aria-label={isPredicting ? 'Live-Vorhersage stoppen' : 'Live-Vorhersage starten'}
+    >
+      <Icon data-icon="inline-start" className="fill-current" aria-hidden="true" />
+      {isPredicting ? 'Stoppen' : 'Starten'}
+    </Button>
+  );
+}
+
+function CameraFeed({
+  facingMode,
+  predictVideoRef,
+  stream,
+}: Pick<PredictionPanelProps, 'facingMode' | 'predictVideoRef' | 'stream'>) {
+  useEffect(() => {
+    const video = predictVideoRef.current;
+    if (!video) return;
+    video.srcObject = stream;
+    return () => {
+      video.srcObject = null;
+    };
+  }, [predictVideoRef, stream]);
+  return (
+    <video
+      ref={predictVideoRef}
+      autoPlay
+      playsInline
+      muted
+      aria-label="Kameravorschau für Vorhersage"
+      className={cn(
+        'absolute inset-0 size-full object-cover',
+        facingMode === 'user' && 'transform scale-x-[-1]',
+      )}
+    />
+  );
+}
+
+function PredictionPlaceholder({
+  description,
+  className,
+  pending,
+  compact,
+}: {
+  description: string;
+  className?: string;
+  pending?: boolean;
+  compact?: boolean;
+}) {
+  return (
+    <Empty className={cn('min-h-36 border border-border bg-muted/60 px-4 py-5 md:p-5', className)}>
+      <EmptyHeader>
+        <EmptyMedia
+          variant="icon"
+          className={cn(
+            'mb-0',
+            compact && 'size-7 [&_svg]:size-4 @lg/prediction:size-10 @lg/prediction:[&_svg]:size-6',
+          )}
+        >
+          {pending ? <Spinner aria-hidden="true" /> : <Camera aria-hidden="true" />}
+        </EmptyMedia>
+        <EmptyDescription>{description}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  );
+}
+
+function cameraDescription({
+  stream,
+  onEnableCamera,
+  cameraPending,
+  cameraFailed,
+}: Pick<PredictionPanelProps, 'stream' | 'onEnableCamera' | 'cameraPending' | 'cameraFailed'>) {
+  if (stream) return 'Die Kamera ist bereit.';
+  if (cameraPending) return 'Kamera wird verbunden.';
+  if (cameraFailed) return 'Die Kameraverbindung ist unterbrochen.';
+  if (onEnableCamera) return 'Aktiviere die Kamera für die Vorhersage.';
+  return 'Für die Live-Vorhersage wird eine Kamera benötigt.';
+}
+
+type CameraProps = Omit<
+  PredictionPanelProps,
+  'entryReady' | 'hasTrainedModel' | 'classes' | 'prediction' | 'subscribeToFeatures'
+>;
+
+function PredictionCamera({
+  isPredicting,
+  stream,
   facingMode,
   predictVideoRef,
   onStartPredicting,
   onStopPredicting,
-}: PredictionPanelProps) {
-  const predictedClassName = useMemo(
-    () => classes.find(c => c.id === prediction?.label)?.name ?? 'Unbekannt',
-    [classes, prediction?.label]
-  );
-
+  onEnableCamera,
+  cameraPending,
+  cameraFailed,
+  onStartIntent,
+}: CameraProps & { onStartIntent: () => void }) {
+  const playable = Boolean(stream);
+  const canEnable = Boolean(onEnableCamera && !cameraPending);
   return (
     <div
-      className={cn(
-        'bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col flex-1 transition-opacity duration-300',
-        !hasTrainedModel ? 'opacity-80 pointer-events-none' : 'opacity-100'
-      )}
-      inert={!hasTrainedModel}
+      data-slot="prediction-camera"
+      className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border bg-media-surface @lg/prediction:aspect-auto @lg/prediction:self-stretch"
     >
-      <div className="px-5 py-4 border-b border-zinc-100 flex justify-between items-center">
-        <h2 className="text-base font-bold text-zinc-800 flex items-center">
-          <Camera className="w-4 h-4 mr-2 text-indigo-500" aria-hidden="true" /> 3. Vorhersage
-        </h2>
-        {isPredicting && (
-          <span className="flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" aria-hidden="true"></span>
-            Live
-          </span>
-        )}
-      </div>
-
-      <div className="p-5 flex flex-col flex-1">
-        <div className="relative aspect-[16/10.25] bg-zinc-900 rounded-xl overflow-hidden mb-5 flex-shrink-0">
-          <video
-            ref={predictVideoRef}
-            autoPlay
-            playsInline
-            muted
-            aria-label="Kameravorschau für Vorhersage"
-            className={cn(
-              'w-full h-full object-cover rounded-xl',
-              facingMode === 'user' ? 'transform scale-x-[-1]' : ''
-            )}
+      {isPredicting && stream ? (
+        <CameraFeed facingMode={facingMode} predictVideoRef={predictVideoRef} stream={stream} />
+      ) : (
+        <PredictionPlaceholder
+          description={cameraDescription({ stream, onEnableCamera, cameraPending, cameraFailed })}
+          pending={cameraPending}
+          compact
+          className={cn(
+            'absolute inset-0 min-h-0 border-0 bg-transparent p-3 md:p-3',
+            (playable || canEnable) && 'pt-14 md:pt-14',
+          )}
+        />
+      )}
+      <div className="absolute inset-x-2 top-2 flex justify-end">
+        {playable ? (
+          <PredictionAction
+            isPredicting={isPredicting}
+            onStartPredicting={onStartPredicting}
+            onStopPredicting={onStopPredicting}
+            onStartIntent={onStartIntent}
           />
-          {!isPredicting && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-xl">
-              <button
-                onClick={onStartPredicting}
-                className="px-5 py-2.5 bg-white text-zinc-900 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
-              >
-                <Play className="w-4 h-4 mr-2 fill-current" aria-hidden="true" /> Starten
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 flex flex-col justify-center min-h-[2.25rem]" aria-live="polite" aria-atomic="true">
-          {isPredicting && prediction ? (
-            <div className="space-y-4">
-              <div className="text-center mb-2">
-                <div className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold mb-1">Erkannt</div>
-                <div className="text-2xl font-black text-zinc-800">
-                  {predictedClassName}
-                </div>
-              </div>
-              <div className="space-y-2.5">
-                {classes.map(c => {
-                  const conf = prediction.confidences[c.id] || 0;
-                  const confPercent = Math.round(conf * 100);
-                  return (
-                    <div key={c.id} className="flex items-center text-xs">
-                      <span className="w-20 truncate font-semibold text-zinc-600">{c.name}</span>
-                      <div className="flex-1 h-2 bg-zinc-100 rounded-full overflow-hidden mx-3">
-                        <div
-                          className="h-full rounded-full transition-all duration-200 ease-out"
-                          style={{ width: `${confPercent}%`, backgroundColor: c.color }}
-                        />
-                      </div>
-                      <span className="w-10 text-right font-mono font-medium text-zinc-600">
-                        {confPercent}%
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-              <button
-                onClick={onStopPredicting}
-                className="w-full mt-4 py-2.5 px-4 bg-zinc-50 hover:bg-zinc-100 text-zinc-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center border border-zinc-200/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2"
-              >
-                <Square className="w-4 h-4 mr-2 fill-current" aria-hidden="true" /> Stoppen
-              </button>
-            </div>
-          ) : (
-            <div className="h-full flex items-center justify-center text-zinc-800 text-sm text-center">
-              Starte die Vorhersage, um Ergebnisse zu sehen.
-            </div>
-          )}
-        </div>
+        ) : canEnable ? (
+          <Button variant="outline" className="min-h-11" onClick={onEnableCamera}>
+            {cameraFailed ? 'Kamera erneut verbinden' : 'Kamera aktivieren'}
+          </Button>
+        ) : null}
       </div>
     </div>
+  );
+}
+
+function PredictionWorkspace({
+  classes,
+  prediction,
+  subscribeToFeatures,
+  ...camera
+}: Omit<PredictionPanelProps, 'entryReady' | 'hasTrainedModel'>) {
+  const { isPredicting, stream } = camera;
+  const live = isPredicting && Boolean(stream);
+  const space = useDeferredPredictionSpace(classes, Boolean(stream), live);
+  return (
+    <div className="grid items-start gap-4 @lg/prediction:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+      <PredictionCamera {...camera} onStartIntent={space.prepare} />
+      <div className="grid min-w-0 gap-3">
+        <Badge variant="secondary">
+          <span
+            className={cn('size-1.5 rounded-full', live ? 'bg-primary' : 'bg-muted-foreground')}
+            aria-hidden="true"
+          />
+          {live ? 'Live' : 'Inaktiv'}
+        </Badge>
+        <ConfidenceResults
+          classes={classes}
+          prediction={live ? prediction : null}
+          isPredicting={isPredicting}
+        />
+        <PredictionDiagram classes={classes}>
+          {space.visible && (
+            <DeferredPredictionSpace
+              result={space.result}
+              classes={classes}
+              subscribeToFeatures={subscribeToFeatures}
+            />
+          )}
+        </PredictionDiagram>
+      </div>
+    </div>
+  );
+}
+
+export default function PredictionPanel({
+  entryReady,
+  hasTrainedModel,
+  ...workspace
+}: PredictionPanelProps) {
+  return (
+    <EntryReveal asChild kind="reading" active={entryReady} scrollOnly index={1}>
+      <section aria-labelledby="training-prediction">
+        <Card className="@container/prediction gap-4">
+          <CardHeader className="grid-rows-[minmax(2.75rem,auto)] items-center">
+            <CardTitle
+              id="training-prediction"
+              tabIndex={-1}
+              className="workspace-heading scroll-mt-28"
+            >
+              Vorhersage
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-1 flex-col">
+            {hasTrainedModel ? (
+              <PredictionWorkspace {...workspace} />
+            ) : (
+              <PredictionPlaceholder description="Trainiere zuerst dein Modell, um neue Kamerabilder zuzuordnen." />
+            )}
+          </CardContent>
+        </Card>
+      </section>
+    </EntryReveal>
   );
 }
