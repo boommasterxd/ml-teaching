@@ -135,7 +135,6 @@
   outline-offset: 3px;
 }
 #privacy-document .legal-document-body :is(p, li) {
-  text-align: justify;
   hyphens: auto;
 }
 .legal-reading-section > :last-child,

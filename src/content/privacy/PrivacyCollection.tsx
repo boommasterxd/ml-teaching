@@ -78,7 +78,7 @@ export const PrivacyCollection = (
     <h4>Erfasste Protokolldaten</h4>
     <p>
       Hierzu gehören IP-Adresse, Zeitpunkt des Aufrufs, angeforderte Seite oder Datei sowie Browser-
-      und Verbindungsinformationen.
+      und Verbindungsinformationen. Vercel kann aus der IP-Adresse Land und Stadt ableiten.
     </p>
     <h4>Zwecke der Verarbeitung und gegebenenfalls Zusammenführung mit anderen Datenquellen</h4>
     <p>
@@ -100,8 +100,12 @@ export const PrivacyCollection = (
       Abschnitt „Vercel“.
     </p>
     <p>
-      Für technische Plattform- und Sicherheitsprotokolle gelten die im Abschnitt „Vercel“
-      beschriebenen Aufbewahrungskriterien.
+      Vercel hält die in den Projektprotokollen erfassten Abrufe nach eigenen Angaben bis zu 30 Tage
+      vor. Für Sicherheitsprotokolle gelten die Aufbewahrungskriterien im Abschnitt „Vercel“. Soweit
+      Vercel Sicherheitsprotokolle in eigener Verantwortlichkeit verarbeitet, richten sich Löschung
+      oder Anonymisierung danach, wie lange die Daten zur Erkennung und Abwehr von Missbrauch oder
+      zur Untersuchung von Sicherheitsvorfällen benötigt werden. Wir exportieren die Zugriffs- und
+      Sicherheitsprotokolle nicht automatisch.
     </p>
     <h3>Einsatz von KI auf der Website</h3>
     <p>
@@ -111,17 +115,20 @@ export const PrivacyCollection = (
     </p>
     <h4>Anbieter</h4>
     <p>
-      Das vortrainierte MobileNet-Modell wird über Google-Dienste bereitgestellt. Für Nutzer im
-      Europäischen Wirtschaftsraum ist Google Ireland Limited, Gordon House, Barrow Street, Dublin
-      4, Irland, der nach Googles Datenschutzerklärung zuständige Datenverantwortliche.
+      Das vortrainierte MobileNet-Modell wird von Google über TensorFlow Hub, Kaggle und Google
+      Cloud Storage bereitgestellt. Für die Dienste von Google ist bei Nutzern im Europäischen
+      Wirtschaftsraum nach Googles Datenschutzerklärung Google Ireland Limited, Gordon House, Barrow
+      Street, Dublin 4, Irland, der zuständige Datenverantwortliche. Kaggle Inc., 1600 Amphitheatre
+      Parkway, Mountain View, CA 94043, USA, betreibt Kaggle und verarbeitet die dort beim Abruf
+      anfallenden Verbindungsdaten in eigener Verantwortlichkeit.
     </p>
     <h4>Verarbeitete personenbezogene Daten</h4>
     <p>
-      Erst nach Ihrer Zustimmung zum Modell-Download stellt Ihr Browser eine Verbindung zu Google
-      her. Dabei werden Ihre IP-Adresse und technische Angaben zum Abruf, etwa Browserinformationen
-      und Zeitpunkt der Anfrage, übertragen. Die von Ihnen ausgewählten Bilder, Kamerabilder und
-      daraus berechneten Merkmale verarbeitet die Lernfunktion auf Ihrem Gerät. Die Anwendung lädt
-      diese Bilddaten nicht auf einen Server hoch.
+      Erst nach Ihrer Zustimmung zum Modell-Download stellt Ihr Browser Verbindungen zu Google und
+      Kaggle her. Dabei werden Ihre IP-Adresse und technische Angaben zum Abruf, etwa
+      Browserinformationen und Zeitpunkt der Anfrage, an den jeweiligen Dienst übertragen. Die von
+      Ihnen ausgewählten Bilder, Kamerabilder und daraus berechneten Merkmale verarbeitet die
+      Lernfunktion auf Ihrem Gerät. Die Anwendung lädt diese Bilddaten nicht auf einen Server hoch.
     </p>
     <h4>Zweck der Verarbeitung</h4>
     <p>
@@ -131,33 +138,40 @@ export const PrivacyCollection = (
     </p>
     <h4>Rechtsgrundlage der Verarbeitung</h4>
     <p>
-      Die durch uns veranlasste Verbindung zu Google und die Verarbeitung Ihrer Bildbeispiele
-      erfolgen nach Ihrer Einwilligung auf Grundlage von Art. 6 Abs. 1 lit. a DSGVO, soweit
-      personenbezogene Daten betroffen sind. Die Kamera wird zusätzlich erst nach Ihrer
+      Die von uns veranlassten Verbindungen zu Google und Kaggle sowie die Verarbeitung Ihrer
+      Bildbeispiele erfolgen nach Ihrer Einwilligung auf Grundlage von Art. 6 Abs. 1 lit. a DSGVO,
+      soweit personenbezogene Daten betroffen sind. Die Kamera wird zusätzlich erst nach Ihrer
       Kamerazustimmung und der Freigabe im Browser aktiviert. Sie können Ihre Einwilligung für die
-      Zukunft widerrufen, indem Sie die Seite neu laden oder schließen. Ein erneuter Start erfordert
-      eine neue Zustimmung. Die Rechtmäßigkeit der bis zum Widerruf erfolgten Verarbeitung bleibt
-      unberührt.
+      Zukunft widerrufen, indem Sie „Einwilligung widerrufen“ wählen oder die Seite neu laden oder
+      schließen. Ein erneuter Start erfordert eine neue Zustimmung. Die Rechtmäßigkeit der bis zum
+      Widerruf erfolgten Verarbeitung bleibt unberührt.
     </p>
     <h4>Empfänger der Daten</h4>
     <p>
-      Google erhält die beim Modell-Download anfallenden Verbindungsdaten. Die selbst ausgewählten
-      Bilder, Kamerabilder und daraus berechneten Bildmerkmale werden durch diese Anwendung weder an
-      Google noch an den Hostinganbieter übermittelt.
+      Google und Kaggle erhalten bei den jeweiligen Abrufen die dabei anfallenden Verbindungsdaten.
+      Kaggle verwendet sie nach eigenen Angaben zur Bereitstellung und Absicherung seines Dienstes.
+      Die selbst ausgewählten Bilder, Kamerabilder und daraus berechneten Bildmerkmale bleiben in
+      Ihrem Browser.
     </p>
     <h4>Speicherdauer beziehungsweise Kriterien für ihre Festlegung</h4>
     <p>
       Bildbeispiele, Bildmerkmale, Klassennamen und der trainierte Klassifikator werden für die
-      aktuelle Nutzung im Arbeitsspeicher Ihres Browsers gehalten. Beim Neuladen oder Schließen der
-      Seite wird dieser Anwendungszustand verworfen. Die Anwendung speichert Ihre Trainingsdaten
-      nicht dauerhaft. Ein Neuladen löscht keine bereits bei Google angefallenen Verbindungsdaten.
-      Google richtet die Aufbewahrung seiner Daten nach Datenart, Verwendungszweck und gesetzlichen
-      Anforderungen, insbesondere Sicherheits- und Missbrauchsabwehrzwecken; Einzelheiten erläutert
-      die{' '}
+      aktuelle Nutzung im Arbeitsspeicher Ihres Browsers gehalten. Wenn Sie „Einwilligung
+      widerrufen“ wählen, die Seite neu laden oder schließen, wird dieser Anwendungszustand
+      verworfen. Die Anwendung speichert Ihre Trainingsdaten nicht dauerhaft. Ein Neuladen löscht
+      keine bereits bei Google oder Kaggle angefallenen Verbindungsdaten. Google richtet die
+      Aufbewahrung seiner Daten nach Datenart, Verwendungszweck und gesetzlichen Anforderungen,
+      insbesondere Sicherheits- und Missbrauchsabwehrzwecken; Einzelheiten erläutert die{' '}
       <a href="https://policies.google.com/privacy?hl=de&amp;gl=de">
         Datenschutzerklärung von Google
       </a>
       .
+    </p>
+    <p>
+      Kaggle bestimmt die Speicherdauer nach dem Zweck der Erhebung. Kaggle kann Daten länger
+      aufbewahren, etwa zur Sicherheit, zur Missbrauchsabwehr oder zur Erfüllung gesetzlicher
+      Pflichten. Weitere Informationen finden Sie in der{' '}
+      <a href="https://www.kaggle.com/privacy">Datenschutzerklärung von Kaggle</a>.
     </p>
     <h4>Übermittlungen in Drittländer und gegebenenfalls geltende Garantien</h4>
     <p>
@@ -170,6 +184,20 @@ export const PrivacyCollection = (
       </a>{' '}
       und das{' '}
       <a href="https://www.dataprivacyframework.gov/participant/5780">offizielle DPF-Register</a>.
+      Für Übermittlungen, die kein Angemessenheitsbeschluss abdeckt, nutzt Google nach eigenen
+      Angaben bei Bedarf Standardvertragsklauseln nach Art. 46 DSGVO. Eine Kopie können Sie über{' '}
+      <a href="https://support.google.com/policies/answer/9581826?hl=de">
+        Googles Datenschutzkontakt
+      </a>{' '}
+      anfragen.
+    </p>
+    <p>
+      Beim Abruf über Kaggle können Verbindungsdaten in die USA übermittelt werden. Kaggle nimmt im
+      Rahmen der Zertifizierung seiner Muttergesellschaft Google LLC am EU-US Data Privacy Framework
+      teil. Für davon erfasste Übermittlungen gilt der Angemessenheitsbeschluss nach Art. 45 DSGVO.
+      Soweit erforderlich, verwendet Kaggle nach eigenen Angaben Standardvertragsklauseln nach Art.
+      46 DSGVO. Ansprechpartner für Auskünfte zu diesen Garantien nennt die{' '}
+      <a href="https://www.kaggle.com/privacy">Datenschutzerklärung von Kaggle</a>.
     </p>
     <h4>
       Speicherung von Informationen auf Ihrem Endgerät oder Zugriff auf dort gespeicherte
@@ -186,12 +214,12 @@ export const PrivacyCollection = (
       Browsereinstellungen steuern.
     </p>
     <h3>Anfrage per E-Mail oder Telefon</h3>
+    <h4>Bearbeitung Ihrer Anfrage</h4>
     <p>
-      Wenn Sie uns per E-Mail oder Telefon kontaktieren, wird Ihre Anfrage inklusive aller daraus
-      hervorgehenden personenbezogenen Daten (Name, Anfrage) zum Zwecke der Bearbeitung Ihres
-      Anliegens bei uns gespeichert und verarbeitet. Soweit für die Bearbeitung erforderlich,
-      verarbeiten die in dieser Datenschutzerklärung genannten Dienstleister diese Daten in unserem
-      Auftrag. Eine sonstige Weitergabe erfolgt nur auf einer anwendbaren Rechtsgrundlage.
+      Wenn Sie uns per E-Mail oder Telefon kontaktieren, verarbeiten wir die dabei mitgeteilten
+      Angaben, insbesondere Ihren Namen, Ihre E-Mail-Adresse oder Telefonnummer sowie den Inhalt
+      Ihrer Anfrage und etwaige Anhänge. Wir verarbeiten diese Daten, um Ihr Anliegen zu bearbeiten
+      und Ihnen zu antworten.
     </p>
     <p>
       Die Verarbeitung dieser Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO, sofern
@@ -200,11 +228,39 @@ export const PrivacyCollection = (
       auf unserem berechtigten Interesse an der effektiven Bearbeitung der an uns gerichteten
       Anfragen (Art. 6 Abs. 1 lit. f DSGVO).
     </p>
+    <h4>E-Mail-Dienst und Empfänger</h4>
     <p>
-      Die von Ihnen an uns per Kontaktanfragen übersandten Daten verbleiben bei uns, bis Sie uns zur
-      Löschung auffordern oder der Zweck für die Datenspeicherung entfällt (z. B. nach
-      abgeschlossener Bearbeitung Ihres Anliegens). Zwingende gesetzliche Bestimmungen –
-      insbesondere gesetzliche Aufbewahrungsfristen – bleiben unberührt.
+      Für den Empfang, die Speicherung und den Versand von E-Mails nutzen wir Hostinger
+      International Ltd., 61 Lordou Vironos Street, 6023 Larnaca, Zypern. Hostinger verarbeitet
+      E-Mail-Inhalte, Anhänge und technische Angaben zur Übermittlung in unserem Auftrag. Mit
+      Hostinger besteht ein{' '}
+      <a href="https://www.hostinger.com/legal/dpa">Vertrag über Auftragsverarbeitung</a>.
+    </p>
+    <p>
+      Hostinger speichert das Postfach und dessen Sicherungskopien nach eigenen Angaben in
+      Deutschland oder Frankreich. Für die Bereitstellung und Absicherung des E-Mail-Dienstes setzt
+      Hostinger Cloudflare, MailChannels und Proofpoint als Unterauftragsverarbeiter ein. Hostinger
+      prüft eingehende E-Mails auch auf Spam und kann die Filterung anhand des Umgangs mit
+      Spam-Nachrichten im Postfach verbessern. Dabei können Daten außerhalb des Europäischen
+      Wirtschaftsraums verarbeitet werden. Für Übermittlungen in Länder ohne
+      Angemessenheitsbeschluss sieht der Vertrag mit Hostinger EU-Standardvertragsklauseln gemäß
+      Art. 46 DSGVO vor. Die Auftragsverarbeitungsvereinbarung verweist auf den Text der Klauseln.
+      Weitere Angaben enthält die{' '}
+      <a href="https://www.hostinger.com/legal/privacy-policy">
+        Datenschutzerklärung von Hostinger
+      </a>
+      .
+    </p>
+    <p>
+      Bei telefonischen Anfragen sind die beteiligten Telekommunikationsanbieter Empfänger der
+      Verbindungsdaten. Eine sonstige Weitergabe erfolgt nur auf einer anwendbaren Rechtsgrundlage.
+    </p>
+    <h4>Speicherdauer</h4>
+    <p>
+      Wir löschen Anfragedaten, sobald sie für die Bearbeitung Ihres Anliegens nicht mehr
+      erforderlich sind. Soweit eine gesetzliche Aufbewahrungspflicht besteht, löschen wir die Daten
+      nach Ablauf der maßgeblichen Frist. Gelöschte E-Mails können im Papierkorb des Postfachs für
+      bis zu 30 Tage verbleiben.
     </p>
   </>
 );

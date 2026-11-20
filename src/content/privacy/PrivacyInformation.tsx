@@ -18,10 +18,10 @@ export const PrivacyInformation = (
       E-Mail) Sicherheitslücken aufweisen kann. Ein lückenloser Schutz der Daten vor dem Zugriff
       durch Dritte ist nicht möglich.
     </p>
-    <h3>Hinweis zur verantwortlichen Stelle</h3>
+    <h3 id="verantwortliche-stelle">Hinweis zur verantwortlichen Stelle</h3>
     <p>Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:</p>
     <p>
-      Yannick Schäfer
+      BoomApps, Yannick Schäfer
       <br />
       Am Mäuerchen 12
       <br />
@@ -42,7 +42,7 @@ export const PrivacyInformation = (
     <p>
       Die Nutzung der Lernfunktion und die Kontaktaufnahme sind freiwillig. Für die Darstellung der
       Website werden die im Abschnitt „Server-Log-Dateien“ beschriebenen technischen
-      Verbindungsdaten benötigt. Für die Lernfunktion wählen Sie selbst Bildbeispiele aus oder
+      Verbindungsdaten benötigt. Für das Bildtraining wählen Sie selbst Bildbeispiele aus oder
       erlauben den Kamerazugriff. Für eine Antwort auf eine E-Mail-Anfrage benötigen wir eine
       erreichbare E-Mail-Adresse und die zur Bearbeitung Ihres Anliegens erforderlichen Angaben.
     </p>
@@ -55,7 +55,7 @@ export const PrivacyInformation = (
     <h4>Folgen einer Nichtbereitstellung</h4>
     <p>
       Ohne die zur Übertragung erforderlichen Verbindungsdaten kann die Website nicht bereitgestellt
-      werden. Ohne Zustimmung zum Modell-Download kann die Lernfunktion nicht gestartet werden. Ohne
+      werden. Ohne Zustimmung zum Modell-Download kann das Bildtraining nicht gestartet werden. Ohne
       Bildbeispiele kann kein eigener Bildklassifikator trainiert werden. Ohne Kamerafreigabe bleibt
       die Kamera ausgeschaltet. Ohne die für eine Antwort erforderlichen Kontaktangaben können wir
       eine Anfrage gegebenenfalls nicht beantworten.

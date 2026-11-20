@@ -293,8 +293,8 @@ The appearance menu loads its popup and choice
 components on intent through a separate entry point from the shared trigger.
 `PageContent` composes Card, CardHeader and CardContent around one semantic article
 and one h1. The reading column has a bounded width. Documents use the neutral
-Card. Privacy-policy paragraphs and lists use
-justified text with German automatic hyphenation; headings remain left-aligned.
+Card. Privacy-policy paragraphs and lists are left-aligned with automatic German
+hyphenation.
 The legal text remains visible in SSG. Heading-led reading groups keep full
 opacity as they enter. Document typography, reading width and spacing live
 in `src/components/legal.css`; route transitions retain the existing native owner.

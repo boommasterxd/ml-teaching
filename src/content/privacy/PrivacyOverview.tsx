@@ -1,6 +1,26 @@
 export const PrivacyOverview = (
   <>
     <h2>1. Datenschutz auf einen Blick</h2>
+    <h3>Kurz erklärt</h3>
+    <p>
+      Wenn du diese Website öffnest, bekommt der Server technische Informationen wie deine
+      IP-Adresse. So weiß der Server, wohin er die Seite schicken soll.
+    </p>
+    <p>
+      Wenn du das Bildtraining startest und zustimmst, lädt dein Browser ein Modell von Google.
+      Dabei erhalten Google und Kaggle technische Informationen wie deine IP-Adresse. Deine
+      Trainingsbilder bleiben in deinem Browser. Die Kamera schaltest du extra frei.
+    </p>
+    <p>
+      Über „Einwilligung widerrufen“ kannst du das Training beenden. Dabei werden die Bilder und das
+      trainierte Modell aus der geöffneten Seite entfernt.
+    </p>
+    <p>
+      Du kannst uns fragen, welche Daten wir über dich haben, und verlangen, dass wir falsche Daten
+      berichtigen oder Daten löschen. Schreib uns an{' '}
+      <a href="mailto:yannickschaefer@boomapps.de">yannickschaefer@boomapps.de</a>. Die Einzelheiten
+      findest du in den Abschnitten unten.
+    </p>
     <h3>Allgemeine Hinweise</h3>
     <p>
       Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren
@@ -13,7 +33,8 @@ export const PrivacyOverview = (
     <h4>Wer ist verantwortlich für die Datenerfassung auf dieser Website?</h4>
     <p>
       Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen
-      Kontaktdaten können Sie dem Abschnitt „Hinweis zur Verantwortlichen Stelle“ in dieser
+      Kontaktdaten können Sie dem Abschnitt „
+      <a href="#verantwortliche-stelle">Hinweis zur verantwortlichen Stelle</a>“ in dieser
       Datenschutzerklärung entnehmen.
     </p>
     <h4>Wie erfassen wir Ihre Daten?</h4>
