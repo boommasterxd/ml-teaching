@@ -22,6 +22,13 @@ export interface TrainingCallbacks {
   onError: (category: Extract<ErrorCategory, 'training' | 'validation'>, msg: string) => void;
 }
 
+export interface TrainingProgress {
+  processed: number;
+  total: number;
+}
+
+const progressIntervalMs = 100;
+
 /**
  * Trains a new KNN classifier by adding all stored feature vectors class by class.
  * Each tensor is disposed immediately after use to prevent GPU memory leaks.
@@ -31,6 +38,7 @@ async function trainClassifier(
   classes: MLClass[],
   newClassifier: Classifier,
   signal: AbortSignal,
+  onBatch: (processed: number) => void,
 ): Promise<void> {
   const tf = await loadTensorFlow();
   let count = 0;
@@ -45,6 +53,7 @@ async function trainClassifier(
       }
       count++;
       if (count % ML.TRAINING_BATCH_SIZE === 0) {
+        onBatch(count);
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
       }
     }
@@ -106,7 +115,7 @@ export function useModelTraining(
   hasDuplicateNames: boolean,
 ) {
   const { setClassifier, setHasTrainedModel, onError } = callbacks;
-  const [isTraining, setIsTraining] = useState(false);
+  const [progress, setProgress] = useState<TrainingProgress | null>(null);
   const trainingRef = useRef<AbortController | null>(null);
   useEffect(
     () => () => {
@@ -135,44 +144,51 @@ export function useModelTraining(
    * Validates all prerequisites and trains a new KNN classifier from the
    * stored feature vectors. The model loader owns replacement and disposal.
    * Reports validation or training errors via `onError` and
-   * updates `isTraining` throughout the async operation.
+   * reports registered images while the async operation is active.
    */
-  const trainModel = useCallback(
-    async (feedbackMs = 0) => {
-      if (trainingRef.current && !trainingRef.current.signal.aborted) return;
-      if (!validateClasses(classes, hasInvalidNames, hasDuplicateNames, onError)) return;
-      const controller = new AbortController();
-      trainingRef.current = controller;
-      setIsTraining(true);
-      const start = performance.now();
-      let newClassifier: Classifier | null = null;
-      try {
-        newClassifier = await createClassifier();
-        await new Promise((resolve) => setTimeout(resolve, ML.TRAINING_UI_YIELD_MS));
-        await trainClassifier(classes, newClassifier, controller.signal);
-        const remaining = feedbackMs - (performance.now() - start);
-        if (remaining > 0 && !controller.signal.aborted)
-          await new Promise((resolve) => setTimeout(resolve, remaining));
-        controller.signal.throwIfAborted();
-        setClassifier(newClassifier);
-        newClassifier = null;
-        setHasTrainedModel(true);
-      } catch {
-        newClassifier?.dispose();
-        if (!controller.signal.aborted) onError('training', 'Fehler beim Training des Modells.');
-      } finally {
-        if (trainingRef.current === controller) {
-          trainingRef.current = null;
-          setIsTraining(false);
-        }
+  const trainModel = useCallback(async () => {
+    if (trainingRef.current && !trainingRef.current.signal.aborted) return;
+    if (!validateClasses(classes, hasInvalidNames, hasDuplicateNames, onError)) return;
+    const controller = new AbortController();
+    trainingRef.current = controller;
+    const total = classes.reduce((count, cls) => count + cls.images.length, 0);
+    setProgress({ processed: 0, total });
+    let nextProgressAt = 0;
+    let newClassifier: Classifier | null = null;
+    try {
+      newClassifier = await createClassifier();
+      await new Promise((resolve) => setTimeout(resolve, ML.TRAINING_UI_YIELD_MS));
+      await trainClassifier(classes, newClassifier, controller.signal, (processed) => {
+        const now = performance.now();
+        if (now < nextProgressAt) return;
+        nextProgressAt = now + progressIntervalMs;
+        setProgress({ processed, total });
+      });
+      controller.signal.throwIfAborted();
+      setClassifier(newClassifier);
+      newClassifier = null;
+      setHasTrainedModel(true);
+    } catch {
+      newClassifier?.dispose();
+      if (!controller.signal.aborted) onError('training', 'Fehler beim Training des Modells.');
+    } finally {
+      if (trainingRef.current === controller) {
+        trainingRef.current = null;
+        setProgress(null);
       }
-    },
-    [classes, setClassifier, setHasTrainedModel, onError, hasInvalidNames, hasDuplicateNames],
-  );
+    }
+  }, [classes, setClassifier, setHasTrainedModel, onError, hasInvalidNames, hasDuplicateNames]);
 
   const isTrainingActive = useCallback(
     () => Boolean(trainingRef.current && !trainingRef.current.signal.aborted),
     [],
   );
-  return { isTraining, isTrainingActive, trainModel, canTrain, hasInvalidNames };
+  return {
+    isTraining: progress !== null,
+    progress,
+    isTrainingActive,
+    trainModel,
+    canTrain,
+    hasInvalidNames,
+  };
 }

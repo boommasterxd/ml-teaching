@@ -67,7 +67,7 @@ export default function PredictionSpace({
   }, [model, subscribeToFeatures]);
 
   return (
-    <div ref={area}>
+    <div ref={area} className="pointer-events-none absolute inset-0">
       <PredictionPointCloud classes={classes} points={model.points} position={position} />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
+import { useEffect, useState } from 'react';
 import type { SubscribePredictionFeatures } from '@/hooks/usePredictionLoop';
 import type { MLClass } from '@/types/ml';
 import { Spinner } from './ui/spinner';
@@ -23,35 +23,14 @@ function loadSpace() {
   return pending;
 }
 
-/** Admit the chart at the container breakpoint defined by the prediction panel. */
-function useSpaceWidth(area: RefObject<HTMLDivElement | null>, enabled: boolean) {
-  const [wide, setWide] = useState(false);
-  useLayoutEffect(() => {
-    const element = area.current;
-    if (!enabled || !element) return;
-    function update() {
-      if (element) {
-        setWide(getComputedStyle(element).getPropertyValue('--prediction-space').trim() === '1');
-      }
-    }
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [area, enabled]);
-  return enabled && wide;
-}
-
 export function useDeferredPredictionSpace(
-  area: RefObject<HTMLDivElement | null>,
   classes: readonly MLClass[],
   enabled: boolean,
   active: boolean,
 ) {
-  const available = useSpaceWidth(area, enabled);
   const [intent, setIntent] = useState<readonly MLClass[]>();
   const [state, setState] = useState<SpaceState>();
-  const shouldPrepare = available && (active || intent === classes);
+  const shouldPrepare = enabled && (active || intent === classes);
 
   useEffect(() => {
     if (!shouldPrepare) return;
@@ -72,10 +51,10 @@ export function useDeferredPredictionSpace(
   }, [classes, shouldPrepare]);
 
   return {
-    visible: available && active,
+    visible: enabled && active,
     result: state?.source === classes ? state : undefined,
     prepare: () => {
-      if (available) setIntent(classes);
+      if (enabled) setIntent(classes);
     },
   };
 }
@@ -94,7 +73,7 @@ export function DeferredPredictionSpace({
       <Text
         variant="muted"
         role="status"
-        className="flex aspect-[2/1] items-center justify-center gap-2"
+        className="absolute inset-0 flex items-center justify-center gap-2 p-2 text-center"
       >
         <Spinner aria-hidden="true" />
         Merkmalsraum wird vorbereitet …
@@ -102,7 +81,11 @@ export function DeferredPredictionSpace({
     );
   }
   if ('failed' in result) {
-    return <Text variant="muted">Der Merkmalsraum konnte nicht angezeigt werden.</Text>;
+    return (
+      <Text variant="muted" className="absolute inset-0 grid place-items-center p-2 text-center">
+        Der Merkmalsraum konnte nicht angezeigt werden.
+      </Text>
+    );
   }
   const Space = result.module.default;
   return <Space classes={classes} model={result.model} subscribeToFeatures={subscribeToFeatures} />;

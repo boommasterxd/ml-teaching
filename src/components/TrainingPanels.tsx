@@ -2,11 +2,8 @@ import type { useTrainingWorkspace } from '@/hooks/useTrainingWorkspace';
 import TrainingClassesPanel from './TrainingClassesPanel';
 import TrainingControls from './TrainingControls';
 import PredictionPanel from './PredictionPanel';
-import { useMotionPreference } from './ui/use-motion-preference';
 
 export type TrainingStep = 'images' | 'training' | 'prediction';
-
-const trainingFeedbackMs = 1250;
 
 /** Only the selected panel mounts. The workspace retains classes and the fitted model. */
 export default function TrainingPanels({
@@ -23,7 +20,6 @@ export default function TrainingPanels({
   const { resources, data, cardActions } = workspace;
   const { consent, camera, prediction } = resources;
   const { classes } = data;
-  const { reduce } = useMotionPreference();
   const onEnableCamera = consent.cameraConsent ? undefined : consent.requestCameraConsent;
 
   return (
@@ -52,11 +48,11 @@ export default function TrainingPanels({
           classes={classes.classes}
           canTrain={data.canTrain}
           hasPendingUploads={data.activity.hasUploads}
-          isTraining={data.training.isTraining}
+          progress={data.training.progress}
           hasTrainedModel={resources.hasTrainedModel}
           hasInvalidNames={data.training.hasInvalidNames}
           hasDuplicateNames={data.hasDuplicateNames}
-          onTrain={() => data.trainModel(reduce ? 0 : trainingFeedbackMs)}
+          onTrain={data.trainModel}
           onPredict={() => onSelect('prediction')}
         />
       )}

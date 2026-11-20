@@ -320,8 +320,8 @@ do not install a second UI foundation.
 ## Layout and interaction
 
 The image-training workspace mounts one step at a time on the same route. It starts
-with the class collection, whose Cards share two columns from Tailwind's `lg`
-breakpoint and stack on narrower screens. Training and prediction each use the
+with the class collection, whose Cards share equal-height rows in two columns from
+Tailwind's `lg` breakpoint and stack on narrower screens. Training and prediction each use the
 full workspace width when selected. Switching steps preserves class data and the
 current model and stops any running prediction when leaving its step.
 Each class reserves space for its gallery toolbar and scrollable
@@ -395,18 +395,20 @@ progress toward the training minimum, then the collected total;
 the first class card and the prediction step offer camera activation after the
 optional camera prompt is declined. A failed camera request shows a persistent
 workspace alert with a document reload action. Local image uploads remain available.
-Each visible preview places the shared camera switch in its lower-right corner.
+Each capture preview places the shared camera switch in its lower-right corner.
 The completed training
 status offers an action that opens the prediction step without starting the camera preview.
-The prediction card
-puts start and stop in the same header control and attaches its preview only during active
-prediction. The camera and confidence readout share a row when the card is wide enough.
-At the wider prediction container breakpoint, the live right column includes a PCA
-scatter plot with one point per training image and a diamond for the current camera frame.
-Once the plot is ready, the camera preview stretches to the bottom of its caption.
-The plot reuses the lesson's diamond, class palette and typography. A packed SVG path per
-class keeps the point cloud separate from the Animate UI marker motion. The visible
-caption explains that the view is a projection of the full feature space.
+The prediction card keeps its camera frame and result areas in place before, during
+and after live prediction. Start and stop share one control inside the frame. The
+video attaches on activation, and the confidence bars are empty until results arrive.
+The camera and confidence readout share a row when the card is wide enough.
+The PCA diagram reserves space below the confidence bars before prediction starts.
+During live prediction, it shows a scatter plot with one point per training image
+and a diamond for the current camera frame. When the panel uses two columns, the
+camera frame stretches to the bottom of the legend. The title identifies the 2D
+projection, and the figure description explains it for assistive technology.
+The plot reuses the lesson's diamond, class palette and typography. A packed SVG
+path per class keeps the point cloud separate from the Animate UI marker motion.
 The workspace panels, dialogs, gallery and camera preview use shared theme and media tokens.
 SiteBrand is a small client boundary so Animate UI's press Slot receives a concrete
 Link element. Passing the server-produced Link through that Slot can resolve to an
@@ -502,11 +504,11 @@ admit scroll reveals once the workspace is ready. The footer withdrawal link bec
 available when setup closes. Later camera prompts retain the workspace layout. Virtual
 thumbnails and live prediction updates never replay decorative entries. Dialogs,
 success feedback, icons and the educational sequence retain their existing owners.
-During classifier training, Animate UI draws converging paths inspired by the lesson's
-nearest-neighbor diagram. Successful training changes the end node to a drawn check and
-announces completion in the persistent status region. The illustration is decorative
-and the success state follows actual completion. Quick runs keep the visual
-sequence on screen for at least 1.25 seconds. Reduced motion skips this minimum.
+During classifier training, the progress bar and the converging paths in the
+illustration follow the number of training images registered with the classifier.
+Successful training changes the end node to a drawn check and announces completion
+in the persistent status region. The success state stays visible until the next
+action. Reduced motion applies progress updates without interpolation.
 
 Quiz completion and KNN answer feedback share `AnimatedFeedback`. Animate UI's
 `AutoHeight` owns expansion and collapse, including the space above the Alert;

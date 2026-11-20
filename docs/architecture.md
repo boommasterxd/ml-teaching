@@ -176,7 +176,7 @@ and keeps selections in memory.
 5. Prediction processes one frame at a time. Stopping or leaving invalidates late
    results. Route cleanup stops camera tracks and disposes classifiers and models.
 
-On a wide prediction panel, intent to start the live preview prepares a local PCA
+Intent to start the live preview prepares a local PCA
 projection of the normalized training features in interruptible batches. The fitted
 axes and point cloud are reused for the same training dataset. While visible, the
 plot samples the same embedding already produced for live classification and moves

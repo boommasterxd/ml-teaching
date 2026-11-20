@@ -217,6 +217,39 @@ describe('useModelTraining', () => {
       expect(onError).not.toHaveBeenCalled();
     });
 
+    it('reports each visible milestone from registered images and clears it when the model is published', async () => {
+      const classes = makeClasses(2, 20);
+      const { result } = renderHook(() =>
+        useModelTraining(classes, { setClassifier, setHasTrainedModel, onError }, false),
+      );
+      vi.useFakeTimers();
+      try {
+        let training!: Promise<void>;
+        await act(async () => {
+          training = result.current.trainModel();
+          await vi.dynamicImportSettled();
+        });
+        expect(result.current.progress).toEqual({ processed: 0, total: 40 });
+
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(ML.TRAINING_UI_YIELD_MS);
+        });
+        expect(result.current.progress).toEqual({ processed: ML.TRAINING_BATCH_SIZE, total: 40 });
+        expect(mockNewClassifier.addExample).toHaveBeenCalledTimes(ML.TRAINING_BATCH_SIZE);
+        expect(setClassifier).not.toHaveBeenCalled();
+
+        await act(async () => {
+          await vi.runAllTimersAsync();
+          await training;
+        });
+        expect(result.current.progress).toBeNull();
+        expect(mockNewClassifier.addExample).toHaveBeenCalledTimes(40);
+        expect(setClassifier).toHaveBeenCalledExactlyOnceWith(mockNewClassifier);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('isTraining is false after training completes', async () => {
       const classes = makeClasses(2);
       const { result } = renderHook(() =>

@@ -1,6 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-checks';
-import { expectHeaderLayout, settleLandingReveals } from './training-keyboard';
+import {
+  expectAlignedTrainingCards,
+  expectHeaderLayout,
+  settleLandingReveals,
+} from './training-keyboard';
 import { learningPaths } from '../../src/lib/learning-paths';
 
 type TransitionSnapshot = {
@@ -104,7 +108,9 @@ async function observeMenuShifts(page: Page) {
     );
 }
 
-test('mobile training consent opens above the page and fits a short viewport', async ({ page }) => {
+test('training consent fits a short viewport and preserves the desktop class row', async ({
+  page,
+}) => {
   const failures = diagnostics(page);
   const transitions = await observeViewTransitions(page);
   await page.setViewportSize({ width: 360, height: 640 });
@@ -120,6 +126,7 @@ test('mobile training consent opens above the page and fits a short viewport', a
   expect(await transitions()).toEqual([]);
   await expect(dialog.getByRole('button', { name: 'Zustimmen' })).toBeInViewport();
   await expectAccessible(page);
+  await expectAlignedTrainingCards(page);
   expect(failures).toEqual([]);
 });
 

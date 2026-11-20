@@ -261,12 +261,14 @@ const ClassCard = memo(function ClassCard({
   );
 
   return (
-    <Card className="@container/training-class gap-4 py-4">
+    <Card className="@container/training-class gap-4 py-4 lg:h-full">
       <ClassHeader cls={cls} position={position} isDuplicate={isDuplicate} actions={actions} />
       <CardContent
         className={cn(
           'grid min-w-0 gap-3 px-4 @md/training-class:px-5',
-          showCamera && '@xl/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]',
+          showCamera
+            ? '@xl/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]'
+            : 'lg:flex-1 lg:content-between',
         )}
       >
         <CameraPreview

@@ -1,8 +1,10 @@
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
-import { useShouldReduceMotion } from '@animate-ui/react/utils/motion';
+import { spring, useTempoTransition } from '@animate-ui/react/utils/motion';
+import { motion } from 'motion/react';
 import { memo } from 'react';
 import { Brain } from './icons/brain';
 import { Check } from './icons/check';
+import { useMotionPreference } from './ui/use-motion-preference';
 
 const examplePositions = [10, 28, 46];
 const featurePaths = ['M21 10 C46 10 39 28 63 28', 'M21 28 H63', 'M21 46 C46 46 39 28 63 28'];
@@ -10,10 +12,13 @@ const featurePaths = ['M21 10 C46 10 39 28 63 28', 'M21 28 H63', 'M21 46 C46 46 
 /** The examples converge on the classifier, as in the lesson's KNN illustration. */
 const TrainingFigure = memo(function TrainingFigure({
   state,
+  progress,
 }: {
   state: 'idle' | 'training' | 'complete';
+  progress: number;
 }) {
-  const reduce = useShouldReduceMotion();
+  const { reduce } = useMotionPreference();
+  const draw = useTempoTransition(spring.progress);
   const complete = state === 'complete';
   return (
     <div className="relative aspect-[104/56] w-44 shrink-0 text-primary sm:w-60" aria-hidden="true">
@@ -29,18 +34,19 @@ const TrainingFigure = memo(function TrainingFigure({
             className="fill-primary/15 stroke-primary/55"
           />
         ))}
-        {featurePaths.map((path, index) => (
+        {featurePaths.map((path) => (
           <g key={path}>
             <path d={path} className="stroke-primary/25" />
             {state !== 'idle' && (
-              <Effect
-                asChild
-                initial={reduce ? false : { pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.7, delay: index * 0.15, ease: 'easeOut' }}
-              >
-                <path d={path} stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-              </Effect>
+              <motion.path
+                d={path}
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                initial={false}
+                animate={{ pathLength: complete ? 1 : progress }}
+                transition={reduce ? { duration: 0 } : draw}
+              />
             )}
           </g>
         ))}
@@ -55,7 +61,7 @@ const TrainingFigure = memo(function TrainingFigure({
         </Effect>
       ) : (
         <span className="absolute top-1/2 right-0 grid size-[35%] aspect-square h-auto -translate-y-1/2 place-items-center rounded-full border border-primary/25 bg-card">
-          <Brain className="size-7 sm:size-9" animate={state === 'training' && !reduce} />
+          <Brain className="size-7 sm:size-9" />
         </span>
       )}
     </div>

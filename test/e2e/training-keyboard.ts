@@ -2,6 +2,20 @@ import { expect, type Page } from '@playwright/test';
 import { learningPaths } from '../../src/lib/learning-paths';
 import { expectAccessible } from './browser-checks';
 
+export async function expectAlignedTrainingCards(page: Page) {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const cards = page.locator('[aria-labelledby="training-images"] [data-slot="card"]');
+  await expect(cards).toHaveCount(2);
+  await expect
+    .poll(() =>
+      cards.evaluateAll((nodes) => {
+        const [first, second] = nodes.map((node) => node.getBoundingClientRect());
+        return Math.abs(first.bottom - second.bottom) + Math.abs(first.top - second.top);
+      }),
+    )
+    .toBeLessThan(1);
+}
+
 export async function classLayout(page: Page) {
   const names = page.getByRole('textbox', { name: /^Name für Klasse / });
   return names.evaluateAll((inputs) => {
@@ -227,9 +241,12 @@ export async function expectLivePredictionControls(page: Page) {
   const space = page.getByRole('figure', { name: 'Merkmalsraum' });
   const stop = page.getByRole('button', { name: 'Live-Vorhersage stoppen' });
   const start = page.getByRole('button', { name: 'Live-Vorhersage starten' });
+  const frame = page.locator('[data-slot="prediction-camera"]');
   const viewport = page.viewportSize()!;
   await expect(preview).toHaveCount(0);
-  await expect(space).toHaveCount(0);
+  await expect(space).toBeVisible();
+  await expect(frame.getByRole('button', { name: 'Live-Vorhersage starten' })).toBeVisible();
+  const recordStartSizes = await observePredictionSizes(frame);
   await start.press('Enter');
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 2' })).toBeVisible();
@@ -238,17 +255,56 @@ export async function expectLivePredictionControls(page: Page) {
   await space.scrollIntoViewIfNeeded();
   const marker = space.locator('[data-slot="prediction-live-point"]');
   await expect(marker).toBeVisible();
+  await recordStartSizes();
   await expectAccessible(page);
   await page.setViewportSize({ width: 390, height: viewport.height });
-  await expect(space).toHaveCount(0);
+  await expect(space).toBeVisible();
   await expect(preview).toBeVisible();
+  const recordMobileSizes = await observePredictionSizes(frame);
+  await stop.press('Space');
+  await expect(preview).toHaveCount(0);
+  await start.press('Enter');
+  await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
+  await space.scrollIntoViewIfNeeded();
+  await expect(marker).toBeVisible();
+  await recordMobileSizes();
   await page.setViewportSize(viewport);
   await space.scrollIntoViewIfNeeded();
   await expect(marker).toBeVisible();
+  const recordStopSizes = await observePredictionSizes(frame);
   await stop.press('Space');
   await expect(start).toBeFocused();
   await expect(preview).toHaveCount(0);
-  await expect(space).toHaveCount(0);
+  await expect(space).toBeVisible();
+  await expect(marker).toHaveCount(0);
+  await recordStopSizes();
+}
+
+async function observePredictionSizes(frame: ReturnType<Page['locator']>) {
+  const probe = await frame.evaluateHandle((node) => {
+    const panel = node.closest('section')!;
+    const sizes = new Set<string>();
+    const record = () =>
+      sizes.add(
+        [node, panel]
+          .map((element) => Math.round(element.getBoundingClientRect().height))
+          .join('/'),
+      );
+    record();
+    const observer = new ResizeObserver(record);
+    observer.observe(node);
+    observer.observe(panel);
+    return { observer, sizes, record };
+  });
+  return async () => {
+    const sizes = await probe.evaluate(({ observer, sizes, record }) => {
+      record();
+      observer.disconnect();
+      return [...sizes];
+    });
+    await probe.dispose();
+    expect(sizes).toHaveLength(1);
+  };
 }
 
 export async function expectKeyboardCapture(page: Page) {

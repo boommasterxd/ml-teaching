@@ -16,7 +16,7 @@ describe('training and prediction controls', () => {
     const base = {
       classes: makeClasses(10),
       canTrain: false,
-      isTraining: false,
+      progress: null,
       hasTrainedModel: false,
       hasInvalidNames: false,
       hasDuplicateNames: false,
@@ -37,10 +37,27 @@ describe('training and prediction controls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Modell trainieren' }));
     expect(onTrain).toHaveBeenCalledOnce();
     expect(screen.queryByRole('button', { name: 'Weiter zur Vorhersage' })).toBeNull();
-    rerender(<TrainingControls {...base} hasPendingUploads={false} isTraining />);
+    rerender(
+      <TrainingControls
+        {...base}
+        hasPendingUploads={false}
+        progress={{ processed: 0, total: 20 }}
+      />,
+    );
+    expect(screen.getByText('Das Modell wird vorbereitet.')).toBeTruthy();
     expect((screen.getByRole('button', { name: /Trainiere/ }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+    rerender(
+      <TrainingControls
+        {...base}
+        hasPendingUploads={false}
+        progress={{ processed: 16, total: 20 }}
+      />,
+    );
+    const progress = screen.getByRole('progressbar', { name: 'Trainingsfortschritt' });
+    expect(progress.getAttribute('aria-valuetext')).toBe('16 von 20 Bildern verarbeitet');
+    expect(screen.getByRole('status').textContent).toContain('Training läuft');
     rerender(<TrainingControls {...base} hasPendingUploads={false} hasTrainedModel canTrain />);
     expect(screen.getByRole('status').textContent).toContain('Training abgeschlossen');
     fireEvent.click(screen.getByRole('button', { name: 'Weiter zur Vorhersage' }));
@@ -81,13 +98,18 @@ describe('training and prediction controls', () => {
     rerender(<PredictionPanel {...base} stream={stream} />);
     expect(base.predictVideoRef.current).toBeNull();
     const start = screen.getByRole('button', { name: 'Live-Vorhersage starten' });
+    const frame = start.closest('[data-slot="prediction-camera"]');
+    expect(frame).not.toBeNull();
+    expect(screen.queryByRole('progressbar')).toBeNull();
     fireEvent.click(start);
     expect(onStartPredicting).toHaveBeenCalledOnce();
     rerender(<PredictionPanel {...base} stream={stream} isPredicting />);
     const preview = screen.getByLabelText('Kameravorschau für Vorhersage');
     expect(base.predictVideoRef.current).toBe(preview);
     expect((preview as HTMLVideoElement).srcObject).toBe(stream);
+    expect(frame?.contains(preview)).toBe(true);
     expect(screen.getByText('Die Vorhersage wird vorbereitet.')).toBeTruthy();
+    expect(screen.queryByRole('progressbar')).toBeNull();
     expect(screen.getByRole('button', { name: 'Live-Vorhersage stoppen' })).toBe(start);
     rerender(
       <PredictionPanel
@@ -97,7 +119,8 @@ describe('training and prediction controls', () => {
         prediction={{ label: 'red', confidences: { red: 0.85, blue: 0.15 } }}
       />,
     );
-    expect(screen.getByRole('status').textContent).toContain('Rot');
+    const result = screen.getByRole('heading', { name: 'Rot' });
+    expect(result.closest('[role="status"]')).not.toBeNull();
     expect(
       screen.getByRole('progressbar', { name: 'Konfidenz für Rot' }).getAttribute('aria-valuenow'),
     ).toBe('85');
@@ -108,6 +131,9 @@ describe('training and prediction controls', () => {
     expect(onStopPredicting).toHaveBeenCalledOnce();
     rerender(<PredictionPanel {...base} stream={stream} />);
     expect(preview.isConnected).toBe(false);
+    expect(frame?.contains(screen.getByRole('button', { name: 'Live-Vorhersage starten' }))).toBe(
+      true,
+    );
     expect((preview as HTMLVideoElement).srcObject).toBeNull();
     expect(base.predictVideoRef.current).toBeNull();
   });

@@ -1,5 +1,6 @@
 import { Brain } from './icons/brain';
 import { ArrowRight } from './icons/arrow-right';
+import type { TrainingProgress } from '../hooks/useModelTraining';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import Button from './Button';
@@ -7,6 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card'
 import { EntryReveal } from './ui/entry-reveal';
 import { Spinner } from './ui/spinner';
 import { MessageSlot } from './ui/message-slot';
+import { Progress } from './ui/progress';
 import { Text } from './ui/typography';
 import TrainingFigure from './TrainingFigure';
 
@@ -15,7 +17,7 @@ interface TrainingControlsProps {
   classes: MLClass[];
   canTrain: boolean;
   hasPendingUploads: boolean;
-  isTraining: boolean;
+  progress: TrainingProgress | null;
   hasTrainedModel: boolean;
   hasInvalidNames: boolean;
   hasDuplicateNames: boolean;
@@ -24,6 +26,7 @@ interface TrainingControlsProps {
 }
 
 const statusMessages = {
+  preparing: 'Das Modell wird vorbereitet.',
   training: 'Das Modell ordnet die Bildmerkmale deinen Klassen zu.',
   uploading: 'Bitte warte, bis alle ausgewählten Bilder vollständig verarbeitet sind.',
   emptyNames: 'Bitte gib allen Klassen einen Namen.',
@@ -35,7 +38,9 @@ const statusMessages = {
 const trainingStatusMessages = Object.values(statusMessages);
 
 function trainingStatus(props: TrainingControlsProps) {
-  if (props.isTraining) return statusMessages.training;
+  if (props.progress) {
+    return props.progress.processed === 0 ? statusMessages.preparing : statusMessages.training;
+  }
   if (props.hasPendingUploads) return statusMessages.uploading;
   if (props.hasInvalidNames) return statusMessages.emptyNames;
   if (props.hasDuplicateNames) return statusMessages.duplicateNames;
@@ -65,9 +70,30 @@ function TrainingSummary({ classes }: Pick<TrainingControlsProps, 'classes'>) {
   );
 }
 
+function TrainingProgressIndicator({ progress }: Pick<TrainingControlsProps, 'progress'>) {
+  const count = progress ? `${progress.processed} von ${progress.total} Bildern verarbeitet` : '';
+  return (
+    <div className="grid min-h-8 w-full max-w-xs gap-1">
+      {progress && (
+        <>
+          <Progress
+            value={progress.processed}
+            max={progress.total}
+            aria-label="Trainingsfortschritt"
+            aria-valuetext={count}
+          />
+          <Text variant="muted" className="text-xs tabular-nums" aria-hidden="true">
+            {count}
+          </Text>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function TrainingControls(props: TrainingControlsProps) {
-  const { classes, canTrain, isTraining, hasTrainedModel, onTrain, onPredict } = props;
-  const state = isTraining ? 'training' : hasTrainedModel ? 'complete' : 'idle';
+  const { classes, canTrain, progress, hasTrainedModel, onTrain, onPredict } = props;
+  const state = progress ? 'training' : hasTrainedModel ? 'complete' : 'idle';
   const complete = state === 'complete';
   const title = {
     idle: 'Trainingsdaten',
@@ -86,19 +112,19 @@ export default function TrainingControls(props: TrainingControlsProps) {
           <CardContent className="grid gap-4">
             <TrainingSummary classes={classes} />
             <div className="training-feedback" data-complete={complete || undefined}>
-              <TrainingFigure state={state} />
+              <TrainingFigure
+                state={state}
+                progress={progress ? progress.processed / progress.total : 0}
+              />
               <div role="status" id="training-status" className="grid min-w-0">
                 <strong className="text-xl font-semibold">{title}</strong>
                 <Text variant="muted" className="leading-relaxed">
-                  {complete ? (
-                    statusMessages.trained
-                  ) : (
-                    <MessageSlot messages={trainingStatusMessages}>
-                      {trainingStatus(props)}
-                    </MessageSlot>
-                  )}
+                  <MessageSlot messages={trainingStatusMessages}>
+                    {complete ? statusMessages.trained : trainingStatus(props)}
+                  </MessageSlot>
                 </Text>
               </div>
+              <TrainingProgressIndicator progress={progress} />
             </div>
           </CardContent>
           <CardFooter className="flex-wrap gap-2">
@@ -106,11 +132,11 @@ export default function TrainingControls(props: TrainingControlsProps) {
               onClick={onTrain}
               variant={complete ? 'outline' : 'default'}
               size="lg"
-              disabled={isTraining || !canTrain}
+              disabled={!!progress || !canTrain}
               className="w-full sm:w-auto"
               aria-describedby={complete ? undefined : 'training-status'}
             >
-              {isTraining ? (
+              {progress ? (
                 <>
                   <Spinner data-icon="inline-start" aria-hidden="true" /> Trainiere …
                 </>
