@@ -1,13 +1,15 @@
-/**
- * ConfirmDialog.tsx
- *
- * Generic confirmation dialog with customizable title, description, icon, and action labels.
- * Wraps the base Dialog component to provide a consistent destructive-action confirmation pattern.
- */
-import type React from 'react';
-import Dialog from '../Dialog';
+import { useRef, type ReactNode } from 'react';
+import { useDialogReturnFocus } from '../dialog-state';
 import ModalContent from '../ModalContent';
-import Button from '../Button';
+import { DialogFooter, DialogHeading } from '../ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
 
 /**
  * Props for the ConfirmDialog component.
@@ -26,13 +28,13 @@ interface ConfirmDialogProps {
   /** Heading text displayed at the top of the dialog. */
   title: string;
   /** Body content explaining the action to be confirmed. */
-  description: React.ReactNode;
+  description: ReactNode;
   /** Label for the confirm (destructive) button. */
   confirmLabel: string;
   /** Label for the cancel button. Defaults to 'Abbrechen'. */
   cancelLabel?: string;
-  /** Optional icon rendered in a circular badge above the title. */
-  icon?: React.ReactNode;
+  /** Optional decorative icon beside the heading. */
+  icon?: ReactNode;
 }
 
 /** Renders a destructive-action confirmation dialog with cancel and confirm buttons. */
@@ -48,25 +50,45 @@ export default function ConfirmDialog({
   cancelLabel = 'Abbrechen',
   icon,
 }: ConfirmDialogProps) {
+  const rememberOpener = useDialogReturnFocus(isOpen);
+  const cancel = useRef<HTMLButtonElement>(null);
+
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} labelledBy={titleId} describedBy={descId}>
-      <ModalContent maxWidth="md" className="p-6">
-        {icon && (
-          <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4" aria-hidden="true">
-            {icon}
-          </div>
-        )}
-        <h3 id={titleId} className="text-xl font-bold text-zinc-900 mb-2">{title}</h3>
-        <p id={descId} className="text-zinc-600 mb-6 text-sm">{description}</p>
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={onClose} className="flex-1">
-            {cancelLabel}
-          </Button>
-          <Button variant="destructive" onClick={onConfirm} className="flex-1">
-            {confirmLabel}
-          </Button>
-        </div>
-      </ModalContent>
-    </Dialog>
+    <AlertDialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <AlertDialogContent
+        aria-modal
+        ref={rememberOpener}
+        render={
+          <ModalContent maxWidth="md" className="gap-5">
+            <DialogHeading icon={icon}>
+              <AlertDialogTitle
+                id={titleId}
+                render={<h3 />}
+                className="text-lg font-semibold text-balance leading-tight tracking-tight"
+              >
+                {title}
+              </AlertDialogTitle>
+            </DialogHeading>
+            <AlertDialogDescription
+              id={descId}
+              className="text-sm text-muted-foreground leading-relaxed [overflow-wrap:anywhere]"
+            >
+              {description}
+            </AlertDialogDescription>
+            <DialogFooter>
+              <AlertDialogCancel ref={cancel}>{cancelLabel}</AlertDialogCancel>
+              <AlertDialogAction onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
+            </DialogFooter>
+          </ModalContent>
+        }
+        initialFocus={cancel}
+        finalFocus={false}
+      />
+    </AlertDialog>
   );
 }

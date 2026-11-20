@@ -1,0 +1,198 @@
+.landing-page {
+  background: var(--background);
+}
+.landing-container {
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 5vw, 4rem);
+}
+.landing-section {
+  padding-block: clamp(4rem, 7vw, 7rem);
+}
+.landing-section-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 1.25rem;
+  max-width: 42rem;
+  margin-bottom: 2.5rem;
+}
+.landing-section-heading > [data-slot='heading'] {
+  width: 100%;
+}
+.landing-technique-layout {
+  display: grid;
+  gap: 2.5rem;
+  align-items: stretch;
+}
+.landing-technique-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 30rem;
+}
+.landing-technique-items,
+.landing-technique-item {
+  gap: 1.5rem;
+}
+.landing-technique-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.landing-tip-content {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+.landing-demo {
+  position: relative;
+  min-width: 0;
+}
+.landing-demo-launch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.hero-section,
+.hero-field {
+  position: relative;
+  isolation: isolate;
+}
+.hero-field {
+  --hero-title-ink: linear-gradient(
+    112deg,
+    var(--primary-hover),
+    var(--primary) 44%,
+    color-mix(in srgb, var(--primary), var(--foreground) 12%) 76%,
+    var(--primary)
+  );
+}
+.dark .hero-field {
+  --hero-title-ink: linear-gradient(112deg, #ff9991, #ff535b 44%, #ff394b 76%, #ff6467);
+}
+.hero-field-backdrop {
+  --halo-x: 50%;
+  --halo-y: calc(var(--header-height) + clamp(0.5rem, 2vh, 1.4rem) + min(39vw, 19svh, 13.8rem));
+  --halo-width: min(68vw, 19rem);
+  --halo-height: min(48vw, 17rem);
+  position: absolute;
+  inset: calc(-1 * (var(--header-height) + var(--header-border-width))) 0 0;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse var(--halo-width) var(--halo-height) at var(--halo-x) var(--halo-y),
+    rgb(222 30 58 / 24%),
+    rgb(202 18 44 / 14%) 44%,
+    rgb(152 9 31 / 5%) 72%,
+    transparent 100%
+  );
+}
+.hero-composition {
+  display: grid;
+  grid-template-areas: 'art' 'copy' 'playback';
+  justify-items: center;
+  align-items: center;
+  padding-block: clamp(0.5rem, 2vh, 1.4rem) 2rem;
+}
+.hero-copy {
+  grid-area: copy;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  container-type: inline-size;
+}
+.hero-title {
+  font-size: clamp(2.6rem, 16cqi, 5.2rem);
+  font-weight: 570;
+  letter-spacing: -0.068em;
+  line-height: 1.04;
+  text-wrap: initial;
+}
+.hero-accent {
+  display: inline-block;
+  color: var(--primary);
+  font-weight: 510;
+  background-color: var(--primary);
+  background-image: var(--hero-title-ink);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@media (forced-colors: active) {
+  .hero-accent {
+    -webkit-text-fill-color: CanvasText;
+  }
+}
+.hero-description {
+  max-width: 32ch;
+  margin-block-start: clamp(1rem, 2.5vw, 1.7rem);
+  color: var(--muted-foreground);
+  font-size: clamp(1.05rem, 1.55vw, 1.38rem);
+  line-height: 1.5;
+  letter-spacing: -0.025em;
+  text-wrap: pretty;
+}
+.hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: clamp(1.35rem, 2.2vw, 2rem);
+}
+.hero-actions a {
+  min-height: 2.95rem;
+  padding-inline: 1.35rem;
+}
+@variant md {
+  .hero-field-backdrop {
+    --halo-x: calc(50% + min(23vw, 18rem));
+    --halo-y: calc(50% + var(--header-height) / 2);
+    --halo-width: min(43vw, 28rem);
+    --halo-height: min(39vw, 37svh, 24rem);
+  }
+  .hero-composition {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.04fr);
+    grid-template-areas: 'copy art' 'copy playback';
+    align-content: center;
+    min-height: clamp(34rem, 76svh, 48rem);
+    padding-block: clamp(1.75rem, 4vh, 3rem);
+  }
+  .hero-copy {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .hero-title {
+    font-size: clamp(3.05rem, 17.3cqi, 7.3rem);
+  }
+  .hero-actions {
+    justify-content: flex-start;
+  }
+}
+@variant lg {
+  .landing-technique-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5rem;
+  }
+  .landing-technique-items {
+    display: grid;
+    grid-template-rows: repeat(2, minmax(min-content, 1fr));
+    gap: 0;
+    height: 100%;
+  }
+  .landing-technique-item:last-child {
+    justify-content: space-between;
+  }
+}
+@variant md {
+  .landing-tip-content {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    align-items: center;
+    gap: 2rem;
+  }
+}

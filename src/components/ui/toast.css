@@ -1,0 +1,40 @@
+@reference 'tailwindcss';
+
+.app-toast-viewport {
+  --toast-side: top;
+  position: fixed;
+  z-index: 50;
+  inset: calc(env(safe-area-inset-top) + var(--header-height) + 0.5rem) 1rem auto;
+  width: auto;
+  max-width: 24rem;
+  margin-inline: auto;
+  pointer-events: none;
+
+  @variant md {
+    --toast-side: bottom;
+    inset: auto max(env(safe-area-inset-right), 1rem) max(env(safe-area-inset-bottom), 1rem) auto;
+    width: 24rem;
+  }
+}
+
+.app-toast {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: calc(3 - var(--toast-index, 0));
+  height: var(--toast-frontmost-height, var(--toast-height));
+  pointer-events: auto;
+
+  &[data-expanded] {
+    height: var(--toast-height);
+  }
+
+  &[data-behind],
+  &[data-limited],
+  &[data-ending-style] {
+    pointer-events: none;
+  }
+
+  @variant md {
+    inset: auto 0 0;
+  }
+}

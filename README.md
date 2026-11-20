@@ -1,227 +1,101 @@
-# 🧠 The Teachable Machine
+# ML Teaching
 
-## Entdecke die Magie des Lernens!
+Explore machine learning through a German interface for children. Choose a learning
+area, discover image classification, and train a model directly in your browser.
+Watch two example paths in the homepage preview of learning through rewards.
 
-Willkommen bei **The Teachable Machine** – einem interaktiven Webprojekt, das dir auf spielerische Weise die Grundlagen des maschinellen Lernens näherbringt. Dieses Projekt ist stark angelehnt an [teachablemachine.withgoogle.com](https://teachablemachine.withgoogle.com/). Erlebe, wie einfach es sein kann, einer Maschine beizubringen, Muster zu erkennen und Entscheidungen zu treffen, ganz ohne komplizierten Code!
+[Source](https://github.com/boommasterxd/ml-teaching) · [Quick start](#quick-start) ·
+[Architecture](docs/architecture.md) ·
+[Development](docs/development.md) · [Security](SECURITY.md)
 
-## 📖 Funktionsweise der App
+## What you can do
 
-The Teachable Machine ist eine moderne **React-Anwendung**, die einen flüssigen und interaktiven Workflow bietet:
+| Workflow                                              | Result                                                                                         |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Choose a learning area                                | Open the image lesson or training workspace. The Q-learning lesson and exercise are planned.   |
+| Explore the image-classification demonstration        | Follow an illustrated classification step by step.                                             |
+| Play the everyday image-recognition quiz              | Find three matching uses, reveal explanations and start another round.                         |
+| Choose light, dark or system appearance               | Use a temporary choice, or explicitly remember it for later visits.                            |
+| Collect webcam images or select local files           | Build named training classes without uploading images.                                         |
+| Extract MobileNet features and train a KNN classifier | Compare examples locally using TensorFlow.js and WebGL.                                        |
+| Test live predictions                                 | See class confidence and revise your training data.                                            |
+| Reset the learning workspace                          | Discard classes, examples, trained KNN data and predictions; retain consent and camera access. |
+| Leave or reload the learning workspace                | Discard the in-memory workspace and consent; release camera and model resources.               |
 
-**1. Startseite / Landing Page (`LandingPage.tsx`)**
-Die Startseite führt in die Welt des maschinellen Lernens ein. Sie enthält:
-- **Interaktive Visualisierung:** Ein animiertes neuronales Netz, das den Signalfluss vom Input über Hidden Layers bis zum Output zeigt (auslösbar durch Hund/Katze-Beispiele).
-- **Theoretische Grundlagen:** Einfache Erklärungen zu **MobileNet** (Feature Extraction), **KNN** (Klassifizierung durch Nachbarschaft) und **Transfer Learning**.
-- **Praktische Tipps:** Anleitung für ein "schlaues" Modell (viele Bilder, verschiedene Winkel, unterschiedliches Licht).
-- **Alltagsbeispiele:** Verknüpfung zu realen Anwendungen wie Face ID, autonomes Fahren und Medizin.
+## Quick start
 
-**2. Trainingsseite / DIY-Seite (`TrainingPage.tsx`)**
-Hier findet der Machine-Learning-Workflow vollständig im Browser statt:
-- **Einwilligung & Datenschutz:** Transparente Abfrage zur Nutzung der Kamera und zum Laden der lokalen KI-Modelle.
-- **Klassenverwaltung:** Erstelle beliebig viele Klassen, benenne sie um oder lösche sie (inkl. Validierung).
-- **Datensammlung:** Nimm Trainingsbilder per Webcam auf (Halten für Serienaufnahme) oder lade eigene Bilddateien hoch.
-- **Bildverwaltung:** Eine Galerie zeigt alle aufgenommenen Bilder; per Klick können diese vergrößert oder einzeln gelöscht werden.
-- **Training:** Trainiere dein Modell in Sekunden direkt auf deinem Gerät.
-- **Echtzeit-Vorhersage:** Live-Klassifizierung durch die Webcam mit dynamischen Wahrscheinlichkeitsbalken für jede Klasse.
-- **Kamera-Steuerung:** Unterstützung für Front- und Rückkameras auf mobilen Geräten.
+Use **Node.js 26.x LTS** and npm. A modern browser with WebGL is required for
+training. Webcam access requires HTTPS, or localhost during development.
 
-## ✨ Features
+```sh
+npm ci --no-audit
+npm run dev
+```
 
-*   **Modernes Framework:** Entwickelt mit React 19 für höchste Performance und Reaktivität.
-*   **Interaktives Lernen:** Trainiere deine eigene "Maschine" ohne Vorkenntnisse direkt im Browser.
-*   **Visuelle Rückmeldung:** Flüssige UI-Animationen mit dem motion-Paket (v12) visualisieren den Lernprozess.
-*   **Vite 8 Speed:** Optimiert für blitzschnelle Ladezeiten.
-*   **Responsive Design:** Nahtlose Nutzung auf Desktop, Tablet und Smartphone dank Tailwind CSS 4.
-*   **Vollständiger Datenschutz:** Client-seitige Verarbeitung mit TensorFlow.js schützt deine Privatsphäre.
+Open [localhost:3000](http://localhost:3000), enter the learning lab, choose image
+recognition and open its practice page. Accept the optional model download before
+training, then separately allow camera access if you want to capture images.
 
-## 🎨 Design Language
+For the native production server:
 
-Die Anwendung nutzt **Tailwind CSS 4** für ein konsistentes und modernes Erscheinungsbild.
+```sh
+npm run build
+npm start
+```
 
-**Design-Highlights**
-- **Branding:** Ein markantes Rot (`#D51317`) leitet den Nutzer durch die Anwendung.
-- **Benutzeroberfläche:** Ein klares, kartenbasiertes Design mit dezenten Schatten sorgt für Übersichtlichkeit.
-- **Interaktionen:** Hochwertige Animationen durch das **motion-Paket (v12)** machen den Workflow greifbar.
-- **Symbolik:** Präzise Icons von **Lucide React** unterstützen die intuitive Bedienung.
+The source targets **ML Teaching** at `https://mlteaching.boomapps.de` on Vercel.
+The new domain and provider configuration are prepared separately from publication.
+ML Teaching is independent of Google Teachable Machine.
 
-## 🚀 So benutzt du es
+## Data, providers and costs
 
-1.  **Öffne die Anwendung:** Besuche die offizielle Version:
-    [Jetzt öffnen](https://theteachablemachine.boomapps.de/)
+Training images, class names, extracted features and the trained KNN classifier stay
+in browser memory. The app has no database, account system or image-upload API.
+Consent is not persisted. Reloading discards the workspace and asks again.
+Quiz answers and progress also stay in memory and are discarded by reset or reload.
+Appearance follows the system by default. Its separate light/dark/system preference
+is saved locally only when you explicitly enable remembering for future visits.
 
-2.  **Daten sammeln:** Erstelle deine Klassen und halte den Aufnahme-Button gedrückt, um Bilder für dein Training zu sammeln.
+After explicit consent, the browser downloads pretrained MobileNet weights from
+Google. Google receives connection metadata during those downloads; the app sends
+no training images. Model files can remain in the browser's ordinary HTTP cache.
+The proposed Vercel host processes website connection data. See the in-app
+[privacy page source](src/screens/PrivacyPage.tsx) and
+[deployment boundaries](docs/deployment.md).
 
-3.  **Trainieren & Testen:** Klicke auf "Modell trainieren" und teste sofort, wie die Maschine deine Bewegungen oder Objekte erkennt.
+There are no application API keys or paid model APIs to configure. Hosting bandwidth
+and native image optimization can incur provider costs. No billing estimates or
+provider plan guarantees are implied. The app has no analytics, advertising or
+externally hosted fonts. Geist is served from a local asset.
 
-## 💻 Entwicklung & lokales Hosting
+## Development
 
-### Voraussetzungen
+```sh
+npm run ci                 # Formatting, lint, types, boundaries, quality, audit and coverage
+npm run build              # One native Next build with strict hash-CSP verification
+npx playwright install --only-shell chromium
+npm run test:e2e           # Native production server, keyboard, consent and axe checks
+npm run audit              # Full dependency tree, including development dependencies
+```
 
-*   **Node.js** (neueste offiziell veröffentlichte LTS-Version; geprüfte Baseline: 26.x)
-*   **npm** oder **yarn**
+Full test commands remain unfiltered locally, including when `CI=true`.
+[Development](docs/development.md) explains focused checks;
+[CI](docs/ci.md) explains the PR selection and required gate.
 
-### Installation
+Pages and layouts are Server Components, rendered at build time. Browser-only ML,
+camera and interactive controls live in small client subtrees. See
+[architecture](docs/architecture.md), [design system](docs/design-system.md), and
+[the SSG/CSP decision](docs/decisions/ssg-and-csp.md).
 
-1.  **Repository klonen:**
-    ```bash
-    git clone https://github.com/boommasterxd/the-teachable-machine.git
-    cd the-teachable-machine
-    ```
+## Contributing and security
 
-2.  **Abhängigkeiten installieren:**
-    ```bash
-    npm install
-    ```
+Work on a development branch. Use English Conventional Commits and keep changes
+reviewable. Publication, merging and provider changes require explicit authorization;
+this migration must remain off `main` until approved. See [AGENTS.md](AGENTS.md) for
+the complete documentation index and repository controls.
 
-3.  **Entwicklungsserver starten:**
-    ```bash
-    npm run dev
-    ```
-    Die App ist unter `http://localhost:3000` erreichbar.
-
-4.  **Produktions-Build erstellen und starten:**
-    ```bash
-    npm run build
-    npm start
-    ```
-
-5.  **Alternativ mit Docker:**
-    ```bash
-    docker build --pull -t teachable-machine .
-    docker run -p 3000:3000 --env-file .env teachable-machine
-    ```
-
-## 🛠️ Technischer Stack
-
-*   **Framework:** [React 19](https://react.dev/)
-*   **Build-Tool:** [Vite 8](https://vitejs.dev/)
-*   **Sprache:** [TypeScript](https://www.typescriptlang.org/)
-*   **Styling:** [Tailwind CSS 4](https://tailwindcss.com/)
-*   **Routing:** [React Router 7](https://reactrouter.com/)
-*   **KI/ML:** [TensorFlow.js](https://www.tensorflow.org/js) (MobileNet & KNN Classifier)
-*   **Animationen:** [motion (v12)](https://motion.dev/) (ehemals Framer Motion)
-*   **Icons:** [Lucide React](https://lucide.dev/)
-*   **Server:** [Express](https://expressjs.com/) mit Helmet CSP und Rate Limiting
-
-## 🤝 Mitwirken
-
-Ideen oder Verbesserungsvorschläge? Wir freuen uns über jeden Beitrag! Erstelle einfach einen Issue oder sende einen Pull Request.
-
-## 📄 Lizenz
-
-Dieses Projekt steht unter der MIT-Lizenz. Weitere Details findest du in der `LICENSE.txt` Datei.
-
----
-
-# 🧠 The Teachable Machine (English)
-
-## Discover the Magic of Learning!
-
-Welcome to **The Teachable Machine** – an interactive web project that playfully introduces you to the basics of machine learning. This project is heavily inspired by [teachablemachine.withgoogle.com](https://teachablemachine.withgoogle.com/). Experience how easy it can be to teach a machine to recognize patterns and make decisions, all without complex code!
-
-## 📖 How the App Works
-
-The Teachable Machine is a modern **React application** that provides a smooth and interactive workflow:
-
-**1. Landing Page (`LandingPage.tsx`)**
-The landing page introduces the world of machine learning. It features:
-- **Interactive Visualization:** An animated neural network showing the signal flow from input through hidden layers to output (triggered by dog/cat examples).
-- **Theoretical Basics:** Simple explanations of **MobileNet** (feature extraction), **KNN** (classification by neighborhood), and **Transfer Learning**.
-- **Practical Tips:** Guidance for a "smart" model (many images, different angles, varying light).
-- **Real-World Examples:** Links to everyday applications like Face ID, autonomous driving, and medicine.
-
-**2. Training / DIY Page (`TrainingPage.tsx`)**
-This is where the machine learning workflow takes place entirely in the browser:
-- **Consent & Privacy:** Transparent request for camera access and loading of local AI models.
-- **Class Management:** Create as many classes as you like, rename them, or delete them (including validation).
-- **Data Collection:** Capture training images via webcam (hold to record burst) or upload your own image files.
-- **Image Management:** A gallery displays all captured images; click to enlarge or delete them individually.
-- **Training:** Train your model in seconds directly on your device.
-- **Real-Time Prediction:** Live classification through the webcam with dynamic probability bars for each class.
-- **Camera Control:** Support for front and rear cameras on mobile devices.
-
-## ✨ Features
-
-*   **Modern Framework:** Built with React 19 for maximum performance and reactivity.
-*   **Interactive Learning:** Train your own "machine" directly in the browser with no prior knowledge.
-*   **Visual Feedback:** Smooth UI animations with the motion package (v12) visualize the learning process.
-*   **Vite 8 Speed:** Optimized for lightning-fast loading times.
-*   **Responsive Design:** Seamless use on desktop, tablet, and smartphone thanks to Tailwind CSS 4.
-*   **Full Privacy:** Client-side processing with TensorFlow.js protects your privacy.
-
-## 🎨 Design Language
-
-The application uses **Tailwind CSS 4** for a consistent and modern appearance.
-
-**Design Highlights**
-- **Branding:** A striking red (`#D51317`) guides the user through the application.
-- **User Interface:** A clear, card-based design with subtle shadows ensures clarity.
-- **Interactions:** High-quality animations by the **motion package (v12)** make the workflow tangible.
-- **Symbolism:** Precise icons from **Lucide React** support intuitive operation.
-
-## 🚀 How to Use It
-
-1.  **Open the Application:** Visit the official version:
-    [Open Now](https://theteachablemachine.boomapps.de/)
-
-2.  **Collect Data:** Create your classes and hold the record button to collect images for your training.
-
-3.  **Train & Test:** Click "Train Model" and immediately test how the machine recognizes your movements or objects.
-
-## 💻 Development & Local Hosting
-
-### Prerequisites
-
-*   **Node.js** (newest officially released LTS; reviewed baseline: 26.x)
-*   **npm** or **yarn**
-
-### Installation
-
-1.  **Clone the Repository:**
-    ```bash
-    git clone https://github.com/boommasterxd/the-teachable-machine.git
-    cd the-teachable-machine
-    ```
-
-2.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Start Development Server:**
-    ```bash
-    npm run dev
-    ```
-    The app is accessible at `http://localhost:3000`.
-
-4.  **Create Production Build and Start:**
-    ```bash
-    npm run build
-    npm start
-    ```
-
-5.  **Alternatively with Docker:**
-    ```bash
-    docker build --pull -t teachable-machine .
-    docker run -p 3000:3000 --env-file .env teachable-machine
-    ```
-
-## 🛠️ Technical Stack
-
-*   **Framework:** [React 19](https://react.dev/)
-*   **Build-Tool:** [Vite 8](https://vitejs.dev/)
-*   **Language:** [TypeScript](https://www.typescriptlang.org/)
-*   **Styling:** [Tailwind CSS 4](https://tailwindcss.com/)
-*   **Routing:** [React Router 7](https://reactrouter.com/)
-*   **AI/ML:** [TensorFlow.js](https://www.tensorflow.org/js) (MobileNet & KNN Classifier)
-*   **Animations:** [motion (v12)](https://motion.dev/) (formerly Framer Motion)
-*   **Icons:** [Lucide React](https://lucide.dev/)
-*   **Server:** [Express](https://expressjs.com/) with Helmet CSP and rate limiting
-
-## 🤝 Contributing
-
-Ideas or suggestions for improvement? We welcome all contributions! Simply create an issue or send a pull request.
-
-## 📄 License
-
-This project is licensed under the MIT License. More details can be found in the `LICENSE.txt` file.
+Report vulnerabilities using [SECURITY.md](SECURITY.md). Application code uses the
+[MIT license](LICENSE.txt). Upstream components and icons retain their own license
+terms, including Animate UI's Commons Clause condition; see
+[third-party notices](docs/third-party-notices.md). No downloadable release is
+published by this source migration.

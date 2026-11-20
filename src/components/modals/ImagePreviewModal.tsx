@@ -4,9 +4,14 @@
  * Modal that displays an enlarged preview of a single training image
  * and provides a delete action for that image.
  */
-import { Trash2, X } from 'lucide-react';
+import { Trash2 } from '../icons/trash2';
+import { X } from '../icons/x';
+import Image from 'next/image';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
+import Button from '../Button';
+import { DialogDescription, DialogTitle } from '../ui/dialog';
+import { Separator } from '../ui/separator';
 import type { MLImage } from '../../types/ml';
 
 /**
@@ -15,6 +20,8 @@ import type { MLImage } from '../../types/ml';
 interface ImagePreviewModalProps {
   /** Whether the modal is currently visible. */
   isOpen: boolean;
+  /** Identifies the image by its position and class. */
+  title: string;
   /** Callback invoked when the modal is closed via the close button. */
   onClose: () => void;
   /** The training image to preview, or null when no image is selected. */
@@ -28,38 +35,51 @@ interface ImagePreviewModalProps {
  * The image content is only rendered when `image` is non-null.
  *
  * @param isOpen - Controls modal visibility.
+ * @param title - Identifies the image by its position and class.
  * @param onClose - Called when the close button is clicked.
  * @param image - The MLImage to display, or null if none is selected.
  * @param onDelete - Called when the delete button is clicked.
  */
-export default function ImagePreviewModal({ isOpen, onClose, image, onDelete }: ImagePreviewModalProps) {
+export default function ImagePreviewModal({
+  isOpen,
+  title,
+  onClose,
+  image,
+  onDelete,
+}: ImagePreviewModalProps) {
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} labelledBy="image-modal-title" describedBy="image-modal-desc">
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      labelledBy="image-modal-title"
+      describedBy="image-modal-desc"
+    >
       <ModalContent maxWidth="sm">
-        <div className="p-4 border-b border-zinc-100 flex justify-between items-center">
-          <h3 id="image-modal-title" className="font-bold text-zinc-800 text-sm">Bild Vorschau</h3>
-          <p id="image-modal-desc" className="sr-only">Vergrößerte Ansicht eines Trainingsbildes mit Option zum Löschen.</p>
-          <button
-            onClick={onClose}
-            className="p-2 text-zinc-600 hover:text-zinc-600 hover:bg-zinc-100 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
-            aria-label="Schließen"
-          >
-            <X className="w-4 h-4" />
-          </button>
+        <div className="flex justify-between items-center">
+          <DialogTitle id="image-modal-title" render={<h3 />}>
+            {title}
+          </DialogTitle>
+          <DialogDescription id="image-modal-desc" className="sr-only">
+            Vergrößerte Ansicht eines Trainingsbildes mit Option zum Löschen.
+          </DialogDescription>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Schließen">
+            <X data-icon="inline-start" aria-hidden="true" />
+          </Button>
         </div>
+        <Separator />
         {image && (
-          <div className="p-6 flex flex-col items-center">
-            <img
+          <div className="flex flex-col items-center">
+            <Image
               src={image.dataUrl}
+              width={192}
+              height={192}
+              unoptimized
               alt="Vergrößerte Bildvorschau"
-              className="w-48 h-48 object-cover rounded-2xl shadow-sm border border-zinc-300 mb-6"
+              className="size-48 object-cover rounded-xl border border-input mb-6"
             />
-            <button
-              onClick={onDelete}
-              className="w-full py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            >
-              <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" /> Bild löschen
-            </button>
+            <Button variant="destructive" onClick={onDelete} className="w-full">
+              <Trash2 data-icon="inline-start" aria-hidden="true" /> Bild löschen
+            </Button>
           </div>
         )}
       </ModalContent>

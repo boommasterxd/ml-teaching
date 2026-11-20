@@ -1,0 +1,16 @@
+# ML Teaching
+
+> Ein deutschsprachiges Lernprojekt für Kinder: KI verstehen und ausprobieren. Entdecke Bilderkennung und Lernen durch Belohnung anhand von Beispielen.
+
+## Anwendung
+
+- [Startseite](https://mlteaching.boomapps.de/): Allgemeiner Einstieg in maschinelles Lernen mit Beispielen, Aktionen und Belohnungen.
+- [Lernlabor](https://mlteaching.boomapps.de/lernen): Bildmodelle mit eigenen Fotos trainieren und über die Wirkung von Belohnungen nachdenken. Erklärung und Übung zu Q-Learning sind angekündigt.
+- [Bilderkennung verstehen](https://mlteaching.boomapps.de/lernen/bilderkennung): Bildverarbeitung als Animation, MobileNet und KNN sowie interaktive Quizze.
+- [Bildmodell trainieren](https://mlteaching.boomapps.de/lernen/bilderkennung/ausprobieren): Interaktive Bildklassifikation mit Kamera oder eigenen Bildern. Das vortrainierte MobileNet-Modell wird nach Zustimmung von Google geladen; Training und Bilderkennung erfolgen im Browser.
+
+## Kontakt und rechtliche Informationen
+
+- [Impressum](https://mlteaching.boomapps.de/impressum): Betreiber und Kontakt.
+- [Datenschutzerklärung](https://mlteaching.boomapps.de/datenschutz): Hinweise zur Verarbeitung von Zugriffsdaten, zum Modell-Download und zur lokalen Bildverarbeitung.
+- [Barrierefreiheit](https://mlteaching.boomapps.de/barrierefreiheit): Maßnahmen und Kontakt für Rückmeldungen zur Zugänglichkeit.

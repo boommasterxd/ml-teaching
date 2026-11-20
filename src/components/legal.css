@@ -1,0 +1,173 @@
+@reference 'tailwindcss';
+
+.legal-layout {
+  --legal-block-padding: clamp(1.5rem, 4vw, 3.25rem);
+  display: grid;
+  align-items: start;
+  gap: 2rem;
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding: var(--legal-block-padding) clamp(1.25rem, 5vw, 4rem) 5rem;
+}
+.legal-sidebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.legal-navigation-group {
+  display: none;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+}
+.legal-navigation-group > p {
+  padding-inline: 0.95rem;
+}
+.legal-sidebar [data-slot='button'] {
+  min-height: 2.75rem;
+}
+
+/* Cover the gap between rows without changing the size of the moving highlight. */
+.legal-navigation .legal-page-link::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--spacing) / -2) calc(var(--spacing) * -1.5);
+}
+.legal-section {
+  min-width: 0;
+}
+.legal-layout .legal-document {
+  --document-padding: clamp(1.05rem, 4vw, 3.25rem);
+  padding-block: clamp(1.75rem, 4vw, 3.5rem);
+}
+.legal-document-header,
+.legal-document-body {
+  padding-inline: var(--document-padding);
+}
+.legal-document-header {
+  padding-bottom: clamp(1.5rem, 3vw, 2.5rem);
+}
+.legal-document-body {
+  font-size: clamp(1rem, 1.22vw, 1.08rem);
+}
+.legal-content {
+  width: 100%;
+  max-width: calc(69ch + 2 * var(--document-padding));
+  margin-inline: auto;
+  color: color-mix(in srgb, var(--foreground) 82%, var(--muted-foreground));
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.document-title {
+  color: var(--foreground);
+  font-size: clamp(1.75rem, 3.25vw, 3.1rem);
+  font-weight: 560;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+  hyphens: auto;
+}
+.legal-content h2,
+.legal-content h3,
+.legal-content h4 {
+  font-family: var(--font-display);
+  color: var(--foreground);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  scroll-margin-top: calc(var(--header-height) + 2rem);
+}
+.legal-content h2 {
+  @apply text-2xl font-semibold tracking-tight;
+  margin-top: 3rem;
+  margin-bottom: 1.25rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.legal-reading-section {
+  display: flow-root;
+}
+.legal-reading-section:first-child > h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.legal-content h3 {
+  @apply text-xl font-semibold tracking-tight;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+.legal-content h4 {
+  @apply text-base font-semibold;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.legal-content p,
+.legal-content ul {
+  margin-bottom: 1rem;
+}
+.legal-content ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.legal-contact-details p {
+  margin-bottom: 0.25rem;
+}
+.legal-content a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.legal-content a:hover {
+  color: var(--foreground);
+}
+.legal-content a:focus-visible,
+.legal-sidebar a:focus-visible,
+.legal-sidebar button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+#privacy-document .legal-document-body :is(p, li) {
+  hyphens: auto;
+}
+.legal-reading-section > :last-child,
+.legal-reading-section > :last-child > p:last-child {
+  margin-bottom: 0;
+}
+@variant max-lg {
+  .legal-layout {
+    --legal-block-padding: 1.25rem;
+    row-gap: 1rem;
+    padding-inline: clamp(0.85rem, 3vw, 2rem);
+  }
+  .document-title {
+    font-size: clamp(1.5rem, 7vw, 2rem);
+  }
+}
+@variant lg {
+  .legal-layout {
+    grid-template-columns: 13.25rem minmax(0, 1fr);
+    gap: clamp(1.75rem, 3.5vw, 3rem);
+  }
+  .legal-sidebar {
+    flex-direction: column;
+    align-items: start;
+    justify-content: start;
+    position: sticky;
+    top: calc(var(--header-height) + var(--header-border-width) + var(--legal-block-padding));
+    gap: 1rem;
+  }
+  .legal-mobile-navigation {
+    display: none;
+  }
+  .legal-navigation-group {
+    display: flex;
+  }
+}

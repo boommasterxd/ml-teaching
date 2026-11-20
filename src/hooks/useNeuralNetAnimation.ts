@@ -1,12 +1,12 @@
 /**
  * useNeuralNetAnimation.ts
  *
- * Manages the multi-step forward-propagation animation for the neural network
- * visualization on the landing page. Orchestrates 7 sequential animation steps
- * via staggered timeouts, driven by `ANIMATION.STEP_DURATION_MS`.
+ * Advances the educational feature-extraction and neighbor-vote stages.
+ * Timers select algorithmic stages; Animate UI owns all visual interpolation.
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ANIMATION, NEURAL_NET_VIZ } from '../constants';
+import { ANIMATION, NETWORK_STAGES } from '../constants';
+import { NETWORK_RESULTS } from '../lib/network-demo';
 
 /**
  * Manages animation state and timeout orchestration for the neural network
@@ -15,9 +15,10 @@ import { ANIMATION, NEURAL_NET_VIZ } from '../constants';
  *
  * @returns An object with the following fields:
  *   - `activeSignal` — the signal type currently being animated (`'dog'`, `'cat'`, or `null`).
- *   - `animStep` — the current animation step index (`-1` = idle, `0`–`7` = active steps).
+ *   - `animStep` — the current stage (`-1` = idle, `0`–`9` = active/completed stages).
  *   - `animating` — whether an animation is currently in progress.
  *   - `result` — the human-readable prediction label shown after the final step, or `null`.
+ *   - `sequence` — identifies each selected example so its decorative signal can restart.
  *   - `triggerAnimation` — starts a new animation sequence for the given signal type.
  */
 export function useNeuralNetAnimation() {
@@ -25,14 +26,17 @@ export function useNeuralNetAnimation() {
   const [animStep, setAnimStep] = useState(-1);
   const [animating, setAnimating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [sequence, setSequence] = useState(0);
 
-  // Tracks all pending timeout IDs so they can be cancelled on re-trigger or unmount.
+  // Bounded educational stages, independent of animation frames and exit lifetimes.
   const timeoutIdsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Clears all pending timeouts when the component unmounts to prevent state updates on
   // an unmounted component.
   useEffect(() => {
-    return () => { timeoutIdsRef.current.forEach(clearTimeout); };
+    return () => {
+      timeoutIdsRef.current.forEach(clearTimeout);
+    };
   }, []);
 
   /**
@@ -40,36 +44,37 @@ export function useNeuralNetAnimation() {
    * No-ops if an animation is already running. Cancels any orphaned timeouts from a
    * previous run before scheduling the new sequence.
    *
-   * Steps 0–6 advance `animStep` at each `ANIMATION.STEP_DURATION_MS` interval.
-   * Step 7 sets the final `result` label and marks the animation as complete.
+   * Each stage advances at `ANIMATION.STEP_DURATION_MS` intervals.
+   * Completion announces the neighbor vote and releases the input controls.
    *
    * @param type - The signal type to animate: `'dog'` or `'cat'`.
    */
-  const triggerAnimation = useCallback((type: 'dog' | 'cat') => {
-    if (animating) return;
-    timeoutIdsRef.current.forEach(clearTimeout);
-    setAnimating(true);
-    setActiveSignal(type);
-    setResult(null);
-    setAnimStep(0);
+  const triggerAnimation = useCallback(
+    (type: 'dog' | 'cat') => {
+      if (animating) return;
+      timeoutIdsRef.current.forEach(clearTimeout);
+      setAnimating(true);
+      setActiveSignal(type);
+      setResult(null);
+      setSequence((current) => current + 1);
+      setAnimStep(0);
 
-    const d = ANIMATION.STEP_DURATION_MS;
+      const d = ANIMATION.STEP_DURATION_MS;
 
-    timeoutIdsRef.current = [
-      setTimeout(() => setAnimStep(1), d * 1),
-      setTimeout(() => setAnimStep(2), d * 2),
-      setTimeout(() => setAnimStep(3), d * 3),
-      setTimeout(() => setAnimStep(4), d * 4),
-      setTimeout(() => setAnimStep(5), d * 5),
-      setTimeout(() => setAnimStep(6), d * 6),
-      setTimeout(() => {
-        setAnimStep(7);
-        setResult(type === 'dog' ? NEURAL_NET_VIZ.DEMO_RESULTS.DOG : NEURAL_NET_VIZ.DEMO_RESULTS.CAT);
-        setAnimating(false);
-        timeoutIdsRef.current = [];
-      }, d * 7),
-    ];
-  }, [animating]);
+      timeoutIdsRef.current = Array.from({ length: NETWORK_STAGES.COMPLETE }, (_, index) => {
+        const step = index + 1;
+        return setTimeout(() => {
+          setAnimStep(step);
+          if (step === NETWORK_STAGES.COMPLETE) {
+            setResult(NETWORK_RESULTS[type]);
+            setAnimating(false);
+            timeoutIdsRef.current = [];
+          }
+        }, d * step);
+      });
+    },
+    [animating],
+  );
 
-  return { activeSignal, animStep, animating, result, triggerAnimation };
+  return { activeSignal, animStep, animating, result, sequence, triggerAnimation };
 }

@@ -1,0 +1,101 @@
+.image-hero-layout {
+  display: grid;
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  padding-block: clamp(2.25rem, 6vw, 6rem) clamp(1.5rem, 4vw, 4rem);
+}
+.image-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.2rem, 2.2vw, 1.85rem);
+  min-width: 0;
+}
+.image-hero-title {
+  max-width: 12ch;
+  font-size: clamp(3rem, 7.15vw, 6.35rem);
+  font-weight: 535;
+  line-height: 0.99;
+  letter-spacing: -0.072em;
+  text-wrap: balance;
+}
+.image-hero-title span {
+  display: block;
+  color: var(--primary);
+}
+.image-hero-copy > [data-slot='text']:last-of-type {
+  max-width: 40ch;
+  font-size: clamp(1rem, 1.55vw, 1.25rem);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+.image-hero-artwork {
+  min-width: 0;
+  width: 100%;
+  max-width: 37rem;
+  margin-inline: auto;
+  padding: clamp(0.8rem, 2vw, 1.6rem) 0 0.85rem;
+  background: radial-gradient(ellipse 48% 44% at 52% 44%, var(--primary-soft), transparent);
+}
+.image-hero-scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.image-hero-controls {
+  display: flex;
+  justify-content: flex-end;
+  padding-inline: 0.85rem;
+}
+.image-hero-controls button {
+  min-height: 2.75rem;
+  padding-inline: 1rem;
+}
+.image-hero-controls button:disabled {
+  opacity: 1;
+}
+.image-hero-grid {
+  stroke: color-mix(in srgb, var(--muted-foreground) 28%, transparent);
+}
+.image-hero-frame,
+.image-hero-result {
+  fill: url(#image-hero-glass);
+  stroke: url(#image-hero-edge);
+}
+.image-hero-photo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 15px;
+}
+.image-hero-focus,
+.image-hero-scan,
+.image-hero-connector {
+  color: var(--primary);
+  stroke: var(--primary);
+  stroke-width: 1.5;
+}
+.image-hero-scan {
+  opacity: 0;
+}
+.image-hero-meta {
+  fill: var(--muted-foreground);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.13em;
+}
+.image-hero-result-label {
+  fill: var(--foreground);
+  font-size: 25px;
+  font-weight: 600;
+}
+.image-hero-accent {
+  color: var(--primary);
+}
+@variant md {
+  .image-hero-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.04fr);
+    min-height: clamp(31rem, 66svh, 45rem);
+  }
+}

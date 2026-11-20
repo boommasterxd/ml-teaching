@@ -1,0 +1,188 @@
+.header-menu-desktop {
+  display: none;
+}
+
+.header-menu-positioner {
+  z-index: 50;
+  width: var(--positioner-width, max-content);
+  height: var(--positioner-height, auto);
+}
+
+.site-header-inner .header-menu-mobile {
+  /* Anchor the open mobile panel to the glass bar, across its available width. */
+  position: static;
+}
+
+.header-menu-panel {
+  --menu-inset: 0.625rem;
+  --menu-icon: 1rem;
+  --menu-gap: 0.625rem;
+  position: relative;
+  pointer-events: auto;
+  width: var(--popup-width, auto);
+  height: var(--popup-height, auto);
+  max-height: calc(100dvh - var(--header-height) - 1rem);
+  overflow: hidden;
+  border: 1px solid var(--glass-line);
+  border-radius: 1.4rem;
+  background: var(--glass-surface);
+  color: var(--popover-foreground);
+  box-shadow:
+    var(--glass-highlight),
+    0 1rem 2.5rem color-mix(in srgb, black 15%, transparent);
+  outline: none;
+}
+
+.header-menu-viewport {
+  position: relative;
+  max-height: calc(100dvh - var(--header-height) - 1rem - 2px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.header-menu-content {
+  padding: 0.5rem;
+}
+
+.header-menu-panel .header-menu-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: var(--menu-icon) minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--menu-gap);
+  min-height: 2.75rem;
+  padding: 0.375rem var(--menu-inset);
+  border-radius: 0.75rem;
+  line-height: 1.35;
+}
+
+.header-menu-row[data-overview] {
+  font-weight: 600;
+}
+
+.menu-highlight-container {
+  position: relative;
+  isolation: isolate;
+}
+
+.menu-highlight-container:not(.menu-highlight-popup) [data-highlight='true'] {
+  position: relative;
+  z-index: 1;
+}
+
+.menu-highlight-surface {
+  pointer-events: none;
+  border-radius: var(--menu-highlight-radius, 0.75rem);
+  background-color: var(--primary-soft);
+}
+
+.menu-highlight-popup .menu-highlight-surface {
+  inset: 0;
+}
+
+.menu-highlight-container:not(:has(> .menu-highlight-surface))
+  :is(.header-menu-trigger, .legal-navigation .legal-page-link):is(
+    [aria-current='page'],
+    [data-current-section]
+  ) {
+  background-color: var(--primary-soft);
+}
+
+:is(.header-menu-trigger, a.header-menu-row, .legal-navigation a.legal-page-link) {
+  background-color: transparent;
+  color: var(--foreground);
+  transition-property: none;
+}
+
+:is(.header-menu-trigger, a.header-menu-row, .legal-navigation a.legal-page-link):is(
+  [aria-current='page'],
+  [data-current-section]
+) {
+  color: var(--primary);
+}
+
+:is(.header-menu-desktop, .header-menu-mobile) > .menu-highlight-container,
+.legal-navigation .menu-highlight-container {
+  --menu-highlight-radius: 9999px;
+}
+
+.header-menu-label {
+  padding: 0.375rem var(--menu-inset) 0.125rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.header-menu-group + .header-menu-group {
+  margin-block-start: 0.25rem;
+  border-top: 1px solid var(--glass-line);
+  padding-block-start: 0.25rem;
+}
+
+/* Extend the hit area above and below the compact Animate UI highlight. */
+.header-menu-trigger::before {
+  content: '';
+  position: absolute;
+  inset: -0.375rem 0;
+}
+
+/* Size the mobile popup from the bar without waiting for the viewport to measure its links. */
+.header-menu-positioner:has(.header-menu-panel-mobile) {
+  width: var(--anchor-width, max-content);
+}
+
+.header-menu-panel-mobile,
+.header-menu-panel-mobile .header-menu-content {
+  width: 100%;
+}
+
+@variant max-sm {
+  .site-header-inner .site-brand {
+    gap: 0.35rem;
+    font-size: 0.95rem;
+  }
+  .site-header-inner .brand-mark {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+  .header-menu-mobile button {
+    padding-inline: 0.5rem;
+  }
+  .header-menu-mobile button svg {
+    display: none;
+  }
+}
+
+@variant md {
+  .header-menu-mobile {
+    display: none;
+  }
+  .header-menu-desktop {
+    display: block;
+  }
+  .header-menu-desktop [data-slot='navigation-menu-list'] > li {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+  .header-menu-desktop .header-menu-trigger[aria-expanded='true']::before {
+    /* Keep the pointer on the trigger while it crosses the gap into its panel. */
+    bottom: -0.75rem;
+  }
+  .header-menu-desktop .header-menu-content {
+    width: max-content;
+    min-width: calc(13rem - 2px);
+    max-width: calc(100vw - 3rem - 2px);
+  }
+  .header-menu-desktop .header-menu-content:has([data-overview]) {
+    width: calc(16.5rem - 2px);
+  }
+  @media (pointer: fine) {
+    .header-menu-panel .header-menu-row {
+      min-height: 2.125rem;
+    }
+  }
+}

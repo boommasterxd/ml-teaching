@@ -4,8 +4,8 @@
  * Shared utility functions used across the application.
  * Exports the `cn` helper for composing conditional Tailwind CSS class names.
  */
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 /**
  * Combines and deduplicates Tailwind CSS class names.

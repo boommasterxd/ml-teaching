@@ -6,13 +6,22 @@
  * defined by PREDICTION.INTERVAL_MS. Exposes start/stop controls and the
  * latest prediction result as reactive state.
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useEffectEvent } from 'react';
 import type React from 'react';
-import * as tf from '@tensorflow/tfjs-core';
+import type * as tf from '@tensorflow/tfjs-core';
+import { loadTensorFlow, retainModel } from '../lib/ml-runtime';
+import { drawFeatureFrame } from '../lib/feature-frame';
 import type { Prediction } from '../types/ml';
 import { PREDICTION } from '../constants';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
 import type { ErrorCategory } from '../types/errors';
+
+type PredictionFeatureSampler = (features: tf.Tensor) => Promise<void> | undefined;
+export type SubscribePredictionFeatures = (sample: PredictionFeatureSampler) => () => void;
+type PublishPrediction = (
+  prediction: Prediction,
+  features: tf.Tensor,
+) => ReturnType<PredictionFeatureSampler>;
 
 /**
  * Groups the three ML objects that are always passed together into inference
@@ -22,6 +31,8 @@ interface InferenceContext {
   classifier: Classifier;
   mobilenetModel: FeatureExtractor;
   video: HTMLVideoElement;
+  canvas: HTMLCanvasElement;
+  mirror: boolean;
 }
 
 /**
@@ -45,13 +56,25 @@ function isVideoReady(video: HTMLVideoElement): boolean {
  */
 async function runInference(
   ctx: InferenceContext,
-  setPrediction: (p: Prediction) => void,
+  publish: PublishPrediction,
+  isCurrent: () => boolean,
 ): Promise<boolean> {
-  const img = tf.browser.fromPixels(ctx.video);
-  const features = ctx.mobilenetModel.infer(img, true);
+  let releaseModel: (() => void) | undefined;
+  let releaseClassifier: (() => void) | undefined;
+  let img: tf.Tensor | null = null;
+  let features: tf.Tensor | null = null;
   try {
+    const runtime = await loadTensorFlow();
+    if (!isCurrent()) return true;
+    releaseModel = retainModel(ctx.mobilenetModel);
+    releaseClassifier = retainModel(ctx.classifier);
+    if (!releaseModel || !releaseClassifier) return true;
+    if (!drawFeatureFrame(ctx.video, ctx.canvas, ctx.mirror)) return false;
+    img = runtime.browser.fromPixels(ctx.canvas);
+    features = ctx.mobilenetModel.infer(img);
     const result = await ctx.classifier.predictClass(features);
-    setPrediction({ label: result.label, confidences: result.confidences });
+    const sample = publish({ label: result.label, confidences: result.confidences }, features);
+    if (sample) await sample;
     return true;
   } catch (err) {
     // Design decision: Individual prediction errors are intentionally only
@@ -61,8 +84,10 @@ async function runInference(
     console.error('Prediction error:', err);
     return false;
   } finally {
-    img.dispose();
-    features.dispose();
+    img?.dispose();
+    features?.dispose();
+    releaseModel?.();
+    releaseClassifier?.();
   }
 }
 
@@ -73,10 +98,11 @@ async function runInference(
  */
 async function handleInference(
   ctx: InferenceContext,
-  setPrediction: (p: Prediction) => void,
+  publish: PublishPrediction,
   consecutiveErrorRef: React.MutableRefObject<number>,
+  isCurrent: () => boolean,
 ): Promise<'ok' | 'error' | 'fatal'> {
-  const success = await runInference(ctx, setPrediction);
+  const success = await runInference(ctx, publish, isCurrent);
   if (success) {
     consecutiveErrorRef.current = 0;
     return 'ok';
@@ -115,17 +141,29 @@ export function usePredictionLoop(
   mobilenetModel: FeatureExtractor | null,
   videoRef: React.RefObject<HTMLVideoElement | null>,
   onError: (category: Extract<ErrorCategory, 'prediction'>, msg: string) => void,
+  mirror = false,
 ) {
   const [isPredicting, setIsPredicting] = useState(false);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const requestRef = useRef<number>(undefined);
   const shouldPredictRef = useRef(false);
+  const generationRef = useRef(0);
+  const inferenceRunningRef = useRef(false);
   const lastPredictTimeRef = useRef(0);
-  const consecutiveErrorRef = useRef(0);
-  const onErrorRef = useRef(onError);
-  onErrorRef.current = onError;
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const featureSampler = useRef<PredictionFeatureSampler | null>(null);
+  const reportError = useEffectEvent(onError);
+  const subscribeToFeatures = useCallback<SubscribePredictionFeatures>((sample) => {
+    featureSampler.current = sample;
+    return () => {
+      if (featureSampler.current === sample) featureSampler.current = null;
+    };
+  }, []);
 
   useEffect(() => {
+    const generation = ++generationRef.current;
+    const isCurrent = () => shouldPredictRef.current && generationRef.current === generation;
+    const consecutiveErrorRef = { current: 0 };
     /**
      * Single iteration of the prediction loop, scheduled via requestAnimationFrame.
      *
@@ -140,29 +178,51 @@ export function usePredictionLoop(
      * @param timestamp - DOMHighResTimeStamp provided by requestAnimationFrame.
      */
     const predictLoop = async (timestamp: number) => {
+      if (!isCurrent()) return;
       if (!classifier || !mobilenetModel || !videoRef.current || classifier.getNumClasses() === 0) {
         return;
       }
 
       if (timestamp - lastPredictTimeRef.current < PREDICTION.INTERVAL_MS) {
-        if (shouldPredictRef.current) {
-          requestRef.current = requestAnimationFrame(predictLoop);
-        }
+        requestRef.current = requestAnimationFrame(predictLoop);
         return;
       }
       lastPredictTimeRef.current = timestamp;
 
-      if (isVideoReady(videoRef.current)) {
-        const ctx: InferenceContext = { classifier, mobilenetModel, video: videoRef.current };
-        const result = await handleInference(ctx, setPrediction, consecutiveErrorRef);
+      if (isVideoReady(videoRef.current) && !inferenceRunningRef.current && !document.hidden) {
+        canvasRef.current ??= document.createElement('canvas');
+        const ctx: InferenceContext = {
+          classifier,
+          mobilenetModel,
+          video: videoRef.current,
+          canvas: canvasRef.current,
+          mirror,
+        };
+        inferenceRunningRef.current = true;
+        const result = await handleInference(
+          ctx,
+          (value, features) => {
+            if (!isCurrent()) return;
+            setPrediction(value);
+            return featureSampler.current?.(features);
+          },
+          consecutiveErrorRef,
+          isCurrent,
+        );
+        inferenceRunningRef.current = false;
+        if (!isCurrent()) return;
         if (result === 'fatal') {
-          onErrorRef.current('prediction', 'Die Klassifizierung ist wiederholt fehlgeschlagen. Bitte trainiere das Modell erneut.');
+          reportError(
+            'prediction',
+            'Die Klassifizierung ist wiederholt fehlgeschlagen. Bitte trainiere das Modell erneut.',
+          );
+          setPrediction(null);
           setIsPredicting(false);
           return;
         }
       }
 
-      if (shouldPredictRef.current) {
+      if (isCurrent()) {
         requestRef.current = requestAnimationFrame(predictLoop);
       }
     };
@@ -176,14 +236,14 @@ export function usePredictionLoop(
       if (requestRef.current) {
         cancelAnimationFrame(requestRef.current);
       }
-      setPrediction(null);
     }
 
     return () => {
       shouldPredictRef.current = false;
+      canvasRef.current = null;
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [isPredicting, classifier, mobilenetModel]);
+  }, [isPredicting, classifier, mobilenetModel, videoRef, mirror]);
 
   /**
    * Sets `isPredicting` to `true`, which triggers the `useEffect` to reset the
@@ -201,8 +261,11 @@ export function usePredictionLoop(
    * frame from re-queuing itself after the effect re-runs.
    */
   const stopPredicting = useCallback(() => {
+    shouldPredictRef.current = false;
+    generationRef.current++;
+    setPrediction(null);
     setIsPredicting(false);
   }, []);
 
-  return { prediction, isPredicting, startPredicting, stopPredicting };
+  return { prediction, isPredicting, startPredicting, stopPredicting, subscribeToFeatures };
 }

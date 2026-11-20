@@ -1,36 +1,34 @@
-/**
- * Centered content card used by legal / informational pages (privacy, imprint, etc.).
- */
 import type { ReactNode } from 'react';
+import LegalReadingSections from './LegalReadingSections';
+import { Card, CardContent, CardHeader } from './ui/card';
+import { Heading } from './ui/typography';
 
-/** Props for the PageContent component. */
-interface PageContentProps {
-  /** Optional HTML id applied to the wrapping `<section>` element. */
+/** Controlled legal copy uses one central typography system in both themes. */
+export default function PageContent({
+  id,
+  labelledBy,
+  title,
+  children,
+}: {
   id?: string;
-  /** Value passed to `aria-labelledby` for accessible section labelling. */
-  labelledBy?: string;
-  /** Content rendered inside the styled card. */
+  labelledBy: string;
+  title: string;
   children: ReactNode;
-}
-
-/**
- * Renders a white card section with constrained width and prose typography.
- *
- * @param id - Optional HTML id for the `<section>` element.
- * @param labelledBy - Id of the element that labels this section (`aria-labelledby`).
- * @param children - Content to display inside the card.
- * @returns A styled `<section>` containing a rounded card with prose styles applied.
- */
-export default function PageContent({ id, labelledBy, children }: PageContentProps) {
+}) {
   return (
-    <section
-      id={id}
-      className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12"
-      aria-labelledby={labelledBy}
-    >
-      <div className="bg-white p-6 sm:p-12 rounded-3xl border border-zinc-200 shadow-sm prose prose-zinc max-w-none">
-        {children}
-      </div>
+    <section id={id} aria-labelledby={labelledBy} className="legal-section">
+      <Card className="legal-document">
+        <article className="legal-content">
+          <CardHeader className="legal-document-header">
+            <Heading as="h1" variant="document" id={labelledBy}>
+              {title}
+            </Heading>
+          </CardHeader>
+          <CardContent className="legal-document-body">
+            <LegalReadingSections>{children}</LegalReadingSections>
+          </CardContent>
+        </article>
+      </Card>
     </section>
   );
 }

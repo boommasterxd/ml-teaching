@@ -12,14 +12,12 @@ import type { MLImage } from '../types/ml';
  *
  * - `none` — no modal is open
  * - `imagePreview` — preview of a single training image belonging to a class
- * - `clearConfirm` — confirmation dialog before clearing all training data
  * - `clearClass` — confirmation dialog before clearing images of one class
  * - `removeClass` — confirmation dialog before removing an entire class
  */
 export type ModalState =
   | { type: 'none' }
   | { type: 'imagePreview'; classId: string; image: MLImage }
-  | { type: 'clearConfirm' }
   | { type: 'clearClass'; classId: string }
   | { type: 'removeClass'; classId: string };
 
@@ -31,7 +29,6 @@ export type ModalState =
  *   action functions:
  *   - `closeModal` — resets modal state to `none`
  *   - `showImagePreview` — opens the image-preview modal for a given class and image
- *   - `showClearConfirm` — opens the global clear-all confirmation modal
  *   - `showClearClass` — opens the clear-class confirmation modal for a given class
  *   - `showRemoveClass` — opens the remove-class confirmation modal for a given class
  */
@@ -46,28 +43,30 @@ export function useModalState() {
    * @param classId - ID of the class the image belongs to.
    * @param image - The `MLImage` object to preview.
    */
-  const showImagePreview = useCallback((classId: string, image: MLImage) =>
-    setModal({ type: 'imagePreview', classId, image }), []);
-
-  /** Opens the confirmation modal for clearing all training data. */
-  const showClearConfirm = useCallback(() =>
-    setModal({ type: 'clearConfirm' }), []);
+  const showImagePreview = useCallback(
+    (classId: string, image: MLImage) => setModal({ type: 'imagePreview', classId, image }),
+    [],
+  );
 
   /**
    * Opens the confirmation modal for clearing all images of one class.
    *
    * @param classId - ID of the class whose images should be cleared.
    */
-  const showClearClass = useCallback((classId: string) =>
-    setModal({ type: 'clearClass', classId }), []);
+  const showClearClass = useCallback(
+    (classId: string) => setModal({ type: 'clearClass', classId }),
+    [],
+  );
 
   /**
    * Opens the confirmation modal for removing an entire class.
    *
    * @param classId - ID of the class to remove.
    */
-  const showRemoveClass = useCallback((classId: string) =>
-    setModal({ type: 'removeClass', classId }), []);
+  const showRemoveClass = useCallback(
+    (classId: string) => setModal({ type: 'removeClass', classId }),
+    [],
+  );
 
-  return { modal, closeModal, showImagePreview, showClearConfirm, showClearClass, showRemoveClass };
+  return { modal, closeModal, showImagePreview, showClearClass, showRemoveClass };
 }

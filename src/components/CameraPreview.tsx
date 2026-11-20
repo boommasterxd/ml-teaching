@@ -1,84 +1,155 @@
-/**
- * CameraPreview.tsx
- *
- * Live camera feed with hold-to-record and file-upload controls for a single ML training class.
- * Supports mouse, touch, and keyboard (Space/Enter) interaction for capturing training images.
- */
 import type React from 'react';
-import { useEffect, useRef } from 'react';
-import { Camera, Upload } from 'lucide-react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
+import { Camera } from './icons/camera';
+import { Square } from './icons/square';
+import { SwitchCamera } from './icons/switch-camera';
+import { Upload } from './icons/upload';
+import Button from './Button';
+import { Input } from './ui/input';
+import { Spinner } from './ui/spinner';
 import { cn } from '../lib/utils';
+import { IMAGE_INPUT_ACCEPT } from '../lib/image-input-policy';
 
-/**
- * Props for the CameraPreview component.
- */
 export interface CameraPreviewProps {
-  /** The active WebRTC camera stream, or null when no camera is available. */
+  disabled: boolean;
   stream: MediaStream | null;
-  /** Camera facing direction — 'user' for front camera (mirrored), 'environment' for back camera. */
   facingMode: 'user' | 'environment';
-  /** Accent color applied to the record button, matching the parent ML class color. */
-  color: string;
-  /** Whether recording is currently active (images are being captured). */
+  isCameraSwitching: boolean;
+  onSwitchCamera: React.MouseEventHandler<HTMLButtonElement>;
   isRecording: boolean;
-  /** Called when the user begins holding the record button. */
   onStartRecording: () => void;
-  /** Called when the user releases the record button. */
   onStopRecording: () => void;
-  /** Called when the user selects image files via the file input. */
-  onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  /** Ref to the underlying video element, shared with the parent for feature extraction. */
+  onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   videoRef: React.RefObject<HTMLVideoElement | null>;
+  fileActions?: React.ReactNode;
+  onCaptureIntent?: () => void;
 }
 
-/**
- * Renders a live camera feed alongside hold-to-record and file-upload controls
- * for capturing training images for a single ML class.
- *
- * Recording works as a hold gesture: press and hold to record, release to stop.
- * Keyboard users (Space/Enter) get a toggle instead — press once to start, press again to stop.
- */
-export default function CameraPreview({
-  stream,
-  facingMode,
-  color,
+type RecordButtonProps = Pick<
+  CameraPreviewProps,
+  'isRecording' | 'onStartRecording' | 'onStopRecording' | 'disabled' | 'onCaptureIntent'
+>;
+
+const touchHoldDelayMs = 350;
+
+function RecordButton({
+  disabled,
   isRecording,
   onStartRecording,
   onStopRecording,
-  onFileUpload,
-  videoRef,
-}: CameraPreviewProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  // Tracks whether the current recording session was started via keyboard,
-  // so Space/Enter acts as a toggle rather than requiring hold-and-release.
-  const keyboardRecordingRef = useRef(false);
+  onCaptureIntent,
+}: RecordButtonProps) {
+  const touch = useRef<{ pointerId: number; timer: number; started: boolean } | null>(null);
+  const suppressTouchClick = useRef(false);
+  useEffect(() => () => window.clearTimeout(touch.current?.timer), []);
 
-  // Assign or clear the camera stream on the video element whenever the stream changes.
-  // The cleanup only nulls srcObject if it still points to the same stream,
-  // preventing a race condition when the stream is swapped while unmounting.
-  useEffect(() => {
-    const videoElement = videoRef.current;
-
-    if (!videoElement) {
-      return;
-    }
-
-    if (stream) {
-      videoElement.srcObject = stream;
-    } else {
-      videoElement.srcObject = null;
-    }
-
-    return () => {
-      if (videoElement.srcObject === stream) {
-        videoElement.srcObject = null;
-      }
+  const startPress = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!event.isPrimary) return;
+    suppressTouchClick.current = false;
+    onCaptureIntent?.();
+    if (event.pointerType !== 'touch' || disabled || isRecording) return;
+    const button = event.currentTarget;
+    const press = {
+      pointerId: event.pointerId,
+      started: false,
+      timer: window.setTimeout(() => {
+        if (button.disabled || document.hidden) return;
+        press.started = true;
+        suppressTouchClick.current = true;
+        onStartRecording();
+      }, touchHoldDelayMs),
     };
-  }, [stream, videoRef]);
+    touch.current = press;
+  };
+
+  const finishPress = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const press = touch.current;
+    if (!press || press.pointerId !== event.pointerId) return;
+    touch.current = null;
+    window.clearTimeout(press.timer);
+    if (press.started) onStopRecording();
+  };
 
   return (
-    <div className="w-full sm:w-56 flex flex-col gap-3 flex-shrink-0">
-      <div className="relative aspect-[4/3] bg-zinc-900 rounded-xl overflow-hidden shadow-inner">
+    <Button
+      variant={isRecording ? 'destructive' : 'default'}
+      size="lg"
+      disabled={disabled && !isRecording}
+      className="min-h-11 w-full touch-manipulation select-none [-webkit-touch-callout:none]"
+      onPointerEnter={onCaptureIntent}
+      onFocus={onCaptureIntent}
+      onPointerDown={startPress}
+      onPointerUp={finishPress}
+      onPointerCancel={finishPress}
+      onLostPointerCapture={finishPress}
+      onContextMenu={(event) => {
+        if (touch.current || suppressTouchClick.current) event.preventDefault();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' && event.repeat) event.preventDefault();
+      }}
+      onClick={(event) => {
+        if (event.detail > 0 && suppressTouchClick.current) {
+          suppressTouchClick.current = false;
+          return;
+        }
+        if (isRecording) onStopRecording();
+        else {
+          onCaptureIntent?.();
+          onStartRecording();
+        }
+      }}
+    >
+      {isRecording ? (
+        <Square data-icon="inline-start" className="fill-current" aria-hidden="true" />
+      ) : (
+        <Camera data-icon="inline-start" aria-hidden="true" />
+      )}
+      {isRecording ? 'Aufnahme stoppen' : 'Aufnehmen'}
+    </Button>
+  );
+}
+
+function usePreviewVisibility(previewRef: React.RefObject<HTMLDivElement | null>) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const preview = previewRef.current;
+    if (!preview) return;
+    let inViewport = false;
+    const updateVisibility = () => setVisible(inViewport && !document.hidden);
+    const observer = new IntersectionObserver((entries) => {
+      inViewport = entries.at(-1)?.isIntersecting ?? false;
+      updateVisibility();
+    });
+    observer.observe(preview);
+    document.addEventListener('visibilitychange', updateVisibility);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', updateVisibility);
+    };
+  }, [previewRef]);
+  return visible;
+}
+
+function LiveCameraPreview(props: CameraPreviewProps) {
+  const { disabled, stream, facingMode, isCameraSwitching, onSwitchCamera, videoRef, isRecording } =
+    props;
+  const previewRef = useRef<HTMLDivElement>(null);
+  const visible = usePreviewVisibility(previewRef);
+  const attachedStream = visible || isRecording ? stream : null;
+
+  useLayoutEffect(() => {
+    const video = videoRef.current;
+    if (!video || !attachedStream) return;
+    video.srcObject = attachedStream;
+    return () => {
+      if (video.srcObject === attachedStream) video.srcObject = null;
+    };
+  }, [attachedStream, videoRef]);
+
+  return (
+    <div className="grid w-full min-w-0 max-w-80 gap-2 justify-self-center">
+      <div ref={previewRef} className="relative aspect-[4/3]">
         <video
           ref={videoRef}
           autoPlay
@@ -86,81 +157,96 @@ export default function CameraPreview({
           muted
           aria-label="Kameravorschau für Trainingsaufnahme"
           className={cn(
-            'w-full h-full object-cover',
-            facingMode === 'user' ? 'transform scale-x-[-1]' : ''
+            'absolute inset-0 size-full rounded-2xl bg-media-surface object-cover',
+            facingMode === 'user' && 'transform scale-x-[-1]',
           )}
         />
-      </div>
-      <div className="flex gap-2">
-        <button
-          onMouseDown={() => {
-            keyboardRecordingRef.current = false;
-            onStartRecording();
-          }}
-          onMouseUp={onStopRecording}
-          onMouseLeave={onStopRecording}
-          onTouchStart={() => {
-            keyboardRecordingRef.current = false;
-            onStartRecording();
-          }}
-          onTouchEnd={onStopRecording}
-          onTouchCancel={onStopRecording}
-          onContextMenu={(e) => e.preventDefault()}
-          onKeyDown={(e) => {
-            if (e.key === ' ' || e.key === 'Enter') {
-              e.preventDefault();
-              if (!isRecording) {
-                keyboardRecordingRef.current = true;
-                onStartRecording();
-              } else if (keyboardRecordingRef.current) {
-                keyboardRecordingRef.current = false;
-                onStopRecording();
-              }
-            }
-          }}
-          onKeyUp={(e) => {
-            if (e.key === ' ' || e.key === 'Enter') {
-              e.preventDefault();
-            }
-          }}
-          className={cn(
-            'flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center select-none touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--btn-color)] focus-visible:ring-offset-2',
-            isRecording
-              ? 'scale-95 shadow-inner opacity-90'
-              : 'shadow-sm hover:-translate-y-0.5 hover:shadow-md'
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute right-2 bottom-2 size-11 shadow-sm"
+          aria-label="Kamera wechseln"
+          title="Kamera wechseln"
+          aria-disabled={isCameraSwitching || undefined}
+          onClick={isCameraSwitching ? undefined : onSwitchCamera}
+        >
+          {isCameraSwitching ? (
+            <Spinner aria-hidden="true" />
+          ) : (
+            <SwitchCamera data-icon aria-hidden="true" />
           )}
-          style={{
-            backgroundColor: color,
-            ['--btn-color' as string]: color,
-            WebkitUserSelect: 'none',
-            WebkitTouchCallout: 'none',
-          } as React.CSSProperties}
+        </Button>
+      </div>
+      <RecordButton {...props} disabled={disabled || !stream} />
+    </div>
+  );
+}
+
+/** Camera attachment and capture cleanup follow the browser stream. */
+export default function CameraPreview(props: CameraPreviewProps) {
+  const {
+    stream,
+    isRecording,
+    onStopRecording,
+    onFileUpload,
+    disabled,
+    fileActions,
+    onCaptureIntent,
+    isCameraSwitching,
+  } = props;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const endCapture = useEffectEvent(onStopRecording);
+  useEffect(() => {
+    if (stream) return () => endCapture();
+  }, [stream]);
+  useEffect(() => {
+    if (!isRecording) return;
+    const stopWhenHidden = () => {
+      if (document.hidden) endCapture();
+    };
+    document.addEventListener('visibilitychange', stopWhenHidden);
+    return () => document.removeEventListener('visibilitychange', stopWhenHidden);
+  }, [isRecording]);
+  return (
+    <>
+      <div
+        className={cn(
+          'col-span-full',
+          fileActions &&
+            'grid grid-cols-[minmax(max-content,2.4fr)_repeat(2,minmax(2.75rem,1fr))] gap-2 @md/training-class:grid-cols-[repeat(3,minmax(max-content,1fr))]',
+        )}
+      >
+        <Button
+          variant={stream ? 'outline' : 'default'}
+          className="h-auto min-h-11 px-2 py-1.5 has-[>svg]:px-2"
+          onPointerEnter={onCaptureIntent}
+          onFocus={onCaptureIntent}
+          onPointerDown={onCaptureIntent}
+          onClick={() => {
+            onCaptureIntent?.();
+            fileInputRef.current?.click();
+          }}
+          disabled={disabled}
         >
-          <Camera
-            className={cn('w-4 h-4 mr-2', isRecording && 'animate-pulse')}
-            aria-hidden="true"
-          />
-          {isRecording ? 'Aufnahme...' : 'Aufnehmen'}
-        </button>
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="px-3 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-xl transition-colors flex items-center justify-center shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2"
-          title="Bilder hochladen"
-          aria-label="Bilder hochladen"
-        >
-          <Upload className="w-4 h-4" aria-hidden="true" />
-        </button>
-        <input
+          <Upload data-icon="inline-start" aria-hidden="true" /> Bilder auswählen
+        </Button>
+        <Input
           type="file"
+          disabled={disabled}
           ref={fileInputRef}
-          onChange={onFileUpload}
-          accept="image/*"
+          onChange={(event) => {
+            if (event.currentTarget.files?.length) onCaptureIntent?.();
+            onFileUpload(event);
+          }}
+          accept={IMAGE_INPUT_ACCEPT}
           multiple
           className="hidden"
           aria-hidden="true"
           tabIndex={-1}
         />
+        {fileActions}
       </div>
-    </div>
+      {(stream || isCameraSwitching) && <LiveCameraPreview {...props} />}
+    </>
   );
 }

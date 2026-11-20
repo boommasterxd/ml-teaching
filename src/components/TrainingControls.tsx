@@ -1,112 +1,173 @@
-/**
- * TrainingControls.tsx
- *
- * Training section panel showing class readiness, total image count,
- * and the train/retrain button with contextual status messages.
- */
-import { Brain, CheckCircle2, Loader2 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { Brain } from './icons/brain';
+import { ArrowRight } from './icons/arrow-right';
+import type { TrainingProgress } from '../hooks/useModelTraining';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
+import Button from './Button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { EntryReveal } from './ui/entry-reveal';
+import { Spinner } from './ui/spinner';
+import { MessageSlot } from './ui/message-slot';
+import { Progress } from './ui/progress';
+import { Text } from './ui/typography';
+import TrainingFigure from './TrainingFigure';
 
-/**
- * Props for the TrainingControls component.
- */
 interface TrainingControlsProps {
-  /** All current ML classes with their collected images. */
+  entryReady?: boolean;
   classes: MLClass[];
-  /** Whether the minimum training requirements are met across all classes. */
   canTrain: boolean;
-  /** Whether a training run is currently in progress. */
-  isTraining: boolean;
-  /** Whether a trained KNN model already exists and can be used for prediction. */
+  hasPendingUploads: boolean;
+  progress: TrainingProgress | null;
   hasTrainedModel: boolean;
-  /** Whether any class has an empty or whitespace-only name. */
   hasInvalidNames: boolean;
-  /** Whether two or more classes share the same name. */
   hasDuplicateNames: boolean;
-  /** Callback triggered when the user clicks the train or retrain button. */
   onTrain: () => void;
+  onPredict?: () => void;
+  onPredictIntent?: () => void;
 }
 
-/**
- * Renders the training control panel.
- *
- * Displays how many classes meet the minimum image threshold, the total
- * image count across all classes, and a button to start or repeat training.
- * The button is disabled when training is active or requirements are unmet.
- * A live status message below the button explains why training is blocked
- * or confirms that the model is ready.
- */
-export default function TrainingControls({
-  classes,
-  canTrain,
-  isTraining,
-  hasTrainedModel,
-  hasInvalidNames,
-  hasDuplicateNames,
-  onTrain,
-}: TrainingControlsProps) {
+const statusMessages = {
+  preparing: 'Das Modell wird vorbereitet.',
+  training: 'Das Modell ordnet die Bildmerkmale deinen Klassen zu.',
+  uploading: 'Bitte warte, bis alle ausgewählten Bilder vollständig verarbeitet sind.',
+  emptyNames: 'Bitte gib allen Klassen einen Namen.',
+  duplicateNames: 'Bitte gib allen Klassen einen eindeutigen Namen.',
+  missingImages: `Du brauchst mindestens ${ML.MIN_CLASSES} Klassen und mindestens ${ML.MIN_IMAGES_PER_CLASS} Bilder pro Klasse.`,
+  trained: 'Du kannst jetzt neue Kamerabilder zuordnen.',
+  ready: 'Bereit zum Trainieren.',
+};
+const trainingStatusMessages = Object.values(statusMessages);
+
+function trainingStatus(props: TrainingControlsProps) {
+  if (props.progress) {
+    return props.progress.processed === 0 ? statusMessages.preparing : statusMessages.training;
+  }
+  if (props.hasPendingUploads) return statusMessages.uploading;
+  if (props.hasInvalidNames) return statusMessages.emptyNames;
+  if (props.hasDuplicateNames) return statusMessages.duplicateNames;
+  if (!props.canTrain) return statusMessages.missingImages;
+  return statusMessages.ready;
+}
+
+function TrainingSummary({ classes }: Pick<TrainingControlsProps, 'classes'>) {
+  const ready = classes.filter((item) => item.images.length >= ML.MIN_IMAGES_PER_CLASS).length;
+  const images = classes.reduce((count, item) => count + item.images.length, 0);
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden flex flex-col">
-      <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
-        <h2 className="text-base font-bold text-zinc-800 flex items-center">
-          <Brain className="w-4 h-4 mr-2 text-indigo-500" aria-hidden="true" /> 2. Training
-        </h2>
-        {hasTrainedModel && (
-          <span role="status" className="flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
-            <CheckCircle2 className="w-3 h-3 mr-1" aria-hidden="true" /> Bereit
+    <dl className="flex flex-wrap gap-x-9 gap-y-3 py-1">
+      <div className="grid gap-1">
+        <dt className="text-sm text-muted-foreground">Klassen bereit</dt>
+        <dd className="text-2xl font-semibold tracking-tight tabular-nums">
+          {ready}{' '}
+          <span className="text-base font-normal text-muted-foreground">
+            / {Math.max(classes.length, ML.MIN_CLASSES)}
           </span>
-        )}
+        </dd>
       </div>
-      <div className="p-5">
-        <div className="flex justify-between text-sm mb-2">
-          <span className="text-zinc-600">Klassen bereit:</span>
-          <span className={cn('font-semibold', canTrain ? 'text-emerald-700' : 'text-red-600')}>
-            {classes.filter(c => c.images.length >= ML.MIN_IMAGES_PER_CLASS).length} / {Math.max(ML.MIN_CLASSES, classes.length)}
-          </span>
-        </div>
-        <div className="flex justify-between text-sm mb-5">
-          <span className="text-zinc-600">Gesammelte Bilder:</span>
-          <span className="font-semibold text-zinc-800">
-            {classes.reduce((acc, c) => acc + c.images.length, 0)}
-          </span>
-        </div>
-
-        <button
-          onClick={onTrain}
-          disabled={isTraining || !canTrain}
-          aria-disabled={isTraining || !canTrain}
-          className={cn(
-            'w-full py-3 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
-            isTraining || !canTrain
-              ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
-              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5'
-          )}
-        >
-          {isTraining ? (
-            <><Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" /> Trainiere...</>
-          ) : hasTrainedModel ? (
-            'Modell neu trainieren'
-          ) : (
-            'Modell trainieren'
-          )}
-        </button>
-
-        <p className="text-xs text-zinc-600 mt-3 text-center" aria-live="polite">
-          {isTraining
-            ? 'Bitte warten, das Modell wird trainiert...'
-            : hasInvalidNames
-            ? 'Bitte gib allen Klassen einen Namen.'
-            : hasDuplicateNames
-            ? 'Bitte gib allen Klassen einen eindeutigen Namen.'
-            : !canTrain
-            ? `Sammle mind. ${ML.MIN_IMAGES_PER_CLASS} Bilder in ALLEN Klassen (mind. ${ML.MIN_CLASSES}).`
-            : hasTrainedModel
-            ? 'Modell ist bereit. Du kannst es jederzeit neu trainieren.'
-            : 'Genug Bilder gesammelt! Du kannst das Modell jetzt trainieren.'}
-        </p>
+      <div className="grid gap-1">
+        <dt className="text-sm text-muted-foreground">Gesammelte Bilder</dt>
+        <dd className="text-2xl font-semibold tracking-tight tabular-nums">{images}</dd>
       </div>
+    </dl>
+  );
+}
+
+function TrainingProgressIndicator({ progress }: Pick<TrainingControlsProps, 'progress'>) {
+  const count = progress ? `${progress.processed} von ${progress.total} Bildern verarbeitet` : '';
+  return (
+    <div className="grid min-h-8 w-full max-w-xs gap-1">
+      {progress && (
+        <>
+          <Progress
+            value={progress.processed}
+            max={progress.total}
+            aria-label="Trainingsfortschritt"
+            aria-valuetext={count}
+          />
+          <Text variant="muted" className="text-xs tabular-nums" aria-hidden="true">
+            {count}
+          </Text>
+        </>
+      )}
     </div>
+  );
+}
+
+export default function TrainingControls(props: TrainingControlsProps) {
+  const { classes, canTrain, progress, hasTrainedModel, onTrain, onPredict } = props;
+  const isTraining = progress !== null;
+  const state = progress ? 'training' : hasTrainedModel ? 'complete' : 'idle';
+  const complete = state === 'complete';
+  const title = {
+    idle: 'Trainingsdaten',
+    training: 'Training läuft',
+    complete: 'Training abgeschlossen',
+  }[state];
+  return (
+    <EntryReveal asChild kind="reading" active={props.entryReady} scrollOnly>
+      <section aria-labelledby="training-model">
+        <Card className="gap-4">
+          <CardHeader>
+            <CardTitle id="training-model" tabIndex={-1} className="workspace-heading scroll-mt-28">
+              Training
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <TrainingSummary classes={classes} />
+            <div className="training-feedback" data-complete={complete || undefined}>
+              <TrainingFigure
+                state={state}
+                progress={progress ? progress.processed / progress.total : 0}
+              />
+              <div role="status" id="training-status" className="grid min-w-0">
+                <strong className="text-xl font-semibold">{title}</strong>
+                <Text variant="muted" className="leading-relaxed">
+                  <MessageSlot messages={trainingStatusMessages}>
+                    {complete ? statusMessages.trained : trainingStatus(props)}
+                  </MessageSlot>
+                </Text>
+              </div>
+              <TrainingProgressIndicator progress={progress} />
+            </div>
+          </CardContent>
+          <CardFooter className="flex-wrap gap-2">
+            <Button
+              onClick={() => {
+                if (canTrain && !isTraining) onTrain();
+              }}
+              variant={complete ? 'outline' : 'default'}
+              size="lg"
+              disabled={!isTraining && !canTrain}
+              aria-disabled={isTraining || !canTrain}
+              className="w-full aria-disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:focus-visible:opacity-100 sm:w-auto"
+              aria-describedby={complete ? undefined : 'training-status'}
+            >
+              {progress ? (
+                <>
+                  <Spinner data-icon="inline-start" aria-hidden="true" /> Trainiere …
+                </>
+              ) : (
+                <>
+                  <Brain data-icon="inline-start" aria-hidden="true" />
+                  {hasTrainedModel ? 'Modell neu trainieren' : 'Modell trainieren'}
+                </>
+              )}
+            </Button>
+            {complete && onPredict && (
+              <Button
+                onClick={onPredict}
+                onPointerEnter={props.onPredictIntent}
+                onFocus={props.onPredictIntent}
+                onPointerDown={props.onPredictIntent}
+                size="lg"
+                className="w-full sm:w-auto"
+              >
+                Weiter zur Vorhersage
+                <ArrowRight data-icon="inline-end" aria-hidden="true" />
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </section>
+    </EntryReveal>
   );
 }

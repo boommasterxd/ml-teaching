@@ -1,0 +1,174 @@
+@reference 'tailwindcss';
+@import '../../components/image-hero/image-hero.css';
+@import '../../components/network/network.css';
+@import '../../components/knn-quiz/knn-quiz.css';
+
+.image-chapter .landing-section {
+  padding-block: clamp(3.4rem, 6.3vw, 6rem);
+}
+
+.image-chapter .landing-section-heading {
+  max-width: 46rem;
+  gap: 1rem;
+  margin-bottom: clamp(1.6rem, 3.4vw, 3.2rem);
+}
+
+.image-chapter h2 {
+  width: auto;
+  max-width: 22ch;
+  padding: 0;
+  border: 0;
+  font-size: clamp(2.15rem, 4.1vw, 4.2rem);
+  font-weight: 510;
+  line-height: 1.06;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.image-chapter-label,
+.image-chapter .landing-section-heading > p:first-child {
+  color: var(--primary);
+  font-size: 0.94rem;
+  font-weight: 540;
+}
+
+.image-chapter .landing-section-heading > p:last-child,
+.image-technique-intro {
+  max-width: 51ch;
+  font-size: clamp(1.05rem, 1.55vw, 1.32rem);
+  line-height: 1.62;
+  text-wrap: pretty;
+}
+
+.image-chapter .landing-technique-layout {
+  align-items: start;
+}
+
+.image-chapter .landing-technique-copy {
+  gap: 1.25rem;
+  max-width: 55ch;
+}
+
+.image-chapter .landing-technique-copy > p,
+.image-chapter [data-slot='item-description'],
+.image-training-step [data-slot='card-description'] {
+  font-size: 1rem;
+  line-height: 1.68;
+  text-wrap: pretty;
+}
+
+.image-chapter .landing-technique-items {
+  display: flex;
+  height: auto;
+  padding-inline: clamp(1.25rem, 3vw, 2.6rem);
+  gap: 0;
+}
+
+.image-chapter .landing-technique-item {
+  padding-block: clamp(1.4rem, 2.8vw, 2.35rem);
+}
+
+.image-chapter .landing-technique-item + .landing-technique-item {
+  border-top: 1px solid var(--border);
+}
+
+.image-chapter .landing-technique-item [data-slot='item-title'] {
+  gap: 0.75rem;
+  margin-bottom: 0.3rem;
+}
+
+.image-chapter h3 {
+  font-weight: 545;
+}
+
+.image-chapter .landing-technique-item h3,
+.image-training-step h3,
+.image-tips h3 {
+  font-size: clamp(1.16rem, 1.85vw, 1.6rem);
+  line-height: 1.22;
+  letter-spacing: -0.035em;
+}
+
+.image-chapter .landing-technique-item [data-slot='item-media'] {
+  border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+  border-radius: 0.75rem;
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.image-training-step {
+  padding-block: clamp(1.45rem, 2.8vw, 2.5rem);
+}
+
+.image-training-step [data-slot='card-header'] {
+  gap: 0.7rem;
+  padding-inline: clamp(1.3rem, 2.5vw, 2.3rem);
+}
+
+.image-training-step .image-step-marker {
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: clamp(0.75rem, 2vw, 1.8rem);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.image-step-marker > svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--primary);
+}
+
+.image-tip-layout {
+  display: grid;
+  align-items: start;
+  row-gap: 1rem;
+}
+
+.image-tips .landing-tip-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.55rem;
+}
+
+.image-tips [data-slot='item'] {
+  padding: clamp(1.1rem, 2.2vw, 1.8rem) 0;
+}
+
+.image-tips [data-slot='item-title'] {
+  gap: 0.75rem;
+}
+
+.image-tips [data-slot='item-title'] > p {
+  margin-right: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.image-training-cta {
+  align-items: center;
+  gap: clamp(1.45rem, 3.4vw, 2.6rem);
+  padding: clamp(3.2rem, 6vw, 6rem) clamp(1.25rem, 4vw, 3.5rem);
+  text-align: center;
+}
+
+.image-training-cta h2 {
+  max-width: 17ch;
+}
+
+.image-training-cta a,
+.image-hero-copy a {
+  min-height: 3rem;
+  padding-inline: 1.5rem;
+}
+
+@media (width >= 64rem) {
+  .image-chapter .landing-technique-layout,
+  .image-tip-layout {
+    grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+    column-gap: clamp(3rem, 6vw, 6rem);
+  }
+}

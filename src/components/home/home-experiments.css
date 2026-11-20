@@ -1,0 +1,62 @@
+.home-input-experiment {
+  min-width: 0;
+}
+.home-signal-artwork {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.home-signal-surface {
+  fill: var(--card);
+  stroke: var(--control);
+}
+.home-signal-label {
+  fill: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.home-signal-muted {
+  stroke: var(--control);
+}
+.home-example-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.home-signal-cells rect {
+  fill: var(--muted);
+}
+.home-signal-cells rect[data-on='true'] {
+  fill: var(--primary);
+}
+.home-signal-output {
+  fill: var(--foreground);
+  font-size: 19px;
+  font-weight: 600;
+}
+.home-signal-active {
+  stroke: var(--primary);
+}
+.learning-area-artwork {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--experiment-accent);
+}
+.learning-area-artwork .artwork-surface {
+  fill: var(--card);
+  stroke: var(--control);
+}
+.learning-area-artwork .artwork-accent {
+  stroke: currentColor;
+}
+@variant max-sm {
+  .home-signal-label {
+    font-size: 19px;
+  }
+  .home-signal-output {
+    font-size: 25px;
+  }
+}
