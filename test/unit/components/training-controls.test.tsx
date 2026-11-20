@@ -34,7 +34,9 @@ describe('training and prediction controls', () => {
     rerender(<TrainingControls {...base} hasPendingUploads={false} hasDuplicateNames />);
     expect(screen.getByText('Bitte gib allen Klassen einen eindeutigen Namen.')).toBeTruthy();
     rerender(<TrainingControls {...base} hasPendingUploads={false} canTrain />);
-    fireEvent.click(screen.getByRole('button', { name: 'Modell trainieren' }));
+    const train = screen.getByRole<HTMLButtonElement>('button', { name: 'Modell trainieren' });
+    train.focus();
+    fireEvent.click(train);
     expect(onTrain).toHaveBeenCalledOnce();
     expect(screen.queryByRole('button', { name: 'Weiter zur Vorhersage' })).toBeNull();
     rerender(
@@ -45,9 +47,12 @@ describe('training and prediction controls', () => {
       />,
     );
     expect(screen.getByText('Das Modell wird vorbereitet.')).toBeTruthy();
-    expect((screen.getByRole('button', { name: /Trainiere/ }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
+    expect(screen.getByRole('button', { name: /Trainiere/ })).toBe(train);
+    expect(document.activeElement).toBe(train);
+    expect(train.disabled).toBe(false);
+    expect(train.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(train);
+    expect(onTrain).toHaveBeenCalledOnce();
     rerender(
       <TrainingControls
         {...base}
@@ -60,6 +65,7 @@ describe('training and prediction controls', () => {
     expect(screen.getByRole('status').textContent).toContain('Training läuft');
     rerender(<TrainingControls {...base} hasPendingUploads={false} hasTrainedModel canTrain />);
     expect(screen.getByRole('status').textContent).toContain('Training abgeschlossen');
+    expect(document.activeElement).toBe(train);
     fireEvent.click(screen.getByRole('button', { name: 'Weiter zur Vorhersage' }));
     expect(onPredict).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole('button', { name: 'Modell neu trainieren' }));

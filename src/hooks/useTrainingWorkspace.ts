@@ -24,19 +24,19 @@ function reportOperationError(category: Exclude<ErrorCategory, 'model'>, message
 }
 
 function useTrainingResources() {
-  const { error, setError } = useAppError();
+  const { error, setError, clearError } = useAppError();
   const consent = useConsentFlow();
   const [hasTrainedModel, setHasTrainedModel] = useState(false);
   const predictVideoRef = useRef<HTMLVideoElement>(null);
   const mainHeadingRef = useRef<HTMLHeadingElement>(null);
   const models = useModelLoader(consent.hasConsented, setError);
-  const canUseModels =
-    !models.isModelLoading && models.classifier !== null && models.mobilenetModel !== null;
+  const { setClassifier } = models;
+  const canUseModels = !models.isModelLoading && models.mobilenetModel !== null;
   const showCameraPrompt = consent.showCameraModal && canUseModels;
   const camera = useCameraStream(
     consent.cameraConsent && canUseModels,
     models.isModelLoading,
-    setError,
+    reportCameraError,
   );
   const prediction = usePredictionLoop(
     models.classifier,
@@ -46,10 +46,20 @@ function useTrainingResources() {
     camera.facingMode === 'user',
   );
   const { stopPredicting, startPredicting: activatePrediction } = prediction;
-  const invalidateModel = useCallback(() => {
-    setHasTrainedModel(false);
+  function reportCameraError(category: 'camera', message: string) {
     stopPredicting();
-  }, [stopPredicting]);
+    setError(category, message);
+  }
+  const { retryCamera: requestCameraRetry } = camera;
+  const retryCamera = useCallback(() => {
+    if (error?.category === 'camera') clearError();
+    requestCameraRetry();
+  }, [error?.category, clearError, requestCameraRetry]);
+  const invalidateModel = useCallback(() => {
+    stopPredicting();
+    setClassifier(null);
+    setHasTrainedModel(false);
+  }, [setClassifier, stopPredicting]);
   const startPredicting = useCallback(() => {
     if (hasTrainedModel && camera.stream) activatePrediction();
   }, [hasTrainedModel, camera.stream, activatePrediction]);
@@ -62,7 +72,7 @@ function useTrainingResources() {
     error,
     consent,
     models,
-    camera,
+    camera: { ...camera, retryCamera },
     prediction,
     invalidateModel,
     startPredicting,

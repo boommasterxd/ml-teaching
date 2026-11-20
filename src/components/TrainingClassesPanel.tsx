@@ -30,6 +30,7 @@ interface TrainingClassesPanelProps {
   facingMode: 'user' | 'environment';
   isCameraPending: boolean;
   isCameraSwitching: boolean;
+  cameraFailed: boolean;
   onEnableCamera?: () => void;
   onSwitchCamera: () => void;
   /** Ref to the main heading element for programmatic focus management. */
@@ -39,14 +40,21 @@ interface TrainingClassesPanelProps {
   /** Called when the user clicks the "Add class" button. */
   onAddClass: () => void;
   onContinue: () => void;
+  onContinueIntent: () => void;
   canContinue: boolean;
 }
+
+type CollectionContinueProps = Pick<
+  TrainingClassesPanelProps,
+  'canContinue' | 'onContinue' | 'onContinueIntent'
+>;
 
 function CollectionContinue({
   canContinue,
   onContinue,
+  onContinueIntent,
   placement,
-}: Pick<TrainingClassesPanelProps, 'canContinue' | 'onContinue'> & {
+}: CollectionContinueProps & {
   placement: 'top' | 'bottom';
 }) {
   const top = placement === 'top';
@@ -63,6 +71,9 @@ function CollectionContinue({
       disabled={!canContinue}
       aria-label="Weiter zum Training"
       onClick={onContinue}
+      onPointerEnter={onContinueIntent}
+      onFocus={onContinueIntent}
+      onPointerDown={onContinueIntent}
     >
       <span className="sm:hidden">Weiter</span>
       <span className="hidden sm:inline">Weiter zum Training</span>
@@ -75,7 +86,8 @@ function CollectionHeader({
   mainHeadingRef,
   canContinue,
   onContinue,
-}: Pick<TrainingClassesPanelProps, 'mainHeadingRef' | 'canContinue' | 'onContinue'>) {
+  onContinueIntent,
+}: Pick<TrainingClassesPanelProps, 'mainHeadingRef'> & CollectionContinueProps) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:gap-3">
       <Heading
@@ -87,7 +99,12 @@ function CollectionHeader({
       >
         Bilder sammeln
       </Heading>
-      <CollectionContinue canContinue={canContinue} onContinue={onContinue} placement="top" />
+      <CollectionContinue
+        canContinue={canContinue}
+        onContinue={onContinue}
+        onContinueIntent={onContinueIntent}
+        placement="top"
+      />
       {!canContinue && (
         <Text variant="muted" className="col-span-full max-w-prose text-pretty">
           Mindestens {ML.MIN_CLASSES} Klassen, eindeutige Namen und je {ML.MIN_IMAGES_PER_CLASS}{' '}
@@ -103,7 +120,8 @@ function CollectionActions({
   onAddClass,
   canContinue,
   onContinue,
-}: Pick<TrainingClassesPanelProps, 'classes' | 'onAddClass' | 'canContinue' | 'onContinue'>) {
+  onContinueIntent,
+}: Pick<TrainingClassesPanelProps, 'classes' | 'onAddClass'> & CollectionContinueProps) {
   const pending = useRef<{ position: number; focusName: boolean } | null>(null);
   const atLimit = classes.length >= ML.MAX_CLASSES;
   const addLabel = atLimit
@@ -137,7 +155,12 @@ function CollectionActions({
         <Plus data-icon="inline-start" aria-hidden="true" />
         Neue Klasse
       </Button>
-      <CollectionContinue canContinue={canContinue} onContinue={onContinue} placement="bottom" />
+      <CollectionContinue
+        canContinue={canContinue}
+        onContinue={onContinue}
+        onContinueIntent={onContinueIntent}
+        placement="bottom"
+      />
     </div>
   );
 }
@@ -149,6 +172,7 @@ export default function TrainingClassesPanel({
   facingMode,
   isCameraPending,
   isCameraSwitching,
+  cameraFailed,
   onEnableCamera,
   onSwitchCamera,
   mainHeadingRef,
@@ -156,6 +180,7 @@ export default function TrainingClassesPanel({
   entryReady = true,
   onAddClass,
   onContinue,
+  onContinueIntent,
   canContinue,
 }: TrainingClassesPanelProps) {
   const activeCameraTrigger = useRef<HTMLButtonElement>(null);
@@ -188,7 +213,7 @@ export default function TrainingClassesPanel({
       onEnableCamera && (
         <Button variant="outline" onClick={onEnableCamera}>
           <Camera data-icon="inline-start" aria-hidden="true" />
-          Kamera aktivieren
+          {cameraFailed ? 'Kamera erneut verbinden' : 'Kamera aktivieren'}
         </Button>
       )
     ));
@@ -198,6 +223,7 @@ export default function TrainingClassesPanel({
       <CollectionHeader
         mainHeadingRef={mainHeadingRef}
         onContinue={onContinue}
+        onContinueIntent={onContinueIntent}
         canContinue={canContinue}
       />
       <EntryReveal kind="text" active={entryReady} scrollOnly>
@@ -234,6 +260,7 @@ export default function TrainingClassesPanel({
         onAddClass={onAddClass}
         canContinue={canContinue}
         onContinue={onContinue}
+        onContinueIntent={onContinueIntent}
       />
     </section>
   );

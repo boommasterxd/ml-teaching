@@ -1,4 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import policy from '../../../.github/cache-policy.json';
 import { selectWork } from '../../../.github/scripts/plan-ci.ts';
@@ -6,13 +9,63 @@ import { selectWork } from '../../../.github/scripts/plan-ci.ts';
 const read = (file: string) => readFileSync(`.github/${file}`, 'utf8');
 const ci = read('workflows/ci.yml');
 const producer = read('workflows/dependency-cache.yml');
+const reconciliation = read('workflows/dependency-cache-reconciliation.yml');
 const cleanup = read('workflows/cache-lifecycle.yml');
 const steps = (yaml: string) => yaml.split(/(?=^      - )/m).slice(1);
+const revision = 'a'.repeat(40);
+const cacheKey = `mlteaching-npm-v1-Linux-x64-node26-npm11-${'b'.repeat(64)}`;
+
+function confirmScheduleMiss(mainSha: string, cacheInventory: string) {
+  const confirm = steps(reconciliation).find((step) => step.includes('id: confirm'));
+  const command = confirm?.split('run: |\n')[1]?.split('\n\n')[0];
+  if (!command) throw new Error('Missing cache confirmation command');
+  const directory = mkdtempSync(path.join(tmpdir(), 'npm-cache-reconciliation-'));
+  const output = path.join(directory, 'outputs');
+  try {
+    writeFileSync(output, '');
+    const { status, stderr } = spawnSync(
+      'bash',
+      [
+        '-c',
+        `
+        gh() {
+          case "$*" in
+            "api repos/$GITHUB_REPOSITORY/git/ref/heads/main --jq .object.sha")
+              printf '%s\\n' "$MAIN_SHA" ;;
+            "api -X GET repos/$GITHUB_REPOSITORY/actions/caches -f ref=refs/heads/main -f key=$CACHE_KEY")
+              printf '%s\\n' "$CACHE_INVENTORY" ;;
+            *) return 1 ;;
+          esac
+        }
+        timeout() { shift; "$@"; }
+        ${command}
+      `,
+      ],
+      {
+        encoding: 'utf8',
+        timeout: 5000,
+        env: {
+          NODE_ENV: 'test',
+          PATH: process.env.PATH,
+          GITHUB_REPOSITORY: policy.repository,
+          GITHUB_SHA: revision,
+          GITHUB_OUTPUT: output,
+          CACHE_KEY: cacheKey,
+          MAIN_SHA: mainSha,
+          CACHE_INVENTORY: cacheInventory,
+        },
+      },
+    );
+    return { status, stderr, output: readFileSync(output, 'utf8') };
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
 
 describe('dependency-cache workflow contracts', () => {
   it('shares complete dependency identities and covers every producer input trigger', () => {
-    const hashes = [...`${ci}\n${producer}`.matchAll(/CACHE_INPUT_HASH: (.+)/g)];
-    expect(hashes).toHaveLength(3);
+    const hashes = [...`${ci}\n${producer}\n${reconciliation}`.matchAll(/CACHE_INPUT_HASH: (.+)/g)];
+    expect(hashes).toHaveLength(4);
     expect(new Set(hashes.map((match) => match[1])).size).toBe(1);
     const paths = producer.split('  workflow_dispatch:')[0];
     for (const input of policy.producerInputs) {
@@ -20,6 +73,9 @@ describe('dependency-cache workflow contracts', () => {
     }
     expect(policy.retiredPrefixes).toEqual([]);
     expect(selectWork(['.github/workflows/dependency-cache.yml']).reason).toBe('full');
+    expect(selectWork(['.github/workflows/dependency-cache-reconciliation.yml']).reason).toBe(
+      'full',
+    );
     expect(selectWork(['.github/scripts/cache-lifecycle/core.cjs']).reason).toBe('full');
   });
 
@@ -46,17 +102,62 @@ describe('dependency-cache workflow contracts', () => {
     expect(producer).toContain(`github.repository == '${policy.repository}'`);
     expect(producer).toContain("github.ref == 'refs/heads/main'");
     expect(producer).toContain("github.event.repository.default_branch == 'main'");
+    expect(producer).toContain('ref: ${{ github.sha }}');
     expect(producer).toContain('key: ${{ steps.cache.outputs.cache-primary-key }}');
     expect(producer).toContain('CACHE_PRIMARY_KEY: ${{ steps.cache.outputs.cache-primary-key }}');
     expect(producer).toContain('name: cache-lifecycle-receipts-${{ github.run_attempt }}');
     expect(producer).toContain('retention-days: 7');
     expect(producer).not.toMatch(/npm run (?:ci|build|test)/);
+    const install = steps(producer).find((step) => step.includes('run: npm ci --no-audit'));
+    expect(install).toContain("if: steps.cache.outputs.cache-hit != 'true'");
     expect(producer).toContain('needs: warm');
     expect(policy.producerWorkflows[0]).toEqual({
       name: 'Dependency cache',
       path: '.github/workflows/dependency-cache.yml',
       job: 'Warm npm cache',
     });
+  });
+
+  it('isolates scheduled cache lookups from the existing main-only producer', () => {
+    expect(reconciliation).toContain('  schedule:');
+    expect(reconciliation).toContain('group: dependency-cache-reconciliation-main');
+    expect(reconciliation).toContain(`github.repository == '${policy.repository}'`);
+    expect(reconciliation).toContain("github.ref == 'refs/heads/main'");
+    expect(reconciliation).toContain("github.event.repository.default_branch == 'main'");
+    expect(reconciliation).toContain('ref: ${{ github.sha }}');
+    expect(reconciliation).toContain('lookup-only: true');
+    expect(reconciliation).not.toMatch(/restore-keys:|npm ci|actions\/cache\/save@/);
+    const [probe, request] = reconciliation.split('  request-warmup:\n');
+    expect(probe).not.toContain('actions: write');
+    expect(request).toContain("if: needs.probe.outputs.missing == 'true'");
+    expect(request).toContain('actions: write');
+    expect(request).toContain('actions/workflows/dependency-cache.yml/dispatches" -f ref=main');
+    expect(request).not.toContain('uses:');
+  });
+
+  it('requests warming only when the live main revision has no cache entry', () => {
+    const miss = '{"total_count":0,"actions_caches":[]}';
+    const ready = confirmScheduleMiss(revision, miss);
+    expect(ready.status, ready.stderr).toBe(0);
+    expect(ready.output).toBe('missing=true\n');
+
+    const advanced = confirmScheduleMiss('c'.repeat(40), miss);
+    expect(advanced.status).toBe(0);
+    expect(advanced.output).toBe('');
+
+    const raced = confirmScheduleMiss(
+      revision,
+      JSON.stringify({
+        total_count: 1,
+        actions_caches: [{ ref: 'refs/heads/main', key: cacheKey, size_in_bytes: 1024 }],
+      }),
+    );
+    expect(raced.status).toBe(0);
+    expect(raced.output).toBe('');
+
+    const unverified = confirmScheduleMiss(revision, '{"total_count":0}');
+    expect(unverified.status).not.toBe(0);
+    expect(unverified.output).toBe('');
   });
 
   it('keeps privileged completion cleanup on trusted main without executing PR code', () => {

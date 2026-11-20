@@ -7,7 +7,7 @@
  */
 import { useRef, useCallback, useEffect } from 'react';
 import type * as tf from '@tensorflow/tfjs-core';
-import { loadTensorFlow } from '../lib/ml-runtime';
+import { loadTensorFlow, retainModel } from '../lib/ml-runtime';
 import { drawFeatureFrame } from '../lib/feature-frame';
 import type { MLImage } from '../types/ml';
 import { ML } from '../constants';
@@ -90,6 +90,7 @@ export function useImageFeatureExtraction(mobilenetModel: FeatureExtractor | nul
       if (!mobilenetModel || !mountedRef.current) return null;
 
       if (!(await acquire(waitForTurn))) return null;
+      let releaseModel: (() => void) | undefined;
       let img: tf.Tensor | null = null;
       let features: tf.Tensor | null = null;
 
@@ -97,11 +98,13 @@ export function useImageFeatureExtraction(mobilenetModel: FeatureExtractor | nul
         if (!mountedRef.current) return null;
         const runtime = await loadTensorFlow();
         if (!mountedRef.current) return null;
+        releaseModel = retainModel(mobilenetModel);
+        if (!releaseModel) return null;
         thumbnailCanvasRef.current ??= document.createElement('canvas');
         const canvas = thumbnailCanvasRef.current;
         if (!drawFeatureFrame(source, canvas, mirror)) return null;
         img = runtime.browser.fromPixels(canvas);
-        features = mobilenetModel.infer(img, true) as tf.Tensor;
+        features = mobilenetModel.infer(img);
         const featureArray = Array.from(await features.data()) as number[];
         if (!mountedRef.current) return null;
 
@@ -115,6 +118,7 @@ export function useImageFeatureExtraction(mobilenetModel: FeatureExtractor | nul
       } finally {
         img?.dispose();
         if (features) features.dispose();
+        releaseModel?.();
         release();
       }
     },

@@ -150,6 +150,44 @@
   --radius-3xl: calc(var(--radius) + 12px);
 }
 
+@utility control-focus {
+  outline-color: var(--control-focus-color, var(--primary));
+
+  &:is(:focus-visible, :has(> input:focus-visible)) {
+    outline-style: solid;
+    outline-width: 3px;
+    outline-offset: var(--control-focus-offset, 2px);
+  }
+
+  @media (forced-colors: active) {
+    outline-color: Highlight;
+  }
+}
+
+@utility control-focus-inset {
+  --control-focus-offset: -3px;
+}
+
+@utility control-focus-media {
+  --control-focus-offset: -3px;
+  --control-focus-color: var(--foreground);
+
+  &:focus-visible::after {
+    position: absolute;
+    inset: 3px;
+    border: 2px solid var(--background);
+    border-radius: inherit;
+    content: '';
+    pointer-events: none;
+  }
+
+  @media (forced-colors: active) {
+    &:focus-visible::after {
+      content: none;
+    }
+  }
+}
+
 @layer base {
   * {
     border-color: var(--border);

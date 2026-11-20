@@ -21,7 +21,7 @@ import type { MLImage } from '../types/ml';
 interface ImageThumbnailProps {
   /** The training image to render. */
   img: MLImage;
-  /** Zero-based position in the image list, used for the alt text. */
+  /** Zero-based position in the class's image list. */
   imgIndex: number;
   /** Whether the gallery is currently in bulk-selection mode. */
   isSelectionMode: boolean;
@@ -49,6 +49,7 @@ const ImageThumbnail = memo(function ImageThumbnail({
   onToggleSelect,
   onImageClick,
 }: ImageThumbnailProps) {
+  const imageNumber = imgIndex + 1;
   return (
     <Button
       variant="thumbnail"
@@ -57,9 +58,7 @@ const ImageThumbnail = memo(function ImageThumbnail({
       data-selection-mode={isSelectionMode || undefined}
       aria-pressed={isSelectionMode ? isSelected : undefined}
       aria-haspopup={isSelectionMode ? undefined : 'dialog'}
-      aria-label={
-        isSelectionMode ? (isSelected ? 'Bild abwählen' : 'Bild auswählen') : 'Bild vergrößern'
-      }
+      aria-label={`Bild ${imageNumber} ${isSelectionMode ? 'auswählen' : 'vergrößern'}`}
       onPointerEnter={isSelectionMode ? undefined : prepareTrainingDialogs}
       onFocus={isSelectionMode ? undefined : prepareTrainingDialogs}
       onPointerDown={isSelectionMode ? undefined : prepareTrainingDialogs}
@@ -67,7 +66,7 @@ const ImageThumbnail = memo(function ImageThumbnail({
     >
       <NextImage
         src={img.dataUrl}
-        alt={`Trainingsbeispiel ${imgIndex + 1}`}
+        alt={`Trainingsbeispiel ${imageNumber}`}
         width={224}
         height={224}
         unoptimized

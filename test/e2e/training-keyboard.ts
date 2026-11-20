@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page, type Route } from '@playwright/test';
 import { learningPaths } from '../../src/lib/learning-paths';
 import { expectAccessible } from './browser-checks';
 
@@ -236,6 +236,35 @@ export async function expectThemeKeepsTraining(page: Page) {
   ).toBeEnabled();
 }
 
+export async function openDeferredTrainingStep(page: Page, trigger: Locator, heading: Locator) {
+  const asset = '**/_next/static/chunks/*.js';
+  const pending = Promise.withResolvers<void>();
+  let loading = false;
+  async function hold(route: Route) {
+    loading = true;
+    await pending.promise;
+    await route.continue();
+  }
+
+  await page.route(asset, hold);
+  try {
+    await trigger.focus();
+    await expect.poll(() => loading).toBe(true);
+    await expect(heading).toHaveCount(0);
+    await page.keyboard.press('Enter');
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Ansicht wird geladen' }),
+    ).toBeVisible();
+    await expect(trigger).toBeFocused();
+    await expect(heading).toHaveCount(0);
+    pending.resolve();
+    await expect(heading).toBeFocused();
+  } finally {
+    pending.resolve();
+    await page.unroute(asset, hold);
+  }
+}
+
 export async function expectLivePredictionControls(page: Page) {
   const preview = page.getByLabel('Kameravorschau für Vorhersage');
   const space = page.getByRole('figure', { name: 'Merkmalsraum' });
@@ -278,6 +307,14 @@ export async function expectLivePredictionControls(page: Page) {
   await expect(space).toBeVisible();
   await expect(marker).toHaveCount(0);
   await recordStopSizes();
+  await start.press('Enter');
+  await space.scrollIntoViewIfNeeded();
+  await expect(marker).toBeVisible();
+  const describe = space.getByRole('button', { name: 'Diagramm beschreiben', exact: true });
+  await describe.press('Enter');
+  await expect(space.getByRole('heading', { name: 'Diagrammbeschreibung' })).toBeFocused();
+  await expect(space.getByText(/^Kamerabild:/)).toBeVisible();
+  await expectAccessible(page);
 }
 
 async function observePredictionSizes(frame: ReturnType<Page['locator']>) {
@@ -323,8 +360,9 @@ export async function expectPreviewDeletion(
   page: Page,
   expectAccessible: (page: Page) => Promise<void>,
 ) {
-  await page.getByRole('button', { name: 'Bild vergrößern' }).first().click();
-  const preview = page.getByRole('dialog', { name: 'Bild Vorschau' });
+  const gallery = page.getByRole('region', { name: /Trainingsbilder von Klasse 1:/ });
+  await gallery.getByRole('button', { name: 'Bild 1 vergrößern', exact: true }).click();
+  const preview = page.getByRole('dialog', { name: 'Bild 1 aus Klasse 1' });
   await expectAccessible(page);
   await preview.getByRole('button', { name: 'Bild löschen' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -336,9 +374,21 @@ export async function expectPreviewDeletion(
 export async function expectGalleryFocusAcrossResize(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
   const gallery = page.getByRole('region', { name: /Trainingsbilder von Klasse 1:/ });
-  const thumbnail = gallery
-    .getByRole('img', { name: 'Trainingsbeispiel 5', exact: true })
-    .locator('..');
+  const thumbnail = gallery.getByRole('button', { name: 'Bild 5 vergrößern', exact: true });
+  const selection = page.getByRole('button', { name: 'Mehrere markieren', exact: true }).first();
+  await selection.press('Enter');
+  const cancel = page.getByRole('button', { name: 'Auswahl abbrechen', exact: true });
+  await expect(cancel).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(gallery).toBeFocused();
+  const first = gallery.getByRole('button', { name: 'Bild 1 auswählen', exact: true });
+  await first.press('Space');
+  await expect(first).toHaveAttribute('aria-pressed', 'true');
+  await cancel.focus();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: '1 ausgewähltes Bild löschen' })).toBeFocused();
+  await cancel.press('Enter');
+  await expect(selection).toBeFocused();
   const row = gallery.locator('[style*="grid-template-columns"]').first();
   await expect(row).toHaveCSS('grid-template-columns', /^(\S+\s+){3}\S+$/);
   await thumbnail.focus();
@@ -347,7 +397,7 @@ export async function expectGalleryFocusAcrossResize(page: Page) {
   await expect(row).toHaveCSS('grid-template-columns', /^(\S+\s+){5}\S+$/);
   await expect(thumbnail).toBeFocused();
   await page.keyboard.press('Enter');
-  const preview = page.getByRole('dialog', { name: 'Bild Vorschau' });
+  const preview = page.getByRole('dialog', { name: 'Bild 5 aus Klasse 1' });
   await expect(preview).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(thumbnail).toBeFocused();

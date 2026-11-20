@@ -43,7 +43,7 @@ development startup. Consult the installed version's framework documentation und
 
 ## Appearance and optional clients
 
-Redline's shared light/dark tokens live in `src/site-foundation.css`, with landing rules
+ML Teaching's shared light/dark tokens live in `src/site-foundation.css`, with landing rules
 in `src/components/hero/hero.css`. `src/lib/fonts.ts` loads the committed local Geist
 WOFF2 asset; no font account, key or runtime font service is required. Its notices
 are in [third-party notices](third-party-notices.md).

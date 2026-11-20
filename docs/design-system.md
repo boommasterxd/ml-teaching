@@ -2,7 +2,7 @@
 
 ## Foundation
 
-Redline uses red primary actions and rounded glass surfaces. Light mode pairs
+ML Teaching uses red primary actions and rounded glass surfaces. Light mode pairs
 dark text with an off-white background and white panels. Dark mode uses light
 text, a black background and smoked glass panels. Local Geist defines both headings
 and interface text. `src/lib/fonts.ts` preloads its Latin WOFF2 asset through
@@ -86,8 +86,10 @@ in their cards.
 The homepage hero actions sit side by side with room to wrap. The primary pill
 uses a red fill and the secondary pill uses a translucent surface.
 The default red Button has a one-pixel white highlight along its inside top edge.
-Outline Buttons use a thin border and a subtle neutral shadow. Keyboard focus
-adds its own ring.
+Outline Buttons use a thin border and a subtle neutral shadow. Shared controls use
+a solid keyboard focus outline, with the system Highlight color in forced colors.
+Quiz cards inset the outline to keep it visible within clipped surfaces; thumbnails
+add a contrasting edge against image content.
 The `mobile-action-pair` rule gives related example actions equal-width columns
 across the available space, with wrapping labels and 44px minimum touch height.
 The reward experiment places its separate reset action across both columns.
@@ -146,9 +148,10 @@ and stacks them when the available dialog width is smaller.
 DialogTitle places optional 1rem icons beside the first line of the heading.
 Confirmations use muted icons. Model loading, training and the appearance menu use
 the shared shadcn Spinner with its Animate UI glyph. Retryable gallery and example
-loading errors use the shared Alert.
+loading errors use the shared Alert, as does the training-panel retry fallback.
 The everyday quiz composes standard
-Cards, whole-card answer Buttons and contextual Alerts; notices use Alert. Badges use default, secondary, outline and
+Cards, whole-card answer Buttons and contextual Alerts, including its feedback retry fallback.
+Notices use Alert. Badges use default, secondary, outline and
 destructive variants for their roles. Consent groups and class-name
 editors reuse FieldSet/Legend/Group/Label/Error as applicable, with shared Input
 and DialogTitle variants. Semantic color and state tokens live in `src/site-foundation.css`.
@@ -360,8 +363,8 @@ Both trigger lists are delivered in static HTML and CSS selects the visible list
 at the shared breakpoint.
 Base UI owns keyboard navigation and the trigger-to-panel relationship.
 Animate UI owns the panel transitions and the moving row highlight.
-Each header trigger keeps its static Lucide chevron through hydration. Its
-rotation uses the existing popup state and CSS reduced-motion rules.
+Each header trigger uses the shared Animate UI chevron with a static glyph through
+hydration. Its rotation follows popup state and reduced-motion rules.
 The small desktop and mobile navigation panel module ships with the header so
 opening can start without a script request. Base UI mounts the portal and its
 active rows on opening. Pointer, keyboard and touch intent on enabled links
@@ -393,8 +396,8 @@ The class marker, gallery illustration and selected thumbnail badge use the same
 theme-aware class accent. Class names identify each group. Class counters show
 progress toward the training minimum, then the collected total;
 the first class card and the prediction step offer camera activation after the
-optional camera prompt is declined. A failed camera request shows a persistent
-workspace alert with a document reload action. Local image uploads remain available.
+optional camera prompt is declined. A failed camera request or interrupted track
+offers an explicit retry. Local image uploads remain available.
 Each capture preview places the shared camera switch in its lower-right corner.
 The completed training
 status offers an action that opens the prediction step without starting the camera preview.
@@ -407,6 +410,8 @@ During live prediction, it shows a scatter plot with one point per training imag
 and a diamond for the current camera frame. When the panel uses two columns, the
 camera frame stretches to the bottom of the legend. The title identifies the 2D
 projection, and the figure description explains it for assistive technology.
+An optional text description captures the last displayed projection as a stable
+snapshot, including class regions and examples nearest to the camera point.
 The plot reuses the lesson's diamond, class palette and typography. A packed SVG
 path per class keeps the point cloud separate from the Animate UI marker motion.
 The workspace panels, dialogs, gallery and camera preview use shared theme and media tokens.
@@ -530,8 +535,9 @@ Reduced motion uses the library's instant height change and opacity feedback.
   keeps the animation rules in external CSS for the static site's strict hash CSP.
   Explicit return links use `nav-back` to mirror the direction. Header, footer
   and ThemeProvider remain outside this persistent boundary. Query/hash changes and subsequent updates leave
-  the main content out of capture. The legal Back control applies those same
-  Flow layers to its native history traversal. The browser owns this capture
+  the main content out of capture. Eligible browser Back and Forward traversals
+  use the Navigation API's precommit support when available; the legal Back control
+  also applies Flow layers to native history traversal. The browser owns this capture
   because a cached history restore can bypass React's view transition. If the
   restored page does not commit promptly, the capture yields to normal navigation.
   Reduced motion opts out of page capture. Unsupported browsers retain

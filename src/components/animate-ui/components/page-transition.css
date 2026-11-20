@@ -8,13 +8,13 @@
 :root:active-view-transition-type(nav-back) {
   --page-direction: -1;
 }
-:root:active-view-transition-type(history-back) [data-route-capture] {
+:root:active-view-transition-type(history-back, history-forward) [data-route-capture] {
   view-transition-class: page-flow;
 }
-:root:active-view-transition-type(history-back) [data-route-capture='page-a'] {
+:root:active-view-transition-type(history-back, history-forward) [data-route-capture='page-a'] {
   view-transition-name: page-a;
 }
-:root:active-view-transition-type(history-back) [data-route-capture='page-b'] {
+:root:active-view-transition-type(history-back, history-forward) [data-route-capture='page-b'] {
   view-transition-name: page-b;
 }
 

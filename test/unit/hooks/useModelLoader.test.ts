@@ -11,6 +11,9 @@ import { useModelLoader } from '@/hooks/useModelLoader';
 import type { ModelLoaderFunctions } from '@/hooks/useModelLoader';
 import type { Classifier, FeatureExtractor } from '@/types/ml-models';
 
+const { loadMobileNetEmbedding } = vi.hoisted(() => ({ loadMobileNetEmbedding: vi.fn() }));
+vi.mock('@/lib/mobilenet-embedding', () => ({ loadMobileNetEmbedding }));
+
 // ─── Mock Factories ──────────────────────────────────────────────────────────
 
 /**
@@ -24,7 +27,7 @@ function makeClassifier(): Classifier {
     predictClass: vi.fn().mockResolvedValue({ label: 'A', confidences: { A: 1 } }),
     getNumClasses: vi.fn(() => 0),
     dispose: vi.fn(),
-    clearAllClasses: vi.fn(),
+    setClassifierDataset: vi.fn(),
   };
 }
 
@@ -36,6 +39,7 @@ function makeClassifier(): Classifier {
 function makeFeatureExtractor(): FeatureExtractor {
   return {
     infer: vi.fn(() => ({ dispose: vi.fn() })) as unknown as FeatureExtractor['infer'],
+    dispose: vi.fn(),
   };
 }
 
@@ -74,6 +78,7 @@ describe('useModelLoader', () => {
 
   beforeEach(() => {
     onError.mockClear();
+    loadMobileNetEmbedding.mockReset();
     // Suppress console.error output from expected error paths under test.
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -249,6 +254,55 @@ describe('useModelLoader', () => {
   });
 
   describe('Abort bei Unmount', () => {
+    it('aborts the previous model request and waits for its late GPU work before reentry', async () => {
+      const pending = Promise.withResolvers<FeatureExtractor>();
+      const oldModel = makeFeatureExtractor();
+      const newModel = makeFeatureExtractor();
+      loadMobileNetEmbedding.mockReturnValueOnce(pending.promise).mockResolvedValueOnce(newModel);
+      const localLoaders = () => ({
+        initBackend: vi.fn().mockResolvedValue(undefined),
+        createClassifier: vi.fn().mockResolvedValue(makeClassifier()),
+        warmup: vi.fn().mockResolvedValue(undefined),
+      });
+
+      const first = renderHook(() => useModelLoader(true, onError, localLoaders()));
+      await act(async () => vi.dynamicImportSettled());
+      expect(loadMobileNetEmbedding).toHaveBeenCalledOnce();
+      const signal = loadMobileNetEmbedding.mock.calls[0][0] as AbortSignal;
+      first.unmount();
+      expect(signal.aborted).toBe(true);
+
+      const second = renderHook(() => useModelLoader(true, onError, localLoaders()));
+      await act(async () => vi.dynamicImportSettled());
+      expect(loadMobileNetEmbedding).toHaveBeenCalledOnce();
+      expect(second.result.current.isModelLoading).toBe(true);
+
+      await act(async () => pending.resolve(oldModel));
+      expect(oldModel.dispose).toHaveBeenCalledOnce();
+      expect(loadMobileNetEmbedding).toHaveBeenCalledTimes(2);
+      expect(second.result.current.mobilenetModel).toBe(newModel);
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('retires the loaded graph after an unfinished GPU warmup settles', async () => {
+      const classifier = makeClassifier();
+      const model = makeFeatureExtractor();
+      const warmup = Promise.withResolvers<void>();
+      const loaders = makeSuccessfulLoaderFns(classifier, model);
+      loaders.warmup = vi.fn(() => warmup.promise);
+      const { result, unmount } = renderHook(() => useModelLoader(true, onError, loaders));
+      await act(async () => {});
+      expect(loaders.warmup).toHaveBeenCalledWith(model, expect.any(AbortSignal));
+      expect(result.current.mobilenetModel).toBeNull();
+
+      unmount();
+      expect(model.dispose).not.toHaveBeenCalled();
+      await act(async () => warmup.resolve());
+      expect(model.dispose).toHaveBeenCalledOnce();
+      expect(classifier.dispose).toHaveBeenCalledOnce();
+      expect(onError).not.toHaveBeenCalled();
+    });
+
     it('disposes models and the latest replacement classifier on unmount', async () => {
       const initial = makeClassifier();
       const replacement = makeClassifier();

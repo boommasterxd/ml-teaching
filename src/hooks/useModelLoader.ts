@@ -6,6 +6,8 @@ import {
   initializeBackend,
   loadClassifierModule,
   loadTensorFlow,
+  retainModel,
+  retireModel,
 } from '../lib/ml-runtime';
 import type { ErrorCategory } from '../types/errors';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
@@ -53,32 +55,51 @@ export async function loadWithRetry<T>(
 
 type LoadingStep<T> = (setText: (text: string) => void, signal: AbortSignal) => Promise<T>;
 
-/** Dispose a late model after timeout/abort; MobileNet cannot cancel its network request. */
-function awaitModel(
-  load: Promise<FeatureExtractor>,
-  signal: AbortSignal,
-): Promise<FeatureExtractor> {
+type MobileNetLoader = (signal: AbortSignal) => Promise<FeatureExtractor>;
+let pendingModelLoad: Promise<FeatureExtractor> | undefined;
+
+async function loadWhenIdle(load: MobileNetLoader, signal: AbortSignal) {
+  // An already-started GPU warmup cannot be cancelled. Do not start another
+  // graph download until the abandoned attempt has finished releasing it.
+  while (pendingModelLoad) {
+    await pendingModelLoad.catch(() => {});
+    signal.throwIfAborted();
+  }
+  signal.throwIfAborted();
+  pendingModelLoad = load(signal);
+  try {
+    return await pendingModelLoad;
+  } finally {
+    pendingModelLoad = undefined;
+  }
+}
+
+/** Cancel the HTTP requests while allowing an already-started GPU read to finish. */
+function awaitModel(loadModel: MobileNetLoader, parent: AbortSignal): Promise<FeatureExtractor> {
+  const controller = new AbortController();
+  const signal = AbortSignal.any([parent, controller.signal]);
   return new Promise((resolve, reject) => {
     let finished = false;
     const finish = () => {
       finished = true;
       clearTimeout(timer);
       signal.removeEventListener('abort', abort);
+      controller.abort();
     };
     const abort = () => {
       finish();
       reject(signal.reason);
     };
-    const timer = setTimeout(() => {
-      finish();
-      reject(new DOMException('MobileNet load timed out', 'TimeoutError'));
-    }, MODEL_LOAD_RETRY.LOAD_TIMEOUT_MS);
+    const timer = setTimeout(
+      () => controller.abort(new DOMException('MobileNet load timed out', 'TimeoutError')),
+      MODEL_LOAD_RETRY.LOAD_TIMEOUT_MS,
+    );
     signal.addEventListener('abort', abort, { once: true });
     if (signal.aborted) abort();
-    load.then(
+    loadWhenIdle(loadModel, signal).then(
       (model) => {
         if (finished) {
-          model.dispose?.();
+          retireModel(model);
           return;
         }
         finish();
@@ -109,18 +130,11 @@ async function prepareClassifier(): Promise<LoadingStep<Classifier>> {
 }
 
 async function prepareMobileNet(): Promise<LoadingStep<FeatureExtractor>> {
-  const mobilenet = await import('@tensorflow-models/mobilenet');
+  const { loadMobileNetEmbedding } = await import('../lib/mobilenet-embedding');
   return (setText, signal) => {
     setText('Lade MobileNet (Feature Extractor)...');
     return loadWithRetry(
-      () =>
-        awaitModel(
-          mobilenet.load({
-            version: ML.MOBILENET_VERSION,
-            alpha: ML.MOBILENET_ALPHA,
-          }),
-          signal,
-        ),
+      () => awaitModel(loadMobileNetEmbedding, signal),
       {
         maxAttempts: MODEL_LOAD_RETRY.MAX_ATTEMPTS,
         baseDelayMs: MODEL_LOAD_RETRY.BASE_DELAY_MS,
@@ -135,18 +149,13 @@ async function warmupKnnShaders(model: FeatureExtractor, signal: AbortSignal) {
   signal.throwIfAborted();
   const knn = await createClassifier();
   try {
-    for (let classId = 0; classId < 2; classId++) {
-      signal.throwIfAborted();
-      const features = tf.tidy(() => model.infer(tf.zeros([224, 224, 3]), true));
-      try {
-        knn.addExample(features, String(classId));
-      } finally {
-        features.dispose();
-      }
-    }
     signal.throwIfAborted();
-    const features = tf.tidy(() => model.infer(tf.zeros([224, 224, 3]), true));
+    const features = tf.tidy(() =>
+      model.infer(tf.zeros([ML.FEATURE_CANVAS_SIZE, ML.FEATURE_CANVAS_SIZE, 3])),
+    );
     try {
+      knn.addExample(features, '0');
+      knn.addExample(features, '1');
       await knn.predictClass(features);
     } finally {
       features.dispose();
@@ -176,11 +185,12 @@ export function useModelLoader(
   const reportError = useEffectEvent(onError);
   const getLoaders = useEffectEvent(() => loaderFns);
 
-  const setClassifier = useCallback((next: Classifier) => {
+  const setClassifier = useCallback((next: Classifier | null) => {
     const previous = classifierRef.current;
+    if (previous === next) return;
     classifierRef.current = next;
     updateClassifier(next);
-    if (previous !== next) previous?.dispose();
+    if (previous) retireModel(previous);
   }, []);
 
   useEffect(() => {
@@ -189,7 +199,6 @@ export function useModelLoader(
     const { signal } = controller;
     const loaders = getLoaders();
     let model: FeatureExtractor | null = null;
-    let published = false;
     let pendingClassifier: Classifier | null = null;
     const setText = (text: string) => {
       if (!signal.aborted) setLoadingText(text);
@@ -209,17 +218,21 @@ export function useModelLoader(
         model = await loadFeatureExtractor(setText, signal);
         signal.throwIfAborted();
         setText('Optimiere GPU-Performance...');
-        await (loaders?.warmup ?? warmupKnnShaders)(model, signal);
+        const release = retainModel(model);
+        try {
+          await (loaders?.warmup ?? warmupKnnShaders)(model, signal);
+        } finally {
+          release?.();
+        }
         signal.throwIfAborted();
         setClassifier(pendingClassifier);
         pendingClassifier = null;
-        published = true;
         setMobilenetModel(model);
         setIsModelLoading(false);
       } catch {
         pendingClassifier?.dispose();
         pendingClassifier = null;
-        model?.dispose?.();
+        if (model) retireModel(model);
         model = null;
         if (signal.aborted) return;
         reportError('model', 'Fehler beim Laden der KI-Modelle. Bitte lade die Seite neu.');
@@ -229,15 +242,8 @@ export function useModelLoader(
     void initModels();
     return () => {
       controller.abort(new DOMException('Model loading cancelled', 'AbortError'));
-      classifierRef.current?.dispose();
-      classifierRef.current = null;
-      // The loader owns models only until publication. In-flight warmup owns its
-      // tensors until it settles, then the aborted path disposes the model.
-      if (published) {
-        model?.dispose?.();
-        model = null;
-      }
-      updateClassifier(null);
+      setClassifier(null);
+      if (model) retireModel(model);
       setMobilenetModel(null);
       setIsModelLoading(true);
     };

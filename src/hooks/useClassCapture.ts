@@ -58,9 +58,10 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
         stopRecording();
         return;
       }
-      if (!videoRef.current) return;
+      const video = videoRef.current;
+      if (!video?.srcObject) return;
       try {
-        await latest.current.actions.onAddExample(latest.current.cls.id, videoRef.current);
+        await latest.current.actions.onAddExample(latest.current.cls.id, video);
       } catch {
         if (intervalRef.current !== interval) return;
         stopRecording();

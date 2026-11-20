@@ -9,16 +9,13 @@ import type { MLClass, MLImage } from '../types/ml';
 import { COLORS } from '../types/ml';
 import { ML } from '../constants';
 
-/** Returns the next auto-incremented class number based on existing "Klasse N" names. */
+/** A collection with N names always leaves a free default number among the first N + 1. */
 function getNextClassNumber(classes: MLClass[]): number {
-  const existingNums = classes
-    .map((c) => c.name.match(/Klasse (\d+)/))
-    .filter((m): m is RegExpMatchArray => m !== null)
-    .map((m) => parseInt(m[1], 10));
-
-  if (existingNums.length > 0) return Math.max(...existingNums) + 1;
-  if (classes.length > 0) return classes.length + 1;
-  return 1;
+  const names = new Set(classes.map(({ name }) => name.trim()));
+  for (let number = 1; number <= classes.length; number += 1) {
+    if (!names.has(`Klasse ${number}`)) return number;
+  }
+  return classes.length + 1;
 }
 
 /** Returns the default set of two empty classes. */
@@ -57,7 +54,7 @@ export function useClassManagement(
 ) {
   const [classes, setClasses] = useState<MLClass[]>(createInitialClasses);
 
-  /** Appends a new empty class with an auto-incremented name and color. */
+  /** Appends a new empty class with an available default name and its color. */
   const addClass = useCallback(() => {
     if (classes.length >= ML.MAX_CLASSES) {
       onWarning?.(`Maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht.`);

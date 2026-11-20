@@ -21,7 +21,7 @@ export const PrivacyInformation = (
     <h3 id="verantwortliche-stelle">Hinweis zur verantwortlichen Stelle</h3>
     <p>Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:</p>
     <p>
-      BoomApps, Yannick Schäfer
+      Yannick Schäfer
       <br />
       Am Mäuerchen 12
       <br />
@@ -72,21 +72,12 @@ export const PrivacyInformation = (
     </p>
     <h3>Allgemeine Hinweise zu den Rechtsgrundlagen der Datenverarbeitung auf dieser Website</h3>
     <p>
-      Sofern Sie in die Datenverarbeitung eingewilligt haben, verarbeiten wir Ihre personenbezogenen
-      Daten auf Grundlage von Art. 6 Abs. 1 lit. a DSGVO bzw. Art. 9 Abs. 2 lit. a DSGVO, sofern
-      besondere Datenkategorien nach Art. 9 Abs. 1 DSGVO verarbeitet werden. Im Falle einer
-      ausdrücklichen Einwilligung in die Übertragung personenbezogener Daten in Drittstaaten erfolgt
-      die Datenverarbeitung außerdem auf Grundlage von Art. 49 Abs. 1 lit. a DSGVO. Sofern Sie in
-      die Speicherung von Cookies oder in den Zugriff auf Informationen in Ihr Endgerät (z.B. via
-      Device-Fingerprinting) eingewilligt haben, erfolgt die Datenverarbeitung zusätzlich auf
-      Grundlage von § 25 Abs. 1 TDDDG. Die Einwilligung ist jederzeit widerrufbar. Sind Ihre Daten
-      zur Vertragserfüllung oder zur Durchführung vorvertraglicher Maßnahmen erforderlich,
-      verarbeiten wir Ihre Daten auf Grundlage des Art. 6 Abs. 1 lit. b DSGVO. Des Weiteren
-      verarbeiten wir Ihre Daten, sofern diese zur Erfüllung einer rechtlichen Verpflichtung
-      erforderlich sind auf Grundlage von Art. 6 Abs. 1 lit. c DSGVO. Die Datenverarbeitung kann
-      ferner auf Grundlage unseres berechtigten Interesses nach Art. 6 Abs. 1 lit. f DSGVO erfolgen.
-      Über die jeweils im Einzelfall einschlägigen Rechtsgrundlagen wird in den folgenden Absätzen
-      dieser Datenschutzerklärung informiert.
+      Für die Verarbeitung personenbezogener Daten bei der Nutzung der Lernfunktion ist Ihre
+      Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO maßgeblich. Andere Verarbeitungen beruhen je nach
+      Zweck auf der Erfüllung eines Vertrags oder vorvertraglichen Maßnahmen (Art. 6 Abs. 1 lit. b
+      DSGVO), einer rechtlichen Verpflichtung (Art. 6 Abs. 1 lit. c DSGVO) oder einem berechtigten
+      Interesse (Art. 6 Abs. 1 lit. f DSGVO). Die jeweiligen Abschnitte erläutern, welche
+      Rechtsgrundlage für die konkrete Verarbeitung gilt.
     </p>
     <h3>Empfänger von personenbezogenen Daten</h3>
     <p>
@@ -96,11 +87,12 @@ export const PrivacyInformation = (
       Rechtsgrundlage weitergegeben. Die jeweiligen Datenschutzrollen sind in den betreffenden
       Dienstabschnitten erläutert.
     </p>
-    <h3>Widerruf Ihrer Einwilligung zur Datenverarbeitung</h3>
+    <h3 id="widerruf-der-einwilligung">Widerruf Ihrer Einwilligung zur Datenverarbeitung</h3>
     <p>
-      Viele Datenverarbeitungsvorgänge sind nur mit Ihrer ausdrücklichen Einwilligung möglich. Sie
-      können eine bereits erteilte Einwilligung jederzeit widerrufen. Die Rechtmäßigkeit der bis zum
-      Widerruf erfolgten Datenverarbeitung bleibt vom Widerruf unberührt.
+      Ihre Einwilligung zur Lernfunktion können Sie jederzeit mit Wirkung für die Zukunft
+      widerrufen. Wählen Sie dazu in der Lernfunktion „Einwilligung widerrufen“, laden Sie die Seite
+      neu oder schließen Sie sie. Die Rechtmäßigkeit der bis zum Widerruf erfolgten Verarbeitung
+      bleibt unberührt.
     </p>
     <h3>
       Widerspruchsrecht gegen die Datenerhebung in besonderen Fällen sowie gegen Direktwerbung (Art.

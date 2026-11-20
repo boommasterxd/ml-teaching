@@ -74,9 +74,10 @@ preparation includes the route tree, leaf page and build-time initial content.
 The training setup's cancel action and the model-error return action warm the same
 image explanation route through native router prefetch. Their activation uses the
 existing backward transition type. Next.js can restore cached history entries synchronously,
-outside React's view transition. The legal sidebar's Back link starts a
-browser-owned Flow capture for a same-document traversal to another page.
-Next.js still restores the original entry. The link exposes the previous
+outside React's view transition. Where the Navigation API supports precommit interception,
+eligible same-document Back and Forward traversals use a browser-owned Flow capture;
+Next.js still restores the original entry. The training consent route is excluded
+from capture. The legal sidebar's Back link also supports browser-owned capture and exposes the previous
 same-origin address, including query and fragment, when available. Intent-based
 route preparation runs for the fallback homepage link. Actual history traversal
 reuses the browser's entry and the router's stored state.
@@ -158,21 +159,33 @@ glyphs. Children select the nearest 1 to 10 points before choosing the majority
 class or a tie. Mistakes remain retryable. The exercise uses synthetic features
 and keeps selections in memory.
 
+## Public discovery
+
+The generated `robots.txt` allows all user agents on all paths and identifies the
+sitemap. It has no separate rules for search, model training or user-initiated
+retrieval; services follow this guidance according to their own crawler behavior.
+[Google-Extended](https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers#google-extended)
+controls training and grounding for specified Gemini and Vertex AI services. It
+does not affect inclusion or ranking in Google Search.
+
 ## Browser ML flow
 
 1. The learning route starts with an explicit consent dialog. No TensorFlow runtime,
    model weights or camera stream is needed to render the page.
 2. After model consent, the same dialog shows loading progress while the browser
-   loads local MobileNet and KNN modules alongside TensorFlow.js backend initialization.
-   Model weights and classifier creation follow backend readiness. The WebGL backend
-   and compiled kernels are reusable within the document.
+   initializes TensorFlow.js and loads the KNN module. It downloads the MobileNet v2
+   graph, warms it and extracts features in the browser. Loading can be aborted and
+   graph resources are disposed when no longer in use. The WebGL backend and compiled
+   kernels are reusable within the document.
 3. When the models are ready, the dialog presents the optional camera choice.
    Camera access starts only after separate camera consent and browser permission.
-   Selected local files and captures are resized for local feature extraction.
+   A rejected request or ended track offers an explicit retry. Selected local files
+   and captures are resized for local feature extraction.
 4. Training requires complete selected upload batches and no active image work.
    New capture and file selection are disabled during training. It creates a
-   replacement KNN classifier from the completed features. A stale or
-   abandoned training run cannot publish its result.
+   replacement KNN classifier from one normalized feature matrix per class. A stale
+   or abandoned training run cannot publish its result. Retired classifiers and
+   models are disposed after their active users release them.
 5. Prediction processes one frame at a time. Stopping or leaving invalidates late
    results. Route cleanup stops camera tracks and disposes classifiers and models.
 
@@ -200,6 +213,10 @@ collected image also start or reuse the same import. Rendering and measurement o
 real rows begin when image data is available and are released after the last
 image is removed. Prediction attaches its video once the camera stream and
 trained model are ready.
+Camera previews attach video while visible or while a capture is active; capture
+stops when the document is hidden. Training and prediction panels prepare on user
+intent. Failed panel loads offer a retry; a failed chunk that requires a document
+reload warns that in-memory training data will be lost.
 There are no shared server entities, reactive joins or SQL operations
 that justify TanStack DB, Table, Drizzle or Turso. Class-name editing remains a
 small local field without a separate form submission or validation schema.

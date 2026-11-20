@@ -146,7 +146,7 @@ export function HomePerspectives() {
 const questions = [
   [
     'Brauche ich eine Kamera?',
-    'Nein. Für die Bilderkennung kannst du Fotos von deinem Gerät auswählen. In der Belohnungsübung wählst du zwischen Stern und Schatz.',
+    'Nein. Für die Bilderkennung kannst du Fotos von deinem Gerät auswählen. Für das Lernen durch Belohnung gibt es hier eine Vorschau.',
   ],
   [
     'Muss ich programmieren können?',

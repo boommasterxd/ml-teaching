@@ -2,7 +2,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
 import sharp from 'sharp';
-import { syntheticModel } from './synthetic-model';
+import { failSyntheticModel, routeSyntheticModel } from './synthetic-model';
 import { expectNetworkLayout } from './network-layout';
 import {
   captureSetupDialog,
@@ -17,6 +17,7 @@ import {
   expectThemeKeepsTraining,
   expectThemeMenuTriggers,
   expectImmediateThemeFeedback,
+  openDeferredTrainingStep,
   openThemeMenu,
   settleLandingReveals,
   withdrawTrainingConsent,
@@ -102,6 +103,31 @@ async function uploadTrainingClasses(page: Page) {
   }
   expect(await classLayout(page)).toEqual(empty);
 }
+
+test('the native image optimizer serves the bounded hero poster as AVIF and WebP', async ({
+  page,
+  request,
+}) => {
+  await page.goto('/');
+  const poster = page.locator('.hero-field-poster img');
+  await expect
+    .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
+  const optimized = new URL(await poster.evaluate((image: HTMLImageElement) => image.currentSrc));
+  expect(optimized.pathname).toBe('/_next/image');
+  expect(optimized.searchParams.get('url')).toMatch(/\.webp$/);
+  const width = Number(optimized.searchParams.get('w'));
+  expect(width).toBeGreaterThan(0);
+  expect(width).toBeLessThanOrEqual(1200);
+  for (const [accept, format] of [
+    ['image/avif,image/webp', 'image/avif'],
+    ['image/webp', 'image/webp'],
+  ]) {
+    const response = await request.get(optimized.href, { headers: { accept } });
+    expect(response.ok()).toBe(true);
+    expect(response.headers()['content-type']).toBe(format);
+  }
+});
 
 test('mobile information menu supports keyboard, focus return and native navigation', async ({
   page,
@@ -225,46 +251,33 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
 
 test('model download is consent-gated and a failed download leaves an accessible recovery path', async ({
   page,
+  baseURL,
 }) => {
-  let modelRequests = 0;
-  await page.route(
-    /^https:\/\/(?:tfhub\.dev|www\.kaggle\.com|www\.gstatic\.com|storage\.googleapis\.com)\//,
-    async (route) => {
-      modelRequests++;
-      await route.fulfill({
-        status: 503,
-        contentType: 'application/json',
-        headers: { 'access-control-allow-origin': '*' },
-        body: '{"error":"Synthetic model outage"}',
-      });
-    },
-  );
+  const network = await routeSyntheticModel(page, baseURL!, failSyntheticModel);
   await page.goto(learningPaths.imagePractice);
   await expect(
     page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' }),
   ).toBeVisible();
-  expect(modelRequests).toBe(0);
+  expect(network.modelRequests).toEqual([]);
   await grantModelConsent(page);
   await expect(
     page.getByRole('alert').filter({ hasText: 'Fehler beim Laden der KI-Modelle' }),
   ).toBeVisible({ timeout: 25_000 });
-  expect(modelRequests).toBeGreaterThan(0);
+  expect(network.modelRequests.length).toBeGreaterThan(0);
   await expect(
     page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' }),
   ).not.toBeVisible();
   await expectAccessible(page);
   await page.getByRole('button', { name: 'Zur Bilderkennung', exact: true }).click();
   await expect(page).toHaveURL(`http://127.0.0.1:3100${learningPaths.images}`);
+  expect(network.unexpectedRequests()).toBe(0);
 });
 
-test('consent can be withdrawn while a model download is pending', async ({ page }) => {
+test('consent can be withdrawn while a model download is pending', async ({ page, baseURL }) => {
   const pending: Route[] = [];
-  await page.route(
-    /^https:\/\/(?:tfhub\.dev|www\.kaggle\.com|www\.gstatic\.com|storage\.googleapis\.com)\//,
-    (route) => {
-      pending.push(route);
-    },
-  );
+  const network = await routeSyntheticModel(page, baseURL!, (route) => {
+    pending.push(route);
+  });
   try {
     await page.goto(learningPaths.imagePractice);
     const { expectSameDialog } = await captureSetupDialog(page);
@@ -280,6 +293,7 @@ test('consent can be withdrawn while a model download is pending', async ({ page
     await withdrawTrainingConsent(page);
     expect(pending).toHaveLength(requestsBeforeWithdrawal);
     await expectAccessible(page);
+    expect(network.unexpectedRequests()).toBe(0);
   } finally {
     await Promise.all(pending.map((route) => route.abort().catch(() => {})));
   }
@@ -387,27 +401,10 @@ test('theme changes preserve navigation and require explicit remembering across 
 
 test('local images train a real browser classifier, predict and reset without uploads', async ({
   page,
+  baseURL,
 }) => {
   const failures = diagnostics(page);
-  let modelRequests = 0;
-  const remoteWrites: string[] = [];
-  page.on('request', (request) => {
-    if (!['GET', 'HEAD'].includes(request.method())) remoteWrites.push(request.url());
-  });
-  await page.route(
-    /^https:\/\/(?:tfhub\.dev|www\.kaggle\.com|www\.gstatic\.com|storage\.googleapis\.com)\//,
-    async (route) => {
-      modelRequests++;
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        headers: { 'access-control-allow-origin': '*' },
-        body: new URL(route.request().url()).pathname.endsWith('.bin')
-          ? Buffer.from(new Int32Array([1, 2]).buffer)
-          : JSON.stringify(syntheticModel),
-      });
-    },
-  );
+  const network = await routeSyntheticModel(page, baseURL!);
   await page.goto(learningPaths.imagePractice);
   await page.setViewportSize({ width: 390, height: 844 });
   const { expectSameDialog, expectStableWorkspace } = await captureSetupDialog(page);
@@ -440,14 +437,24 @@ test('local images train a real browser classifier, predict and reset without up
   const steps = page.getByRole('navigation', { name: 'Trainingsablauf' });
   const next = page.getByRole('button', { name: 'Weiter zum Training' });
   await expect(next).toHaveCount(2);
-  await next.last().press('Enter');
-  await expect(page.getByRole('heading', { name: 'Training', exact: true })).toBeFocused();
+  await openDeferredTrainingStep(
+    page,
+    next.last(),
+    page.getByRole('heading', { name: 'Training', exact: true }),
+  );
   await expect(page.getByRole('textbox')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Modell trainieren', exact: true }).click();
+  const train = page.getByRole('button', {
+    name: /^(Modell trainieren|Trainiere …|Modell neu trainieren)$/,
+  });
+  await train.press('Enter');
   await expect(page.getByRole('status').filter({ hasText: 'Training läuft' })).toBeVisible();
+  await expect(train).toBeFocused();
   await expectThemeKeepsTraining(page);
-  await page.getByRole('button', { name: 'Weiter zur Vorhersage' }).press('Enter');
-  await expect(page.getByRole('heading', { name: 'Vorhersage', exact: true })).toBeFocused();
+  await openDeferredTrainingStep(
+    page,
+    page.getByRole('button', { name: 'Weiter zur Vorhersage' }),
+    page.getByRole('heading', { name: 'Vorhersage', exact: true }),
+  );
   await expect(page.getByRole('heading', { name: 'Training', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Kamera aktivieren', exact: true }).click();
   await expect(camera).toBeVisible();
@@ -465,12 +472,11 @@ test('local images train a real browser classifier, predict and reset without up
   await page.getByRole('alertdialog').getByRole('button', { name: 'Zurücksetzen' }).click();
   await expect(next.first()).toBeDisabled();
   await expectKeyboardCapture(page);
-  expect(modelRequests).toBe(2);
-  expect(remoteWrites).toEqual([]);
   expect(failures).toEqual([]);
   await expect(
     page.getByRole('contentinfo').getByRole('link', { name: /^Einwilligung widerrufen/ }),
   ).toBeVisible();
   await withdrawTrainingConsent(page);
-  expect(modelRequests).toBe(2);
+  expect(network.modelRequests).toEqual(['graph', 'weights']);
+  expect(network.unexpectedRequests()).toBe(0);
 });

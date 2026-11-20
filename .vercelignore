@@ -12,6 +12,9 @@ test-results/
 *.pem
 *.key
 
+# Local attachments
+/.codex-attachments/
+
 # Development-only content; native build and CSP inputs remain included
 .git/
 .github/

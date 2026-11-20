@@ -17,7 +17,7 @@ import { useCameraStream } from '@/hooks/useCameraStream';
  * Creates a mock MediaStreamTrack with a spy on `stop`.
  */
 function makeMockTrack() {
-  return { stop: vi.fn() };
+  return Object.assign(new EventTarget(), { stop: vi.fn(), readyState: 'live' });
 }
 
 /**
@@ -111,36 +111,74 @@ describe('useCameraStream', () => {
       expect(result.current.stream).toBeNull();
       expect(track.stop).toHaveBeenCalledOnce();
     });
-    it('ruft getUserMedia nicht auf wenn cameraConsent false ist', async () => {
+    it('does not request camera access without consent, including on retry', async () => {
       const getUserMedia = vi.fn().mockResolvedValue(makeMockStream());
       vi.stubGlobal('navigator', {
         mediaDevices: { getUserMedia },
       });
 
-      await act(async () => {
-        renderHook(() => useCameraStream(false, false, vi.fn()));
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      });
+      const { result } = renderHook(() => useCameraStream(false, false, vi.fn()));
+      await act(async () => result.current.retryCamera());
 
       expect(getUserMedia).not.toHaveBeenCalled();
     });
   });
 
   describe('Fehlerbehandlung', () => {
-    it('ruft onError auf wenn getUserMedia fehlschlägt', async () => {
+    it('reports an access failure and allows a single explicit retry', async () => {
+      const replacement = makeMockStream();
+      const getUserMedia = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('Permission denied'))
+        .mockResolvedValueOnce(replacement);
       vi.stubGlobal('navigator', {
-        mediaDevices: {
-          getUserMedia: vi.fn().mockRejectedValue(new Error('Permission denied')),
-        },
+        mediaDevices: { getUserMedia },
       });
       const onError = vi.fn();
-
-      await act(async () => {
-        renderHook(() => useCameraStream(true, false, onError));
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      });
-
+      const { result } = renderHook(() => useCameraStream(true, false, onError));
+      await act(async () => {});
       expect(onError).toHaveBeenCalledWith('camera', expect.any(String));
+      expect(result.current.hasFailed).toBe(true);
+      await act(async () => {
+        result.current.retryCamera();
+        result.current.retryCamera();
+      });
+      expect(getUserMedia).toHaveBeenCalledTimes(2);
+      expect(result.current.stream).toBe(replacement);
+      expect(result.current.hasFailed).toBe(false);
+    });
+
+    it('retires an interrupted stream, waits for retry and ignores later events from the old track', async () => {
+      const lostTrack = makeMockTrack();
+      const original = makeMockStream([lostTrack]);
+      const replacement = makeMockStream();
+      const getUserMedia = vi
+        .fn()
+        .mockResolvedValueOnce(original)
+        .mockResolvedValueOnce(replacement);
+      vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+      const onError = vi.fn();
+      const { result } = renderHook(() => useCameraStream(true, false, onError));
+      await act(async () => {});
+      expect(result.current.streamRef.current).toBe(original);
+
+      act(() => {
+        lostTrack.readyState = 'ended';
+        lostTrack.dispatchEvent(new Event('ended'));
+      });
+      expect(result.current.stream).toBeNull();
+      expect(result.current.streamRef.current).toBeNull();
+      expect(result.current.hasFailed).toBe(true);
+      expect(result.current.isPending).toBe(false);
+      expect(onError).toHaveBeenCalledWith('camera', expect.stringContaining('unterbrochen'));
+      expect(getUserMedia).toHaveBeenCalledOnce();
+
+      await act(async () => result.current.retryCamera());
+      expect(result.current.stream).toBe(replacement);
+      act(() => lostTrack.dispatchEvent(new Event('ended')));
+      expect(result.current.streamRef.current).toBe(replacement);
+      expect(onError).toHaveBeenCalledOnce();
+      expect(lostTrack.stop).toHaveBeenCalledOnce();
     });
   });
 

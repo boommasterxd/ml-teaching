@@ -1,29 +1,57 @@
+import type { Metadata } from 'next';
+import JsonLd from '@/components/JsonLd';
 import LandingPage from '@/screens/LandingPage';
-import { siteConfig, webApplicationId } from '@/lib/site';
+import { siteConfig, webApplicationId, webSiteId } from '@/lib/site';
 
 export const dynamic = 'error';
+export const metadata: Metadata = {
+  title: 'ML Teaching – KI verstehen und ausprobieren',
+  description: siteConfig.description,
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    locale: siteConfig.locale,
+    siteName: siteConfig.name,
+    title: siteConfig.name,
+    description: siteConfig.description,
+    url: '/',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteConfig.name,
+    description: siteConfig.description,
+  },
+  robots: { index: true, follow: true },
+};
 
 export default function HomePage() {
   const structuredData = {
     '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    '@id': webApplicationId,
-    name: siteConfig.name,
-    url: siteConfig.url,
-    description: siteConfig.description,
-    applicationCategory: 'EducationalApplication',
-    operatingSystem: 'Web browser',
-    inLanguage: 'de',
-    isAccessibleForFree: true,
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': webSiteId,
+        name: siteConfig.name,
+        url: siteConfig.url,
+        inLanguage: siteConfig.language,
+      },
+      {
+        '@type': 'WebApplication',
+        '@id': webApplicationId,
+        name: siteConfig.name,
+        url: siteConfig.url,
+        description: siteConfig.description,
+        applicationCategory: 'EducationalApplication',
+        operatingSystem: 'Web browser',
+        inLanguage: siteConfig.language,
+        isAccessibleForFree: true,
+        isPartOf: { '@id': webSiteId },
+      },
+    ],
   };
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
-        }}
-      />
+      <JsonLd data={structuredData} />
       <LandingPage />
     </>
   );

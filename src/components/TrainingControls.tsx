@@ -23,6 +23,7 @@ interface TrainingControlsProps {
   hasDuplicateNames: boolean;
   onTrain: () => void;
   onPredict?: () => void;
+  onPredictIntent?: () => void;
 }
 
 const statusMessages = {
@@ -93,6 +94,7 @@ function TrainingProgressIndicator({ progress }: Pick<TrainingControlsProps, 'pr
 
 export default function TrainingControls(props: TrainingControlsProps) {
   const { classes, canTrain, progress, hasTrainedModel, onTrain, onPredict } = props;
+  const isTraining = progress !== null;
   const state = progress ? 'training' : hasTrainedModel ? 'complete' : 'idle';
   const complete = state === 'complete';
   const title = {
@@ -129,11 +131,14 @@ export default function TrainingControls(props: TrainingControlsProps) {
           </CardContent>
           <CardFooter className="flex-wrap gap-2">
             <Button
-              onClick={onTrain}
+              onClick={() => {
+                if (canTrain && !isTraining) onTrain();
+              }}
               variant={complete ? 'outline' : 'default'}
               size="lg"
-              disabled={!!progress || !canTrain}
-              className="w-full sm:w-auto"
+              disabled={!isTraining && !canTrain}
+              aria-disabled={isTraining || !canTrain}
+              className="w-full aria-disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:focus-visible:opacity-100 sm:w-auto"
               aria-describedby={complete ? undefined : 'training-status'}
             >
               {progress ? (
@@ -148,7 +153,14 @@ export default function TrainingControls(props: TrainingControlsProps) {
               )}
             </Button>
             {complete && onPredict && (
-              <Button onClick={onPredict} size="lg" className="w-full sm:w-auto">
+              <Button
+                onClick={onPredict}
+                onPointerEnter={props.onPredictIntent}
+                onFocus={props.onPredictIntent}
+                onPointerDown={props.onPredictIntent}
+                size="lg"
+                className="w-full sm:w-auto"
+              >
                 Weiter zur Vorhersage
                 <ArrowRight data-icon="inline-end" aria-hidden="true" />
               </Button>

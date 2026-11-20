@@ -3,6 +3,8 @@
 The `CI` workflow validates pull requests targeting `main` against GitHub's simulated
 merge commit. It uses the supported Node.js `26.x` major with `check-latest: true` and
 installs the lockfile with `npm ci --no-audit`.
+These workflow descriptions apply to this development branch. The existing `main`
+and provider behavior remain separate until authorized integration.
 
 ## Check selection
 
@@ -22,6 +24,8 @@ jobs use regular runners; job-level conditions prevent allocation of unselected
 substantive jobs. Superseded runs for the same PR are cancelled. The unconditional
 final `CI` check accepts successful selected jobs and explicitly excluded skipped
 jobs only. Invalid plans, planning failures, cancellations and unexpected skips fail.
+The CI workflow and final gate use the simulated PR merge checkout. The maintainer
+accepts that workflow provenance for this repository.
 
 ## Dependency cache lifecycle
 
@@ -34,9 +38,17 @@ output and browser profiles are not cached.
 
 The separate `Dependency cache` workflow produces caches from trusted `main` when
 dependency, runtime or cache configuration inputs change. Its manual entry point
-also requires `main`. It installs locked dependencies and records the native
-producer identity; it does not repeat application quality, build or browser jobs.
+also requires `main`. An exact cache hit reuses the immutable cache; otherwise it
+restores a compatible fallback when available and installs locked dependencies.
+It records the native producer identity without repeating application quality,
+build or browser jobs.
 Cache availability does not establish a hit-rate or duration improvement.
+
+The `Dependency cache reconciliation` workflow checks the exact key daily at 11:23 UTC
+without downloading the cache. It confirms an apparent miss against the current
+`main` revision and cache inventory before dispatching the trusted producer. This
+independent check covers changes for which GitHub suppresses a push-triggered
+workflow after a `GITHUB_TOKEN` action.
 
 `.github/cache-policy.json` declares the managed family, producer and input
 boundaries. Cleanup runs from the current trusted `main` source after a successful
@@ -54,7 +66,7 @@ of eligible PR install opportunities with unchanged compatible inputs. Exact and
 compatible restores count as successes; cold, error and unknown outcomes remain
 in the denominator. Initial and dependency-changing installs are tracked separately.
 This is a target, not a measured hit rate; retention and capacity remain unchanged
-pending workload evidence, without periodic keepalive or a paid increase.
+pending workload evidence, without a separate keepalive job or a paid increase.
 
 The lifecycle engine in `.github/scripts/cache-lifecycle/` is the unchanged
 canonical JavaScript runtime from the GitHub plugin 1.5.0's
@@ -72,9 +84,11 @@ and unit coverage. These commands also remain available individually in
 and audit execution failures; development dependencies remain installed. Before an
 authorized integration, run the separate full local `npm audit --include=dev` and
 review development-only findings.
+The development-only [minimatch advisory](https://github.com/advisories/GHSA-g3hv-75wg-m249)
+is accepted until a compatible upstream update is available.
 
 Application code, own tooling, root configurations and tests require at most
-100 lines per function, 500 lines per source file,
+100 lines per function, 500 lines per source file including CSS,
 cyclomatic complexity 20, cognitive complexity 25, six parameters and nesting depth
 four. Declarative callbacks passed directly to an imported Vitest `describe` are
 exempt from function length only: their size groups separate test cases. Individual

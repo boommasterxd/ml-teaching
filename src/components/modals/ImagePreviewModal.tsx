@@ -20,6 +20,8 @@ import type { MLImage } from '../../types/ml';
 interface ImagePreviewModalProps {
   /** Whether the modal is currently visible. */
   isOpen: boolean;
+  /** Identifies the image by its position and class. */
+  title: string;
   /** Callback invoked when the modal is closed via the close button. */
   onClose: () => void;
   /** The training image to preview, or null when no image is selected. */
@@ -33,12 +35,14 @@ interface ImagePreviewModalProps {
  * The image content is only rendered when `image` is non-null.
  *
  * @param isOpen - Controls modal visibility.
+ * @param title - Identifies the image by its position and class.
  * @param onClose - Called when the close button is clicked.
  * @param image - The MLImage to display, or null if none is selected.
  * @param onDelete - Called when the delete button is clicked.
  */
 export default function ImagePreviewModal({
   isOpen,
+  title,
   onClose,
   image,
   onDelete,
@@ -53,7 +57,7 @@ export default function ImagePreviewModal({
       <ModalContent maxWidth="sm">
         <div className="flex justify-between items-center">
           <DialogTitle id="image-modal-title" render={<h3 />}>
-            Bild Vorschau
+            {title}
           </DialogTitle>
           <DialogDescription id="image-modal-desc" className="sr-only">
             Vergrößerte Ansicht eines Trainingsbildes mit Option zum Löschen.

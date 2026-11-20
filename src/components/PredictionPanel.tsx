@@ -31,6 +31,7 @@ interface PredictionPanelProps {
   onStopPredicting: () => void;
   onEnableCamera?: () => void;
   cameraPending: boolean;
+  cameraFailed?: boolean;
   subscribeToFeatures: SubscribePredictionFeatures;
 }
 
@@ -171,9 +172,11 @@ function cameraDescription({
   stream,
   onEnableCamera,
   cameraPending,
-}: Pick<PredictionPanelProps, 'stream' | 'onEnableCamera' | 'cameraPending'>) {
+  cameraFailed,
+}: Pick<PredictionPanelProps, 'stream' | 'onEnableCamera' | 'cameraPending' | 'cameraFailed'>) {
   if (stream) return 'Die Kamera ist bereit.';
   if (cameraPending) return 'Kamera wird verbunden.';
+  if (cameraFailed) return 'Die Kameraverbindung ist unterbrochen.';
   if (onEnableCamera) return 'Aktiviere die Kamera für die Vorhersage.';
   return 'Für die Live-Vorhersage wird eine Kamera benötigt.';
 }
@@ -192,20 +195,21 @@ function PredictionCamera({
   onStopPredicting,
   onEnableCamera,
   cameraPending,
+  cameraFailed,
   onStartIntent,
 }: CameraProps & { onStartIntent: () => void }) {
-  const playable = isPredicting || Boolean(stream);
+  const playable = Boolean(stream);
   const canEnable = Boolean(onEnableCamera && !cameraPending);
   return (
     <div
       data-slot="prediction-camera"
       className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border bg-media-surface @lg/prediction:aspect-auto @lg/prediction:self-stretch"
     >
-      {isPredicting ? (
+      {isPredicting && stream ? (
         <CameraFeed facingMode={facingMode} predictVideoRef={predictVideoRef} stream={stream} />
       ) : (
         <PredictionPlaceholder
-          description={cameraDescription({ stream, onEnableCamera, cameraPending })}
+          description={cameraDescription({ stream, onEnableCamera, cameraPending, cameraFailed })}
           pending={cameraPending}
           compact
           className={cn(
@@ -224,7 +228,7 @@ function PredictionCamera({
           />
         ) : canEnable ? (
           <Button variant="outline" className="min-h-11" onClick={onEnableCamera}>
-            Kamera aktivieren
+            {cameraFailed ? 'Kamera erneut verbinden' : 'Kamera aktivieren'}
           </Button>
         ) : null}
       </div>

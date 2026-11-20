@@ -69,19 +69,10 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
               className="min-w-0 leading-normal font-normal [overflow-wrap:anywhere] sm:leading-relaxed"
             >
               <span>
-                Ich willige ein, dass für die Ausführung der Anwendung notwendige KI-Modelle
-                (MobileNet) von Google-Servern geladen werden. Mir ist bewusst, dass hierbei meine
-                IP-Adresse an Google übertragen wird (siehe{' '}
-                <a
-                  href="https://policies.google.com/privacy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Google Datenschutzerklärung
-                  <span className="sr-only"> (öffnet in neuem Tab)</span>
-                </a>
-                ). Die Verarbeitung der aufgenommenen Bilddaten erfolgt dabei ausschließlich lokal
-                auf deinem Endgerät; es findet kein Upload von Bildmaterial statt.
+                Ich willige ein, dass mein Browser das KI-Modell für die Bilderkennung von Google
+                über Kaggle lädt. Dafür erhalten Google und Kaggle meine IP-Adresse und technische
+                Angaben zum Abruf. Mehr dazu steht in der{' '}
+                <Link href="/datenschutz">Datenschutzerklärung</Link>.
               </span>
             </FieldLabel>
           </Field>
@@ -89,7 +80,8 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
       </FieldSet>
 
       <FieldDescription id="consent-modal-desc" role="note">
-        Sie können Ihre Einwilligung jederzeit widerrufen. Ein Neuladen der Seite genügt.
+        Du kannst deine Einwilligung jederzeit widerrufen. Wähle dazu „Einwilligung widerrufen“ oder
+        lade die Seite neu.
       </FieldDescription>
 
       <DialogFooter layout="auto-fit">

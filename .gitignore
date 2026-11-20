@@ -12,6 +12,9 @@ next-env.d.ts
 *.pem
 *.key
 
+# Local attachments
+/.codex-attachments/
+
 # Verification artifacts
 coverage/
 playwright-report/

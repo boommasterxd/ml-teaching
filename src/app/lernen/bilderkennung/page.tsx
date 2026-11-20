@@ -1,3 +1,4 @@
+import JsonLd from '@/components/JsonLd';
 import ImageRecognitionPage from '@/screens/ImageRecognitionPage';
 import { learningPaths } from '@/lib/learning-paths';
 import { pageMetadata, siteConfig, webApplicationId } from '@/lib/site';
@@ -24,12 +25,7 @@ export default function ImageLearningPage() {
   };
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
-        }}
-      />
+      <JsonLd data={structuredData} />
       <ImageRecognitionPage />
     </>
   );

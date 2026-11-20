@@ -9,14 +9,13 @@
 import type * as tf from '@tensorflow/tfjs-core';
 
 /**
- * Minimal interface for a feature extractor (e.g. MobileNet).
- * Covers only the `infer` method actually called by the application.
+ * Loaded MobileNet embedding model.
  */
 export interface FeatureExtractor {
-  /** Returns a feature tensor for the given input. Pass `true` for embedding output. */
-  infer(input: tf.Tensor, embedding: boolean): tf.Tensor;
+  /** Returns the embedding tensor for the given input. */
+  infer(input: tf.Tensor): tf.Tensor;
   /** Releases downloaded weights when leaving the training page. */
-  dispose?(): void;
+  dispose(): void;
 }
 
 /**
@@ -36,12 +35,12 @@ interface ClassificationResult {
 export interface Classifier {
   /** Adds a training example for the given label. */
   addExample(example: tf.Tensor, label: string): void;
+  /** Takes ownership of the normalized per-class matrices of a new classifier. */
+  setClassifierDataset(dataset: Record<string, tf.Tensor2D>): void;
   /** Returns the predicted class label and confidence scores. */
   predictClass(input: tf.Tensor): Promise<ClassificationResult>;
   /** Returns the number of distinct classes currently stored. */
   getNumClasses(): number;
   /** Releases all internal tensors and frees memory. */
   dispose(): void;
-  /** Removes all stored examples and resets the classifier. */
-  clearAllClasses(): void;
 }

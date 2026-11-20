@@ -16,6 +16,18 @@ interface TrainingPageModalsProps {
 
 type ConfirmationKind = Exclude<ModalState['type'], 'none' | 'imagePreview'>;
 
+function imagePreviewTitle(
+  classes: MLClass[],
+  preview: Extract<ModalState, { type: 'imagePreview' }> | null,
+) {
+  if (!preview) return 'Bildvorschau';
+  const classIndex = classes.findIndex(({ id }) => id === preview.classId);
+  const imageIndex = classes[classIndex]?.images.findIndex(({ id }) => id === preview.image.id);
+  return imageIndex !== undefined && imageIndex >= 0
+    ? `Bild ${imageIndex + 1} aus Klasse ${classIndex + 1}`
+    : 'Bildvorschau';
+}
+
 function confirmation(kind: ConfirmationKind, className: string | undefined) {
   if (kind === 'clearClass')
     return {
@@ -63,6 +75,7 @@ export default function TrainingPageModals({
     <>
       <ImagePreviewModal
         isOpen={preview !== null}
+        title={imagePreviewTitle(classes, preview)}
         image={preview?.image ?? null}
         onClose={closeModal}
         onDelete={() => {

@@ -19,9 +19,12 @@ type SetClassifier = (c: Classifier) => void;
 /** Callback type for reporting training or validation errors. */
 type TrainingOnError = (category: 'training' | 'validation', msg: string) => void;
 
-// Mock TensorFlow.js — tensor1d is called during training to wrap feature arrays.
 vi.mock('@tensorflow/tfjs-core', () => ({
-  tensor1d: vi.fn(() => ({ dispose: vi.fn() })),
+  tensor2d: vi.fn(() => ({ dispose: vi.fn() })),
+  norm: vi.fn(),
+  div: vi.fn((examples) => examples),
+  tidy: (run: () => unknown) => run(),
+  dispose: vi.fn(),
 }));
 
 /**
@@ -33,7 +36,7 @@ const mockNewClassifier: Classifier = {
   predictClass: vi.fn(),
   getNumClasses: vi.fn(() => 0),
   dispose: vi.fn(),
-  clearAllClasses: vi.fn(),
+  setClassifierDataset: vi.fn(),
 };
 
 vi.mock('@tensorflow-models/knn-classifier', () => ({
@@ -217,8 +220,9 @@ describe('useModelTraining', () => {
       expect(onError).not.toHaveBeenCalled();
     });
 
-    it('reports each visible milestone from registered images and clears it when the model is published', async () => {
+    it('reports progress and installs just one normalized matrix per class', async () => {
       const classes = makeClasses(2, 20);
+      const tfMock = await import('@tensorflow/tfjs-core');
       const { result } = renderHook(() =>
         useModelTraining(classes, { setClassifier, setHasTrainedModel, onError }, false),
       );
@@ -235,7 +239,7 @@ describe('useModelTraining', () => {
           await vi.advanceTimersByTimeAsync(ML.TRAINING_UI_YIELD_MS);
         });
         expect(result.current.progress).toEqual({ processed: ML.TRAINING_BATCH_SIZE, total: 40 });
-        expect(mockNewClassifier.addExample).toHaveBeenCalledTimes(ML.TRAINING_BATCH_SIZE);
+        expect(mockNewClassifier.setClassifierDataset).not.toHaveBeenCalled();
         expect(setClassifier).not.toHaveBeenCalled();
 
         await act(async () => {
@@ -243,7 +247,17 @@ describe('useModelTraining', () => {
           await training;
         });
         expect(result.current.progress).toBeNull();
-        expect(mockNewClassifier.addExample).toHaveBeenCalledTimes(40);
+        expect(tfMock.tensor2d).toHaveBeenCalledTimes(2);
+        expect(tfMock.tensor2d).toHaveBeenCalledWith(
+          Float32Array.from(classes[0].images.flatMap((item) => item.featureArray)),
+          [20, 2],
+        );
+        expect(tfMock.norm).toHaveBeenCalledTimes(2);
+        expect(tfMock.norm).toHaveBeenCalledWith(expect.any(Object), 'euclidean', 1, true);
+        expect(mockNewClassifier.setClassifierDataset).toHaveBeenCalledExactlyOnceWith({
+          'class-0': expect.any(Object),
+          'class-1': expect.any(Object),
+        });
         expect(setClassifier).toHaveBeenCalledExactlyOnceWith(mockNewClassifier);
       } finally {
         vi.useRealTimers();
@@ -263,11 +277,14 @@ describe('useModelTraining', () => {
       expect(result.current.isTraining).toBe(false);
     });
 
-    it('calls onError with category "training" when the classifier throws during training', async () => {
+    it('releases partially built matrices when training fails and keeps the run unpublished', async () => {
       const tfMock = await import('@tensorflow/tfjs-core');
-      vi.mocked(tfMock.tensor1d).mockImplementationOnce(() => {
-        throw new Error('GPU-Fehler');
-      });
+      const firstMatrix = { dispose: vi.fn() };
+      vi.mocked(tfMock.tensor2d)
+        .mockReturnValueOnce(firstMatrix as never)
+        .mockImplementationOnce(() => {
+          throw new Error('GPU-Fehler');
+        });
 
       const classes = makeClasses(2);
       const { result } = renderHook(() =>
@@ -279,7 +296,9 @@ describe('useModelTraining', () => {
       });
 
       expect(onError).toHaveBeenCalledWith('training', 'Fehler beim Training des Modells.');
+      expect(tfMock.dispose).toHaveBeenCalledExactlyOnceWith({ 'class-0': firstMatrix });
       expect(mockNewClassifier.dispose).toHaveBeenCalled();
+      expect(setClassifier).not.toHaveBeenCalled();
       expect(result.current.isTraining).toBe(false);
     });
 

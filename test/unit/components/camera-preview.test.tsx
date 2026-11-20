@@ -85,6 +85,49 @@ describe('camera preview controls', () => {
     }
   });
 
+  it('attaches only in view or while recording and preserves controls across scrolling', () => {
+    let updateVisibility!: (inView: boolean) => void;
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(private callback: IntersectionObserverCallback) {}
+        observe(target: Element) {
+          updateVisibility = (isIntersecting) =>
+            this.callback(
+              [{ target, isIntersecting } as IntersectionObserverEntry],
+              this as unknown as IntersectionObserver,
+            );
+        }
+        disconnect() {}
+      },
+    );
+    const stop = vi.fn();
+    const stream = { getTracks: () => [{ stop }] } as unknown as MediaStream;
+    const { rerender } = render(<CameraControls stream={stream} />);
+    const video = screen.getByLabelText<HTMLVideoElement>('Kameravorschau für Trainingsaufnahme');
+    const record = screen.getByRole('button', { name: 'Aufnehmen' });
+    expect(video.srcObject ?? null).toBeNull();
+
+    act(() => updateVisibility(true));
+    expect(video.srcObject).toBe(stream);
+    act(() => record.focus());
+    fireEvent.click(record);
+    act(() => updateVisibility(false));
+    expect(video.srcObject).toBe(stream);
+    expect(document.activeElement).toBe(record);
+    fireEvent.click(screen.getByRole('button', { name: 'Aufnahme stoppen' }));
+    expect(video.srcObject).toBeNull();
+    expect(stop).not.toHaveBeenCalled();
+
+    const nextStream = {} as MediaStream;
+    rerender(<CameraControls stream={nextStream} />);
+    expect(video.srcObject).toBeNull();
+    act(() => updateVisibility(true));
+    expect(screen.getByLabelText('Kameravorschau für Trainingsaufnahme')).toBe(video);
+    expect(video.srcObject).toBe(nextStream);
+    expect(document.activeElement).toBe(record);
+  });
+
   it('keeps the focused switch button during stream replacement and blocks duplicate switches', () => {
     const stream = {} as MediaStream;
     const onSwitchCamera = vi.fn();

@@ -53,7 +53,9 @@ describe('strict-CSP static UI', () => {
     expect(dialog?.contains(title)).toBe(true);
     expect(title?.textContent).toBe('Einwilligung zur Datenverarbeitung');
     expect(dialog?.querySelectorAll('[role="checkbox"][aria-checked="false"]')).toHaveLength(2);
-    expect(dialog?.textContent).toContain('IP-Adresse an Google übertragen');
+    const modelConsent = dialog?.querySelector('label[for="model-consent"]');
+    expect(modelConsent?.textContent).toContain('Google und Kaggle meine IP-Adresse');
+    expect(modelConsent?.querySelector('a[href="/datenschutz"]')).not.toBeNull();
     expect(dialog?.querySelector('a[href="/datenschutz"]')).not.toBeNull();
     expect(dialog?.querySelectorAll('button[disabled]')).toHaveLength(1);
   });

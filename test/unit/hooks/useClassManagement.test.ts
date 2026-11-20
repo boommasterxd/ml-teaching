@@ -54,7 +54,7 @@ describe('useClassManagement', () => {
       expect(result.current.classes).toHaveLength(3);
     });
 
-    it('benennt die neue Klasse auto-inkrementiert', () => {
+    it('verwendet die erste freie Standardnummer', () => {
       const { result } = renderHook(() => useClassManagement(onInvalidate));
 
       act(() => result.current.addClass());
@@ -70,15 +70,32 @@ describe('useClassManagement', () => {
       expect(onInvalidate).toHaveBeenCalledTimes(1);
     });
 
-    it('setzt die Nummer korrekt fort nach umbenennen', () => {
+    it('verwendet eine freigewordene Standardnummer nach dem Umbenennen erneut', () => {
       const { result } = renderHook(() => useClassManagement(onInvalidate));
 
-      // Rename "Klasse 2" — auto-increment is based on the highest existing "Klasse N" number.
       act(() => result.current.updateClassName(result.current.classes[1].id, 'Hund'));
       act(() => result.current.addClass());
 
-      // Highest remaining "Klasse N" number is 1, so the next one should be 2.
       expect(result.current.classes[2].name).toBe('Klasse 2');
+    });
+
+    it('vermeidet Namenskollisionen bei großen Nummern und Leerraum', () => {
+      const { result } = renderHook(() => useClassManagement(onInvalidate));
+      const [first, second] = result.current.classes;
+
+      act(() => {
+        result.current.updateClassName(first.id, 'Klasse 10000000000000000');
+        result.current.updateClassName(second.id, ' Klasse 2 ');
+        result.current.addClass();
+        result.current.addClass();
+      });
+
+      expect(result.current.classes.map(({ name }) => name)).toEqual([
+        'Klasse 10000000000000000',
+        ' Klasse 2 ',
+        'Klasse 1',
+        'Klasse 3',
+      ]);
     });
   });
 

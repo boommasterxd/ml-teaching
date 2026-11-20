@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { SubscribePredictionFeatures } from '@/hooks/usePredictionLoop';
 import type { MLClass } from '@/types/ml';
+import { PredictionPlotPlaceholder } from './PredictionDiagram';
 import { Spinner } from './ui/spinner';
 import { Text } from './ui/typography';
 
@@ -70,21 +71,25 @@ export function DeferredPredictionSpace({
 }) {
   if (!result) {
     return (
-      <Text
-        variant="muted"
-        role="status"
-        className="absolute inset-0 flex items-center justify-center gap-2 p-2 text-center"
-      >
-        <Spinner aria-hidden="true" />
-        Merkmalsraum wird vorbereitet …
-      </Text>
+      <PredictionPlotPlaceholder>
+        <Text
+          variant="muted"
+          role="status"
+          className="absolute inset-0 flex items-center justify-center gap-2 p-2 text-center"
+        >
+          <Spinner aria-hidden="true" />
+          Merkmalsraum wird vorbereitet …
+        </Text>
+      </PredictionPlotPlaceholder>
     );
   }
   if ('failed' in result) {
     return (
-      <Text variant="muted" className="absolute inset-0 grid place-items-center p-2 text-center">
-        Der Merkmalsraum konnte nicht angezeigt werden.
-      </Text>
+      <PredictionPlotPlaceholder>
+        <Text variant="muted" className="absolute inset-0 grid place-items-center p-2 text-center">
+          Der Merkmalsraum konnte nicht angezeigt werden.
+        </Text>
+      </PredictionPlotPlaceholder>
     );
   }
   const Space = result.module.default;

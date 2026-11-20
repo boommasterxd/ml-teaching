@@ -6,6 +6,7 @@ import DeferredTrainingDialogs, {
 } from '@/components/DeferredTrainingDialogs';
 import type { ModalState } from '@/hooks/useModalState';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
+import { makeClasses } from '../helpers/training-data';
 
 const chunk = vi.hoisted(() => {
   const gate = Promise.withResolvers<void>();
@@ -24,17 +25,18 @@ function TrainingReset() {
   const [modal, setModal] = useState<ModalState>({ type: 'none' });
   const close = useCallback(() => setModal({ type: 'none' }), []);
   const reset = vi.fn();
+  const classes = makeClasses(1);
   return (
     <>
       <button
         onFocus={prepareTrainingDialogs}
-        onClick={() => setModal({ type: 'clearClass', classId: 'test-class' })}
+        onClick={() => setModal({ type: 'clearClass', classId: classes[0].id })}
       >
         Klasse zurücksetzen
       </button>
       <DeferredTrainingDialogs
         modal={modal}
-        classes={[]}
+        classes={classes}
         closeModal={close}
         removeImage={reset}
         clearClass={reset}
@@ -63,6 +65,8 @@ it('can cancel a cold opening, reuse the same chunk and reopen without losing th
 
   fireEvent.click(trigger);
   const dialog = await screen.findByRole('alertdialog', { name: 'Bilder dieser Klasse löschen?' });
+  expect(dialog.getAttribute('aria-describedby')).toBeTruthy();
+  expect(screen.getByText('„Rot“')).toBeTruthy();
   await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
   fireEvent.keyDown(document, { key: 'Escape' });
   await waitFor(() => expect(document.activeElement).toBe(trigger));

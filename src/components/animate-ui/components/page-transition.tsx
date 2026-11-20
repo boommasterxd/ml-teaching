@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { EntryViewportReadyContext, InitialEntryContext } from '@/components/ui/entry-policy';
 import { useMotionPreference } from '@/components/ui/use-motion-preference';
-import { learningPaths } from '@/lib/learning-paths';
+import { canCaptureRoute, subscribeToHistoryTransitions } from '@/lib/history-transition';
 
 // Exact trusted bytes emitted by Motion's AnimateView reset hook, also hashed during SSG.
 export const VIEW_TRANSITION_RESET = `
@@ -35,13 +35,17 @@ export function PageTransition({
   const pathname = usePathname();
   const page = pageKey ?? pathname;
   const { reduce } = useMotionPreference();
-  // The initial training dialog is already modal on arrival. Document snapshots paint above it.
-  const canAnimateArrival = !reduce && pathname !== learningPaths.imagePractice;
+  const canAnimateArrival = !reduce && canCaptureRoute(pathname);
   const [arrival, setArrival] = useState({ page, initial: true, ready: true, alternate: false });
   const capture = arrival.alternate ? 'page-b' : 'page-a';
   // Separate snapshots keep each page's own scroll position and dimensions.
   if (arrival.page !== page)
     setArrival({ page, initial: false, ready: false, alternate: !arrival.alternate });
+  useEffect(() => {
+    if (reduce || !window.navigation) return;
+    const content = document.querySelector<HTMLElement>('[data-route-capture]');
+    if (content) return subscribeToHistoryTransitions(window.navigation, content);
+  }, [reduce]);
   useEffect(() => {
     if (arrival.ready) return;
     let current = true;

@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 export function checkQualityLimits(root = process.cwd()) {
   const errors: string[] = [];
   function checkFile(file: string) {
-    if (!/\.[cm]?[jt]sx?$/.test(file)) return;
+    if (!/\.(?:[cm]?[jt]sx?|css)$/.test(file)) return;
     const lines = readFileSync(file, 'utf8').trimEnd().split('\n').length;
     if (lines > 500) errors.push(`${file}: ${lines} lines exceeds the 500-line limit.`);
   }

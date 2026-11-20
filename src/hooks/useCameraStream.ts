@@ -9,6 +9,17 @@ interface CameraRequest {
   switching: boolean;
 }
 
+async function openCamera(facingMode: CameraRequest['facingMode']) {
+  return navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode,
+      width: { ideal: CAMERA.IDEAL_WIDTH },
+      height: { ideal: CAMERA.IDEAL_HEIGHT },
+    },
+    audio: false,
+  });
+}
+
 export function useCameraStream(
   cameraConsent: boolean,
   isModelLoading: boolean,
@@ -23,53 +34,73 @@ export function useCameraStream(
   const [result, setResult] = useState<{ request: CameraRequest; stream: MediaStream | null }>();
   if (request.active !== cameraActive) {
     setRequest({ active: cameraActive, facingMode: request.facingMode, switching: false });
+    setResult(undefined);
   }
   const { facingMode } = request;
   const stream = cameraActive && result?.request === request ? result.stream : null;
   const isPending = cameraActive && result?.request !== request;
   const isSwitching = isPending && request.switching;
+  const hasFailed = cameraActive && result?.request === request && result.stream === null;
   const streamRef = useRef<MediaStream | null>(null);
+  const failedRequestRef = useRef<CameraRequest | null>(null);
   const reportError = useEffectEvent(onError);
 
   useEffect(() => {
     if (!request.active) return;
     let active = true;
     let ownedStream: MediaStream | null = null;
+    let tracks: MediaStreamTrack[] = [];
+
+    function releaseCamera() {
+      if (streamRef.current === ownedStream) streamRef.current = null;
+      ownedStream = null;
+      for (const track of tracks) {
+        track.removeEventListener('ended', handleTrackEnded);
+        track.stop();
+      }
+      tracks = [];
+    }
+
+    function fail(message: string) {
+      failedRequestRef.current = request;
+      setResult({ request, stream: null });
+      reportError('camera', message);
+    }
+
+    function handleTrackEnded() {
+      if (!active || !ownedStream) return;
+      releaseCamera();
+      fail('Die Kameraverbindung wurde unterbrochen.');
+    }
 
     async function requestCamera() {
-      try {
-        if (!navigator.mediaDevices?.getUserMedia) throw new Error('Camera unavailable.');
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: request.facingMode,
-            width: { ideal: CAMERA.IDEAL_WIDTH },
-            height: { ideal: CAMERA.IDEAL_HEIGHT },
-          },
-          audio: false,
-        });
-        if (!active) {
-          mediaStream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-        ownedStream = mediaStream;
-        streamRef.current = mediaStream;
-        setResult({ request, stream: mediaStream });
-      } catch {
-        if (!active) return;
-        setResult({ request, stream: null });
-        reportError('camera', 'Kamerazugriff verweigert oder keine Kamera gefunden.');
+      const mediaStream = await openCamera(request.facingMode).catch(() => null);
+      if (!mediaStream) {
+        if (active) fail('Kamerazugriff verweigert oder keine Kamera gefunden.');
+        return;
       }
+      if (!active) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      tracks = mediaStream.getTracks();
+      ownedStream = mediaStream;
+      streamRef.current = mediaStream;
+      for (const track of tracks) track.addEventListener('ended', handleTrackEnded);
+      if (tracks.some((track) => track.readyState === 'ended')) handleTrackEnded();
+      else setResult({ request, stream: mediaStream });
     }
     void requestCamera();
     return () => {
       active = false;
-      ownedStream?.getTracks().forEach((track) => track.stop());
-      if (streamRef.current === ownedStream) streamRef.current = null;
+      releaseCamera();
+      if (failedRequestRef.current === request) failedRequestRef.current = null;
     };
   }, [request]);
 
   const toggleCamera = useCallback(() => {
     const switching = streamRef.current !== null;
+    setResult(undefined);
     setRequest((previous) => ({
       active: previous.active,
       facingMode: previous.facingMode === 'user' ? 'environment' : 'user',
@@ -77,5 +108,19 @@ export function useCameraStream(
     }));
   }, []);
 
-  return { facingMode, stream, streamRef, isPending, isSwitching, toggleCamera };
+  const retryCamera = useCallback(() => {
+    const failed = failedRequestRef.current;
+    setRequest((previous) => (previous === failed ? { ...previous, switching: false } : previous));
+  }, []);
+
+  return {
+    facingMode,
+    stream,
+    streamRef,
+    isPending,
+    isSwitching,
+    hasFailed,
+    toggleCamera,
+    retryCamera,
+  };
 }

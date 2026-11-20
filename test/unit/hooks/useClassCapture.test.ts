@@ -26,6 +26,8 @@ const actions = () => ({
   onUploadStart: vi.fn(() => true),
   onUploadEnd: vi.fn(),
 });
+const makeAttachedVideo = () =>
+  Object.assign(document.createElement('video'), { srcObject: {} as MediaStream });
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -71,7 +73,7 @@ describe('class image capture', () => {
     callbacks.onUploadStart.mockReturnValue(false);
     const cls = makeClass();
     const { result } = renderHook(() => useClassCapture(cls, callbacks));
-    result.current.videoRef.current = document.createElement('video');
+    result.current.videoRef.current = makeAttachedVideo();
     act(() => result.current.startRecording());
     const event = {
       target: { files: [new File(['a'], 'a.png')], value: 'selected' },
@@ -86,7 +88,7 @@ describe('class image capture', () => {
     const { result, rerender } = renderHook(({ cls }) => useClassCapture(cls, callbacks), {
       initialProps: { cls: makeClass() },
     });
-    result.current.videoRef.current = document.createElement('video');
+    result.current.videoRef.current = makeAttachedVideo();
     act(() => result.current.startRecording());
     const event = {
       target: { files: [new File(['a'], 'a.png')], value: 'selected' },
@@ -105,7 +107,7 @@ describe('class image capture', () => {
       ({ callbacks }) => useClassCapture(cls, callbacks),
       { initialProps: { callbacks: first } },
     );
-    const video = document.createElement('video');
+    const video = makeAttachedVideo();
     result.current.videoRef.current = video;
     act(() => {
       result.current.startRecording();
@@ -122,12 +124,27 @@ describe('class image capture', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('waits for an offscreen recording to attach the camera before requesting a frame', () => {
+    const callbacks = actions();
+    const cls = makeClass();
+    const { result } = renderHook(() => useClassCapture(cls, callbacks));
+    const video = document.createElement('video');
+    result.current.videoRef.current = video;
+    act(() => result.current.startRecording());
+    expect(result.current.isRecording).toBe(true);
+    expect(callbacks.onAddExample).not.toHaveBeenCalled();
+
+    video.srcObject = {} as MediaStream;
+    act(() => vi.advanceTimersByTime(CAMERA.CAPTURE_INTERVAL_MS));
+    expect(callbacks.onAddExample).toHaveBeenCalledWith(cls.id, video);
+  });
+
   it('stops recording at the supported image limit and can be stopped by the control', () => {
     const callbacks = actions();
     const { result, rerender } = renderHook(({ cls }) => useClassCapture(cls, callbacks), {
       initialProps: { cls: makeClass() },
     });
-    result.current.videoRef.current = document.createElement('video');
+    result.current.videoRef.current = makeAttachedVideo();
     act(() => result.current.startRecording());
     rerender({ cls: makeClass(ML.MAX_IMAGES_PER_CLASS) });
     act(() => {
@@ -148,7 +165,7 @@ describe('class image capture', () => {
     callbacks.onAddExample.mockRejectedValue(new Error('Camera image unavailable'));
     const cls = makeClass();
     const { result } = renderHook(() => useClassCapture(cls, callbacks));
-    result.current.videoRef.current = document.createElement('video');
+    result.current.videoRef.current = makeAttachedVideo();
     for (let attempt = 1; attempt <= 2; attempt++) {
       await act(async () => result.current.startRecording());
       expect(result.current.isRecording).toBe(false);

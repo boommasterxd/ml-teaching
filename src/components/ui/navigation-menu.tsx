@@ -3,12 +3,12 @@
 import { useRef, type ComponentProps, type ComponentType, type RefObject } from 'react';
 import { NavigationMenu as Primitive } from '@animate-ui/react/primitives/base-ui/navigation-menu';
 import { NavigationMenu as BaseNavigationMenu } from '@base-ui/react/navigation-menu';
-import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ChevronDown } from '../icons/chevron-down';
 import { MenuHighlight } from './menu-highlight';
 
 export const navigationMenuTriggerStyle =
-  'header-menu-trigger group relative inline-flex min-h-8 w-max items-center justify-center rounded-full px-2.5 py-1 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'control-focus header-menu-trigger group relative inline-flex min-h-8 w-max items-center justify-center rounded-full px-2.5 py-1 text-sm font-medium';
 
 export function NavigationMenu({
   className,
@@ -80,7 +80,17 @@ export function NavigationMenuTrigger({ children, onKeyDown, ...props }: Primiti
   return (
     <Primitive.Trigger
       type="button"
-      render={(triggerProps) => <button {...triggerProps} />}
+      render={(triggerProps, { open }) => (
+        <button {...triggerProps}>
+          {children}
+          <ChevronDown
+            size={28}
+            animate={open}
+            className="ml-1 size-3 group-data-popup-open:rotate-180"
+            aria-hidden="true"
+          />
+        </button>
+      )}
       className={navigationMenuTriggerStyle}
       onKeyDown={(event) => {
         onKeyDown?.(event);
@@ -94,14 +104,7 @@ export function NavigationMenuTrigger({ children, onKeyDown, ...props }: Primiti
         }
       }}
       {...props}
-    >
-      {children}
-      <ChevronDown
-        size={28}
-        className="ml-1 size-3 motion-safe:transition-transform group-data-popup-open:rotate-180"
-        aria-hidden="true"
-      />
-    </Primitive.Trigger>
+    />
   );
 }
 
@@ -109,7 +112,7 @@ export function NavigationMenuLink({ className, ...props }: Primitive.Link.Props
   return (
     <BaseNavigationMenu.Link
       className={cn(
-        'block rounded-sm p-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:font-semibold',
+        'control-focus block rounded-sm p-2 text-sm aria-[current=page]:font-semibold',
         className,
       )}
       {...props}

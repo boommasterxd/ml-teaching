@@ -72,6 +72,7 @@ No application secrets are required. Never pull private environment values just 
 verify setup. `.vercelignore` excludes local secrets and unnecessary development
 content while keeping all native build/CSP inputs. Git delivery, CLI source uploads
 and final deployed artifacts remain separate verification boundaries.
+The root `.codex-attachments/` directory is excluded from both Git and Vercel uploads.
 
 ## Publication acceptance
 

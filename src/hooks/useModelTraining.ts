@@ -6,6 +6,7 @@
  * validation flags so the UI can reflect readiness and progress.
  */
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import type { Tensor2D } from '@tensorflow/tfjs-core';
 import { createClassifier, loadTensorFlow } from '../lib/ml-runtime';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
@@ -30,9 +31,8 @@ export interface TrainingProgress {
 const progressIntervalMs = 100;
 
 /**
- * Trains a new KNN classifier by adding all stored feature vectors class by class.
- * Each tensor is disposed immediately after use to prevent GPU memory leaks.
- * Yields to the browser every TRAINING_BATCH_SIZE iterations to keep the UI responsive.
+ * Installs one normalized matrix per class without rebuilding it for every image.
+ * Progress and cancellation still yield to the browser while collecting features.
  */
 async function trainClassifier(
   classes: MLClass[],
@@ -41,22 +41,33 @@ async function trainClassifier(
   onBatch: (processed: number) => void,
 ): Promise<void> {
   const tf = await loadTensorFlow();
+  const featureCount = classes[0].images[0].featureArray.length;
+  const dataset: Record<string, Tensor2D> = {};
   let count = 0;
-  for (const cls of classes) {
-    for (const img of cls.images) {
+  try {
+    for (const cls of classes) {
       signal.throwIfAborted();
-      const tensor = tf.tensor1d(img.featureArray);
-      try {
-        newClassifier.addExample(tensor, cls.id);
-      } finally {
-        tensor.dispose();
+      const rowCount = cls.images.length;
+      const rows = new Float32Array(rowCount * featureCount);
+      for (const [row, { featureArray }] of cls.images.entries()) {
+        if (featureArray.length !== featureCount) throw new Error('Invalid feature vector size.');
+        rows.set(featureArray, row * featureCount);
+        count++;
+        if (count % ML.TRAINING_BATCH_SIZE === 0) {
+          onBatch(count);
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+          signal.throwIfAborted();
+        }
       }
-      count++;
-      if (count % ML.TRAINING_BATCH_SIZE === 0) {
-        onBatch(count);
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      }
+      dataset[cls.id] = tf.tidy(() => {
+        const examples = tf.tensor2d(rows, [rowCount, featureCount]);
+        return tf.div(examples, tf.norm(examples, 'euclidean', 1, true));
+      });
     }
+    newClassifier.setClassifierDataset(dataset);
+  } catch (error) {
+    tf.dispose(dataset);
+    throw error;
   }
 }
 

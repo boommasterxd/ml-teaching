@@ -36,6 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -61,6 +62,7 @@ jobs:
           CACHE_MATCHED_KEY: ${{ steps.cache.outputs.cache-matched-key }}
           CACHE_RESTORE_OUTCOME: ${{ steps.cache.outcome }}
       - name: Populate the complete locked dependency store
+        if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci --no-audit
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: steps.cache.outputs.cache-hit != 'true' && steps.cache.outputs.cache-primary-key != ''

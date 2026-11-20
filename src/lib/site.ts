@@ -9,6 +9,7 @@ export const siteConfig = {
   locale: 'de_DE',
 } as const;
 
+export const webSiteId = `${siteConfig.url}/#website`;
 export const webApplicationId = `${siteConfig.url}/#application`;
 
 const socialImage = {
@@ -23,6 +24,7 @@ export function pageMetadata(title: string, description: string, path: string): 
     title,
     description,
     alternates: { canonical: path },
+    robots: { index: true, follow: true },
     openGraph: {
       title,
       description,

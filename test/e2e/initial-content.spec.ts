@@ -207,12 +207,9 @@ for (const [width, colorScheme] of [
       await expect(local.getByRole('link')).toHaveAttribute('href', '/datenschutz');
       await expectReadable(model);
       await expect(model).toContainText(
-        /MobileNet[\s\S]*Google[\s\S]*IP-Adresse[\s\S]*kein Upload/,
+        /KI-Modell[\s\S]*Google über Kaggle[\s\S]*Google und Kaggle meine IP-Adresse/,
       );
-      await expect(model.getByRole('link')).toHaveAttribute(
-        'href',
-        'https://policies.google.com/privacy',
-      );
+      await expect(model.getByRole('link')).toHaveAttribute('href', '/datenschutz');
       await expectReadable(dialog.getByRole('note'));
       const choices = dialog.getByRole('checkbox');
       await expect(choices).toHaveCount(2);

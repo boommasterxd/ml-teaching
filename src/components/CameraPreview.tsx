@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { Camera } from './icons/camera';
 import { Square } from './icons/square';
 import { SwitchCamera } from './icons/switch-camera';
@@ -110,11 +110,46 @@ function RecordButton({
   );
 }
 
+function usePreviewVisibility(previewRef: React.RefObject<HTMLDivElement | null>) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const preview = previewRef.current;
+    if (!preview) return;
+    let inViewport = false;
+    const updateVisibility = () => setVisible(inViewport && !document.hidden);
+    const observer = new IntersectionObserver((entries) => {
+      inViewport = entries.at(-1)?.isIntersecting ?? false;
+      updateVisibility();
+    });
+    observer.observe(preview);
+    document.addEventListener('visibilitychange', updateVisibility);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', updateVisibility);
+    };
+  }, [previewRef]);
+  return visible;
+}
+
 function LiveCameraPreview(props: CameraPreviewProps) {
-  const { disabled, stream, facingMode, isCameraSwitching, onSwitchCamera, videoRef } = props;
+  const { disabled, stream, facingMode, isCameraSwitching, onSwitchCamera, videoRef, isRecording } =
+    props;
+  const previewRef = useRef<HTMLDivElement>(null);
+  const visible = usePreviewVisibility(previewRef);
+  const attachedStream = visible || isRecording ? stream : null;
+
+  useLayoutEffect(() => {
+    const video = videoRef.current;
+    if (!video || !attachedStream) return;
+    video.srcObject = attachedStream;
+    return () => {
+      if (video.srcObject === attachedStream) video.srcObject = null;
+    };
+  }, [attachedStream, videoRef]);
+
   return (
     <div className="grid w-full min-w-0 max-w-80 gap-2 justify-self-center">
-      <div className="relative">
+      <div ref={previewRef} className="relative aspect-[4/3]">
         <video
           ref={videoRef}
           autoPlay
@@ -122,7 +157,7 @@ function LiveCameraPreview(props: CameraPreviewProps) {
           muted
           aria-label="Kameravorschau für Trainingsaufnahme"
           className={cn(
-            'aspect-[4/3] w-full rounded-2xl bg-media-surface object-cover',
+            'absolute inset-0 size-full rounded-2xl bg-media-surface object-cover',
             facingMode === 'user' && 'transform scale-x-[-1]',
           )}
         />
@@ -154,7 +189,6 @@ export default function CameraPreview(props: CameraPreviewProps) {
     isRecording,
     onStopRecording,
     onFileUpload,
-    videoRef,
     disabled,
     fileActions,
     onCaptureIntent,
@@ -163,14 +197,8 @@ export default function CameraPreview(props: CameraPreviewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endCapture = useEffectEvent(onStopRecording);
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !stream) return;
-    video.srcObject = stream;
-    return () => {
-      if (video.srcObject === stream) video.srcObject = null;
-      endCapture();
-    };
-  }, [stream, videoRef]);
+    if (stream) return () => endCapture();
+  }, [stream]);
   useEffect(() => {
     if (!isRecording) return;
     const stopWhenHidden = () => {

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { ESLint } from 'eslint';
 import { checkQualityLimits } from '../../scripts/check-quality-limits.ts';
@@ -13,13 +13,14 @@ afterEach(() => {
 });
 
 describe('blocking quality gates', () => {
-  it('rejects oversized root configuration through the native CLI', () => {
+  it.each(['next.config.mjs', 'src/site.css'])('rejects an oversized %s via the CLI', (path) => {
     const root = mkdtempSync(join(tmpdir(), 'ml-teaching-quality-'));
     fixtures.push(root);
-    const file = join(root, 'next.config.mjs');
-    writeFileSync(file, Array(500).fill('// configuration fixture').join('\n'));
+    const file = join(root, path);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, Array(500).fill('/* source fixture */').join('\n'));
     expect(checkQualityLimits(root)).toEqual([]);
-    writeFileSync(file, Array(501).fill('// configuration fixture').join('\n'));
+    writeFileSync(file, Array(501).fill('/* source fixture */').join('\n'));
     expect(checkQualityLimits(root)).toEqual([`${file}: 501 lines exceeds the 500-line limit.`]);
     const result = spawnSync(process.execPath, [resolve('scripts/check-quality-limits.ts')], {
       cwd: root,

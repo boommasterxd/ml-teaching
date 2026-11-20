@@ -11,6 +11,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useImageFeatureExtraction } from '@/hooks/useImageFeatureExtraction';
 import { ML } from '@/constants';
+import { retireModel } from '@/lib/ml-runtime';
 import type { FeatureExtractor } from '@/types/ml-models';
 
 // Mock TF.js — only browser.fromPixels is called inside the hook.
@@ -42,6 +43,7 @@ function makeTensor(data: number[] = [0.1, 0.2]) {
 function makeFeatureExtractor(featureTensor = makeTensor()): FeatureExtractor {
   return {
     infer: vi.fn(() => featureTensor) as unknown as FeatureExtractor['infer'],
+    dispose: vi.fn(),
   };
 }
 
@@ -133,7 +135,7 @@ describe('useImageFeatureExtraction', () => {
     expect(secondTensor.dispose).toHaveBeenCalledOnce();
   });
 
-  it('releases waiting uploads on unmount without starting more GPU work', async () => {
+  it('cancels waiting uploads and defers model disposal until the in-flight readback completes', async () => {
     let finish!: (data: Float32Array) => void;
     const tensor = makeTensor();
     tensor.data.mockImplementationOnce(
@@ -148,11 +150,14 @@ describe('useImageFeatureExtraction', () => {
     await waitFor(() => expect(model.infer).toHaveBeenCalledOnce());
     const waiting = result.current.extractFeatures(makeVideoSource(), false, true);
     unmount();
+    retireModel(model);
+    expect(model.dispose).not.toHaveBeenCalled();
     expect(await waiting).toBeNull();
     finish(new Float32Array([1, 0]));
     expect(await first).toBeNull();
     expect(model.infer).toHaveBeenCalledOnce();
     expect(tensor.dispose).toHaveBeenCalledOnce();
+    expect(model.dispose).toHaveBeenCalledOnce();
   });
   describe('Null-Guards', () => {
     it('gibt null zurück wenn kein Modell übergeben wurde', async () => {
@@ -308,6 +313,7 @@ describe('useImageFeatureExtraction', () => {
         infer: vi.fn(() => {
           throw new Error('GPU error');
         }) as unknown as FeatureExtractor['infer'],
+        dispose: vi.fn(),
       };
       const { result } = renderHook(() => useImageFeatureExtraction(errorModel));
 

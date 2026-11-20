@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useTrainingWorkspace } from '../hooks/useTrainingWorkspace';
 import PageHeader from '../components/PageHeader';
 import Button from '../components/Button';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { Badge } from '../components/ui/badge';
-import TrainingPanels, { type TrainingStep } from '../components/TrainingPanels';
+import { Spinner } from '../components/ui/spinner';
+import TrainingPanels from '../components/TrainingPanels';
+import { useTrainingPanelLoading, type TrainingStep } from '../components/training-panel-loading';
 import DeferredTrainingDialogs from '../components/DeferredTrainingDialogs';
 import TrainingError from '../components/TrainingError';
 import TrainingSetupDialog from '../components/modals/TrainingSetupDialog';
@@ -28,6 +31,7 @@ function TrainingPipeline({
   canTrain,
   canPredict,
   onSelect,
+  onPrepare,
   navigation,
 }: {
   currentStep: TrainingStep;
@@ -35,6 +39,7 @@ function TrainingPipeline({
   canTrain: boolean;
   canPredict: boolean;
   onSelect: (step: TrainingStep) => void;
+  onPrepare: (step: TrainingStep) => void;
   navigation: React.Ref<HTMLElement>;
 }) {
   return (
@@ -43,12 +48,16 @@ function TrainingPipeline({
         {steps.map(({ step, label }, index) => (
           <li key={step}>
             <Button
+              id={`training-step-${step}`}
               variant="ghost"
               size="sm"
               className="training-step"
               aria-current={step === currentStep ? 'step' : undefined}
               disabled={step === 'training' ? !canTrain : step === 'prediction' && !canPredict}
               onClick={() => onSelect(step)}
+              onPointerEnter={() => onPrepare(step)}
+              onFocus={() => onPrepare(step)}
+              onPointerDown={() => onPrepare(step)}
             >
               <Badge
                 variant={step === currentStep ? 'default' : 'secondary'}
@@ -76,9 +85,14 @@ function TrainingPipeline({
 }
 
 function useTrainingNavigation(canTrain: boolean, canPredict: boolean, stopPrediction: () => void) {
+  const { modules, prepared, status, prepare, open } = useTrainingPanelLoading(
+    canTrain,
+    canPredict,
+  );
   const [selection, setSelection] = useState<TrainingStep>('images');
   const navigation = useRef<HTMLElement>(null);
   const previous = useRef(selection);
+  const moveFocus = useRef(true);
   const current = !canTrain
     ? 'images'
     : selection === 'prediction' && !canPredict
@@ -88,16 +102,57 @@ function useTrainingNavigation(canTrain: boolean, canPredict: boolean, stopPredi
   useLayoutEffect(() => {
     if (previous.current === current) return;
     previous.current = current;
+    const shouldMoveFocus = moveFocus.current;
+    moveFocus.current = true;
+    if (!shouldMoveFocus) return;
     const heading = steps.find(({ step }) => step === current);
     if (heading) document.getElementById(heading.id)?.focus({ preventScroll: true });
     navigation.current?.scrollIntoView?.({ block: 'start', behavior: 'instant' });
   }, [current]);
   const select = (step: TrainingStep) => {
-    if ((step === 'training' && !canTrain) || (step === 'prediction' && !canPredict)) return;
-    if (current === 'prediction' && step !== current) stopPrediction();
-    setSelection(step);
+    open(step, (focusOnCommit) => {
+      if (current === 'prediction' && step !== current) stopPrediction();
+      if (step !== current) moveFocus.current = focusOnCommit;
+      setSelection(step);
+    });
   };
-  return { current, navigation, select };
+  const onPrepare = (step: TrainingStep) => {
+    if (step !== 'images' && step !== current) prepare(step);
+  };
+  return { current, navigation, select, onPrepare, modules, prepared, status };
+}
+
+function TrainingPanelFeedback({
+  status,
+  retry,
+}: {
+  status: ReturnType<typeof useTrainingNavigation>['status'];
+  retry: (step: TrainingStep) => void;
+}) {
+  if (!status) return null;
+  if (status.state === 'loading')
+    return (
+      <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Spinner aria-hidden="true" /> Ansicht wird geladen …
+      </p>
+    );
+  return (
+    <Alert variant="destructive">
+      <AlertDescription>
+        <p>Die Ansicht konnte nicht geladen werden.</p>
+        {status.needsReload ? (
+          <p>
+            Lade die Seite neu, wenn du fortfahren möchtest. Dabei gehen deine Trainingsdaten
+            verloren.
+          </p>
+        ) : (
+          <Button variant="outline" size="sm" onClick={() => retry(status.step)}>
+            Erneut versuchen
+          </Button>
+        )}
+      </AlertDescription>
+    </Alert>
+  );
 }
 
 function getSetupStep({
@@ -140,6 +195,7 @@ export default function TrainingPage() {
               canTrain={data.canTrain}
               canPredict={canPredict}
               onSelect={flow.select}
+              onPrepare={flow.onPrepare}
               navigation={flow.navigation}
             />
           }
@@ -155,11 +211,21 @@ export default function TrainingPage() {
             onReturnIntent={modelFailed ? prepareReturn : undefined}
           />
         )}
+        <TrainingPanelFeedback
+          status={flow.status}
+          retry={(step) => {
+            document.getElementById(`training-step-${step}`)?.focus({ preventScroll: true });
+            flow.select(step);
+          }}
+        />
         <TrainingPanels
           workspace={workspace}
           ready={ready}
           step={flow.current}
+          modules={flow.modules}
+          prepared={flow.prepared}
           onSelect={flow.select}
+          onPrepare={flow.onPrepare}
         />
       </div>
       {consent.hasConsented && !initialSetup && setupStep === null && <TrainingFooterWithdrawal />}

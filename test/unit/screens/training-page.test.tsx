@@ -15,7 +15,6 @@ const boundary = vi.hoisted(() => {
     stopTrack: vi.fn(),
     toastError: vi.fn(),
     prepareToastViewport: vi.fn(),
-    model: { infer: vi.fn(tensor), dispose: vi.fn() },
   };
 });
 vi.mock('@/components/toast-loader', () => ({
@@ -29,17 +28,23 @@ vi.mock('@tensorflow/tfjs-core', () => ({
   setBackend: vi.fn(async () => true),
   ready: vi.fn(async () => {}),
   zeros: boundary.tensor,
-  tensor1d: boundary.tensor,
+  tensor2d: boundary.tensor,
+  div: boundary.tensor,
+  norm: boundary.tensor,
+  dispose: vi.fn(),
   tidy: (operation: () => unknown) => operation(),
   browser: { fromPixels: vi.fn(boundary.tensor) },
 }));
 vi.mock('@tensorflow/tfjs-backend-webgl', () => ({}));
-vi.mock('@tensorflow-models/mobilenet', () => ({ load: boundary.load }));
+vi.mock('@/lib/mobilenet-embedding', () => ({ loadMobileNetEmbedding: boundary.load }));
 vi.mock('@tensorflow-models/knn-classifier', () => ({
   create: () => {
     const labels = new Set<string>();
     return {
       addExample: (_tensor: unknown, label: string) => labels.add(label),
+      setClassifierDataset: (dataset: Record<string, unknown>) => {
+        for (const label of Object.keys(dataset)) labels.add(label);
+      },
       getNumClasses: () => labels.size,
       predictClass: async () => ({
         label: [...labels][0],
@@ -60,10 +65,14 @@ const originalRevokeURL = Object.getOwnPropertyDescriptor(URL, 'revokeObjectURL'
 beforeEach(() => {
   installBrowserHost();
   vi.clearAllMocks();
-  boundary.load.mockReset().mockResolvedValue(boundary.model);
+  boundary.load.mockReset().mockImplementation(async () => ({
+    infer: vi.fn(boundary.tensor),
+    dispose: vi.fn(),
+  }));
+  const track = Object.assign(new EventTarget(), { stop: boundary.stopTrack, readyState: 'live' });
   boundary.getUserMedia.mockResolvedValue({
     active: true,
-    getTracks: () => [{ stop: boundary.stopTrack }],
+    getTracks: () => [track],
   });
   Object.defineProperty(navigator, 'mediaDevices', {
     configurable: true,
@@ -142,6 +151,12 @@ async function enterWithoutCamera() {
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 }
 
+async function openSecondImagePreview() {
+  const gallery = within(screen.getByRole('region', { name: /Trainingsbilder von Klasse 1:/ }));
+  fireEvent.click(await gallery.findByRole('button', { name: 'Bild 2 vergrößern' }));
+  return within(await screen.findByRole('dialog', { name: 'Bild 2 aus Klasse 1' }));
+}
+
 const png =
   'iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAIAAAA2iEnWAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVQImWP4z8DwnwGMERQARNAF+661WskAAAAASUVORK5CYII=';
 const imageBytes = Uint8Array.from(atob(png), (character) => character.charCodeAt(0));
@@ -181,8 +196,8 @@ describe('training page integration', () => {
     await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2));
     expect(currentStep()).toBe(steps.getByRole('button', { name: 'Bilder sammeln' }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Weiter zum Training' })[0]);
-    expect(screen.queryByRole('heading', { name: 'Bilder sammeln' })).toBeNull();
-    const train = screen.getByRole('button', { name: 'Modell trainieren' });
+    expect(screen.getByText('Ansicht wird geladen …')).toBeTruthy();
+    const train = await screen.findByRole('button', { name: 'Modell trainieren' });
     await waitFor(() => expect((train as HTMLButtonElement).disabled).toBe(false));
     expect(currentStep()).toBe(steps.getByRole('button', { name: 'Training' }));
     fireEvent.click(train);
@@ -192,8 +207,9 @@ describe('training page integration', () => {
       { timeout: 3000 },
     );
     fireEvent.click(next);
+    const predictionHeading = await screen.findByRole('heading', { name: 'Vorhersage' });
     expect(currentStep()).toBe(steps.getByRole('button', { name: 'Vorhersage' }));
-    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Vorhersage' }));
+    expect(document.activeElement).toBe(predictionHeading);
     fireEvent.click(screen.getByRole('button', { name: 'Kamera aktivieren' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Erlauben' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
@@ -211,12 +227,11 @@ describe('training page integration', () => {
     expect(screen.getByRole('button', { name: 'Live-Vorhersage starten' })).toBeTruthy();
     fireEvent.click(steps.getByRole('button', { name: 'Bilder sammeln' }));
     expect(screen.getAllByText('10 Bilder')).toHaveLength(2);
-    const previews = await screen.findAllByRole('button', { name: 'Bild vergrößern' });
-    fireEvent.click(previews[0]);
-    fireEvent.click(await screen.findByRole('button', { name: 'Schließen' }));
+    const preview = await openSecondImagePreview();
+    fireEvent.click(preview.getByRole('button', { name: 'Schließen' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bild vergrößern' })[0]);
-    fireEvent.click(await screen.findByRole('button', { name: 'Bild löschen' }));
+    const reopened = await openSecondImagePreview();
+    fireEvent.click(reopened.getByRole('button', { name: 'Bild löschen' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(screen.getByText('9 / 10 Bilder')).toBeTruthy();
     expect((steps.getByRole('button', { name: 'Vorhersage' }) as HTMLButtonElement).disabled).toBe(
@@ -291,18 +306,23 @@ describe('training page integration', () => {
   });
 
   it('reports camera access failure and still lets the user continue with uploads', async () => {
-    boundary.getUserMedia.mockRejectedValue(new DOMException('Access denied', 'NotAllowedError'));
+    boundary.getUserMedia.mockRejectedValueOnce(
+      new DOMException('Access denied', 'NotAllowedError'),
+    );
     const { container } = render(<TrainingPage />);
     confirmGeneralConsent();
     fireEvent.click(await screen.findByRole('button', { name: 'Erlauben' }));
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('Kamerazugriff verweigert oder keine Kamera gefunden.');
     expect(within(alert).getByRole('button', { name: 'Seite neu laden' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Kamera erneut versuchen' })).toBeNull();
+    const retry = screen.getByRole('button', { name: 'Kamera erneut verbinden' });
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
     fireEvent.change(input, { target: { files: selectedImages('valid', 1) } });
     await screen.findByText('1 / 10 Bilder');
     expect(screen.getByRole('alert')).toBe(alert);
+    fireEvent.click(retry);
+    await waitFor(() => expect(boundary.getUserMedia).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('returns to the image explanation when the general processing choice is declined', () => {

@@ -31,7 +31,7 @@ export function Checkbox({ className, checked, onCheckedChange, ...props }: Chec
       }}
       data-slot="checkbox"
       className={cn(
-        'peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-checked:border-primary aria-checked:bg-primary aria-checked:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:aria-checked:bg-primary',
+        'control-focus peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-checked:border-primary aria-checked:bg-primary aria-checked:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:aria-checked:bg-primary',
         className,
       )}
     >

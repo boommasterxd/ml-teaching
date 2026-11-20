@@ -10,6 +10,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePredictionLoop } from '@/hooks/usePredictionLoop';
 import { PREDICTION } from '@/constants';
+import { retireModel } from '@/lib/ml-runtime';
 import type { Classifier, FeatureExtractor } from '@/types/ml-models';
 
 // Mock TF.js — only fromPixels is called inside the prediction loop.
@@ -35,7 +36,7 @@ function makeClassifier(numClasses = 2, shouldThrow = false): Classifier {
       : vi.fn().mockResolvedValue({ label: 'Class 1', confidences: { 'Class 1': 0.9 } }),
     getNumClasses: vi.fn(() => numClasses),
     dispose: vi.fn(),
-    clearAllClasses: vi.fn(),
+    setClassifierDataset: vi.fn(),
   };
 }
 
@@ -46,6 +47,7 @@ function makeClassifier(numClasses = 2, shouldThrow = false): Classifier {
 function makeFeatureExtractor(): FeatureExtractor {
   return {
     infer: vi.fn(() => ({ dispose: vi.fn() })) as unknown as FeatureExtractor['infer'],
+    dispose: vi.fn(),
   };
 }
 
@@ -158,7 +160,7 @@ describe('usePredictionLoop', () => {
     expect(result.current.prediction?.label).toBe('Class 1');
   });
 
-  it('does not restore a prediction when an in-flight result resolves after stop', async () => {
+  it('releases invalidated training data only after the last prediction settles', async () => {
     const classifier = makeClassifier();
     let finish!: (value: { label: string; confidences: Record<string, number> }) => void;
     vi.mocked(classifier.predictClass).mockImplementation(
@@ -175,12 +177,20 @@ describe('usePredictionLoop', () => {
       await fireRaf();
     });
     expect(classifier.predictClass).toHaveBeenCalledOnce();
-    act(() => result.current.stopPredicting());
+    act(() => {
+      result.current.stopPredicting();
+      retireModel(classifier);
+      retireModel(model);
+    });
+    expect(classifier.dispose).not.toHaveBeenCalled();
+    expect(model.dispose).not.toHaveBeenCalled();
     await act(async () => {
       finish({ label: 'old', confidences: { old: 1 } });
     });
     expect(result.current.prediction).toBeNull();
     expect(result.current.isPredicting).toBe(false);
+    expect(classifier.dispose).toHaveBeenCalledOnce();
+    expect(model.dispose).toHaveBeenCalledOnce();
   });
 
   it('releases the input tensor and reports repeated feature-extraction failures', async () => {

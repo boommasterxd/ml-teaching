@@ -50,7 +50,7 @@ function Slider<Value extends number | readonly number[]>({
             index={index}
             key={index}
             data-slot="slider-thumb"
-            className="block size-4 shrink-0 rounded-full border border-primary bg-background shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 has-[:focus-visible]:ring-4 data-[disabled]:pointer-events-none"
+            className="control-focus block size-4 shrink-0 rounded-full border border-primary bg-background shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 data-[disabled]:pointer-events-none"
           />
         ))}
       </SliderPrimitive.Control>

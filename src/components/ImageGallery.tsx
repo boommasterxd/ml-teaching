@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useRef, useCallback } from 'react';
+import { memo, useState, useEffect, useRef, useCallback, type RefObject } from 'react';
 import Button from './Button';
 import { Image as ImageIcon } from './icons/image';
 import { Trash2 } from './icons/trash2';
@@ -105,16 +105,16 @@ interface GalleryToolbarProps {
   isSelectionMode: boolean;
   selectedCount: number;
   onDelete: () => void;
-  onCancel: () => void;
-  onSelect: () => void;
+  modeButtonRef: RefObject<HTMLButtonElement | null>;
+  onToggleMode: () => void;
 }
 
 function GalleryToolbar({
   isSelectionMode,
   selectedCount,
   onDelete,
-  onCancel,
-  onSelect,
+  modeButtonRef,
+  onToggleMode,
 }: GalleryToolbarProps) {
   return (
     <div className="flex min-h-9 shrink-0 items-center justify-between gap-1">
@@ -122,26 +122,39 @@ function GalleryToolbar({
         {isSelectionMode ? `${selectedCount} ausgewählt` : 'Bildergalerie'}
       </span>
       <div className="flex gap-1">
-        {isSelectionMode ? (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onDelete}
-              disabled={selectedCount === 0}
-              aria-label={`${selectedCount} ausgewählte Bilder löschen`}
-            >
-              <Trash2 aria-hidden="true" />
-              <span className="hidden @md/gallery:inline">Löschen</span>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onCancel} aria-label="Auswahl abbrechen">
+        <Button
+          ref={modeButtonRef}
+          variant="ghost"
+          size="sm"
+          onClick={(event) => {
+            event.currentTarget.focus({ preventScroll: true });
+            onToggleMode();
+          }}
+          aria-label={isSelectionMode ? 'Auswahl abbrechen' : 'Mehrere markieren'}
+        >
+          {isSelectionMode ? (
+            <>
               <X aria-hidden="true" />
               <span className="hidden @md/gallery:inline">Abbrechen</span>
-            </Button>
-          </>
-        ) : (
-          <Button variant="ghost" size="sm" onClick={onSelect} aria-label="Mehrere markieren">
-            Markieren
+            </>
+          ) : (
+            'Markieren'
+          )}
+        </Button>
+        {isSelectionMode && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            disabled={selectedCount === 0}
+            aria-label={
+              selectedCount === 1
+                ? '1 ausgewähltes Bild löschen'
+                : `${selectedCount} ausgewählte Bilder löschen`
+            }
+          >
+            <Trash2 aria-hidden="true" />
+            <span className="hidden @md/gallery:inline">Löschen</span>
           </Button>
         )}
       </div>
@@ -181,6 +194,7 @@ const ImageGallery = memo(function ImageGallery({
     setSelectedIds(new Set());
   }
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const modeButtonRef = useRef<HTMLButtonElement>(null);
   const hasImages = images.length > 0;
 
   /** Adds or removes an image ID from the current selection set. */
@@ -199,6 +213,8 @@ const ImageGallery = memo(function ImageGallery({
   /** Deletes all currently selected images and exits selection mode. */
   const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
+    const nextFocus = selectedIds.size === images.length ? scrollContainerRef : modeButtonRef;
+    nextFocus.current?.focus({ preventScroll: true });
     onRemoveImages(Array.from(selectedIds));
     setSelectedIds(new Set());
     setIsSelectionMode(false);
@@ -217,11 +233,11 @@ const ImageGallery = memo(function ImageGallery({
           isSelectionMode={isSelectionMode}
           selectedCount={selectedIds.size}
           onDelete={handleBulkDelete}
-          onCancel={() => {
-            setIsSelectionMode(false);
-            setSelectedIds(new Set());
+          modeButtonRef={modeButtonRef}
+          onToggleMode={() => {
+            if (isSelectionMode) setSelectedIds(new Set());
+            setIsSelectionMode(!isSelectionMode);
           }}
-          onSelect={() => setIsSelectionMode(true)}
         />
       )}
       <div

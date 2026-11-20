@@ -6,7 +6,14 @@ const nextConfig = {
   agentRules: false,
   adapterPath: fileURLToPath(new URL('./csp/adapter.mjs', import.meta.url)),
   poweredByHeader: false,
-  images: { formats: ['image/avif', 'image/webp'] },
+  images: {
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    formats: ['image/avif', 'image/webp'],
+    localPatterns: [
+      { pathname: '/_next/static/media/**', search: '' },
+      { pathname: '/_next/static/immutable/media/**', search: '' },
+    ],
+  },
   experimental: {
     turbopackChunking: {
       minChunkSize: 700_000,

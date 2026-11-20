@@ -230,30 +230,160 @@ test('the mobile navigation marks the current page and moves its highlight on ho
   expect(failures).toEqual([]);
 });
 
-test('desktop navigation without a current page highlights only the hovered item', async ({
+function feedbackArrow(link: Locator) {
+  return link.locator('svg').last().locator('g').first();
+}
+
+function arrowOffset(link: Locator) {
+  return feedbackArrow(link).evaluate((arrow) => {
+    const transform = getComputedStyle(arrow).transform;
+    return transform === 'none' ? 0 : new DOMMatrix(transform).m41;
+  });
+}
+
+async function watchStationaryHover(link: Locator) {
+  const probe = await feedbackArrow(link).evaluateHandle((arrow) => {
+    const state = { stopped: false, lost: false };
+    function check() {
+      if (state.stopped) return;
+      const transform = getComputedStyle(arrow).transform;
+      if (!arrow.isConnected || transform === 'none' || new DOMMatrix(transform).m41 <= 0) {
+        state.lost = true;
+      }
+      requestAnimationFrame(check);
+    }
+    requestAnimationFrame(check);
+    return state;
+  });
+  return async () => {
+    const lost = await probe.evaluate((state) => {
+      state.stopped = true;
+      return state.lost;
+    });
+    await probe.dispose();
+    expect(lost).toBe(false);
+  };
+}
+
+test('finished link preparation supplies the complete page on first activation and reentry', async ({
+  page,
+  baseURL,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+  const failures = diagnostics(page);
+  const network = await holdLearningPayloads(page, baseURL!);
+  try {
+    await page.goto('/');
+    const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
+    const trigger = navigation.getByRole('button', { name: 'Lernlabor', exact: true });
+    const overview = navigation.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
+    await trigger.hover();
+    await expect(overview).toBeVisible();
+    expect(network.payloads).toEqual([]);
+    const destination = page.waitForResponse((response) => {
+      const request = response.request();
+      return (
+        isLearningPayload(request) &&
+        request.headers()['next-router-segment-prefetch']?.endsWith('/__PAGE__')
+      );
+    });
+    await expect.poll(() => arrowOffset(overview)).toBe(0);
+    await overview.hover();
+    await expect.poll(() => network.prefetches.length).toBeGreaterThan(0);
+    await expect.poll(() => arrowOffset(overview)).toBeGreaterThan(0);
+    const verifyHover = await watchStationaryHover(overview);
+    network.release();
+    const prepared = await destination;
+    expect(prepared.ok()).toBe(true);
+    expect(await prepared.text()).toContain('Dein Lernlabor');
+    await settleEntryAnimations(page);
+    await verifyHover();
+    expect(await arrowOffset(overview)).toBeGreaterThan(0);
+
+    const preparedRequests = network.payloads.length;
+    const heading = page.getByRole('heading', { name: 'Dein Lernlabor', exact: true });
+    await overview.click();
+    await expect(heading).toBeVisible();
+    await expect(page).toHaveURL(learningPaths.hub);
+    expect(network.payloads).toHaveLength(preparedRequests);
+
+    await navigation.getByRole('link', { name: 'Startseite', exact: true }).click();
+    await expect(page).toHaveURL('/');
+    await trigger.hover();
+    await overview.click();
+    await expect(heading).toBeVisible();
+    await expect(page).toHaveURL(learningPaths.hub);
+    await settleEntryAnimations(page);
+    expect(network.payloads).toHaveLength(preparedRequests);
+    expect(network.documents()).toBe(1);
+    expect(failures).toEqual([]);
+  } finally {
+    network.release();
+  }
+});
+
+test('failed preparation keeps the first hover feedback and the link remains keyboard operable', async ({
   page,
 }) => {
-  const path = '/this-page-does-not-exist';
-  const failures = diagnostics(page, path);
-  await page.goto(path);
-  const toolbar = page.locator('.header-menu-desktop > .menu-highlight-container');
-  const learning = toolbar.getByRole('button', { name: 'Lernlabor', exact: true });
-  const neutral = await learning.evaluate((trigger) => getComputedStyle(trigger).color);
-  await expect(toolbar.locator('.menu-highlight-surface')).toHaveCount(0);
-  await learning.hover();
-  await expect(toolbar.locator('.menu-highlight-surface')).toHaveCount(1);
-  await expect(learning).toHaveCSS('color', neutral);
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'no-preference' });
+  const response = Promise.withResolvers<void>();
+  let held = false;
+  await page.route('**/lernen?*', async (route) => {
+    const request = route.request();
+    if (held || request.headers()['next-router-segment-prefetch'] !== '/_tree') {
+      return route.continue();
+    }
+    held = true;
+    await response.promise;
+    await route.abort('connectionfailed');
+  });
+  try {
+    await page.goto('/');
+    const main = page.getByRole('main');
+    const link = main.getByRole('link', { name: 'Lernlabor', exact: true });
+    const failed = page.waitForEvent('requestfailed', (request) => isLearningPayload(request));
+    await link.hover();
+    await expect.poll(() => held).toBe(true);
+    await expect.poll(() => arrowOffset(link)).toBeGreaterThan(0);
+    const verifyHover = await watchStationaryHover(link);
+    response.resolve();
+    await failed;
+    await settleEntryAnimations(page);
+    await verifyHover();
+    expect(await arrowOffset(link)).toBeGreaterThan(0);
 
-  const panel = page.locator('[data-slot="navigation-menu-content"][data-open]');
-  const overview = panel.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
-  await expect(overview).toBeVisible();
-  await expect(panel.locator('.menu-highlight-surface')).toHaveCount(0);
-  await overview.hover();
-  await expect(toolbar.locator('.menu-highlight-surface')).toHaveCount(0);
-  await expect(panel.locator('.menu-highlight-surface')).toHaveCount(1);
-  await expect(overview).toHaveCSS('color', neutral);
-  await expect(overview.locator('svg').first()).toHaveCSS('color', neutral);
-  await panel.getByText('Bilderkennung', { exact: true }).hover();
-  await expect(panel.locator('.menu-highlight-surface')).toHaveCount(0);
-  expect(failures).toEqual([]);
+    await main.getByRole('heading', { level: 1 }).hover();
+    await expect.poll(() => arrowOffset(link)).toBe(0);
+    await link.hover();
+    await expect.poll(() => arrowOffset(link)).toBeGreaterThan(0);
+    await main.getByRole('heading', { level: 1 }).hover();
+    await focusByKeyboard(page, link);
+    await expect.poll(() => arrowOffset(link)).toBeGreaterThan(0);
+    await page.keyboard.press('Enter');
+    await expect(main.getByRole('heading', { name: 'Dein Lernlabor', exact: true })).toBeVisible();
+    await expectAccessible(page);
+  } finally {
+    response.resolve();
+  }
+});
+
+test('keyboard focus has an outline in normal and forced colors', async ({ page }) => {
+  for (const forcedColors of ['none', 'active'] as const) {
+    await page.emulateMedia({ forcedColors });
+    await page.goto('/');
+    const targets = [
+      page.getByRole('button', { name: 'Lernlabor', exact: true }),
+      page.getByRole('button', { name: 'Darstellung einstellen', exact: true }),
+      page.getByRole('main').getByRole('link', { name: 'Lernlabor', exact: true }),
+    ];
+    for (const control of targets) {
+      await focusByKeyboard(page, control);
+      await expect(control).toBeInViewport();
+      await expect(control).toHaveCSS('outline-style', 'solid');
+      const width = await control.evaluate((node) =>
+        parseFloat(getComputedStyle(node).outlineWidth),
+      );
+      expect(width).toBeGreaterThanOrEqual(2);
+    }
+  }
 });

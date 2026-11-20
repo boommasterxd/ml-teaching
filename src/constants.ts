@@ -24,13 +24,6 @@ export const ML = {
    * feature vectors. MobileNet expects exactly 224×224 input.
    */
   FEATURE_CANVAS_SIZE: 224,
-  /** MobileNet major version passed to the TensorFlow.js model loader. */
-  MOBILENET_VERSION: 2 as const,
-  /**
-   * MobileNet width multiplier (alpha). 1.0 uses the full-size network for
-   * maximum accuracy; lower values trade accuracy for speed.
-   */
-  MOBILENET_ALPHA: 1.0,
   /**
    * JPEG quality factor (0–1) used when encoding captured frames as
    * data-URL thumbnails for display in the UI.
@@ -43,10 +36,7 @@ export const ML = {
    * KNN training loop. Allows React to render the isTraining spinner first.
    */
   TRAINING_UI_YIELD_MS: 100,
-  /**
-   * Number of KNN addExample calls between async yield points during training.
-   * Keeps the main thread responsive by returning control to the browser every N iterations.
-   */
+  /** Number of feature vectors collected between browser yields during training. */
   TRAINING_BATCH_SIZE: 8,
 } as const;
 
@@ -79,7 +69,7 @@ export const MODEL_LOAD_RETRY = {
   MAX_ATTEMPTS: 3,
   /** Initial back-off delay in milliseconds before the first retry. */
   BASE_DELAY_MS: 1000,
-  /** Timeout in milliseconds for a single model load attempt before triggering a retry. */
+  /** Timeout in milliseconds for a model load attempt. Timeouts end the current setup. */
   LOAD_TIMEOUT_MS: 30_000,
 } as const;
 

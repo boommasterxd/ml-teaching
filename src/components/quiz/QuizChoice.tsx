@@ -13,6 +13,7 @@ import { Mic } from '@/components/icons/mic';
 import { Smartphone } from '@/components/icons/smartphone';
 import { Timer } from '@/components/icons/timer';
 import Button from '@/components/Button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const exampleIcons = {
@@ -74,23 +75,26 @@ export default function QuizChoice({
         </Button>
       </div>
       {answered && !QuizResult && (
-        <div className="pointer-events-none absolute inset-0 z-30 grid place-content-center px-6 text-sm">
-          <div className="rounded-xl bg-card p-3">
-            <p>{example.explanation}</p>
-            {feedbackFailed && (
-              <Button
-                className="pointer-events-auto mt-2"
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  choice.current?.focus();
-                  onIntent();
-                }}
-              >
-                Rückmeldung erneut laden
-              </Button>
-            )}
-          </div>
+        <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center px-3 sm:px-6">
+          <Alert role="group" aria-label="Rückmeldung" className="min-w-0">
+            <AlertTitle>{example.correct ? 'Richtig!' : 'Hier nicht.'}</AlertTitle>
+            <AlertDescription>
+              <p>{example.explanation}</p>
+              {feedbackFailed && (
+                <Button
+                  className="pointer-events-auto mt-1 h-auto min-h-8 max-w-full text-center whitespace-normal"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    choice.current?.focus();
+                    onIntent();
+                  }}
+                >
+                  Rückmeldung erneut laden
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
         </div>
       )}
       <AnimatePresence initial={false}>

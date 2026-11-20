@@ -9,12 +9,14 @@ const mocks = vi.hoisted(() => ({
   extract: vi.fn(),
   toastError: vi.fn(),
   setClassifier: vi.fn(),
+  retryCamera: vi.fn(),
+  reportCameraError: undefined as ((category: 'camera', message: string) => void) | undefined,
   classifier: {
     addExample: vi.fn(),
     dispose: vi.fn(),
     getNumClasses: () => 2,
     predictClass: vi.fn(),
-    clearAllClasses: vi.fn(),
+    setClassifierDataset: vi.fn(),
   },
 }));
 
@@ -29,18 +31,32 @@ vi.mock('@/hooks/useModelLoader', () => ({
   }),
 }));
 vi.mock('@/hooks/useCameraStream', () => ({
-  useCameraStream: (consented: boolean) => ({
-    facingMode: 'user',
-    stream: consented ? {} : null,
-    toggleCamera: vi.fn(),
-  }),
+  useCameraStream: (
+    consented: boolean,
+    _isLoading: boolean,
+    onError: typeof mocks.reportCameraError,
+  ) => {
+    mocks.reportCameraError = onError;
+    return {
+      facingMode: 'user',
+      stream: consented ? {} : null,
+      toggleCamera: vi.fn(),
+      retryCamera: mocks.retryCamera,
+    };
+  },
 }));
 vi.mock('@/hooks/useImageFeatureExtraction', () => ({
   useImageFeatureExtraction: () => ({ extractFeatures: mocks.extract }),
 }));
 vi.mock('@/lib/ml-runtime', () => ({
   createClassifier: async () => mocks.classifier,
-  loadTensorFlow: async () => ({ tensor1d: () => ({ dispose: vi.fn() }) }),
+  loadTensorFlow: async () => ({
+    tensor2d: (_rows: Float32Array, shape: [number, number]) => ({ shape }),
+    norm: vi.fn(),
+    div: (examples: unknown) => examples,
+    tidy: (run: () => unknown) => run(),
+    dispose: vi.fn(),
+  }),
 }));
 
 const image = (id: string): MLImage => ({
@@ -104,7 +120,10 @@ describe('local training workspace', () => {
       expect.stringContaining('Training abgeschlossen'),
     );
     await waitFor(() => expect(result.current.resources.hasTrainedModel).toBe(true));
-    expect(mocks.classifier.addExample).toHaveBeenCalledTimes(2 * ML.MIN_IMAGES_PER_CLASS + 2);
+    expect(mocks.classifier.setClassifierDataset).toHaveBeenCalledExactlyOnceWith({
+      'class-1': { shape: [ML.MIN_IMAGES_PER_CLASS + 1, 2] },
+      'class-2': { shape: [ML.MIN_IMAGES_PER_CLASS + 1, 2] },
+    });
   });
 
   it('does not train over an unfinished camera frame', async () => {
@@ -129,7 +148,10 @@ describe('local training workspace', () => {
     });
     act(() => result.current.data.trainModel());
     await waitFor(() => expect(result.current.resources.hasTrainedModel).toBe(true));
-    expect(mocks.classifier.addExample).toHaveBeenCalledTimes(2 * ML.MIN_IMAGES_PER_CLASS + 1);
+    expect(mocks.classifier.setClassifierDataset).toHaveBeenCalledExactlyOnceWith({
+      'class-1': { shape: [ML.MIN_IMAGES_PER_CLASS + 1, 2] },
+      'class-2': { shape: [ML.MIN_IMAGES_PER_CLASS, 2] },
+    });
   });
   it('keeps local image uploads usable after declining camera access and can reopen the choice', async () => {
     const { result } = renderHook(() => useTrainingWorkspace());
@@ -219,6 +241,28 @@ describe('local training workspace', () => {
     act(() => result.current.data.classes.removeImage('class-1', 'image-0'));
     expect(result.current.resources.hasTrainedModel).toBe(false);
     expect(result.current.resources.prediction.isPredicting).toBe(false);
+    expect(mocks.setClassifier).toHaveBeenLastCalledWith(null);
+  });
+
+  it('stops live prediction on camera loss and retries without restarting it', async () => {
+    const { result } = renderHook(() => useTrainingWorkspace());
+    act(() => result.current.resources.consent.grantConsent());
+    act(() => result.current.resources.consent.grantCameraConsent());
+    await collectMinimumImages(result);
+    act(() => result.current.data.trainModel());
+    await waitFor(() => expect(result.current.resources.hasTrainedModel).toBe(true));
+    act(() => result.current.resources.startPredicting());
+    expect(result.current.resources.prediction.isPredicting).toBe(true);
+
+    act(() => mocks.reportCameraError?.('camera', 'Verbindung unterbrochen'));
+    expect(result.current.resources.prediction.isPredicting).toBe(false);
+    expect(result.current.resources.error?.category).toBe('camera');
+    expect(mocks.retryCamera).not.toHaveBeenCalled();
+    act(() => result.current.resources.camera.retryCamera());
+    expect(mocks.retryCamera).toHaveBeenCalledOnce();
+    expect(result.current.resources.error).toBeNull();
+    expect(result.current.resources.hasTrainedModel).toBe(true);
+    expect(result.current.resources.prediction.isPredicting).toBe(false);
   });
 
   it('passes extraction failures to the upload batch and still validates class changes', async () => {
@@ -245,7 +289,7 @@ describe('local training workspace', () => {
     const { result } = renderHook(() => useTrainingWorkspace());
     await collectMinimumImages(result);
     for (let attempt = 1; attempt <= 2; attempt++) {
-      mocks.classifier.addExample.mockImplementationOnce(() => {
+      mocks.classifier.setClassifierDataset.mockImplementationOnce(() => {
         throw new Error('Training failed');
       });
       act(() => result.current.data.trainModel());

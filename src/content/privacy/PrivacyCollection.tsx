@@ -1,55 +1,28 @@
 export const PrivacyCollection = (
   <>
     <h2>4. Datenerfassung auf dieser Website</h2>
-    <h3>Cookies</h3>
+    <h3>Speicherung und Zugriff auf Ihrem Gerät</h3>
     <p>
-      Cookies sind kleine Datenpakete, die auf Ihrem Endgerät gespeichert werden können. Auch andere
-      Technologien können Informationen auf Ihrem Endgerät speichern oder auslesen. Welche dieser
-      Technologien auf dieser Website eingesetzt werden, zu welchen Zwecken und mit welcher
-      Speicherdauer, erläutern die jeweiligen Dienstabschnitte.
+      Ihr Browser kann Dateien für die Anzeige der Website zwischenspeichern. Weitere Speicher- und
+      Auslesevorgänge betreffen die von Ihnen gespeicherte Darstellungswahl und die freiwillige
+      Lernfunktion. Wann dies geschieht und welche Daten betroffen sind, steht in den Abschnitten
+      „Vercel“, „Darstellungseinstellungen“ und „Einsatz von KI auf der Website“.
     </p>
     <p>
-      Cookies und vergleichbare Technologien können von uns oder von eingebundenen Drittanbietern
-      eingesetzt werden. Ob sie bereits beim Aufruf der Website oder erst nach Aktivierung einer
-      optionalen Funktion eingesetzt werden, ergibt sich aus den jeweiligen Dienstabschnitten.
-    </p>
-    <p>
-      Ob eine Speicherung oder ein Zugriff ohne Einwilligung zulässig ist, hängt von der konkreten
-      Funktion und ihrem Zweck ab.
-    </p>
-    <p>
-      Die Speicherung von Informationen auf Ihrem Endgerät und der Zugriff auf bereits dort
-      gespeicherte Informationen richten sich nach § 25 TDDDG. Dafür ist grundsätzlich Ihre
-      Einwilligung nach § 25 Abs. 1 TDDDG erforderlich. Ohne Einwilligung ist dies nach § 25 Abs. 2
-      TDDDG nur zulässig, wenn der alleinige Zweck die Übertragung einer Nachricht über ein
-      öffentliches Telekommunikationsnetz ist oder die Speicherung beziehungsweise der Zugriff
-      unbedingt erforderlich ist, um Ihnen einen von Ihnen ausdrücklich gewünschten digitalen Dienst
-      bereitzustellen. Die Optimierung der Website oder die Messung des Webpublikums begründen für
-      sich allein keine solche Ausnahme.
-    </p>
-    <p>
-      Werden anschließend personenbezogene Daten verarbeitet, ist dafür zusätzlich eine
-      Rechtsgrundlage nach der DSGVO erforderlich. Die Rechtsgrundlage, der Zweck und die
-      Speicherdauer ergeben sich aus dem jeweiligen Dienstabschnitt dieser Datenschutzerklärung.
-      Eine Ausnahme von der Einwilligungspflicht nach § 25 Abs. 2 TDDDG ersetzt diese Prüfung nicht.
-      Eine erteilte Einwilligung können Sie jederzeit mit Wirkung für die Zukunft widerrufen.
-    </p>
-    <p>
-      Sie können Ihren Browser so einstellen, dass Sie über das Setzen von Cookies informiert werden
-      und Cookies nur im Einzelfall erlauben, die Annahme von Cookies für bestimmte Fälle oder
-      generell ausschließen sowie das automatische Löschen der Cookies beim Schließen des Browsers
-      aktivieren. Soweit eine Funktion Cookies benötigt, kann deren Deaktivierung diese Funktion
-      einschränken.
-    </p>
-    <p>
-      Die dienstbezogenen Informationen gelten auch für Speicher- und Auslesevorgänge eingebundener
-      Anbieter.
+      Die Speicherung und das Auslesen von Informationen auf Ihrem Gerät richten sich nach § 25
+      TDDDG. Dafür ist grundsätzlich Ihre Einwilligung nach § 25 Abs. 1 TDDDG erforderlich. Ohne
+      Einwilligung sind sie nach § 25 Abs. 2 TDDDG zulässig, wenn sie ausschließlich der Übertragung
+      einer Nachricht über ein öffentliches Telekommunikationsnetz dienen oder für den von Ihnen
+      ausdrücklich gewünschten digitalen Dienst unbedingt erforderlich sind. Für die anschließende
+      Verarbeitung personenbezogener Daten benötigen wir zusätzlich eine Rechtsgrundlage nach der
+      DSGVO.
     </p>
     <h3>Darstellungseinstellungen</h3>
     <h4>Auswahl und lokale Speicherung</h4>
     <p>
       Sie können diese Website hell, dunkel oder entsprechend der Systemeinstellung Ihres Geräts
-      anzeigen lassen. Ohne gespeicherte Auswahl richtet sich die Darstellung nach der
+      anzeigen lassen. Eine ungespeicherte Auswahl gilt bis zum Neuladen oder Schließen der Website.
+      Ohne gespeicherte Auswahl richtet sich die Darstellung beim nächsten Besuch nach der
       Systemeinstellung.
     </p>
     <p>
@@ -68,9 +41,9 @@ export const PrivacyCollection = (
       zuverlässig bereitzustellen.
     </p>
     <p>
-      Die Einstellung wird bis zu ihrer Änderung über die Darstellungswahl oder bis zur Löschung der
-      Website-Daten in Ihrem Browser gespeichert. Wenn Ihr Browser die Speicherung nicht zulässt,
-      kann Ihre Auswahl nicht für weitere Besuche gespeichert werden.
+      Die gespeicherte Einstellung bleibt erhalten, bis Sie die Auswahl ändern, das Merken
+      ausschalten oder die Website-Daten im Browser löschen. Wenn Ihr Browser das Speichern nicht
+      zulässt, können Sie die Auswahl nur für den aktuellen Besuch verwenden.
     </p>
     <p>Die Darstellungseinstellung ist unabhängig von Ihrer Einwilligung zur KI-Lernfunktion.</p>
     <h3>Server-Log-Dateien</h3>
@@ -113,47 +86,37 @@ export const PrivacyCollection = (
       können Sie anhand eigener Bildbeispiele einen Bildklassifikator trainieren und dessen
       Vorhersagen ausprobieren.
     </p>
-    <h4>Anbieter</h4>
+    <h4>Download des KI-Modells</h4>
     <p>
-      Das vortrainierte MobileNet-Modell wird von Google über TensorFlow Hub, Kaggle und Google
-      Cloud Storage bereitgestellt. Für die Dienste von Google ist bei Nutzern im Europäischen
-      Wirtschaftsraum nach Googles Datenschutzerklärung Google Ireland Limited, Gordon House, Barrow
-      Street, Dublin 4, Irland, der zuständige Datenverantwortliche. Kaggle Inc., 1600 Amphitheatre
-      Parkway, Mountain View, CA 94043, USA, betreibt Kaggle und verarbeitet die dort beim Abruf
-      anfallenden Verbindungsdaten in eigener Verantwortlichkeit.
+      Nach Ihrer Einwilligung lädt Ihr Browser das vortrainierte Modell MobileNet von Google über
+      TensorFlow Hub, Kaggle und Google Cloud Storage. Google und Kaggle erhalten dabei Ihre
+      IP-Adresse und technische Angaben zum Abruf, etwa Browserinformationen und den Zeitpunkt der
+      Anfrage. Der Download stellt die für die Bilderkennung erforderlichen Modellparameter bereit.
     </p>
-    <h4>Verarbeitete personenbezogene Daten</h4>
     <p>
-      Erst nach Ihrer Zustimmung zum Modell-Download stellt Ihr Browser Verbindungen zu Google und
-      Kaggle her. Dabei werden Ihre IP-Adresse und technische Angaben zum Abruf, etwa
-      Browserinformationen und Zeitpunkt der Anfrage, an den jeweiligen Dienst übertragen. Die von
-      Ihnen ausgewählten Bilder, Kamerabilder und daraus berechneten Merkmale verarbeitet die
-      Lernfunktion auf Ihrem Gerät. Die Anwendung lädt diese Bilddaten nicht auf einen Server hoch.
+      Nach Googles Datenschutzerklärung ist Google Ireland Limited, Gordon House, Barrow Street,
+      Dublin 4, Irland, für die Google-Dienste bei Nutzerinnen und Nutzern im Europäischen
+      Wirtschaftsraum verantwortlich. Kaggle Inc., 1600 Amphitheatre Parkway, Mountain View, CA
+      94043, USA, betreibt Kaggle und verarbeitet die Verbindungsdaten in eigener Verantwortlichkeit
+      zur Bereitstellung und Absicherung des Dienstes.
     </p>
-    <h4>Zweck der Verarbeitung</h4>
+    <h4>Bildtraining auf Ihrem Gerät</h4>
     <p>
-      Der Modell-Download stellt die zur Bilderkennung erforderlichen vortrainierten Modellparameter
-      bereit. Die lokale Verarbeitung Ihrer Bildbeispiele dient dem Training und dem Ausprobieren
-      eigener Bildklassen zu Lernzwecken.
+      Die Lernfunktion verarbeitet Ihre ausgewählten Bilder, Kamerabilder und die daraus berechneten
+      Merkmale auf Ihrem Gerät. Mit den Beispielen können Sie einen eigenen Bildklassifikator
+      trainieren und dessen Vorhersagen testen. Die Anwendung lädt diese Trainingsdaten auf keinen
+      Server hoch.
     </p>
-    <h4>Rechtsgrundlage der Verarbeitung</h4>
+    <h4>Einwilligung und Widerruf</h4>
     <p>
-      Die von uns veranlassten Verbindungen zu Google und Kaggle sowie die Verarbeitung Ihrer
-      Bildbeispiele erfolgen nach Ihrer Einwilligung auf Grundlage von Art. 6 Abs. 1 lit. a DSGVO,
-      soweit personenbezogene Daten betroffen sind. Die Kamera wird zusätzlich erst nach Ihrer
-      Kamerazustimmung und der Freigabe im Browser aktiviert. Sie können Ihre Einwilligung für die
-      Zukunft widerrufen, indem Sie „Einwilligung widerrufen“ wählen oder die Seite neu laden oder
-      schließen. Ein erneuter Start erfordert eine neue Zustimmung. Die Rechtmäßigkeit der bis zum
-      Widerruf erfolgten Verarbeitung bleibt unberührt.
+      Soweit personenbezogene Daten betroffen sind, beruhen der Modell-Download und die lokale
+      Verarbeitung auf Ihrer Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO. Die Kamera wird erst nach
+      Ihrer separaten Zustimmung und der Freigabe im Browser aktiviert. Zum Widerruf verwenden Sie
+      die unter „
+      <a href="#widerruf-der-einwilligung">Widerruf Ihrer Einwilligung zur Datenverarbeitung</a>“
+      beschriebenen Möglichkeiten. Ein erneuter Start erfordert eine neue Zustimmung.
     </p>
-    <h4>Empfänger der Daten</h4>
-    <p>
-      Google und Kaggle erhalten bei den jeweiligen Abrufen die dabei anfallenden Verbindungsdaten.
-      Kaggle verwendet sie nach eigenen Angaben zur Bereitstellung und Absicherung seines Dienstes.
-      Die selbst ausgewählten Bilder, Kamerabilder und daraus berechneten Bildmerkmale bleiben in
-      Ihrem Browser.
-    </p>
-    <h4>Speicherdauer beziehungsweise Kriterien für ihre Festlegung</h4>
+    <h4>Speicherdauer</h4>
     <p>
       Bildbeispiele, Bildmerkmale, Klassennamen und der trainierte Klassifikator werden für die
       aktuelle Nutzung im Arbeitsspeicher Ihres Browsers gehalten. Wenn Sie „Einwilligung
@@ -173,7 +136,7 @@ export const PrivacyCollection = (
       Pflichten. Weitere Informationen finden Sie in der{' '}
       <a href="https://www.kaggle.com/privacy">Datenschutzerklärung von Kaggle</a>.
     </p>
-    <h4>Übermittlungen in Drittländer und gegebenenfalls geltende Garantien</h4>
+    <h4>Übermittlungen in Drittländer</h4>
     <p>
       Beim Modell-Download können Verbindungsdaten an Google-Server außerhalb des Europäischen
       Wirtschaftsraums, insbesondere in den USA, gelangen. Google LLC ist nach dem EU-US Data
@@ -199,10 +162,7 @@ export const PrivacyCollection = (
       46 DSGVO. Ansprechpartner für Auskünfte zu diesen Garantien nennt die{' '}
       <a href="https://www.kaggle.com/privacy">Datenschutzerklärung von Kaggle</a>.
     </p>
-    <h4>
-      Speicherung von Informationen auf Ihrem Endgerät oder Zugriff auf dort gespeicherte
-      Informationen und deren Rechtsgrundlage nach § 25 TDDDG
-    </h4>
+    <h4>Zugriff auf Ihr Gerät</h4>
     <p>
       Die Lernfunktion greift erst nach Ihrer Zustimmung auf die von Ihnen ausgewählten Bilddateien
       beziehungsweise die freigegebene Kamera zu. Modellparameter und Trainingsdaten werden auf

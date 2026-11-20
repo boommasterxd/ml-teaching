@@ -1,9 +1,10 @@
-import { memo, useId, type ReactNode } from 'react';
+import { memo, useId, type MouseEventHandler, type ReactNode, type Ref } from 'react';
 import { classColorClasses } from '@/lib/class-colors';
 import type { ProjectedPosition } from '@/lib/feature-projection';
 import { cn } from '@/lib/utils';
 import type { MLClass } from '@/types/ml';
 import { KnnQuery } from './network/KnnArtwork';
+import Button from './Button';
 import { Heading } from './ui/typography';
 
 export const plotWidth = 320;
@@ -30,6 +31,58 @@ export function getMarkerStyles(classes: readonly MLClass[]) {
     colorCounts.set(color, previous + 1);
     return { id, name, color, count: images.length, shape: shapes[previous % shapes.length] };
   });
+}
+
+export function PredictionPlot({
+  children,
+  ref,
+}: {
+  children?: ReactNode;
+  ref?: Ref<HTMLDivElement>;
+}) {
+  return (
+    <div ref={ref} className="relative overflow-hidden rounded-xl border bg-background">
+      <svg viewBox={plotViewBox} className="w-full" aria-hidden="true">
+        <path
+          d="M12 24h296M12 54h296M12 114h296M12 144h296M40 12v144m40-144v144m40-144v144m80-144v144m40-144v144m40-144v144"
+          className="stroke-border"
+          strokeDasharray="2 4"
+        />
+        <path d="M12 84h296M160 12v144" className="stroke-control/55" />
+      </svg>
+      {children}
+    </div>
+  );
+}
+
+export function PredictionDescriptionButton({
+  controls,
+  onClick,
+}: {
+  controls?: string;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      className="min-h-11 justify-self-start"
+      disabled={!onClick}
+      aria-controls={controls}
+      onClick={onClick}
+    >
+      Diagramm beschreiben
+    </Button>
+  );
+}
+
+export function PredictionPlotPlaceholder({ children }: { children?: ReactNode }) {
+  return (
+    <>
+      <PredictionPlot>{children}</PredictionPlot>
+      <PredictionDescriptionButton />
+    </>
+  );
 }
 
 const DiagramLegend = memo(function DiagramLegend({ classes }: { classes: readonly MLClass[] }) {
@@ -81,17 +134,7 @@ export default function PredictionDiagram({
       <Heading as="h3" id={title} className="text-sm">
         Merkmalsraum (2D-Projektion)
       </Heading>
-      <div className="relative overflow-hidden rounded-xl border bg-background">
-        <svg viewBox={plotViewBox} className="w-full" aria-hidden="true">
-          <path
-            d="M12 24h296M12 54h296M12 114h296M12 144h296M40 12v144m40-144v144m40-144v144m80-144v144m40-144v144m40-144v144"
-            className="stroke-border"
-            strokeDasharray="2 4"
-          />
-          <path d="M12 84h296M160 12v144" className="stroke-control/55" />
-        </svg>
-        {children}
-      </div>
+      {children || <PredictionPlotPlaceholder />}
       <DiagramLegend classes={classes} />
       <figcaption id={description} className="sr-only">
         Der Klassifikator vergleicht alle Bildmerkmale. Eine gestrichelte Markierung am Rand zeigt

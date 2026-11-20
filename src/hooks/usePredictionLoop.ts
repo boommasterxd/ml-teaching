@@ -9,7 +9,7 @@
 import { useState, useEffect, useRef, useCallback, useEffectEvent } from 'react';
 import type React from 'react';
 import type * as tf from '@tensorflow/tfjs-core';
-import { loadTensorFlow } from '../lib/ml-runtime';
+import { loadTensorFlow, retainModel } from '../lib/ml-runtime';
 import { drawFeatureFrame } from '../lib/feature-frame';
 import type { Prediction } from '../types/ml';
 import { PREDICTION } from '../constants';
@@ -54,14 +54,24 @@ function isVideoReady(video: HTMLVideoElement): boolean {
  *
  * @returns `true` on success, `false` on error.
  */
-async function runInference(ctx: InferenceContext, publish: PublishPrediction): Promise<boolean> {
+async function runInference(
+  ctx: InferenceContext,
+  publish: PublishPrediction,
+  isCurrent: () => boolean,
+): Promise<boolean> {
+  let releaseModel: (() => void) | undefined;
+  let releaseClassifier: (() => void) | undefined;
   let img: tf.Tensor | null = null;
   let features: tf.Tensor | null = null;
   try {
     const runtime = await loadTensorFlow();
+    if (!isCurrent()) return true;
+    releaseModel = retainModel(ctx.mobilenetModel);
+    releaseClassifier = retainModel(ctx.classifier);
+    if (!releaseModel || !releaseClassifier) return true;
     if (!drawFeatureFrame(ctx.video, ctx.canvas, ctx.mirror)) return false;
     img = runtime.browser.fromPixels(ctx.canvas);
-    features = ctx.mobilenetModel.infer(img, true);
+    features = ctx.mobilenetModel.infer(img);
     const result = await ctx.classifier.predictClass(features);
     const sample = publish({ label: result.label, confidences: result.confidences }, features);
     if (sample) await sample;
@@ -76,6 +86,8 @@ async function runInference(ctx: InferenceContext, publish: PublishPrediction): 
   } finally {
     img?.dispose();
     features?.dispose();
+    releaseModel?.();
+    releaseClassifier?.();
   }
 }
 
@@ -88,8 +100,9 @@ async function handleInference(
   ctx: InferenceContext,
   publish: PublishPrediction,
   consecutiveErrorRef: React.MutableRefObject<number>,
+  isCurrent: () => boolean,
 ): Promise<'ok' | 'error' | 'fatal'> {
-  const success = await runInference(ctx, publish);
+  const success = await runInference(ctx, publish, isCurrent);
   if (success) {
     consecutiveErrorRef.current = 0;
     return 'ok';
@@ -194,6 +207,7 @@ export function usePredictionLoop(
             return featureSampler.current?.(features);
           },
           consecutiveErrorRef,
+          isCurrent,
         );
         inferenceRunningRef.current = false;
         if (!isCurrent()) return;
