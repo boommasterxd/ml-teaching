@@ -51,10 +51,12 @@ function useStepHeight(step: SetupStep, reduce: boolean) {
 }
 
 function StepPanel({
+  step,
   initial,
   reduce,
   children,
 }: {
+  step: SetupStep;
   initial: boolean;
   reduce: boolean;
   children: ReactNode;
@@ -62,7 +64,8 @@ function StepPanel({
   const present = useIsPresent();
   const props = {
     className: cn(
-      'grid min-w-0 gap-5 sm:gap-6',
+      'grid min-w-0 sm:gap-6',
+      step === 'consent' ? 'gap-3' : 'gap-5',
       !present && 'pointer-events-none absolute inset-x-0 top-0',
     ),
     inert: !present,
@@ -100,7 +103,7 @@ export default function SetupStepTransition({
     <div ref={viewport} className="min-w-0 overflow-clip [overflow-clip-margin:4px]">
       <div ref={content} className="relative">
         <AnimatePresence initial={false}>
-          <StepPanel key={step} initial={step === initialStep} reduce={reduce}>
+          <StepPanel key={step} step={step} initial={step === initialStep} reduce={reduce}>
             {children}
           </StepPanel>
         </AnimatePresence>

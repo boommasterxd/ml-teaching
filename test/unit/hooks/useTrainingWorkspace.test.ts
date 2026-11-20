@@ -153,36 +153,29 @@ describe('local training workspace', () => {
     expect(result.current.resources.models.mobilenetModel).toBeNull();
     expect(result.current.resources.showCameraPrompt).toBe(false);
   });
-  it('never restores an in-flight image after clearing a class or resetting all data', async () => {
+  it('never restores an in-flight image after clearing a class', async () => {
     const { result } = renderHook(() => useTrainingWorkspace());
-    for (const resetAll of [false, true]) {
-      const classId = result.current.data.classes.classes[0].id;
-      let finish!: (image: MLImage) => void;
-      mocks.extract.mockImplementationOnce(
-        () =>
-          new Promise<MLImage>((resolve) => {
-            finish = resolve;
-          }),
+    const classId = result.current.data.classes.classes[0].id;
+    let finish!: (image: MLImage) => void;
+    mocks.extract.mockImplementationOnce(
+      () =>
+        new Promise<MLImage>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    let capture!: void | Promise<void>;
+    act(() => {
+      capture = result.current.cardActions.onAddImageExample(
+        classId,
+        document.createElement('img'),
       );
-      let capture!: void | Promise<void>;
-      act(() => {
-        capture = result.current.cardActions.onAddImageExample(
-          classId,
-          document.createElement('img'),
-        );
-      });
-      act(() => {
-        if (resetAll) result.current.data.classes.resetClasses();
-        else result.current.data.classes.clearClass(classId);
-      });
-      await act(async () => {
-        finish(image('late-image'));
-        await capture;
-      });
-      expect(result.current.data.classes.classes.every((cls) => cls.images.length === 0)).toBe(
-        true,
-      );
-    }
+    });
+    act(() => result.current.data.classes.clearClass(classId));
+    await act(async () => {
+      finish(image('late-image'));
+      await capture;
+    });
+    expect(result.current.data.classes.classes.every((cls) => cls.images.length === 0)).toBe(true);
   });
   it('keeps consent steps ordered and closes a preview when its image is deleted', async () => {
     const { result } = renderHook(() => useTrainingWorkspace());

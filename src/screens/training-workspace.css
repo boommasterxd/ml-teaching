@@ -35,15 +35,13 @@
   width: 100%;
   height: auto;
   min-height: 2.75rem;
-  flex-direction: column;
   gap: 0.25rem;
-  padding: 0.375rem 0.65rem;
+  padding: 0.375rem 0.25rem;
   border-radius: 1.15rem;
   color: var(--muted-foreground);
   font-size: 0.75rem;
 
   @variant sm {
-    flex-direction: row;
     gap: 0.5rem;
     padding-inline: 0.875rem;
     font-size: 0.875rem;
@@ -62,23 +60,20 @@
   gap: clamp(1.75rem, 3vw, 2.75rem);
 }
 
-.training-console {
-  display: grid;
-  gap: 2.25rem;
-
-  @variant md {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-  }
-}
-
-.training-stage {
+.training-feedback {
   display: flex;
-  min-width: 0;
   flex-direction: column;
-  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--muted);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  text-align: center;
 }
 
-.training-stage [data-slot='card-footer'] {
-  margin-top: auto;
+.training-feedback[data-complete] {
+  border-color: var(--success-border);
+  background: var(--success-soft);
 }

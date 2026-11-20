@@ -15,6 +15,7 @@ import type { ImageGalleryRowsProps } from './ImageGalleryRows';
  * Props for the ImageGallery component.
  */
 interface ImageGalleryProps {
+  className?: string;
   /** Distinguishes this class's gallery in landmark navigation. */
   label: string;
   /** The list of training images to display. */
@@ -163,6 +164,7 @@ function GalleryEmpty() {
 }
 
 const ImageGallery = memo(function ImageGallery({
+  className,
   label,
   images,
   color,
@@ -203,40 +205,44 @@ const ImageGallery = memo(function ImageGallery({
   };
 
   return (
-    <div className={cn('@container/gallery min-w-0', classColorClasses(color))}>
-      <div className="flex h-36 min-w-0 flex-col @sm/gallery:h-44">
-        {hasImages && (
-          <GalleryToolbar
+    <div
+      className={cn(
+        '@container/gallery flex h-58 min-w-0 flex-col gap-1 rounded-2xl bg-muted/60 p-1.5 dark:bg-background/40',
+        classColorClasses(color),
+        className,
+      )}
+    >
+      {hasImages && (
+        <GalleryToolbar
+          isSelectionMode={isSelectionMode}
+          selectedCount={selectedIds.size}
+          onDelete={handleBulkDelete}
+          onCancel={() => {
+            setIsSelectionMode(false);
+            setSelectedIds(new Set());
+          }}
+          onSelect={() => setIsSelectionMode(true)}
+        />
+      )}
+      <div
+        ref={scrollContainerRef}
+        tabIndex={hasImages ? 0 : -1}
+        role="region"
+        aria-label={label}
+        className="gallery-region min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-0.5"
+      >
+        {hasImages ? (
+          <DeferredGalleryRows
+            images={images}
+            selectedIds={selectedIds}
             isSelectionMode={isSelectionMode}
-            selectedCount={selectedIds.size}
-            onDelete={handleBulkDelete}
-            onCancel={() => {
-              setIsSelectionMode(false);
-              setSelectedIds(new Set());
-            }}
-            onSelect={() => setIsSelectionMode(true)}
+            onToggleSelect={toggleImageSelection}
+            onImageClick={onImageClick}
+            scrollContainerRef={scrollContainerRef}
           />
+        ) : (
+          <GalleryEmpty />
         )}
-        <div
-          ref={scrollContainerRef}
-          tabIndex={hasImages ? 0 : -1}
-          role="region"
-          aria-label={label}
-          className="gallery-region min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto rounded-2xl bg-muted/60 p-1.5 dark:bg-background/40"
-        >
-          {hasImages ? (
-            <DeferredGalleryRows
-              images={images}
-              selectedIds={selectedIds}
-              isSelectionMode={isSelectionMode}
-              onToggleSelect={toggleImageSelection}
-              onImageClick={onImageClick}
-              scrollContainerRef={scrollContainerRef}
-            />
-          ) : (
-            <GalleryEmpty />
-          )}
-        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { DialogDescription, DialogTitle } from '../ui/dialog';
+import { DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
 import { Spinner } from '../ui/spinner';
 import TrainingWithdrawal from '../TrainingWithdrawal';
 
@@ -17,9 +17,9 @@ export default function LoadingStep({ loadingText }: { loadingText: string }) {
           {loadingText}
         </DialogDescription>
       </div>
-      <div className="flex justify-end">
-        <TrainingWithdrawal variant="dialog" />
-      </div>
+      <DialogFooter className="grid-cols-1 sm:justify-items-end">
+        <TrainingWithdrawal />
+      </DialogFooter>
     </>
   );
 }

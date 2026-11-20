@@ -1,55 +1,103 @@
 'use client';
 
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTrainingWorkspace } from '../hooks/useTrainingWorkspace';
 import PageHeader from '../components/PageHeader';
 import Button from '../components/Button';
 import { Badge } from '../components/ui/badge';
-import TrainingPanels from '../components/TrainingPanels';
+import TrainingPanels, { type TrainingStep } from '../components/TrainingPanels';
 import DeferredTrainingDialogs from '../components/DeferredTrainingDialogs';
 import TrainingError from '../components/TrainingError';
 import TrainingSetupDialog from '../components/modals/TrainingSetupDialog';
-import TrainingWithdrawal from '../components/TrainingWithdrawal';
+import { TrainingFooterWithdrawal } from '../components/TrainingWithdrawal';
 import { prepareToastViewport } from '@/components/toast-loader';
 import { prepareRoute } from '@/components/prepare-route';
 import { learningPaths } from '@/lib/learning-paths';
 import './training-workspace.css';
 
 const steps = [
-  { id: 'training-images', label: 'Bilder sammeln' },
-  { id: 'training-model', label: 'Training' },
-  { id: 'training-prediction', label: 'Vorhersage' },
+  { step: 'images', id: 'training-images', label: 'Bilder sammeln' },
+  { step: 'training', id: 'training-model', label: 'Training' },
+  { step: 'prediction', id: 'training-prediction', label: 'Vorhersage' },
 ] as const;
 
-function TrainingPipeline({ currentStep, ready }: { currentStep: number; ready: boolean }) {
+function TrainingPipeline({
+  currentStep,
+  ready,
+  canTrain,
+  canPredict,
+  onSelect,
+  navigation,
+}: {
+  currentStep: TrainingStep;
+  ready: boolean;
+  canTrain: boolean;
+  canPredict: boolean;
+  onSelect: (step: TrainingStep) => void;
+  navigation: React.Ref<HTMLElement>;
+}) {
   return (
-    <nav aria-label="Trainingsablauf" inert={!ready}>
-      <ol className="flex max-w-full flex-wrap gap-1">
-        {steps.map(({ id, label }, index) => (
-          <li key={id}>
+    <nav ref={navigation} aria-label="Trainingsablauf" inert={!ready} className="scroll-mt-24">
+      <ol className="grid grid-cols-3 gap-1 lg:flex">
+        {steps.map(({ step, label }, index) => (
+          <li key={step}>
             <Button
               variant="ghost"
               size="sm"
               className="training-step"
-              render={
-                <a href={`#${id}`} aria-current={index === currentStep ? 'step' : undefined} />
-              }
+              aria-current={step === currentStep ? 'step' : undefined}
+              disabled={step === 'training' ? !canTrain : step === 'prediction' && !canPredict}
+              onClick={() => onSelect(step)}
             >
               <Badge
-                variant={index === currentStep ? 'default' : 'secondary'}
-                className="size-[1.375rem] p-0 text-[0.7rem] tabular-nums"
+                variant={step === currentStep ? 'default' : 'secondary'}
+                className="size-[1.0625rem] p-0 text-[0.65rem] tabular-nums sm:size-[1.375rem] sm:text-[0.7rem]"
                 aria-hidden="true"
               >
                 {index + 1}
               </Badge>
-              {label}
+              {index === 0 ? (
+                <>
+                  <span aria-hidden="true" className="sm:hidden">
+                    Bilder
+                  </span>
+                  <span className="sr-only sm:not-sr-only">{label}</span>
+                </>
+              ) : (
+                label
+              )}
             </Button>
           </li>
         ))}
       </ol>
     </nav>
   );
+}
+
+function useTrainingNavigation(canTrain: boolean, canPredict: boolean, stopPrediction: () => void) {
+  const [selection, setSelection] = useState<TrainingStep>('images');
+  const navigation = useRef<HTMLElement>(null);
+  const previous = useRef(selection);
+  const current = !canTrain
+    ? 'images'
+    : selection === 'prediction' && !canPredict
+      ? 'training'
+      : selection;
+  if (selection !== current) setSelection(current);
+  useLayoutEffect(() => {
+    if (previous.current === current) return;
+    previous.current = current;
+    const heading = steps.find(({ step }) => step === current);
+    if (heading) document.getElementById(heading.id)?.focus({ preventScroll: true });
+    navigation.current?.scrollIntoView?.({ block: 'start', behavior: 'instant' });
+  }, [current]);
+  const select = (step: TrainingStep) => {
+    if ((step === 'training' && !canTrain) || (step === 'prediction' && !canPredict)) return;
+    if (current === 'prediction' && step !== current) stopPrediction();
+    setSelection(step);
+  };
+  return { current, navigation, select };
 }
 
 function getSetupStep({
@@ -67,48 +115,61 @@ export default function TrainingPage() {
   const router = useRouter();
   const workspace = useTrainingWorkspace();
   const { resources, data, dialogs } = workspace;
-  const { modelError, consent, models, prediction } = resources;
+  const { error, consent, models, prediction } = resources;
+  const modelFailed = error?.category === 'model';
   const { classes } = data;
   const setupStep = getSetupStep(resources);
   // The inline setup and the workspace handoff share the same first-close boundary.
   const [initialSetup, setInitialSetup] = useState(setupStep === 'consent');
   if (initialSetup && setupStep === null) setInitialSetup(false);
   const ready = !initialSetup && Boolean(models.mobilenetModel) && !models.isModelLoading;
-  const trainingStep = data.canTrain || data.training.isTraining ? 1 : 0;
-  const currentStep = resources.hasTrainedModel && !data.training.isTraining ? 2 : trainingStep;
+  const canPredict = data.canTrain && resources.hasTrainedModel && !data.training.isTraining;
+  const flow = useTrainingNavigation(data.canTrain, canPredict, prediction.stopPredicting);
   const prepareReturn = () => prepareRoute(router, learningPaths.images);
   const declineConsent = () => router.push(learningPaths.images, { transitionTypes: ['nav-back'] });
   return (
-    <div className="bg-background text-foreground pb-16 sm:pb-24">
+    <div className="bg-background text-foreground pb-10 sm:pb-16">
       <div className="training-workspace" inert={setupStep !== null}>
         <PageHeader
           title="Dein Bildmodell"
           description="Welche Motive soll dein Modell unterscheiden? Benenne die Klassen zum Beispiel „Tasse“ und „Stift“."
-          rightSlot={<TrainingPipeline currentStep={currentStep} ready={ready} />}
+          rightSlot={
+            <TrainingPipeline
+              currentStep={flow.current}
+              ready={ready}
+              canTrain={data.canTrain}
+              canPredict={canPredict}
+              onSelect={flow.select}
+              navigation={flow.navigation}
+            />
+          }
         />
-        {modelError && (
+        {error && (
           <TrainingError
-            message={modelError.message}
-            onReturn={declineConsent}
-            onReturnIntent={prepareReturn}
+            message={
+              modelFailed
+                ? error.message
+                : `${error.message} Du kannst Bilder hochladen. Beim Neuladen gehen deine Trainingsdaten verloren.`
+            }
+            onReturn={modelFailed ? declineConsent : undefined}
+            onReturnIntent={modelFailed ? prepareReturn : undefined}
           />
         )}
-        <TrainingPanels workspace={workspace} ready={ready} />
-        <TrainingWithdrawal
-          visible={consent.hasConsented && !initialSetup && !models.isModelLoading}
+        <TrainingPanels
+          workspace={workspace}
+          ready={ready}
+          step={flow.current}
+          onSelect={flow.select}
         />
       </div>
+      {consent.hasConsented && !initialSetup && setupStep === null && <TrainingFooterWithdrawal />}
       <DeferredTrainingDialogs
         modal={dialogs.modal}
         classes={classes.classes}
-        classifier={models.classifier}
         closeModal={dialogs.closeModal}
         removeImage={classes.removeImage}
         clearClass={classes.clearClass}
         removeClass={classes.removeClass}
-        resetClasses={classes.resetClasses}
-        setHasTrainedModel={resources.setHasTrainedModel}
-        stopPredicting={prediction.stopPredicting}
       />
       <TrainingSetupDialog
         initialContent={initialSetup}

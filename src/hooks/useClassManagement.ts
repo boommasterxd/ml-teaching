@@ -148,13 +148,6 @@ export function useClassManagement(
     [onInvalidate],
   );
 
-  /** Resets to the default two empty classes. */
-  const resetClasses = useCallback(() => {
-    setClasses(
-      createInitialClasses().map((cls) => ({ ...cls, id: `class-${crypto.randomUUID()}` })),
-    );
-  }, []);
-
   return {
     classes,
     addClass,
@@ -164,6 +157,5 @@ export function useClassManagement(
     removeImage,
     removeImages,
     clearClass,
-    resetClasses,
   };
 }

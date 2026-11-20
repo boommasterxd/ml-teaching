@@ -104,6 +104,25 @@ async function observeMenuShifts(page: Page) {
     );
 }
 
+test('mobile training consent opens above the page and fits a short viewport', async ({ page }) => {
+  const failures = diagnostics(page);
+  const transitions = await observeViewTransitions(page);
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.emulateMedia({ reducedMotion: 'no-preference', colorScheme: 'dark' });
+  await page.goto(learningPaths.images);
+  await page
+    .getByRole('link', { name: 'Eigenes Bildmodell trainieren', exact: true })
+    .first()
+    .click();
+  await expect(page).toHaveURL(learningPaths.imagePractice);
+  const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  await expect(dialog).toBeVisible();
+  expect(await transitions()).toEqual([]);
+  await expect(dialog.getByRole('button', { name: 'Zustimmen' })).toBeInViewport();
+  await expectAccessible(page);
+  expect(failures).toEqual([]);
+});
+
 test('the brand scrolls to the top of an already open homepage without a page transition', async ({
   page,
 }) => {

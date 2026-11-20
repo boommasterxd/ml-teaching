@@ -7,17 +7,16 @@ export async function classLayout(page: Page) {
   return names.evaluateAll((inputs) => {
     const cards = inputs.map((input) => input.closest('[data-slot="card"]')!);
     const [first, next] = cards.map((card) => card.getBoundingClientRect());
-    const training = cards[0]?.closest('.training-panels')?.querySelector('.training-console');
-    if (!first || !next || !training) throw new Error('The training workspace is incomplete.');
+    if (!first || !next) throw new Error('The training workspace is incomplete.');
     return {
-      heights: [first.height, next.height],
-      spacing: next.top - first.top,
-      actions: cards.map(
-        (card) =>
+      heights: [Math.round(first.height), Math.round(next.height)],
+      spacing: Math.round(next.top - first.top),
+      actions: cards.map((card) =>
+        Math.round(
           card.querySelector('[data-slot="card-content"]')!.getBoundingClientRect().top -
-          card.getBoundingClientRect().top,
+            card.getBoundingClientRect().top,
+        ),
       ),
-      consoleHeight: training.getBoundingClientRect().height,
     };
   });
 }
@@ -215,11 +214,53 @@ export async function expectThemeKeepsTraining(page: Page) {
   await theme.focus();
   await page.keyboard.press('Space');
   await expect(theme).toBeChecked();
-  await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
-  await expect(page.getByRole('status').filter({ hasText: 'Bereit' })).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Training abgeschlossen' }),
+  ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Modell neu trainieren', exact: true }),
   ).toBeEnabled();
+}
+
+export async function expectLivePredictionControls(page: Page) {
+  const preview = page.getByLabel('Kameravorschau für Vorhersage');
+  const space = page.getByRole('figure', { name: 'Merkmalsraum' });
+  const stop = page.getByRole('button', { name: 'Live-Vorhersage stoppen' });
+  const start = page.getByRole('button', { name: 'Live-Vorhersage starten' });
+  const viewport = page.viewportSize()!;
+  await expect(preview).toHaveCount(0);
+  await expect(space).toHaveCount(0);
+  await start.press('Enter');
+  await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 2' })).toBeVisible();
+  await expect(space.getByRole('listitem').filter({ hasText: /Klasse 1.*10/ })).toBeVisible();
+  await expect(space.getByRole('listitem').filter({ hasText: /Klasse 2.*10/ })).toBeVisible();
+  await space.scrollIntoViewIfNeeded();
+  const marker = space.locator('[data-slot="prediction-live-point"]');
+  await expect(marker).toBeVisible();
+  await expectAccessible(page);
+  await page.setViewportSize({ width: 390, height: viewport.height });
+  await expect(space).toHaveCount(0);
+  await expect(preview).toBeVisible();
+  await page.setViewportSize(viewport);
+  await space.scrollIntoViewIfNeeded();
+  await expect(marker).toBeVisible();
+  await stop.press('Space');
+  await expect(start).toBeFocused();
+  await expect(preview).toHaveCount(0);
+  await expect(space).toHaveCount(0);
+}
+
+export async function expectKeyboardCapture(page: Page) {
+  const capture = page.getByRole('button', { name: 'Aufnehmen', exact: true }).first();
+  const stop = page.getByRole('button', { name: 'Aufnahme stoppen', exact: true });
+  await capture.focus();
+  await page.keyboard.press('Enter');
+  await expect(stop).toBeFocused();
+  await expect(page.getByText(/^[1-9] \/ 10 Bilder$/).first()).toBeVisible();
+  await page.keyboard.press('Space');
+  await expect(capture).toBeFocused();
+  await expect(stop).toHaveCount(0);
 }
 
 export async function expectPreviewDeletion(
@@ -270,20 +311,23 @@ export async function expectGalleryFocusAcrossResize(page: Page) {
 }
 
 export async function expectCancelledResetKeepsImages(page: Page) {
-  await page.getByRole('button', { name: 'Alle Klassen und Bilder zurücksetzen' }).click();
+  const reset = page.getByRole('button', { name: /^Bilder der Klasse 1:/ });
+  await reset.click();
   await expect(
-    page.getByRole('alertdialog', { name: 'Daten unwiderruflich löschen?' }),
+    page.getByRole('alertdialog', { name: 'Bilder dieser Klasse löschen?' }),
   ).toBeVisible();
   await page.keyboard.press('Escape');
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Enter');
+  await expect(reset).toBeFocused();
   await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
   expect(
     await page.evaluate(() =>
       Boolean(document.activeElement?.closest('[inert], [aria-hidden="true"], [data-closed]')),
     ),
   ).toBe(false);
-  await expect(page.getByRole('textbox', { name: 'Name für Klasse 3: Klasse 3' })).toBeVisible();
+  await page.getByRole('button', { name: 'Neue Klasse hinzufügen' }).press('Enter');
+  const name = page.getByRole('textbox', { name: 'Name für Klasse 3: Klasse 3' });
+  await expect(name).toBeFocused();
+  await expect(name).toBeInViewport();
   await page.getByRole('button', { name: 'Klasse 3: Klasse 3 löschen', exact: true }).click();
   const remove = page.getByRole('alertdialog', { name: 'Klasse löschen?' });
   await remove.getByRole('button', { name: 'Löschen', exact: true }).click();

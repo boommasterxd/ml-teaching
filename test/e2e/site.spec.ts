@@ -8,8 +8,10 @@ import {
   captureSetupDialog,
   classLayout,
   expectStableNameValidation,
+  expectKeyboardCapture,
   expectCancelledResetKeepsImages,
   expectGalleryFocusAcrossResize,
+  expectLivePredictionControls,
   expectPreviewDeletion,
   expectThemeControlAlignment,
   expectThemeKeepsTraining,
@@ -435,50 +437,40 @@ test('local images train a real browser classifier, predict and reset without up
   await uploadTrainingClasses(page);
   await expectGalleryFocusAcrossResize(page);
   await expectCancelledResetKeepsImages(page);
-  await expect(page.getByRole('button', { name: 'Modell trainieren', exact: true })).toBeEnabled();
+  const steps = page.getByRole('navigation', { name: 'Trainingsablauf' });
+  const next = page.getByRole('button', { name: 'Weiter zum Training' });
+  await expect(next).toHaveCount(2);
+  await next.last().press('Enter');
+  await expect(page.getByRole('heading', { name: 'Training', exact: true })).toBeFocused();
+  await expect(page.getByRole('textbox')).toHaveCount(0);
   await page.getByRole('button', { name: 'Modell trainieren', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Bereit' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'Training läuft' })).toBeVisible();
   await expectThemeKeepsTraining(page);
-  await expect(page.getByRole('button', { name: 'Starten', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Weiter zur Vorhersage' }).press('Enter');
+  await expect(page.getByRole('heading', { name: 'Vorhersage', exact: true })).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'Training', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Kamera aktivieren', exact: true }).click();
   await expect(camera).toBeVisible();
   await camera.getByRole('button', { name: 'Erlauben' }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect
-    .poll(() =>
-      page
-        .locator('video')
-        .first()
-        .evaluate((element) =>
-          ((element as HTMLVideoElement).srcObject as MediaStream | null)
-            ?.getTracks()
-            .map((track) => track.readyState),
-        ),
-    )
-    .toEqual(['live']);
-  await expect(page.getByRole('button', { name: 'Starten', exact: true })).toBeEnabled();
-  await page.getByRole('button', { name: 'Starten', exact: true }).click();
-  await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
-  await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 2' })).toBeVisible();
-  await expectAccessible(page);
-  await page.getByRole('button', { name: 'Stoppen', exact: true }).click();
-  await page.getByRole('button', { name: 'Modell neu trainieren', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Bereit' })).toBeVisible();
+  await expect(camera).toHaveCount(0);
+  await expectLivePredictionControls(page);
+  await steps.getByRole('button', { name: 'Training', exact: true }).click();
+  await expect(page.getByText('Training abgeschlossen', { exact: true })).toBeVisible();
+  await steps.getByRole('button', { name: 'Bilder sammeln', exact: true }).click();
+  await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
   await expectPreviewDeletion(page, expectAccessible);
-  await page.getByRole('button', { name: 'Alle Klassen und Bilder zurücksetzen' }).click();
-  const reset = page.getByRole('alertdialog', { name: 'Daten unwiderruflich löschen?' });
-  await expectAccessible(page);
-  await reset.getByRole('button', { name: 'Unwiderruflich löschen', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Modell trainieren', exact: true })).toBeDisabled();
-  const capture = page.getByRole('button', { name: /^(Aufnehmen|Aufnahme\.\.\.)$/ }).first();
-  await capture.focus();
-  await page.keyboard.press('Enter');
-  await expect(capture).toHaveAttribute('aria-pressed', 'true');
-  await page.keyboard.press('Space');
-  await expect(capture).toHaveAttribute('aria-pressed', 'false');
+  await expect(steps.getByRole('button', { name: 'Vorhersage', exact: true })).toBeDisabled();
+  const resetClass = page.getByRole('button', { name: /^Bilder der Klasse 1:/ });
+  await resetClass.click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Zurücksetzen' }).click();
+  await expect(next.first()).toBeDisabled();
+  await expectKeyboardCapture(page);
   expect(modelRequests).toBe(2);
   expect(remoteWrites).toEqual([]);
   expect(failures).toEqual([]);
+  await expect(
+    page.getByRole('contentinfo').getByRole('link', { name: /^Einwilligung widerrufen/ }),
+  ).toBeVisible();
   await withdrawTrainingConsent(page);
   expect(modelRequests).toBe(2);
 });

@@ -16,6 +16,7 @@ import type { CaptureActions } from '../hooks/useClassCapture';
 import { ML } from '../constants';
 import type { MLClass, MLImage } from '../types/ml';
 import CameraPreview from './CameraPreview';
+import type { CameraPreviewProps } from './CameraPreview';
 import { prepareTrainingDialogs } from './DeferredTrainingDialogs';
 import ImageGallery, { prepareImageGallery } from './ImageGallery';
 import Button from './Button';
@@ -53,16 +54,16 @@ export interface ClassCardActions extends CaptureActions {
 /**
  * Props for the ClassCard component.
  */
-interface ClassCardProps {
+interface ClassCardProps extends Pick<
+  CameraPreviewProps,
+  'stream' | 'facingMode' | 'isCameraSwitching' | 'onSwitchCamera'
+> {
   position: number;
+  cameraFallback?: React.ReactNode;
   /** The ML class data to display and manage. */
   cls: MLClass;
   /** Whether the class name conflicts with another class name. */
   isDuplicate: boolean;
-  /** Active camera stream to render in the preview. `null` if no camera is available. */
-  stream: MediaStream | null;
-  /** Which camera to use: `'user'` for front-facing, `'environment'` for rear-facing. */
-  facingMode: 'user' | 'environment';
   /** Grouped callback actions for class management and user interactions. */
   actions: ClassCardActions;
 }
@@ -156,7 +157,7 @@ function ClassHeader({
   return (
     <CardHeader className="items-center px-4 @md/training-class:px-5">
       <Field data-invalid={!!errorMsg} className="min-w-0 gap-2">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 items-center gap-2">
           <div
             className={cn(
               'size-2.5 shrink-0 rounded-full bg-[var(--class-on-surface)]',
@@ -175,7 +176,7 @@ function ClassHeader({
           />
           <Badge
             variant="secondary"
-            className="max-w-[50%] whitespace-normal tabular-nums"
+            className="min-h-7 max-w-[50%] px-2.5 whitespace-normal tabular-nums"
             title={`Mindestens ${ML.MIN_IMAGES_PER_CLASS}, maximal ${ML.MAX_IMAGES_PER_CLASS} Bilder pro Klasse`}
           >
             {enoughImages && <Check aria-hidden="true" />}
@@ -234,11 +235,12 @@ const ClassCard = memo(function ClassCard({
   cls,
   position,
   isDuplicate,
-  stream,
-  facingMode,
   actions,
+  cameraFallback,
+  ...camera
 }: ClassCardProps) {
   const { onRemoveImages, onImageClick } = actions;
+  const showCamera = camera.stream || camera.isCameraSwitching;
   const { videoRef, isRecording, startRecording, stopRecording, handleFileUpload } =
     useClassCapture(cls, actions);
 
@@ -264,13 +266,12 @@ const ClassCard = memo(function ClassCard({
       <CardContent
         className={cn(
           'grid min-w-0 gap-3 px-4 @md/training-class:px-5',
-          stream && '@xl/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]',
+          showCamera && '@xl/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]',
         )}
       >
         <CameraPreview
+          {...camera}
           disabled={actions.captureDisabled || cls.images.length >= ML.MAX_IMAGES_PER_CLASS}
-          stream={stream}
-          facingMode={facingMode}
           isRecording={isRecording}
           onStartRecording={startRecording}
           onStopRecording={stopRecording}
@@ -279,7 +280,11 @@ const ClassCard = memo(function ClassCard({
           onCaptureIntent={prepareImageGallery}
           fileActions={<ClassManagementActions cls={cls} position={position} actions={actions} />}
         />
+        {cameraFallback && <div className="col-span-full">{cameraFallback}</div>}
         <ImageGallery
+          className={
+            showCamera ? '@xl/training-class:h-auto @xl/training-class:[contain:size]' : undefined
+          }
           label={`Trainingsbilder von Klasse ${position}: ${cls.name.trim() || 'ohne Namen'}, scrollbar`}
           images={cls.images}
           color={cls.color}

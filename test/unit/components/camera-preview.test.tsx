@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import CameraPreview from '@/components/CameraPreview';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
@@ -11,10 +11,14 @@ function CameraControls({
   disabled = false,
   stream = null,
   onFileUpload = vi.fn(),
+  isCameraSwitching = false,
+  onSwitchCamera = vi.fn(),
 }: {
   disabled?: boolean;
   stream?: MediaStream | null;
   onFileUpload?: () => void;
+  isCameraSwitching?: boolean;
+  onSwitchCamera?: () => void;
 }) {
   const [recording, setRecording] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -23,6 +27,8 @@ function CameraControls({
       disabled={disabled}
       stream={stream}
       facingMode="user"
+      isCameraSwitching={isCameraSwitching}
+      onSwitchCamera={onSwitchCamera}
       isRecording={recording}
       onStartRecording={() => setRecording(true)}
       onStopRecording={() => setRecording(false)}
@@ -33,40 +39,72 @@ function CameraControls({
 }
 
 describe('camera preview controls', () => {
-  it('supports keyboard toggling, ignores key repeat and cancels capture on blur or pointer cancellation', () => {
+  it('starts on button activation and keeps recording until the same button is activated again', () => {
     render(<CameraControls stream={{} as MediaStream} />);
     const record = screen.getByRole('button', { name: 'Aufnehmen' });
-    record.focus();
-    fireEvent.keyDown(record, { key: ' ' });
-    expect(record.getAttribute('aria-pressed')).toBe('true');
-    fireEvent.keyDown(record, { key: ' ', repeat: true });
-    fireEvent.keyUp(record, { key: ' ' });
-    expect(record.getAttribute('aria-pressed')).toBe('true');
-    fireEvent.keyDown(record, { key: ' ' });
-    expect(record.getAttribute('aria-pressed')).toBe('false');
-    fireEvent.keyDown(record, { key: ' ' });
-    fireEvent.blur(record);
-    expect(record.getAttribute('aria-pressed')).toBe('false');
-    Object.defineProperty(record, 'setPointerCapture', { value: vi.fn() });
-    fireEvent.pointerDown(record, { pointerId: 1, pointerType: 'mouse' });
-    expect(record.getAttribute('aria-pressed')).toBe('true');
-    fireEvent.pointerUp(record, { pointerId: 1, pointerType: 'mouse' });
-    expect(record.getAttribute('aria-pressed')).toBe('false');
-    fireEvent.pointerDown(record, { pointerId: 2, pointerType: 'touch' });
-    fireEvent.pointerCancel(record);
-    expect(record.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.pointerDown(record, { pointerType: 'mouse' });
+    expect(screen.getByRole('button', { name: 'Aufnehmen' })).toBe(record);
+    fireEvent.click(record);
+    expect(screen.getByRole('button', { name: 'Aufnahme stoppen' })).toBe(record);
+    fireEvent.click(record);
+    expect(screen.getByRole('button', { name: 'Aufnehmen' })).toBe(record);
   });
 
-  it('keeps Enter recording active after key release until Enter is pressed again', () => {
-    render(<CameraControls stream={{} as MediaStream} />);
-    const record = screen.getByRole('button', { name: 'Aufnehmen' });
-    record.focus();
-    fireEvent.keyDown(record, { key: 'Enter' });
-    fireEvent.keyUp(record, { key: 'Enter' });
-    expect(record.getAttribute('aria-pressed')).toBe('true');
-    fireEvent.keyDown(record, { key: 'Enter' });
-    fireEvent.keyUp(record, { key: 'Enter' });
-    expect(record.getAttribute('aria-pressed')).toBe('false');
+  it('records only while holding a touch press and does not toggle back on after release', () => {
+    vi.useFakeTimers();
+    try {
+      render(<CameraControls stream={{} as MediaStream} />);
+      const record = screen.getByRole('button', { name: 'Aufnehmen' });
+      const touch = { pointerType: 'touch', pointerId: 1, isPrimary: true };
+      fireEvent.pointerDown(record, touch);
+      fireEvent.pointerCancel(record, touch);
+      act(() => vi.advanceTimersByTime(400));
+      expect(screen.getByRole('button', { name: 'Aufnehmen' })).toBe(record);
+
+      fireEvent.pointerDown(record, touch);
+      act(() => vi.advanceTimersByTime(400));
+      expect(screen.getByRole('button', { name: 'Aufnahme stoppen' })).toBe(record);
+      fireEvent.pointerUp(record, touch);
+      fireEvent.click(record, { detail: 1 });
+      expect(screen.getByRole('button', { name: 'Aufnehmen' })).toBe(record);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('stops recording when the document becomes hidden', () => {
+    const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+    try {
+      render(<CameraControls stream={{} as MediaStream} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Aufnehmen' }));
+      hidden.mockReturnValue(true);
+      fireEvent(document, new Event('visibilitychange'));
+      expect(screen.getByRole('button', { name: 'Aufnehmen' })).toBeTruthy();
+    } finally {
+      hidden.mockRestore();
+    }
+  });
+
+  it('keeps the focused switch button during stream replacement and blocks duplicate switches', () => {
+    const stream = {} as MediaStream;
+    const onSwitchCamera = vi.fn();
+    const { rerender } = render(<CameraControls stream={stream} onSwitchCamera={onSwitchCamera} />);
+    const cameraSwitch = screen.getByRole('button', { name: 'Kamera wechseln' });
+    act(() => cameraSwitch.focus());
+    fireEvent.click(cameraSwitch);
+    expect(onSwitchCamera).toHaveBeenCalledOnce();
+
+    rerender(<CameraControls isCameraSwitching onSwitchCamera={onSwitchCamera} />);
+    expect(screen.getByRole('button', { name: 'Kamera wechseln' })).toBe(cameraSwitch);
+    expect(document.activeElement).toBe(cameraSwitch);
+    expect(cameraSwitch.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(cameraSwitch);
+    expect(onSwitchCamera).toHaveBeenCalledOnce();
+
+    rerender(<CameraControls stream={{} as MediaStream} onSwitchCamera={onSwitchCamera} />);
+    expect(document.activeElement).toBe(cameraSwitch);
+    fireEvent.click(cameraSwitch);
+    expect(onSwitchCamera).toHaveBeenCalledTimes(2);
   });
 
   it('attaches and detaches streams, opens the file picker and disables image input during training', () => {
@@ -86,8 +124,8 @@ describe('camera preview controls', () => {
     });
     expect(onFileUpload).toHaveBeenCalledOnce();
     const record = screen.getByRole('button', { name: 'Aufnehmen' });
-    fireEvent.keyDown(record, { key: 'Enter' });
-    expect(record.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(record);
+    expect(screen.getByRole('button', { name: 'Aufnahme stoppen' })).toBe(record);
     rerender(<CameraControls stream={null} onFileUpload={onFileUpload} />);
     expect(video.srcObject).toBeNull();
     expect(screen.queryByRole('button', { name: /Aufnehm|Aufnahme/ })).toBeNull();

@@ -26,20 +26,19 @@ function TrainingReset() {
   const reset = vi.fn();
   return (
     <>
-      <button onFocus={prepareTrainingDialogs} onClick={() => setModal({ type: 'clearConfirm' })}>
-        Alles zurücksetzen
+      <button
+        onFocus={prepareTrainingDialogs}
+        onClick={() => setModal({ type: 'clearClass', classId: 'test-class' })}
+      >
+        Klasse zurücksetzen
       </button>
       <DeferredTrainingDialogs
         modal={modal}
         classes={[]}
-        classifier={null}
         closeModal={close}
         removeImage={reset}
         clearClass={reset}
         removeClass={reset}
-        resetClasses={reset}
-        setHasTrainedModel={reset}
-        stopPredicting={reset}
       />
     </>
   );
@@ -47,7 +46,7 @@ function TrainingReset() {
 
 it('can cancel a cold opening, reuse the same chunk and reopen without losing the trigger', async () => {
   render(<TrainingReset />);
-  const trigger = screen.getByRole('button', { name: 'Alles zurücksetzen' });
+  const trigger = screen.getByRole('button', { name: 'Klasse zurücksetzen' });
   expect(chunk.request).not.toHaveBeenCalled();
   fireEvent.click(trigger);
   expect(screen.getByRole('status').textContent).toBe('Dialog wird geladen.');
@@ -63,7 +62,7 @@ it('can cancel a cold opening, reuse the same chunk and reopen without losing th
   expect(document.activeElement).toBe(trigger);
 
   fireEvent.click(trigger);
-  const dialog = await screen.findByRole('alertdialog', { name: 'Daten unwiderruflich löschen?' });
+  const dialog = await screen.findByRole('alertdialog', { name: 'Bilder dieser Klasse löschen?' });
   await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
   fireEvent.keyDown(document, { key: 'Escape' });
   await waitFor(() => expect(document.activeElement).toBe(trigger));

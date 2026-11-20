@@ -1,26 +1,19 @@
-/**
- * TrainingClassesPanel.tsx
- *
- * Collection section of the training page. Renders the class list header
- * (count label, reset and add buttons) and the grid of ClassCard components.
- * All state and callbacks are passed in from TrainingPage.
- */
 import type React from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
+import { ArrowRight } from './icons/arrow-right';
 import { Plus } from './icons/plus';
-import { RotateCcw } from './icons/rotate-ccw';
 import { Camera } from './icons/camera';
-import { SwitchCamera } from './icons/switch-camera';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import ClassCard from './ClassCard';
 import type { ClassCardActions } from './ClassCard';
 import Button from './Button';
-import { prepareTrainingDialogs } from './DeferredTrainingDialogs';
-import { Badge } from './ui/badge';
 import { Empty, EmptyDescription, EmptyHeader } from './ui/empty';
 import { AnimatedList, AnimatedListItem } from './ui/animated-list';
-import { Heading } from './ui/typography';
+import { Heading, Text } from './ui/typography';
 import { EntryReveal } from './ui/entry-reveal';
+import { Spinner } from './ui/spinner';
+import { cn } from '@/lib/utils';
 
 /**
  * Props for the TrainingClassesPanel component.
@@ -35,90 +28,116 @@ interface TrainingClassesPanelProps {
   stream: MediaStream | null;
   /** Camera facing mode: front-facing ('user') or rear-facing ('environment'). */
   facingMode: 'user' | 'environment';
-  cameraActionLabel: 'Kamera aktivieren' | 'Kamera wechseln';
-  onCameraAction: () => void;
+  isCameraPending: boolean;
+  isCameraSwitching: boolean;
+  onEnableCamera?: () => void;
+  onSwitchCamera: () => void;
   /** Ref to the main heading element for programmatic focus management. */
   mainHeadingRef: React.RefObject<HTMLHeadingElement | null>;
   /** Callbacks for all actions a ClassCard can trigger (rename, delete, add image, etc.). */
   cardActions: ClassCardActions;
   /** Called when the user clicks the "Add class" button. */
   onAddClass: () => void;
-  /** Called when the user clicks the "Reset all" button to open the confirmation modal. */
-  onShowClearConfirm: () => void;
+  onContinue: () => void;
+  canContinue: boolean;
+}
+
+function CollectionContinue({
+  canContinue,
+  onContinue,
+  placement,
+}: Pick<TrainingClassesPanelProps, 'canContinue' | 'onContinue'> & {
+  placement: 'top' | 'bottom';
+}) {
+  const top = placement === 'top';
+  return (
+    <Button
+      variant={canContinue ? 'default' : 'outline'}
+      size={top ? 'sm' : 'lg'}
+      className={cn(
+        'min-h-11 shrink-0 disabled:border-border disabled:text-muted-foreground disabled:opacity-100',
+        top
+          ? 'px-2.5 has-[>svg]:px-2.5 sm:px-4 sm:has-[>svg]:px-4'
+          : 'max-sm:border-0 max-sm:bg-transparent max-sm:px-3 max-sm:text-primary max-sm:shadow-none max-sm:hover:bg-primary/10 max-sm:disabled:text-muted-foreground',
+      )}
+      disabled={!canContinue}
+      aria-label="Weiter zum Training"
+      onClick={onContinue}
+    >
+      <span className="sm:hidden">Weiter</span>
+      <span className="hidden sm:inline">Weiter zum Training</span>
+      <ArrowRight data-icon="inline-end" aria-hidden="true" />
+    </Button>
+  );
 }
 
 function CollectionHeader({
-  count,
   mainHeadingRef,
+  canContinue,
+  onContinue,
+}: Pick<TrainingClassesPanelProps, 'mainHeadingRef' | 'canContinue' | 'onContinue'>) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:gap-3">
+      <Heading
+        as="h2"
+        id="training-images"
+        ref={mainHeadingRef}
+        tabIndex={-1}
+        className="scroll-mt-28 border-0 pb-0 text-lg leading-tight font-semibold min-[23rem]:text-xl sm:text-3xl"
+      >
+        Bilder sammeln
+      </Heading>
+      <CollectionContinue canContinue={canContinue} onContinue={onContinue} placement="top" />
+      {!canContinue && (
+        <Text variant="muted" className="col-span-full max-w-prose text-pretty">
+          Mindestens {ML.MIN_CLASSES} Klassen, eindeutige Namen und je {ML.MIN_IMAGES_PER_CLASS}{' '}
+          Bilder.
+        </Text>
+      )}
+    </div>
+  );
+}
+
+function CollectionActions({
+  classes,
   onAddClass,
-  onShowClearConfirm,
-  cameraActionLabel,
-  onCameraAction,
-}: Pick<
-  TrainingClassesPanelProps,
-  'mainHeadingRef' | 'onAddClass' | 'onShowClearConfirm' | 'cameraActionLabel' | 'onCameraAction'
-> & { count: number }) {
-  const atLimit = count >= ML.MAX_CLASSES;
+  canContinue,
+  onContinue,
+}: Pick<TrainingClassesPanelProps, 'classes' | 'onAddClass' | 'canContinue' | 'onContinue'>) {
+  const pending = useRef<{ position: number; focusName: boolean } | null>(null);
+  const atLimit = classes.length >= ML.MAX_CLASSES;
   const addLabel = atLimit
     ? `Klasse hinzufügen deaktiviert, maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht`
     : 'Neue Klasse hinzufügen';
+
+  useLayoutEffect(() => {
+    const request = pending.current;
+    const added = request && classes[request.position];
+    if (!added) return;
+    pending.current = null;
+    const name = document.getElementById(`class-name-${added.id}`);
+    name?.scrollIntoView?.({ block: 'center', behavior: 'instant' });
+    if (request.focusName) name?.focus({ preventScroll: true });
+  }, [classes]);
+
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
-      <div className="flex flex-wrap items-center gap-x-3">
-        <Heading
-          as="h2"
-          id="training-images"
-          ref={mainHeadingRef}
-          tabIndex={-1}
-          className="scroll-mt-28 border-0 pb-0 text-2xl font-semibold sm:text-3xl"
-        >
-          Bilder sammeln
-        </Heading>
-        <Badge variant="secondary" className="tabular-nums">
-          {count} {count === 1 ? 'Klasse' : 'Klassen'}
-        </Badge>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          id="training-camera"
-          variant="outline"
-          aria-label={cameraActionLabel}
-          onClick={onCameraAction}
-        >
-          {cameraActionLabel === 'Kamera wechseln' ? (
-            <SwitchCamera data-icon="inline-start" aria-hidden="true" />
-          ) : (
-            <Camera data-icon="inline-start" aria-hidden="true" />
-          )}
-          <span className="sm:hidden">Kamera</span>
-          <span className="hidden sm:inline">{cameraActionLabel}</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-haspopup="dialog"
-          onPointerEnter={prepareTrainingDialogs}
-          onFocus={prepareTrainingDialogs}
-          onPointerDown={prepareTrainingDialogs}
-          onClick={onShowClearConfirm}
-          title="Alles zurücksetzen"
-          aria-label="Alle Klassen und Bilder zurücksetzen"
-        >
-          <RotateCcw aria-hidden="true" />
-        </Button>
-        <Button
-          variant="secondary"
-          size="default"
-          onClick={onAddClass}
-          disabled={atLimit}
-          title={addLabel}
-          aria-label={addLabel}
-        >
-          <Plus data-icon="inline-start" aria-hidden="true" />
-          <span className="sm:hidden">Neue Klasse</span>
-          <span className="hidden sm:inline">Klasse hinzufügen</span>
-        </Button>
-      </div>
+    <div className="flex items-center justify-between gap-2 sm:gap-3">
+      <Button
+        variant="secondary"
+        size="lg"
+        className="min-h-11 max-sm:min-w-0 max-sm:flex-1 max-sm:px-3"
+        disabled={atLimit}
+        title={addLabel}
+        aria-label={addLabel}
+        onClick={(event) => {
+          pending.current = { position: classes.length, focusName: event.detail === 0 };
+          onAddClass();
+        }}
+      >
+        <Plus data-icon="inline-start" aria-hidden="true" />
+        Neue Klasse
+      </Button>
+      <CollectionContinue canContinue={canContinue} onContinue={onContinue} placement="bottom" />
     </div>
   );
 }
@@ -128,14 +147,59 @@ export default function TrainingClassesPanel({
   duplicateClassNames,
   stream,
   facingMode,
+  isCameraPending,
+  isCameraSwitching,
+  onEnableCamera,
+  onSwitchCamera,
   mainHeadingRef,
   cardActions,
   entryReady = true,
-  ...headerActions
+  onAddClass,
+  onContinue,
+  canContinue,
 }: TrainingClassesPanelProps) {
+  const activeCameraTrigger = useRef<HTMLButtonElement>(null);
+  const handleCameraSwitch = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
+    (event) => {
+      if (isCameraPending) return;
+      const button = event.currentTarget;
+      activeCameraTrigger.current = button === document.activeElement ? button : null;
+      onSwitchCamera();
+    },
+    [isCameraPending, onSwitchCamera],
+  );
+  useLayoutEffect(() => {
+    const trigger = activeCameraTrigger.current;
+    if (!trigger || isCameraPending) return;
+    activeCameraTrigger.current = null;
+    if (trigger.isConnected || document.activeElement !== document.body) return;
+    if (stream) mainHeadingRef.current?.focus();
+  }, [isCameraPending, mainHeadingRef, stream]);
+
+  const cameraControl =
+    !stream &&
+    !isCameraSwitching &&
+    (isCameraPending ? (
+      <p role="status" className="flex min-h-9 items-center gap-2 text-sm text-muted-foreground">
+        <Spinner aria-hidden="true" />
+        Kamera wird verbunden
+      </p>
+    ) : (
+      onEnableCamera && (
+        <Button variant="outline" onClick={onEnableCamera}>
+          <Camera data-icon="inline-start" aria-hidden="true" />
+          Kamera aktivieren
+        </Button>
+      )
+    ));
+
   return (
     <section aria-labelledby="training-images" className="flex min-w-0 flex-col gap-5">
-      <CollectionHeader {...headerActions} count={classes.length} mainHeadingRef={mainHeadingRef} />
+      <CollectionHeader
+        mainHeadingRef={mainHeadingRef}
+        onContinue={onContinue}
+        canContinue={canContinue}
+      />
       <EntryReveal kind="text" active={entryReady} scrollOnly>
         <AnimatedList className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {classes.length === 0 ? (
@@ -155,6 +219,9 @@ export default function TrainingClassesPanel({
                   isDuplicate={duplicateClassNames.has(cls.name.trim())}
                   stream={stream}
                   facingMode={facingMode}
+                  isCameraSwitching={isCameraSwitching}
+                  onSwitchCamera={handleCameraSwitch}
+                  cameraFallback={index === 0 ? cameraControl : undefined}
                   actions={cardActions}
                 />
               </AnimatedListItem>
@@ -162,6 +229,12 @@ export default function TrainingClassesPanel({
           )}
         </AnimatedList>
       </EntryReveal>
+      <CollectionActions
+        classes={classes}
+        onAddClass={onAddClass}
+        canContinue={canContinue}
+        onContinue={onContinue}
+      />
     </section>
   );
 }

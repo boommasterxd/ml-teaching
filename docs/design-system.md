@@ -254,12 +254,11 @@ synthetic exercise in a hidden React Activity, which keeps effects inactive.
 On activation the visible exercise takes focus from its placeholder action when
 that action still owns focus.
 The compact Footer contains the brand, copyright and information links. Below `md`,
-all three groups stack and center, including wrapped information-link rows. Consent
-withdrawal belongs below the training workspace and inside the model-loading step.
-Both reuse `TrainingWithdrawal` and its native document reload, discarding the
-in-memory workspace and presenting consent again. Only the workspace includes the
-explanatory line below the action. The consent step and privacy
-policy retain the local-processing disclosures.
+the groups stack and center, including wrapped information-link rows. After setup,
+the training route contributes a consent withdrawal link between copyright and the
+information links. Withdrawal is also available in the model-loading dialog. Both
+links reload the document, discarding the in-memory workspace and presenting consent
+again. The consent step and privacy policy explain local processing.
 Badge icons inherit the surrounding Card or control's AnimateIcon context instead
 of introducing a nested provider that would restrict their hover trigger to the badge.
 Destructive Buttons and Badges use the theme's foreground/background pair without
@@ -320,12 +319,20 @@ do not install a second UI foundation.
 
 ## Layout and interaction
 
-The image-training workspace puts the class collection first. Its Cards share two columns
-from Tailwind's `lg` breakpoint and stack on narrower screens. Training and prediction
-share a glass panel underneath and sit side by side from `md`. Each class reserves space
-for its gallery toolbar and scrollable thumbnails from the empty state onward. Adding or
-removing images leaves the surrounding controls in place. Container queries set thumbnail
-columns from the gallery's own width. TanStack Virtual reads the same CSS column count.
+The image-training workspace mounts one step at a time on the same route. It starts
+with the class collection, whose Cards share two columns from Tailwind's `lg`
+breakpoint and stack on narrower screens. Training and prediction each use the
+full workspace width when selected. Switching steps preserves class data and the
+current model and stops any running prediction when leaving its step.
+Each class reserves space for its gallery toolbar and scrollable
+thumbnails from the empty state onward. With the camera enabled, the gallery and the capture
+surface share one row and height from 36 rem of class-card width. Narrower cards stack the
+two surfaces. The stacked gallery keeps room for two full rows of thumbnails at phone
+widths. The capture toggle spans the width below the video. A click, tap or keyboard
+activation toggles capture. Holding the touch button records until release or gesture
+cancellation. Capture ends when the document is hidden.
+Adding or removing images leaves the surrounding controls in place. Container queries set
+thumbnail columns from the gallery's own width. TanStack Virtual reads the same CSS column count.
 The homepage hero places the glass beside the text at `md`. The loop and droplets
 share one scroll-parallax layer.
 
@@ -364,9 +371,18 @@ emit an inline style in the static document.
 Header, footer and legal pages share the legal destinations.
 ThemeProvider and the shared header/footer sit outside the route
 ViewTransition. Theme changes update the root appearance without remounting the
-learning workspace. Three native fragment links mark the current training step and
-focus its section heading on activation. The class name fills the header beside
-the right-aligned image count. An invalid name uses the field's error border and
+learning workspace. Three buttons mark the current training step and focus the
+new section heading on activation. The two collection continue buttons require
+enough images in distinctly named classes. Prediction unlocks after successful
+training. On narrow screens the step buttons share the full width. The add-class
+action is below the last card, beside the bottom continue button. On small screens
+the add action fills the remaining width and the continue button uses a compact text
+style. Animate UI Auto Height follows the class grid as rows appear or disappear,
+moving the actions and footer with the list. Reduced motion applies the new
+height immediately. Adding a class brings its name into view. Keyboard activation
+also focuses the new field.
+The class name fills the card header beside
+the compact, vertically centered image count. An invalid name uses the field's error border and
 an anchored Animate UI tooltip on focus or hover. The field retains a live error
 description. The training status reserves space for its wrapped messages. A
 full-width row groups upload, reset and removal.
@@ -376,9 +392,22 @@ selection controls so collecting the first image keeps the card height stable.
 The class marker, gallery illustration and selected thumbnail badge use the same
 theme-aware class accent. Class names identify each group. Class counters show
 progress toward the training minimum, then the collected total;
-the camera controls in the collection header enable live capture, and the prediction
-preview appears once a trained model and a stream are available. The workspace panels, dialogs, gallery and
-camera preview use shared theme and media tokens.
+the first class card and the prediction step offer camera activation after the
+optional camera prompt is declined. A failed camera request shows a persistent
+workspace alert with a document reload action. Local image uploads remain available.
+Each visible preview places the shared camera switch in its lower-right corner.
+The completed training
+status offers an action that opens the prediction step without starting the camera preview.
+The prediction card
+puts start and stop in the same header control and attaches its preview only during active
+prediction. The camera and confidence readout share a row when the card is wide enough.
+At the wider prediction container breakpoint, the live right column includes a PCA
+scatter plot with one point per training image and a diamond for the current camera frame.
+Once the plot is ready, the camera preview stretches to the bottom of its caption.
+The plot reuses the lesson's diamond, class palette and typography. A packed SVG path per
+class keeps the point cloud separate from the Animate UI marker motion. The visible
+caption explains that the view is a projection of the full feature space.
+The workspace panels, dialogs, gallery and camera preview use shared theme and media tokens.
 SiteBrand is a small client boundary so Animate UI's press Slot receives a concrete
 Link element. Passing the server-produced Link through that Slot can resolve to an
 opaque child during development and omit the brand. Header and Footer remain server
@@ -390,7 +419,9 @@ the homepage with the shared backward Flow transition.
 Dialogs have constrained viewport height and scrollable content. Base UI and the
 initial native dialog handle focus and Escape. React Remove Scroll contains scrolling.
 The training setup focuses each new step's title and announces loading progress
-in place. Controlled dialogs restore focus when they close.
+in place. On narrow screens the consent text uses the available width inside the
+dialog, which retains vertical scrolling for short viewports and zoom.
+Controlled dialogs restore focus when they close.
 Buttons share disabled, keyboard and touch behavior. Error messages, empty data,
 loading state and deletion confirmations stay explicit.
 
@@ -467,11 +498,15 @@ Legal text is grouped at existing
 h2/h3 boundaries without changing controlled copy, while its H1 stays visible.
 The training workspace keeps its geometry through setup and becomes interactive
 when the model is ready and the first dialog closes. Panels below the viewport
-admit scroll reveals once the workspace is ready. The withdrawal notice reserves
-its space through setup and becomes visible at the same handoff. Later camera
-prompts retain the workspace layout. Virtual
+admit scroll reveals once the workspace is ready. The footer withdrawal link becomes
+available when setup closes. Later camera prompts retain the workspace layout. Virtual
 thumbnails and live prediction updates never replay decorative entries. Dialogs,
 success feedback, icons and the educational sequence retain their existing owners.
+During classifier training, Animate UI draws converging paths inspired by the lesson's
+nearest-neighbor diagram. Successful training changes the end node to a drawn check and
+announces completion in the persistent status region. The illustration is decorative
+and the success state follows actual completion. Quick runs keep the visual
+sequence on screen for at least 1.25 seconds. Reduced motion skips this minimum.
 
 Quiz completion and KNN answer feedback share `AnimatedFeedback`. Animate UI's
 `AutoHeight` owns expansion and collapse, including the space above the Alert;
@@ -504,6 +539,9 @@ Reduced motion uses the library's instant height change and opacity feedback.
   Concurrent theme, menu and route updates can supersede a pending native snapshot.
   React may skip that visual transition to preserve synchronous interaction; do not
   delay navigation or focus to serialize decorative work.
+  Entering the image-training route opens its native consent dialog immediately.
+  This destination opts out of page snapshots because document transitions paint
+  above the native modal. Its setup steps retain their own component transitions.
   During the Animate UI theme wipe, only the theme Switch receives a separate
   named live capture. Its old capture is transparent and its group has no independent
   animation, so the existing Animate UI thumb spring remains visible immediately

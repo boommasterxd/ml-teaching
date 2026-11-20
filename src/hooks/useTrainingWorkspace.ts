@@ -24,21 +24,19 @@ function reportOperationError(category: Exclude<ErrorCategory, 'model'>, message
 }
 
 function useTrainingResources() {
-  const { error: modelError, setError: setModelError } = useAppError();
+  const { error, setError } = useAppError();
   const consent = useConsentFlow();
   const [hasTrainedModel, setHasTrainedModel] = useState(false);
   const predictVideoRef = useRef<HTMLVideoElement>(null);
   const mainHeadingRef = useRef<HTMLHeadingElement>(null);
-  const models = useModelLoader(consent.hasConsented, setModelError);
+  const models = useModelLoader(consent.hasConsented, setError);
   const canUseModels =
     !models.isModelLoading && models.classifier !== null && models.mobilenetModel !== null;
   const showCameraPrompt = consent.showCameraModal && canUseModels;
   const camera = useCameraStream(
     consent.cameraConsent && canUseModels,
     models.isModelLoading,
-    predictVideoRef,
-    reportOperationError,
-    hasTrainedModel,
+    setError,
   );
   const prediction = usePredictionLoop(
     models.classifier,
@@ -61,7 +59,7 @@ function useTrainingResources() {
       mainHeadingRef.current?.focus({ preventScroll: true });
   }, [cameraConsent, cameraDeclined, hasConsented, canUseModels]);
   return {
-    modelError,
+    error,
     consent,
     models,
     camera,
@@ -133,13 +131,13 @@ function useTrainingData(resources: ReturnType<typeof useTrainingResources>) {
       endImage,
     ],
   );
-  const trainModel = () => {
+  const trainModel = (feedbackMs = 0) => {
     if (activity.isBusy()) {
       notifyError('Bitte warte, bis alle Bilder vollständig verarbeitet sind.');
       return;
     }
     prediction.stopPredicting();
-    void training.trainModel();
+    void training.trainModel(feedbackMs);
   };
   return {
     classes,

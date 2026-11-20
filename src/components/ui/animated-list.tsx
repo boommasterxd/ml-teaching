@@ -10,6 +10,7 @@ import {
   type RefObject,
 } from 'react';
 import { AnimatePresence, motion, useIsPresent } from 'motion/react';
+import { AutoHeight } from '@animate-ui/react/primitives/effects/auto-height';
 import { cn } from '@/lib/utils';
 import {
   ReducedMotionConfig,
@@ -25,11 +26,16 @@ const serverSnapshot = () => false;
 export function AnimatedList({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <ReducedMotionConfig>
-      <div className={cn('relative flex flex-col gap-6', className)}>
-        <AnimatePresence mode="sync" initial={false}>
-          {children}
-        </AnimatePresence>
-      </div>
+      <AutoHeight
+        className="overflow-clip [overflow-clip-margin:4px]"
+        style={{ overflow: undefined }}
+      >
+        <div className={cn('relative flex flex-col gap-6', className)}>
+          <AnimatePresence mode="sync" initial={false}>
+            {children}
+          </AnimatePresence>
+        </div>
+      </AutoHeight>
     </ReducedMotionConfig>
   );
 }

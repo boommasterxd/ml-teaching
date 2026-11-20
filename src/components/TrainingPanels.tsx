@@ -2,35 +2,51 @@ import type { useTrainingWorkspace } from '@/hooks/useTrainingWorkspace';
 import TrainingClassesPanel from './TrainingClassesPanel';
 import TrainingControls from './TrainingControls';
 import PredictionPanel from './PredictionPanel';
-import { Card } from './ui/card';
+import { useMotionPreference } from './ui/use-motion-preference';
 
-/** Stable panel surfaces enter when the consent-gated workspace is ready, without remounting it. */
+export type TrainingStep = 'images' | 'training' | 'prediction';
+
+const trainingFeedbackMs = 1250;
+
+/** Only the selected panel mounts. The workspace retains classes and the fitted model. */
 export default function TrainingPanels({
   workspace,
   ready,
+  step,
+  onSelect,
 }: {
   workspace: ReturnType<typeof useTrainingWorkspace>;
   ready: boolean;
+  step: TrainingStep;
+  onSelect: (step: TrainingStep) => void;
 }) {
-  const { resources, data, dialogs, cardActions } = workspace;
+  const { resources, data, cardActions } = workspace;
   const { consent, camera, prediction } = resources;
   const { classes } = data;
+  const { reduce } = useMotionPreference();
+  const onEnableCamera = consent.cameraConsent ? undefined : consent.requestCameraConsent;
+
   return (
     <div inert={!ready} className="training-panels">
-      <TrainingClassesPanel
-        entryReady={ready}
-        classes={classes.classes}
-        duplicateClassNames={data.duplicateClassNames}
-        stream={camera.stream}
-        cameraActionLabel={consent.cameraConsent ? 'Kamera wechseln' : 'Kamera aktivieren'}
-        onCameraAction={consent.cameraConsent ? camera.toggleCamera : consent.requestCameraConsent}
-        facingMode={camera.facingMode}
-        mainHeadingRef={resources.mainHeadingRef}
-        cardActions={cardActions}
-        onAddClass={classes.addClass}
-        onShowClearConfirm={dialogs.showClearConfirm}
-      />
-      <Card className="training-console">
+      {step === 'images' && (
+        <TrainingClassesPanel
+          entryReady={ready}
+          classes={classes.classes}
+          duplicateClassNames={data.duplicateClassNames}
+          stream={camera.stream}
+          isCameraPending={camera.isPending}
+          isCameraSwitching={camera.isSwitching}
+          onEnableCamera={onEnableCamera}
+          onSwitchCamera={camera.toggleCamera}
+          facingMode={camera.facingMode}
+          mainHeadingRef={resources.mainHeadingRef}
+          cardActions={cardActions}
+          onAddClass={classes.addClass}
+          onContinue={() => onSelect('training')}
+          canContinue={data.canTrain}
+        />
+      )}
+      {step === 'training' && (
         <TrainingControls
           entryReady={ready}
           classes={classes.classes}
@@ -40,11 +56,14 @@ export default function TrainingPanels({
           hasTrainedModel={resources.hasTrainedModel}
           hasInvalidNames={data.training.hasInvalidNames}
           hasDuplicateNames={data.hasDuplicateNames}
-          onTrain={data.trainModel}
+          onTrain={() => data.trainModel(reduce ? 0 : trainingFeedbackMs)}
+          onPredict={() => onSelect('prediction')}
         />
+      )}
+      {step === 'prediction' && (
         <PredictionPanel
           entryReady={ready}
-          hasCamera={camera.stream !== null}
+          stream={camera.stream}
           classes={classes.classes}
           prediction={prediction.prediction}
           isPredicting={prediction.isPredicting}
@@ -53,8 +72,11 @@ export default function TrainingPanels({
           predictVideoRef={resources.predictVideoRef}
           onStartPredicting={resources.startPredicting}
           onStopPredicting={prediction.stopPredicting}
+          onEnableCamera={onEnableCamera}
+          cameraPending={camera.isPending}
+          subscribeToFeatures={prediction.subscribeToFeatures}
         />
-      </Card>
+      )}
     </div>
   );
 }

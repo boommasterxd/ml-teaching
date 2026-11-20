@@ -29,15 +29,15 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
       <DialogTitle
         id="consent-modal-title"
         tabIndex={-1}
-        className="text-balance text-2xl leading-tight tracking-tight sm:text-3xl"
+        className="text-xl leading-tight tracking-tight sm:text-3xl sm:text-balance"
       >
         Einwilligung zur Datenverarbeitung
       </DialogTitle>
 
       <FieldSet className="min-w-0">
         <FieldLegend className="sr-only">Einwilligungen</FieldLegend>
-        <FieldGroup className="gap-0 divide-y divide-border rounded-2xl border border-border bg-background/40 px-4 sm:px-5">
-          <Field orientation="horizontal" className="items-start py-4">
+        <FieldGroup className="gap-0 divide-y divide-border sm:rounded-2xl sm:border sm:border-border sm:bg-background/40 sm:px-5">
+          <Field orientation="horizontal" className="items-start gap-2.5 py-2 sm:gap-3 sm:py-4">
             <Checkbox
               id="privacy-consent"
               checked={privacyChecked}
@@ -46,7 +46,7 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
             />
             <FieldLabel
               htmlFor="privacy-consent"
-              className="min-w-0 leading-relaxed font-normal [overflow-wrap:anywhere]"
+              className="min-w-0 leading-normal font-normal [overflow-wrap:anywhere] sm:leading-relaxed"
             >
               <span>
                 Ich willige ein, dass ML Teaching meine ausgewählten Bilder, Kamerabilder und daraus
@@ -57,7 +57,7 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
             </FieldLabel>
           </Field>
 
-          <Field orientation="horizontal" className="items-start py-4">
+          <Field orientation="horizontal" className="items-start gap-2.5 py-2 sm:gap-3 sm:py-4">
             <Checkbox
               id="model-consent"
               checked={modelChecked}
@@ -66,7 +66,7 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
             />
             <FieldLabel
               htmlFor="model-consent"
-              className="min-w-0 leading-relaxed font-normal [overflow-wrap:anywhere]"
+              className="min-w-0 leading-normal font-normal [overflow-wrap:anywhere] sm:leading-relaxed"
             >
               <span>
                 Ich willige ein, dass für die Ausführung der Anwendung notwendige KI-Modelle

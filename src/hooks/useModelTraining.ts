@@ -137,31 +137,38 @@ export function useModelTraining(
    * Reports validation or training errors via `onError` and
    * updates `isTraining` throughout the async operation.
    */
-  const trainModel = useCallback(async () => {
-    if (trainingRef.current && !trainingRef.current.signal.aborted) return;
-    if (!validateClasses(classes, hasInvalidNames, hasDuplicateNames, onError)) return;
-    const controller = new AbortController();
-    trainingRef.current = controller;
-    setIsTraining(true);
-    let newClassifier: Classifier | null = null;
-    try {
-      newClassifier = await createClassifier();
-      await new Promise((resolve) => setTimeout(resolve, ML.TRAINING_UI_YIELD_MS));
-      await trainClassifier(classes, newClassifier, controller.signal);
-      controller.signal.throwIfAborted();
-      setClassifier(newClassifier);
-      newClassifier = null;
-      setHasTrainedModel(true);
-    } catch {
-      newClassifier?.dispose();
-      if (!controller.signal.aborted) onError('training', 'Fehler beim Training des Modells.');
-    } finally {
-      if (trainingRef.current === controller) {
-        trainingRef.current = null;
-        setIsTraining(false);
+  const trainModel = useCallback(
+    async (feedbackMs = 0) => {
+      if (trainingRef.current && !trainingRef.current.signal.aborted) return;
+      if (!validateClasses(classes, hasInvalidNames, hasDuplicateNames, onError)) return;
+      const controller = new AbortController();
+      trainingRef.current = controller;
+      setIsTraining(true);
+      const start = performance.now();
+      let newClassifier: Classifier | null = null;
+      try {
+        newClassifier = await createClassifier();
+        await new Promise((resolve) => setTimeout(resolve, ML.TRAINING_UI_YIELD_MS));
+        await trainClassifier(classes, newClassifier, controller.signal);
+        const remaining = feedbackMs - (performance.now() - start);
+        if (remaining > 0 && !controller.signal.aborted)
+          await new Promise((resolve) => setTimeout(resolve, remaining));
+        controller.signal.throwIfAborted();
+        setClassifier(newClassifier);
+        newClassifier = null;
+        setHasTrainedModel(true);
+      } catch {
+        newClassifier?.dispose();
+        if (!controller.signal.aborted) onError('training', 'Fehler beim Training des Modells.');
+      } finally {
+        if (trainingRef.current === controller) {
+          trainingRef.current = null;
+          setIsTraining(false);
+        }
       }
-    }
-  }, [classes, setClassifier, setHasTrainedModel, onError, hasInvalidNames, hasDuplicateNames]);
+    },
+    [classes, setClassifier, setHasTrainedModel, onError, hasInvalidNames, hasDuplicateNames],
+  );
 
   const isTrainingActive = useCallback(
     () => Boolean(trainingRef.current && !trainingRef.current.signal.aborted),

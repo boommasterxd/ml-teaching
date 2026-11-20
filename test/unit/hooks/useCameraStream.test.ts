@@ -3,14 +3,13 @@
  *
  * Unit tests for the useCameraStream hook. Covers stream setup on consent,
  * guard conditions without consent, error reporting on getUserMedia failure,
- * camera toggle, srcObject assignment to the video ref, and stream cleanup
+ * camera toggle and stream cleanup
  * on unmount.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCameraStream } from '@/hooks/useCameraStream';
-import type React from 'react';
 
 // ─── Mock Factories ──────────────────────────────────────────────────────────
 
@@ -32,14 +31,6 @@ function makeMockStream(tracks = [makeMockTrack()]) {
   } as unknown as MediaStream;
 }
 
-/**
- * Creates a mock React ref pointing to a stub HTMLVideoElement.
- */
-function makeVideoRef(): React.RefObject<HTMLVideoElement | null> {
-  const video = { srcObject: null } as unknown as HTMLVideoElement;
-  return { current: video };
-}
-
 // ─── Setup ───────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
@@ -56,16 +47,12 @@ afterEach(() => {
 describe('useCameraStream', () => {
   describe('Initialer Zustand', () => {
     it('facingMode startet als user', () => {
-      const { result } = renderHook(() =>
-        useCameraStream(false, false, { current: null }, vi.fn()),
-      );
+      const { result } = renderHook(() => useCameraStream(false, false, vi.fn()));
       expect(result.current.facingMode).toBe('user');
     });
 
     it('stream startet als null', () => {
-      const { result } = renderHook(() =>
-        useCameraStream(false, false, { current: null }, vi.fn()),
-      );
+      const { result } = renderHook(() => useCameraStream(false, false, vi.fn()));
       expect(result.current.stream).toBeNull();
     });
   });
@@ -79,7 +66,7 @@ describe('useCameraStream', () => {
       });
 
       await act(async () => {
-        renderHook(() => useCameraStream(true, false, { current: null }, vi.fn()));
+        renderHook(() => useCameraStream(true, false, vi.fn()));
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
       });
 
@@ -94,29 +81,13 @@ describe('useCameraStream', () => {
         mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(mockStream) },
       });
 
-      const { result } = renderHook(() => useCameraStream(true, false, { current: null }, vi.fn()));
+      const { result } = renderHook(() => useCameraStream(true, false, vi.fn()));
 
       await act(async () => {
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
       });
 
       expect(result.current.stream).toBe(mockStream);
-    });
-
-    it('weist den Stream dem srcObject der videoRef zu', async () => {
-      const mockStream = makeMockStream();
-      vi.stubGlobal('navigator', {
-        mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(mockStream) },
-      });
-      const videoRef = makeVideoRef();
-
-      renderHook(() => useCameraStream(true, false, videoRef, vi.fn()));
-
-      await act(async () => {
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      });
-
-      expect(videoRef.current?.srcObject).toBe(mockStream);
     });
   });
 
@@ -125,9 +96,8 @@ describe('useCameraStream', () => {
       const track = makeMockTrack();
       const getUserMedia = vi.fn().mockResolvedValue(makeMockStream([track]));
       vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
-      const videoRef = makeVideoRef();
       const { result, rerender } = renderHook(
-        ({ loading }) => useCameraStream(true, loading, videoRef, vi.fn()),
+        ({ loading }) => useCameraStream(true, loading, vi.fn()),
         { initialProps: { loading: true } },
       );
       expect(getUserMedia).not.toHaveBeenCalled();
@@ -148,7 +118,7 @@ describe('useCameraStream', () => {
       });
 
       await act(async () => {
-        renderHook(() => useCameraStream(false, false, { current: null }, vi.fn()));
+        renderHook(() => useCameraStream(false, false, vi.fn()));
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
       });
 
@@ -166,7 +136,7 @@ describe('useCameraStream', () => {
       const onError = vi.fn();
 
       await act(async () => {
-        renderHook(() => useCameraStream(true, false, { current: null }, onError));
+        renderHook(() => useCameraStream(true, false, onError));
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
       });
 
@@ -175,10 +145,46 @@ describe('useCameraStream', () => {
   });
 
   describe('toggleCamera', () => {
+    it('waits for a fresh stream when retrying the previous camera after a failed switch', async () => {
+      const previousTrack = makeMockTrack();
+      const previousStream = makeMockStream([previousTrack]);
+      const replacementStream = makeMockStream();
+      let resolveReplacement!: (stream: MediaStream) => void;
+      const getUserMedia = vi
+        .fn()
+        .mockResolvedValueOnce(previousStream)
+        .mockRejectedValueOnce(new Error('Camera unavailable'))
+        .mockImplementationOnce(
+          () =>
+            new Promise<MediaStream>((resolve) => {
+              resolveReplacement = resolve;
+            }),
+        );
+      vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+      const onError = vi.fn();
+      const { result } = renderHook(() => useCameraStream(true, false, onError));
+      await act(async () => {});
+      expect(result.current.stream).toBe(previousStream);
+
+      act(() => result.current.toggleCamera());
+      expect(result.current.stream).toBeNull();
+      expect(result.current.isSwitching).toBe(true);
+      expect(previousTrack.stop).toHaveBeenCalledOnce();
+      await act(async () => {});
+      expect(result.current.isPending).toBe(false);
+      expect(onError).toHaveBeenCalledOnce();
+
+      act(() => result.current.toggleCamera());
+      expect(result.current.stream).toBeNull();
+      expect(result.current.isSwitching).toBe(false);
+      expect(result.current.isPending).toBe(true);
+      await act(async () => resolveReplacement(replacementStream));
+      expect(result.current.stream).toBe(replacementStream);
+      expect(result.current.isPending).toBe(false);
+    });
+
     it('wechselt facingMode von user zu environment', () => {
-      const { result } = renderHook(() =>
-        useCameraStream(false, false, { current: null }, vi.fn()),
-      );
+      const { result } = renderHook(() => useCameraStream(false, false, vi.fn()));
 
       act(() => {
         result.current.toggleCamera();
@@ -188,9 +194,7 @@ describe('useCameraStream', () => {
     });
 
     it('wechselt facingMode von environment zurück zu user', () => {
-      const { result } = renderHook(() =>
-        useCameraStream(false, false, { current: null }, vi.fn()),
-      );
+      const { result } = renderHook(() => useCameraStream(false, false, vi.fn()));
 
       act(() => {
         result.current.toggleCamera();
@@ -211,9 +215,7 @@ describe('useCameraStream', () => {
       });
       vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(() => pending) } });
       const track = makeMockTrack();
-      const { unmount } = renderHook(() =>
-        useCameraStream(true, false, { current: null }, vi.fn()),
-      );
+      const { unmount } = renderHook(() => useCameraStream(true, false, vi.fn()));
       unmount();
       await act(async () => {
         allow(makeMockStream([track]));
@@ -240,8 +242,7 @@ describe('useCameraStream', () => {
         );
       vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
       const onError = vi.fn();
-      const videoRef = makeVideoRef();
-      const { result } = renderHook(() => useCameraStream(true, false, videoRef, onError));
+      const { result } = renderHook(() => useCameraStream(true, false, onError));
       act(() => result.current.toggleCamera());
       const current = makeMockStream();
       await act(async () => {
@@ -252,7 +253,6 @@ describe('useCameraStream', () => {
         first(makeMockStream([oldTrack]));
       });
       expect(result.current.stream).toBe(current);
-      expect(videoRef.current?.srcObject).toBe(current);
       expect(oldTrack.stop).toHaveBeenCalledOnce();
       expect(getUserMedia).toHaveBeenCalledTimes(2);
     });
@@ -263,9 +263,7 @@ describe('useCameraStream', () => {
         mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(mockStream) },
       });
 
-      const { unmount } = renderHook(() =>
-        useCameraStream(true, false, { current: null }, vi.fn()),
-      );
+      const { unmount } = renderHook(() => useCameraStream(true, false, vi.fn()));
 
       await act(async () => {
         await new Promise<void>((resolve) => setTimeout(resolve, 0));

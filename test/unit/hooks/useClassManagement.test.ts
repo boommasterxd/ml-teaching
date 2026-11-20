@@ -219,28 +219,4 @@ describe('useClassManagement', () => {
       expect(onInvalidate).toHaveBeenCalledTimes(1);
     });
   });
-
-  describe('resetClasses', () => {
-    it('setzt auf die zwei Default-Klassen zurück', () => {
-      const { result } = renderHook(() => useClassManagement(onInvalidate));
-
-      act(() => result.current.addClass());
-      act(() => result.current.addClass());
-      expect(result.current.classes).toHaveLength(4);
-
-      act(() => result.current.resetClasses());
-
-      expect(result.current.classes).toHaveLength(2);
-      expect(result.current.classes[0].name).toBe('Klasse 1');
-      expect(result.current.classes[1].name).toBe('Klasse 2');
-    });
-
-    it('ruft onInvalidate NICHT auf', () => {
-      const { result } = renderHook(() => useClassManagement(onInvalidate));
-
-      act(() => result.current.resetClasses());
-
-      expect(onInvalidate).not.toHaveBeenCalled();
-    });
-  });
 });

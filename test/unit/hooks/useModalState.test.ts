@@ -35,14 +35,6 @@ describe('useModalState', () => {
     }
   });
 
-  it('opens the clear-all confirmation dialog', () => {
-    const { result } = renderHook(() => useModalState());
-
-    act(() => result.current.showClearConfirm());
-
-    expect(result.current.modal.type).toBe('clearConfirm');
-  });
-
   it('opens the clear-class dialog with the correct classId', () => {
     const { result } = renderHook(() => useModalState());
 
@@ -68,8 +60,8 @@ describe('useModalState', () => {
   it('closes any open modal state via closeModal', () => {
     const { result } = renderHook(() => useModalState());
 
-    act(() => result.current.showClearConfirm());
-    expect(result.current.modal.type).toBe('clearConfirm');
+    act(() => result.current.showClearClass('class-1'));
+    expect(result.current.modal.type).toBe('clearClass');
 
     act(() => result.current.closeModal());
     expect(result.current.modal.type).toBe('none');
@@ -78,7 +70,7 @@ describe('useModalState', () => {
   it('overwrites an already open modal when a new one is opened', () => {
     const { result } = renderHook(() => useModalState());
 
-    act(() => result.current.showClearConfirm());
+    act(() => result.current.showClearClass('class-1'));
     act(() => result.current.showRemoveClass('class-1'));
 
     expect(result.current.modal.type).toBe('removeClass');

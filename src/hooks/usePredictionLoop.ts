@@ -16,6 +16,13 @@ import { PREDICTION } from '../constants';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
 import type { ErrorCategory } from '../types/errors';
 
+type PredictionFeatureSampler = (features: tf.Tensor) => Promise<void> | undefined;
+export type SubscribePredictionFeatures = (sample: PredictionFeatureSampler) => () => void;
+type PublishPrediction = (
+  prediction: Prediction,
+  features: tf.Tensor,
+) => ReturnType<PredictionFeatureSampler>;
+
 /**
  * Groups the three ML objects that are always passed together into inference
  * functions, eliminating the recurring Data Clump.
@@ -47,10 +54,7 @@ function isVideoReady(video: HTMLVideoElement): boolean {
  *
  * @returns `true` on success, `false` on error.
  */
-async function runInference(
-  ctx: InferenceContext,
-  setPrediction: (p: Prediction) => void,
-): Promise<boolean> {
+async function runInference(ctx: InferenceContext, publish: PublishPrediction): Promise<boolean> {
   let img: tf.Tensor | null = null;
   let features: tf.Tensor | null = null;
   try {
@@ -59,7 +63,8 @@ async function runInference(
     img = runtime.browser.fromPixels(ctx.canvas);
     features = ctx.mobilenetModel.infer(img, true);
     const result = await ctx.classifier.predictClass(features);
-    setPrediction({ label: result.label, confidences: result.confidences });
+    const sample = publish({ label: result.label, confidences: result.confidences }, features);
+    if (sample) await sample;
     return true;
   } catch (err) {
     // Design decision: Individual prediction errors are intentionally only
@@ -81,10 +86,10 @@ async function runInference(
  */
 async function handleInference(
   ctx: InferenceContext,
-  setPrediction: (p: Prediction) => void,
+  publish: PublishPrediction,
   consecutiveErrorRef: React.MutableRefObject<number>,
 ): Promise<'ok' | 'error' | 'fatal'> {
-  const success = await runInference(ctx, setPrediction);
+  const success = await runInference(ctx, publish);
   if (success) {
     consecutiveErrorRef.current = 0;
     return 'ok';
@@ -133,7 +138,14 @@ export function usePredictionLoop(
   const inferenceRunningRef = useRef(false);
   const lastPredictTimeRef = useRef(0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const featureSampler = useRef<PredictionFeatureSampler | null>(null);
   const reportError = useEffectEvent(onError);
+  const subscribeToFeatures = useCallback<SubscribePredictionFeatures>((sample) => {
+    featureSampler.current = sample;
+    return () => {
+      if (featureSampler.current === sample) featureSampler.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const generation = ++generationRef.current;
@@ -159,9 +171,7 @@ export function usePredictionLoop(
       }
 
       if (timestamp - lastPredictTimeRef.current < PREDICTION.INTERVAL_MS) {
-        if (shouldPredictRef.current) {
-          requestRef.current = requestAnimationFrame(predictLoop);
-        }
+        requestRef.current = requestAnimationFrame(predictLoop);
         return;
       }
       lastPredictTimeRef.current = timestamp;
@@ -178,8 +188,10 @@ export function usePredictionLoop(
         inferenceRunningRef.current = true;
         const result = await handleInference(
           ctx,
-          (value) => {
-            if (isCurrent()) setPrediction(value);
+          (value, features) => {
+            if (!isCurrent()) return;
+            setPrediction(value);
+            return featureSampler.current?.(features);
           },
           consecutiveErrorRef,
         );
@@ -241,5 +253,5 @@ export function usePredictionLoop(
     setIsPredicting(false);
   }, []);
 
-  return { prediction, isPredicting, startPredicting, stopPredicting };
+  return { prediction, isPredicting, startPredicting, stopPredicting, subscribeToFeatures };
 }

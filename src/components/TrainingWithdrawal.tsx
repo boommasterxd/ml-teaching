@@ -1,45 +1,40 @@
+import { useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { RotateCcw } from './icons/rotate-ccw';
 import Button from './Button';
-import { Text } from './ui/typography';
-import { EntryReveal } from './ui/entry-reveal';
 import { learningPaths } from '@/lib/learning-paths';
-import { cn } from '@/lib/utils';
 
-/** A native document reload retires the complete in-memory workspace and renews consent. */
-export default function TrainingWithdrawal({
-  variant = 'workspace',
-  visible = true,
-}: {
-  variant?: 'workspace' | 'dialog';
-  visible?: boolean;
-}) {
-  const action = (
-    <Button
-      variant="outline"
-      render={
+const withdrawalLabel = 'Einwilligung widerrufen und lokale Trainingsdaten verwerfen';
+// The persistent site shell always provides the same slot for this document.
+const subscribeToFooter = () => () => {};
+const getFooterSlot = () => document.getElementById('footer-route-actions');
+const getServerSlot = () => null;
+
+export function TrainingFooterWithdrawal() {
+  const slot = useSyncExternalStore(subscribeToFooter, getFooterSlot, getServerSlot);
+  return slot
+    ? createPortal(
         <a
           href={learningPaths.imagePractice}
-          aria-label="Einwilligung widerrufen und lokale Trainingsdaten verwerfen"
-        />
-      }
+          aria-label={withdrawalLabel}
+          className="footer-link inline-flex min-h-6 items-center text-sm"
+        >
+          Einwilligung widerrufen
+        </a>,
+        slot,
+      )
+    : null;
+}
+
+/** A native document reload retires the complete in-memory workspace and renews consent. */
+export default function TrainingWithdrawal() {
+  return (
+    <Button
+      variant="outline"
+      render={<a href={learningPaths.imagePractice} aria-label={withdrawalLabel} />}
     >
       <RotateCcw data-icon="inline-start" aria-hidden="true" />
       Einwilligung widerrufen
     </Button>
-  );
-  if (variant === 'dialog') return action;
-  return (
-    <EntryReveal kind="text" asChild active={visible} scrollOnly>
-      <div
-        aria-hidden={!visible || undefined}
-        className={cn(
-          'mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center',
-          !visible && 'invisible',
-        )}
-      >
-        {action}
-        <Text variant="muted">Lädt die Lernseite neu und verwirft deine Trainingsdaten.</Text>
-      </div>
-    </EntryReveal>
   );
 }

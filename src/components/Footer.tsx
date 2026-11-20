@@ -3,7 +3,7 @@ import SiteBrand from './SiteBrand';
 import { EntryReveal } from './ui/entry-reveal';
 import { headerLegalLinks } from '@/content/site-navigation';
 
-/** Compact global identity and information links; consent controls belong to the workspace. */
+/** Compact global identity, route-owned actions and information links. */
 export default function Footer() {
   return (
     <footer className="site-footer">
@@ -15,6 +15,7 @@ export default function Footer() {
               &copy; {new Date().getFullYear()} Yannick Schäfer &amp; Mara Tesche
             </p>
           </div>
+          <div id="footer-route-actions" className="empty:hidden" />
           <nav aria-label="Rechtliche Links">
             <ul className="footer-links">
               {headerLegalLinks.map(({ href, label }) => (

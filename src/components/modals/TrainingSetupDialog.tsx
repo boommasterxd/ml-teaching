@@ -38,7 +38,7 @@ export default function TrainingSetupDialog({
       describedBy={`${step}-modal-desc`}
       onClose={step ? decline[step] : undefined}
     >
-      <ModalContent className="max-w-xl">
+      <ModalContent className="max-w-xl p-4 sm:p-6">
         {step && (
           <SetupStepTransition step={step}>
             {step === 'consent' && (
