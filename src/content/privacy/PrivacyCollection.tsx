@@ -4,9 +4,10 @@ export const PrivacyCollection = (
     <h3>Speicherung und Zugriff auf Ihrem Gerät</h3>
     <p>
       Ihr Browser kann Dateien für die Anzeige der Website zwischenspeichern. Weitere Speicher- und
-      Auslesevorgänge betreffen die von Ihnen gespeicherte Darstellungswahl und die freiwillige
-      Lernfunktion. Wann dies geschieht und welche Daten betroffen sind, steht in den Abschnitten
-      „Vercel“, „Darstellungseinstellungen“ und „Einsatz von KI auf der Website“.
+      Auslesevorgänge betreffen eine gegebenenfalls erforderliche Sicherheitsprüfung durch Vercel,
+      die von Ihnen gespeicherte Darstellungswahl und die freiwillige Lernfunktion. Wann dies
+      geschieht und welche Daten betroffen sind, steht in den Abschnitten „Vercel“,
+      „Darstellungseinstellungen“ und „Einsatz von KI auf der Website“.
     </p>
     <p>
       Die Speicherung und das Auslesen von Informationen auf Ihrem Gerät richten sich nach § 25

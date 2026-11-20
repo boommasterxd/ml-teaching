@@ -26,6 +26,22 @@ export const PrivacyHosting = (
       die ausdrücklich gewünschte Bereitstellung erforderlich ist, beruht sie auf § 25 Abs. 2 Nr. 2
       TDDDG.
     </p>
+    <h4>Schutz vor automatisierten Zugriffen</h4>
+    <p>
+      Bei Anfragen, die auf automatisierte Zugriffe hindeuten, kann Vercel vor dem Zugriff auf die
+      Website eine Browserprüfung durchführen. Dabei führt Ihr Browser JavaScript aus und
+      übermittelt das Prüfergebnis an Vercel. Vercel bewertet technische Browsermerkmale. Nach
+      erfolgreicher Prüfung wird im Browser eine an diesen Browser gebundene Prüfsitzung gespeichert
+      und bei weiteren Anfragen berücksichtigt. Diese Sitzung ist nach Angaben von Vercel eine
+      Stunde gültig. Scheitert die Prüfung, wird die Anfrage abgewiesen.
+    </p>
+    <p>
+      Soweit die Speicherung oder das Auslesen auf Ihrem Gerät zur sicheren Bereitstellung der von
+      Ihnen angeforderten Website unbedingt erforderlich ist, erfolgt dies nach § 25 Abs. 2 Nr. 2
+      TDDDG. Soweit dabei personenbezogene Daten verarbeitet werden, ist Art. 6 Abs. 1 lit. f DSGVO
+      die Rechtsgrundlage. Unser berechtigtes Interesse besteht darin, automatisierten Missbrauch
+      abzuwehren und die Website verfügbar zu halten.
+    </p>
     <h4>Speicherdauer</h4>
     <p>
       Für personenbezogene Kundendaten, die Vercel in unserem Auftrag verarbeitet, gelten unsere
