@@ -33,6 +33,18 @@ export async function settleEntryAnimations(page: Page) {
   }
 }
 
+export async function expectNoStoredTrainingData(page: Page) {
+  expect(await page.context().cookies()).toEqual([]);
+  expect(
+    await page.evaluate(async () => ({
+      local: localStorage.length,
+      session: sessionStorage.length,
+      databases: (await indexedDB.databases()).length,
+      caches: (await caches.keys()).length,
+    })),
+  ).toEqual({ local: 0, session: 0, databases: 0, caches: 0 });
+}
+
 export async function expectAccessible(page: Page) {
   await settleEntryAnimations(page);
   await expect(page.locator(':is([role="dialog"], [role="alertdialog"])[data-closed]')).toHaveCount(
@@ -112,4 +124,61 @@ export async function expectMenuHighlight(row: Locator, background: string) {
       }),
     )
     .toEqual([{ background, opacity: '1', onRow: true }]);
+}
+
+type TransitionSnapshot = {
+  root: boolean;
+  outgoingPages: number;
+  incomingPages: number;
+  back: boolean;
+};
+type TransitionObserver = typeof window & {
+  observedTransitions: Promise<TransitionSnapshot | 'skipped'>[];
+};
+
+export async function observeViewTransitions(page: Page) {
+  await page.addInitScript(() => {
+    const observedTransitions: TransitionObserver['observedTransitions'] = [];
+    Object.assign(window, { observedTransitions });
+    const start = document.startViewTransition;
+    if (!start) return;
+    document.startViewTransition = new Proxy(start, {
+      apply(target, thisArg, args) {
+        const transition = Reflect.apply(target, thisArg, args) as ViewTransition;
+        observedTransitions.push(
+          transition.ready.then(
+            () => {
+              const effects = document
+                .getAnimations()
+                .map((animation) => animation.effect)
+                .filter((effect) => effect instanceof KeyframeEffect);
+              const pageLayers = (side: 'old' | 'new') => {
+                const prefix = `::view-transition-${side}(`;
+                return effects.filter(
+                  ({ pseudoElement }) =>
+                    pseudoElement?.startsWith(prefix) && pseudoElement !== `${prefix}root)`,
+                );
+              };
+              const outgoing = pageLayers('old');
+              const incoming = pageLayers('new');
+              // The browser assigns a width to the captured root group even without an animation.
+              const rootGroup = getComputedStyle(
+                document.documentElement,
+                '::view-transition-group(root)',
+              );
+              return {
+                root: Number.isFinite(Number.parseFloat(rootGroup.width)),
+                outgoingPages: new Set(outgoing.map(({ pseudoElement }) => pseudoElement)).size,
+                incomingPages: new Set(incoming.map(({ pseudoElement }) => pseudoElement)).size,
+                back: transition.types.has('nav-back'),
+              };
+            },
+            () => 'skipped',
+          ),
+        );
+        return transition;
+      },
+    });
+  });
+  return () => page.evaluate(() => Promise.all((window as TransitionObserver).observedTransitions));
 }

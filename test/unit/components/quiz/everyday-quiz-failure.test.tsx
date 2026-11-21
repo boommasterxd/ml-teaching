@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, it, expect, vi } from 'vitest';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import EverydayQuiz from '@/components/quiz/EverydayQuiz';
 import { QUIZ_EXAMPLES } from '@/lib/recognition-quiz';
 import { installBrowserHost, restoreBrowserHost } from '../../helpers/browser-host';
@@ -9,7 +9,10 @@ vi.mock('@/components/quiz/quiz-feedback', () => {
 });
 
 beforeEach(installBrowserHost);
-afterEach(restoreBrowserHost);
+afterEach(() => {
+  cleanup();
+  restoreBrowserHost();
+});
 
 it('keeps the answer visible and provides a focus-safe retry when feedback fails to load', async () => {
   render(<EverydayQuiz />);

@@ -124,6 +124,22 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
 });
 
 test('the keyboard legal back action animates the previous history entry', async ({ page }) => {
+  await page.addInitScript(() => {
+    // Hold the next native popstate before Next restores its content.
+    window.addEventListener(
+      'popstate',
+      (event) => {
+        const root = document.documentElement;
+        if (!event.isTrusted || root.dataset.delayHistoryCommit !== 'true') return;
+        event.stopImmediatePropagation();
+        delete root.dataset.delayHistoryCommit;
+        window.setTimeout(() => {
+          window.dispatchEvent(new PopStateEvent('popstate', { state: event.state }));
+        }, 350);
+      },
+      { capture: true },
+    );
+  });
   const failures = diagnostics(page);
   await page.goto('/lernen');
   const entryKey = () => page.evaluate(() => navigation.currentEntry?.key);
@@ -138,10 +154,14 @@ test('the keyboard legal back action animates the previous history entry', async
   await settleEntryAnimations(page);
 
   const transitions = await observeBackFlow(page);
+  await page.evaluate(() => {
+    document.documentElement.dataset.delayHistoryCommit = 'true';
+  });
   await back.focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/lernen$/);
   await expect(page.getByRole('heading', { name: 'Dein Lernlabor', exact: true })).toBeVisible();
+  expect(await page.locator('html').getAttribute('data-delay-history-commit')).toBeNull();
   await settleEntryAnimations(page);
   expect(await transitions()).toEqual([{ back: true, outgoingRight: true, incomingLeft: true }]);
   expect(await entryKey()).toBe(learningEntry);

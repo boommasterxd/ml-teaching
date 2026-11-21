@@ -177,8 +177,8 @@ content wrapper fixes enabled-item opacity with an important utility to preserve
 text contrast during entry. Disabled items retain their separate opacity state.
 Base UI owns keyboard activation in dropdowns. Animate UI owns popup entry,
 exit and pointer feedback. A closing popup immediately becomes inert during exit.
-The appearance menu's checkbox uses a plain Lucide check path inside Animate UI's
-checkbox indicator. The indicator draws and erases the path from the checked state.
+The appearance menu aligns all rows at the same inset. Its moving highlight
+follows hover and keyboard focus, and checked choices use red, semibold text.
 `LearningCard` composes CardHeader, CardTitle and CardDescription for each of
 the three training steps. A red icon and step number share a row above the title.
 The image explanation presents the technique before its interactive animation
@@ -289,7 +289,7 @@ Below `lg`, the toolbar pairs the back action with the Informationen dropdown.
 Back traverses the previous browser entry when available and uses the homepage for a direct entry.
 The dropdown's three native links use the shared Animate UI menu, including
 current-page semantics, shared intent-based native route prefetching and whole-control icon
-feedback. The header and the legal dropdown share the same root and trigger.
+feedback.
 Pointer, keyboard focus and touch intent prepare the three legal items through
 one retryable module. The portal mounts on opening and owns focus and exit.
 The appearance menu loads its popup and choice
@@ -305,9 +305,10 @@ in `src/components/legal.css`; route transitions retain the existing native owne
 The static 404 and 500 documents and the App Router recovery screen share
 `PublicErrorScene`. Status text and recovery actions remain visible in the initial
 render. The 404 uses three separately modeled glass digits in the shared
-Topography renderer. The 500 and recovery screen use its ring. A local poster
-reserves the artwork's space and stays visible with reduced motion or unavailable
-WebGL. The static error documents keep the poster node when playback starts.
+Topography renderer. The 500 and recovery screen use its ring. The static
+error pages reserve the artwork area and display the shared Spinner until the
+first frame. Their local poster is the still for reduced motion, disabled
+scripting or unavailable WebGL.
 The App Router recovery screen renders the poster immediately and loads the
 playback component when the recovery screen mounts. If playback fails to load,
 the poster and recovery actions stay available. Visible artwork or pointer
@@ -357,18 +358,21 @@ have a 44 px pointer target. Menu rows use compact spacing for mouse input and
 retain their larger touch targets on coarse-pointer devices.
 Below `md`, one Menü trigger exposes the same destinations. Unavailable learning items
 show their availability without a navigable URL. Enabled links use native intent preparation.
-Static markup and the interactive header share their menu items, links and triggers.
-Each responsive navigation has a React Activity boundary for selective hydration.
-Both trigger lists are delivered in static HTML and CSS selects the visible list
-at the shared breakpoint.
+Both lightweight trigger lists are delivered in static HTML and CSS selects the
+visible list at the shared breakpoint. The shared navigation control uses a Base
+UI button for the initial trigger. It shares its label, chevron and styles with
+the trigger inside the interactive menu. Once the browser resolves the viewport,
+it mounts just the matching navigation tree. Focus carries over from the initial triggers.
+Crossing the breakpoint closes the old panel.
 Base UI owns keyboard navigation and the trigger-to-panel relationship.
 Animate UI owns the panel transitions and the moving row highlight.
 Each header trigger uses the shared Animate UI chevron with a static glyph through
 hydration. Its rotation follows popup state and reduced-motion rules.
-The small desktop and mobile navigation panel module ships with the header so
-opening can start without a script request. Base UI mounts the portal and its
-active rows on opening. Pointer, keyboard and touch intent on enabled links
-prepares their destination routes.
+The header keeps its Base UI triggers and positioning shell stable. Pointer,
+keyboard and touch intent load the shared module for the navigation rows and
+their icons. Opening before it arrives shows a loading status in the existing
+popup. The popup supports dismissal while loading and retry after a failure.
+Link intent prepares destination routes.
 The header list applies isolation through CSS because Animate UI's list would
 emit an inline style in the static document.
 Header, footer and legal pages share the legal destinations.
@@ -450,14 +454,19 @@ theme wipe updates both when its existing completion applies the theme.
 
 The static switch takes its initial position, track color and glyph from the
 bootstrapped root theme. React adopts that position as it reads the preference.
+The shared switch thumb and icons prepare Motion on pointer, touch or focus
+intent in the appearance controls. Press feedback and the switch node stay stable.
 The lightweight switch and menu trigger remain available initially. Pointer/focus
-intent prepares one deduplicated, retryable ThemeMenu module; the supported public
-portal mounts its content only when opened. No hidden portal prerender is assumed.
+intent prepares one deduplicated, retryable ThemeMenu module including its Base UI
+root. The portal mounts the content on opening. Below `md` the menu matches the
+glass header's width and aligns with its outer edges. From `md` it anchors to the
+shared button.
 The menu trigger sets the shared Button's Animate UI tap scale to 1 so Base UI
 positions the panel against a stable rectangle during pointer and keyboard press.
-The toolbar gives the brand and appearance controls equal inline insets from
-the rounded ends. It defines the menu offset at its mobile and desktop breakpoints to
-align the appearance menu with the navigation flyouts.
+The toolbar centers the brand mark and appearance trigger in the rounded ends.
+Their inline insets derive from the toolbar radius and each element's size.
+The mobile and desktop menu offsets align the appearance menu with the navigation
+flyouts.
 Initial learning consent remains eager. The loading and camera steps mount on
 activation in the same dialog. Intent on a confirmation or image-preview trigger
 prepares one shared module. The workspace mounts one active dialog at a time and
@@ -475,11 +484,11 @@ on entry and 50 ms on scroll, each capped at two steps. Initially visible conten
 remains opaque and readable and only shifts briefly. Primary page headings stay static.
 The homepage headline, supporting text and actions remain sharp and in place
 from the first paint through hydration and highlight startup.
-On first arrival from below, cards, standalone headings and reading groups fade in
-with a short 14–16 px slide. Legal documents reveal by heading-led group, and the
-training and prediction sections enter independently after workspace setup.
-Scroll reveals animate opacity and translation. Virtualized thumbnails keep
-their existing list lifecycle.
+On first arrival from below, cards and navigation surfaces fade in with a short
+14–16 px slide. Standalone text, reading groups and the header and footer stay
+opaque during scroll reveals. Legal documents reveal by heading-led group, and
+the training and prediction sections enter independently after workspace setup.
+Virtualized thumbnails keep their existing list lifecycle.
 Reduced motion and keyboard focus reveal immediately without spatial movement.
 SSG and hydration start with visible content and no initial style attributes.
 The installed Animate UI Effect remounts its descendants when its reduced-motion
@@ -538,8 +547,9 @@ Reduced motion uses the library's instant height change and opacity feedback.
   the main content out of capture. Eligible browser Back and Forward traversals
   use the Navigation API's precommit support when available; the legal Back control
   also applies Flow layers to native history traversal. The browser owns this capture
-  because a cached history restore can bypass React's view transition. If the
-  restored page does not commit promptly, the capture yields to normal navigation.
+  because a cached history restore can bypass React's view transition. Capture
+  follows the matching history entry and rendered route commit. Interruption,
+  failed navigation or browser cancellation releases the pending capture.
   Reduced motion opts out of page capture. Unsupported browsers retain
   normal navigation. The consent-withdrawal
   link deliberately reloads the document to discard the in-memory workspace. It
@@ -550,6 +560,13 @@ Reduced motion uses the library's instant height change and opacity feedback.
   Entering the image-training route opens its native consent dialog immediately.
   This destination opts out of page snapshots because document transitions paint
   above the native modal. Its setup steps retain their own component transitions.
+  The native 500 document and the homepage opt in to the browser's document
+  transition for recovery. The shared fade captures the main content, with the
+  shell outside the capture. Every App Router document includes the same hashed
+  stylesheet in its head, so its document CSP permits the rule across client
+  navigation. A media condition enables it only on the homepage or native 500
+  document and when motion is allowed. Initially visible homepage content skips
+  the additional component entrance after a 500 recovery.
   During the Animate UI theme wipe, only the theme Switch receives a separate
   named live capture. Its old capture is transparent and its group has no independent
   animation, so the existing Animate UI thumb spring remains visible immediately
@@ -563,8 +580,10 @@ Reduced motion uses the library's instant height change and opacity feedback.
   is emitted during SSG for the shared legal selection and covered by the hash CSP.
   Destination preparation uses the native Next router cache.
 - The hero adapts the Animate UI Topography WebGL renderer. The first pass computes
-  the loop's reflections and refraction. The second resolves its edge coverage at
-  output resolution. Desktop homepage playback starts at up to 2× display
+  the loop's reflections and refraction. Its front-surface search is bounded to the
+  ring and its soft edge. The two ellipsoid droplets use direct ray intersections
+  and surface normals. The second pass resolves edge coverage at output resolution.
+  Desktop homepage playback starts at up to 2× display
   scaling, 300,000 field texels and 4,147,200 output pixels. Mobile and error artwork
   start at up to 1.5× display scaling, 150,000 field texels and 2,073,600 output pixels.
   Sustained frame cadence can raise
@@ -578,9 +597,9 @@ Reduced motion uses the library's instant height change and opacity feedback.
   and desktop WebP posters in `src/assets/hero/` show the shader's resting pose.
   They preserve the alpha channel so the themed stage shows through the glass.
   Next.js generates responsive optimizer URLs for the homepage, 404, 500 and
-  in-app recovery posters. Each `<picture>` and its viewport-specific priority
-  preloads share the candidates and sizes for the scene's layout. The Pages
-  Router 500 document emits its poster preloads in the head before startup scripts.
+  in-app recovery posters. The static pages select the still through the browser's
+  reduced-motion media query or the scripting-disabled fallback. The in-app
+  recovery screen preloads the same candidates used by its `<picture>`.
   Both themes use the same ruby glass material. The loop turns and the droplets
   drift with moving highlights at up to 30 frames per second during autonomous
   playback. Each droplet follows its own path with a visible gap from the loop.
@@ -592,16 +611,19 @@ Reduced motion uses the library's instant height change and opacity feedback.
   activations start as slots become free, including repeated taps at the same pixel.
   The artwork itself accepts Enter and Space and keeps
   the normal pointer cursor. The only separate control pauses or resumes playback.
-  The poster remains visible while the two GPU programs link. Where parallel
-  compilation is available, the renderer checks their readiness on its frame
-  loop. The first successful draw hides the poster without an extra entrance fade.
+  A shared Spinner glyph is visible in the initial HTML and Animate UI takes
+  over its motion after hydration. The first successful draw removes it.
+  Where parallel compilation is available, the renderer checks the readiness of
+  both GPU programs on its frame loop.
   Visibility and intent share one renderer import promise. The homepage starts
   preparing the renderer after the visible hero has had a chance to paint, even
-  while the document is still loading. Error artwork waits for document load.
+  while the document is still loading. Static error artwork uses the same schedule.
+  The in-app recovery artwork keeps its static poster while playback loads.
   The resolved component mounts directly on the client after any incoming page
   transition.
-  The poster returns on reduced motion, a hidden tab, unsupported WebGL or
-  context loss. These states unmount the enhancement and dispose its renderer.
+  The poster is used for reduced motion, unsupported WebGL or context loss.
+  Reduced motion, a hidden tab or a lost context unmounts the enhancement and
+  disposes its renderer.
   The homepage pauses the render loop when the artwork leaves the viewport
   and retains its single bounded canvas for the active page. Scrolling back
   resumes the same frame without reinitializing WebGL. Error artwork releases
@@ -628,10 +650,11 @@ Reduced motion uses the library's instant height change and opacity feedback.
   initial markup. Exiting classes become inert and hidden from assistive technology
   immediately; focus moves to a remaining neighbor or the workspace heading.
   Supported `AnimatePresence mode="sync"` retains the fading exit in document flow,
-  then Motion's `layout="position"` reflows the remaining classes. Motion 14.9.1's
-  `popLayout` requires a runtime-injected empty style element, which the strict SSG
-  hash CSP forbids. Sync presence preserves one motion owner without adding an
-  empty-style hash, nonce, custom geometry engine or relaxed policy.
+  then Motion's `layout="position"` reflows the remaining classes. Motion's
+  `popLayout` appends a style element at runtime before inserting the positioning rule.
+  The strict SSG hash CSP blocks that style element. Sync presence preserves one
+  motion owner without adding an empty-style hash, nonce, custom geometry engine
+  or relaxed policy.
 - The educational illustration has four ordered stages: an Input placeholder replaced by a 112px image after selection,
   labeled conceptual feature maps, a nearest-neighbor diagram and a separate vote
   readout. Animate UI Shine scans the selected example; Effect reveals edges,
@@ -738,8 +761,8 @@ changing the mounted components or their motion owners.
 The educational illustration preserves its example image,
 labeled feature maps, neighbor points, connecting paths and class labels before enabling its
 interactive component.
-These are explicit integrations for the installed Animate UI 2.4.6 and Motion
-14.9.1 producers, not permission to omit primary content or relax the CSP.
+These integrations preserve the initial content and the existing CSP with
+the installed Animate UI and Motion components.
 
 Shared `ActionFeedback` keeps AnimateIcon in a layout-neutral `display: contents`
 parent and places ButtonPrimitive's press Slot directly on the native button or

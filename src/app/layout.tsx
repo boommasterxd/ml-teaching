@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { PageTransition } from '@/components/animate-ui/components/page-transition';
+import ErrorRecoveryTransitionStyles from '@/components/ErrorRecoveryTransitionStyles';
 import Footer from '@/components/Footer';
 import SiteHeader from '@/components/SiteHeader';
 import ToastHost from '@/components/ToastHost';
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
+        <ErrorRecoveryTransitionStyles />
         <link
           id="site-favicon"
           rel="icon"

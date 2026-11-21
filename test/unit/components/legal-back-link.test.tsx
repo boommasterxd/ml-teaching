@@ -10,6 +10,12 @@ import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host'
 
 const learningEntryKey = 'learning';
 
+function commitHistoryEntry(navigation: Navigation, key: string, url: string, index = 0) {
+  history.replaceState(null, '', url);
+  Object.assign(navigation, { currentEntry: { key, index } });
+  navigation.dispatchEvent(new Event('currententrychange'));
+}
+
 function installNavigation(traverseTo = vi.fn<Navigation['traverseTo']>(), target = '/lernen') {
   const entry = {
     key: learningEntryKey,
@@ -33,10 +39,18 @@ function installTransition() {
   Object.defineProperty(document, 'activeViewTransition', { configurable: true, value: null });
   const start = vi.fn((options: StartViewTransitionOptions) => {
     Object.defineProperty(document, 'activeViewTransition', { configurable: true, value: active });
+    const { promise: ready, resolve, reject } = Promise.withResolvers<void>();
+    const updateCallbackDone = Promise.resolve().then(() => options.update?.());
+    void updateCallbackDone.then(resolve, reject);
+    const release = () => {
+      Object.defineProperty(document, 'activeViewTransition', { configurable: true, value: null });
+    };
+    void ready.then(release, release);
     return {
-      ready: Promise.resolve(),
-      updateCallbackDone: Promise.resolve().then(() => options.update?.()),
+      ready,
+      updateCallbackDone,
       skipTransition: skip,
+      skipByBrowser: () => reject(new DOMException('Snapshot deadline', 'TimeoutError')),
     };
   });
   Object.defineProperty(document, 'startViewTransition', { configurable: true, value: start });
@@ -75,22 +89,24 @@ function installBrowserTraversal() {
   const { navigation } = installNavigation();
   const { start, skip } = installTransition();
   const content = document.createElement('main');
+  content.dataset.routePath = location.pathname;
   const stop = subscribeToHistoryTransitions(navigation, content);
-  const originalUrl = location.href;
-  return {
-    navigation,
-    start,
-    skip,
-    content,
-    restore() {
-      stop?.();
-      history.replaceState(null, '', originalUrl);
-    },
-  };
+  return { navigation, start, skip, content, stop };
+}
+
+function installBackAction() {
+  const { start, skip } = installTransition();
+  const traverse = vi.fn<Navigation['traverseTo']>();
+  const { navigation, entry } = installNavigation(traverse);
+  traverse.mockReturnValue({ committed: Promise.resolve(entry), finished: Promise.resolve(entry) });
+  const content = render(<main data-route-capture="legal" data-route-path="/impressum" />);
+  return { start, skip, traverse, navigation, entry, content };
 }
 
 describe('legal page back navigation', () => {
+  const originalUrl = location.href;
   beforeEach(() => {
+    history.replaceState(null, '', '/impressum');
     installBrowserHost();
     vi.clearAllMocks();
     vi.stubGlobal('CSS', { supports: vi.fn(() => true) });
@@ -100,6 +116,7 @@ describe('legal page back navigation', () => {
     Reflect.deleteProperty(document, 'activeViewTransition');
     vi.useRealTimers();
     restoreBrowserHost();
+    history.replaceState(null, '', originalUrl);
   });
 
   it.each(['no View Transition API', 'no transition-type selector', 'the training consent dialog'])(
@@ -136,14 +153,7 @@ describe('legal page back navigation', () => {
 
   it('keeps one back traversal in flight until the destination content commits', async () => {
     vi.useFakeTimers();
-    const { start, skip } = installTransition();
-    const traverse = vi.fn<Navigation['traverseTo']>();
-    const { navigation, entry } = installNavigation(traverse);
-    traverse.mockReturnValue({
-      committed: Promise.resolve(entry),
-      finished: Promise.resolve(entry),
-    });
-    const content = render(<main data-route-capture="legal" />);
+    const { start, skip, traverse, navigation, entry, content } = installBackAction();
 
     expect(goBackWithTransition(navigation, entry)).toBe(true);
     expect(goBackWithTransition(navigation, entry)).toBe(true);
@@ -151,42 +161,35 @@ describe('legal page back navigation', () => {
     const completion = start.mock.results[0].value.updateCallbackDone.then(settled);
     await Promise.resolve();
     expect(traverse).toHaveBeenCalledExactlyOnceWith(entry.key);
+    commitHistoryEntry(navigation, entry.key, '/lernen');
+    await vi.advanceTimersByTimeAsync(350);
     expect(settled).not.toHaveBeenCalled();
 
-    content.rerender(<main data-route-capture="learning" />);
+    content.rerender(<main data-route-capture="learning" data-route-path="/lernen" />);
     await completion;
-    await vi.runOnlyPendingTimersAsync();
+    expect(settled).toHaveBeenCalledOnce();
     expect(skip).not.toHaveBeenCalled();
   });
 
-  it('releases the transition if restored route content stalls', async () => {
-    vi.useFakeTimers();
-    const { start, skip } = installTransition();
-    const traverse = vi.fn<Navigation['traverseTo']>();
-    const { navigation, entry } = installNavigation(traverse);
-    traverse.mockReturnValue({
-      committed: Promise.resolve(entry),
-      finished: Promise.resolve(entry),
-    });
-    render(<main data-route-capture="legal" />);
+  it('releases pending content when the browser skips its snapshot', async () => {
+    const { start, skip, traverse, navigation, entry } = installBackAction();
 
     expect(goBackWithTransition(navigation, entry)).toBe(true);
-    await vi.runAllTimersAsync();
-    await start.mock.results[0].value.updateCallbackDone;
-    expect(skip).toHaveBeenCalledOnce();
+    const transition = start.mock.results[0].value;
+    await Promise.resolve();
+    transition.skipByBrowser();
+    await transition.updateCallbackDone;
+    window.dispatchEvent(new Event('pagehide'));
+    expect(skip).not.toHaveBeenCalled();
     expect(traverse).toHaveBeenCalledExactlyOnceWith(entry.key);
   });
 
   it('releases the transition when a superseding navigation aborts restoration', async () => {
-    const { start, skip } = installTransition();
-    const traverse = vi.fn<Navigation['traverseTo']>();
-    const { navigation, entry } = installNavigation(traverse);
+    const { start, skip, traverse, navigation, entry } = installBackAction();
     traverse.mockImplementation(() => ({
       committed: Promise.resolve(entry),
       finished: Promise.reject(new DOMException('Superseded', 'AbortError')),
     }));
-    render(<main data-route-capture="legal" />);
-
     expect(goBackWithTransition(navigation, entry)).toBe(true);
     await start.mock.results[0].value.updateCallbackDone;
     expect(skip).toHaveBeenCalledOnce();
@@ -199,21 +202,20 @@ describe('legal page back navigation', () => {
   ] as const)(
     'can animate a native history traversal to entry %i',
     async (index, type, historyType) => {
-      const { navigation, start, skip, content, restore } = installBrowserTraversal();
+      const { navigation, start, skip, content, stop } = installBrowserTraversal();
       try {
         const intercept = dispatchTraversal(navigation, '/lernen', index);
         const options = intercept.mock.calls[0]?.[0];
         expect(options?.focusReset).toBe('manual');
         await options?.precommitHandler?.({} as NavigationPrecommitController);
         expect(start.mock.calls[0]?.[0].types).toEqual([type, historyType]);
-        Object.assign(navigation, { currentEntry: { key: learningEntryKey, index } });
-        history.replaceState(null, '', '/lernen');
-        content.setAttribute('data-route-capture', 'page-b');
+        commitHistoryEntry(navigation, learningEntryKey, '/lernen', index);
+        content.dataset.routePath = '/lernen';
         await start.mock.results[0]?.value.updateCallbackDone;
         expect(skip).not.toHaveBeenCalled();
         expect(navigation.traverseTo).not.toHaveBeenCalled();
       } finally {
-        restore();
+        stop?.();
       }
     },
   );
@@ -223,21 +225,34 @@ describe('legal page back navigation', () => {
     ['a different entry at the same URL', 'other-learning', '/lernen', 1],
     ['the same entry at another URL', learningEntryKey, '/impressum', 1],
   ] as const)('handles a router history update to %s', async (_, key, url, skips) => {
-    const { navigation, start, skip, content, restore } = installBrowserTraversal();
+    const { navigation, start, skip, content, stop } = installBrowserTraversal();
     const controller = new AbortController();
     try {
       const intercept = dispatchTraversal(navigation, '/lernen', 0, false, controller.signal);
       await intercept.mock.calls[0]?.[0].precommitHandler?.({} as NavigationPrecommitController);
-      Object.assign(navigation, { currentEntry: { key: learningEntryKey, index: 0 } });
-      history.replaceState(null, '', '/lernen');
+      commitHistoryEntry(navigation, learningEntryKey, '/lernen');
       controller.abort();
-      Object.assign(navigation, { currentEntry: { key, index: 0 } });
-      history.replaceState(null, '', url);
-      content.setAttribute('data-route-capture', 'page-b');
+      commitHistoryEntry(navigation, key, url);
+      content.dataset.routePath = '/lernen';
       await start.mock.results[0]?.value.updateCallbackDone;
       expect(skip).toHaveBeenCalledTimes(skips);
     } finally {
-      restore();
+      stop?.();
+    }
+  });
+
+  it('cleans up a pending browser traversal when its route subscription ends', async () => {
+    const { navigation, start, skip, stop } = installBrowserTraversal();
+    try {
+      const intercept = dispatchTraversal(navigation, '/lernen', 0);
+      await intercept.mock.calls[0]?.[0].precommitHandler?.({} as NavigationPrecommitController);
+      stop?.();
+      await start.mock.results[0].value.updateCallbackDone;
+      window.dispatchEvent(new Event('pagehide'));
+      expect(skip).toHaveBeenCalledOnce();
+      expect(dispatchTraversal(navigation, '/datenschutz', 0)).not.toHaveBeenCalled();
+    } finally {
+      stop?.();
     }
   });
 

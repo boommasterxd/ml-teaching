@@ -2,13 +2,12 @@
 
 import { useSyncExternalStore } from 'react';
 import { useReducedMotionSetting } from '@animate-ui/react/utils/motion';
-
-const query = '(prefers-reduced-motion: reduce)';
+import { reducedMotionMedia } from '@/lib/media-queries';
 const listeners = new Set<() => void>();
 let media: MediaQueryList | undefined;
 
 function getMedia() {
-  return (media ??= window.matchMedia(query));
+  return (media ??= window.matchMedia(reducedMotionMedia));
 }
 
 function notify() {

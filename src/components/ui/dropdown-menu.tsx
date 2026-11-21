@@ -3,17 +3,18 @@
 import type { ComponentProps, ReactElement } from 'react';
 import { Menu as Primitive } from '@animate-ui/react/primitives/base-ui/menu';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
-import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActionFeedback } from './action-feedback';
 import { MenuHighlight, MenuHighlightItem } from './menu-highlight';
 
-type MenuPosition = Pick<Primitive.Positioner.Props, 'sideOffset' | 'align'>;
+type MenuPosition = Pick<Primitive.Positioner.Props, 'anchor' | 'sideOffset' | 'align'>;
 const menuItemClass =
   'relative flex cursor-default items-center gap-2 rounded-xl text-sm outline-hidden select-none focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring forced-colors:focus-visible:[outline:auto] data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4';
+const choiceSpacing = 'px-2 py-1.5 aria-checked:font-semibold aria-checked:text-primary';
 
 /** Retained exit content immediately loses keyboard and accessibility-tree participation. */
 export function DropdownMenuContent({
+  anchor,
   className,
   sideOffset = 4,
   align,
@@ -24,6 +25,7 @@ export function DropdownMenuContent({
   return (
     <Primitive.Portal>
       <Primitive.Positioner
+        anchor={anchor}
         align={align}
         sideOffset={sideOffset}
         collisionPadding={0}
@@ -80,13 +82,8 @@ export function DropdownMenuRadioItem({
         value={value}
         {...props}
         data-slot="dropdown-menu-radio-item"
-        className={cn(menuItemClass, 'py-1.5 pr-2 pl-8 aria-checked:text-primary', className)}
+        className={cn(menuItemClass, choiceSpacing, className)}
       >
-        <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-          <Primitive.RadioItemIndicator>
-            <span aria-hidden="true" className="block size-2 rounded-full bg-current" />
-          </Primitive.RadioItemIndicator>
-        </span>
         {children}
       </BaseMenu.RadioItem>
     </DropdownItemHighlight>
@@ -104,14 +101,8 @@ export function DropdownMenuCheckboxItem({
       <BaseMenu.CheckboxItem
         {...props}
         data-slot="dropdown-menu-checkbox-item"
-        className={cn(menuItemClass, 'py-1.5 pr-2 pl-8', className)}
+        className={cn(menuItemClass, choiceSpacing, className)}
       >
-        <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-          <Primitive.CheckboxItemIndicator>
-            {/* The indicator draws this path when the selection changes. */}
-            <Check aria-hidden="true" />
-          </Primitive.CheckboxItemIndicator>
-        </span>
         {children}
       </BaseMenu.CheckboxItem>
     </DropdownItemHighlight>

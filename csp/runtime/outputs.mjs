@@ -5,6 +5,10 @@ import { assetHashes, digest, prepareDocument } from './html.mjs';
 import { policyFor } from './policy.mjs';
 import { assertCacheHeaders, browserCacheRoute } from './browser-cache.mjs';
 
+// The native router compiles source; provider adapters can use sourceRegex directly.
+export const errorFallbackSource = '/:path((?!_next/static/).*)';
+export const errorFallbackRegex = '^/(?!_next/static/).*$';
+
 /** @param {string} value */
 function escaped(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
@@ -136,8 +140,8 @@ export async function persistNativeHeaders(context, documents, fallbackPolicy, o
   }
   if (fallbackPolicy)
     manifest.headers.unshift({
-      source: '/:path*',
-      regex: '^/(?!_next/static/).*$',
+      source: errorFallbackSource,
+      regex: errorFallbackRegex,
       headers: [{ key: 'Content-Security-Policy', value: fallbackPolicy }],
     });
   for (const document of documents)

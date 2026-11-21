@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { mediumViewport } from '@/lib/media-queries';
 import { installThemeHost, restoreThemeHost } from '../helpers/theme-host';
 
 const route = vi.hoisted(() => ({ pathname: '/lernen', router: { prefetch: vi.fn() } }));
@@ -9,6 +10,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 const open = (trigger: HTMLElement) => fireEvent.click(trigger, { detail: 0 });
+let desktop = false;
 
 beforeEach(() => {
   installThemeHost();
@@ -16,6 +18,7 @@ beforeEach(() => {
   const actual = media.getMockImplementation()!;
   media.mockImplementation((query) => {
     const result = actual(query);
+    if (query === mediumViewport) return { ...result, matches: desktop };
     return query === '(prefers-reduced-motion: reduce)' ? { ...result, matches: true } : result;
   });
   Object.defineProperty(SVGElement.prototype, 'getAnimations', {
@@ -24,6 +27,7 @@ beforeEach(() => {
   });
   vi.resetModules();
   route.pathname = '/lernen';
+  desktop = false;
 });
 afterEach(() => {
   cleanup();
@@ -38,6 +42,7 @@ async function renderNavigation() {
 
 describe('header navigation', () => {
   it('opens on activation and transfers keyboard focus between the trigger and its links', async () => {
+    desktop = true;
     await renderNavigation();
     const trigger = screen.getByRole('button', { name: 'Lernlabor' });
     act(() => trigger.focus());

@@ -3,7 +3,6 @@ import { ArrowRight } from '@/components/icons/arrow-right';
 import { Heading, Text } from '@/components/ui/typography';
 import HeroScene from '@/components/hero/HeroScene';
 import HeroAccent from '@/components/hero/HeroAccent';
-import StaticContourPoster from '@/components/hero/StaticContourPoster';
 import { heroPosterImages } from '@/components/hero/poster-assets';
 import ExperimentsLink from '@/components/home/ExperimentsLink';
 import { HomePlaybackProvider } from '@/components/home/HomePlaybackProvider';
@@ -23,7 +22,7 @@ export default function LandingPage() {
     <div className="landing-page home-glass">
       <HomePlaybackProvider>
         <section className="hero-section" aria-labelledby="hero-title">
-          <HeroScene poster={<StaticContourPoster sources={heroPosterImages} />}>
+          <HeroScene sources={heroPosterImages}>
             <div className="hero-copy">
               <Heading as="h1" variant="hero" id="hero-title">
                 Du probierst.

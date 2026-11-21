@@ -33,12 +33,14 @@ function resizeRaster(
   return { width, height, dpr };
 }
 
+export type FieldPlayback = 'running' | 'paused' | 'offscreen';
+
 export interface FieldMotion {
   x: MotionValue<number>;
   y: MotionValue<number>;
   lift: MotionValue<number>;
   ripples: GlassImpulses;
-  running: MotionValue<boolean>;
+  playback: MotionValue<FieldPlayback>;
 }
 
 function centerPointer(
@@ -87,14 +89,11 @@ export function useTopographyRenderer(
   sharpDesktopStart: boolean,
 ) {
   useEffect(() => {
-    const { x, y, lift, ripples, running } = values;
+    const { x, y, lift, ripples, playback } = values;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const renderer = createTopographyRenderer(canvas, shape);
-    if (!renderer) {
-      onUnavailable();
-      return;
-    }
+    if (!renderer) return onUnavailable();
     const quality = createTopographyQuality(
       sharpDesktopStart && window.matchMedia(contourMedia.desktop).matches,
     );
@@ -108,14 +107,17 @@ export function useTopographyRenderer(
     let clockOrigin: number | undefined;
     let painted = false;
     let retired = false;
+    let resizePending = false;
     const resize = () => {
+      resizePending = playback.get() === 'offscreen';
+      if (resizePending) return;
       bounds = canvas.getBoundingClientRect();
       const next = updateRaster();
       if (size.width === next.width && size.height === next.height && size.dpr === next.dpr) return;
       size = next;
       quality.resetSamples();
       centerPointer(values, size);
-      if (painted || running.get()) draw();
+      if (painted || playback.get() === 'running') draw();
     };
     const draw = () => {
       const drawn = renderer.draw({
@@ -134,7 +136,7 @@ export function useTopographyRenderer(
       }
     };
     const tick = ({ timestamp }: { timestamp: number }) => {
-      if (retired || !running.get()) return;
+      if (retired || playback.get() !== 'running') return;
       if (!painted || clockOrigin === undefined) clockOrigin = timestamp - time;
       const elapsed = timestamp - clockOrigin;
       const qualityChanged = painted && quality.sample(timestamp);
@@ -161,8 +163,10 @@ export function useTopographyRenderer(
       onUnavailable();
     };
     canvas.addEventListener('webglcontextlost', unavailable);
-    const unsubscribe = running.on('change', (active) => {
-      if (!active) cancelFrame(tick);
+    const unsubscribe = playback.on('change', (state) => {
+      if (resizePending && state !== 'offscreen') resize();
+      if (retired) return;
+      if (state !== 'running') cancelFrame(tick);
       else {
         clockOrigin = undefined;
         quality.resetSamples();
@@ -171,7 +175,7 @@ export function useTopographyRenderer(
     });
     centerPointer(values, size);
     draw();
-    if (!retired && running.get()) frame.render(tick, true);
+    if (!retired && playback.get() === 'running') frame.render(tick, true);
     return stop;
   }, [canvasRef, values, onUnavailable, onRendered, shape, sharpDesktopStart]);
 }

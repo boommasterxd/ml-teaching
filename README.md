@@ -1,8 +1,9 @@
 # ML Teaching
 
-Explore machine learning through a German interface for children. Choose a learning
-area, discover image classification, and train a model directly in your browser.
-Watch two example paths in the homepage preview of learning through rewards.
+ML Teaching is a free, ad-free machine learning resource for children in German.
+Choose a learning area, discover image classification, and train a model directly
+in your browser. Watch two example paths in the homepage preview of learning
+through rewards.
 
 [Open ML Teaching](https://mlteaching.boomapps.de) ·
 [Source](https://github.com/boommasterxd/ml-teaching) · [Quick start](#quick-start) ·
@@ -16,6 +17,7 @@ Watch two example paths in the homepage preview of learning through rewards.
 | Choose a learning area                                | Open the image lesson or training workspace. The Q-learning lesson and exercise are planned.   |
 | Explore the image-classification demonstration        | Follow an illustrated classification step by step.                                             |
 | Play the everyday image-recognition quiz              | Find three matching uses, reveal explanations and start another round.                         |
+| Try the KNN exercise in the image lesson              | Set K, select the nearest points and choose the class with the most votes or a tie.            |
 | Choose light, dark or system appearance               | Use a temporary choice, or explicitly remember it for later visits.                            |
 | Collect webcam images or select local files           | Build named training classes without uploading images.                                         |
 | Extract MobileNet features and train a KNN classifier | Compare examples locally using TensorFlow.js and WebGL.                                        |
@@ -64,8 +66,8 @@ Vercel processes website connection data. See the in-app
 
 There are no application API keys or paid model APIs to configure. Hosting bandwidth
 and native image optimization can incur provider costs. No billing estimates or
-provider plan guarantees are implied. The app has no analytics, advertising or
-externally hosted fonts. Geist is served from a local asset.
+provider plan guarantees are implied. The app has no analytics or externally
+hosted fonts. Geist is served from a local asset.
 
 ## Development
 

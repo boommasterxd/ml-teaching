@@ -1,0 +1,11 @@
+{
+  "modelUrl": "https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/classification/2/model.json?tfjs-format=file",
+  "inputSize": 224,
+  "embedding": {
+    "name": "module_apply_default/MobilenetV2/Logits/AvgPool",
+    "padding": "VALID",
+    "dataFormat": "NHWC",
+    "poolSize": [1, 7, 7, 1],
+    "strides": [1, 1, 1, 1]
+  }
+}

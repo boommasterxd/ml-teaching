@@ -1,8 +1,9 @@
 import { preload } from 'react-dom';
+import { mediumViewport } from '@/lib/media-queries';
 
 export const contourMedia = {
   mobile: '(width < 48rem)',
-  desktop: '(width >= 48rem)',
+  desktop: mediumViewport,
 } as const;
 
 export type PosterVariants<T> = Record<keyof typeof contourMedia, T>;
@@ -17,7 +18,7 @@ interface ContourSource {
 
 export type ContourSources = PosterVariants<ContourSource>;
 
-export function contourPreloads(sources: ContourSources) {
+function contourPreloads(sources: ContourSources) {
   return (['mobile', 'desktop'] as const).map((variant) => {
     const { src, srcSet, sizes } = sources[variant];
     return {

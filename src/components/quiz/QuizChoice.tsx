@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence } from 'motion/react';
-import { useRef, type ComponentType } from 'react';
+import { useId, useRef, type ComponentType } from 'react';
 import type { QuizExample } from '@/lib/recognition-quiz';
 import { Calculator } from '@/components/icons/calculator';
 import { Camera } from '@/components/icons/camera';
@@ -44,13 +44,14 @@ export default function QuizChoice({
   onAnswer: (example: QuizExample) => void;
 }) {
   const Icon = exampleIcons[example.icon];
+  const descriptionId = useId();
   const choice = useRef<HTMLButtonElement>(null);
   return (
     <Card className="isolate h-full gap-0 py-0">
       <div className="relative flex-1 overflow-clip rounded-(--quiz-inner-radius) [--quiz-inner-radius:calc(var(--glass-radius)-1px)]">
         <CardHeader className="min-h-48 pt-20 pb-6" aria-hidden={answered || undefined}>
           <CardTitle as="h3">{example.title}</CardTitle>
-          <CardDescription>{example.description}</CardDescription>
+          <CardDescription id={descriptionId}>{example.description}</CardDescription>
         </CardHeader>
         <Button
           ref={choice}
@@ -59,6 +60,7 @@ export default function QuizChoice({
           size="quiz-card"
           data-result={answered ? (example.correct ? 'correct' : 'incorrect') : undefined}
           aria-label={'Auswählen: ' + example.title}
+          aria-describedby={answered ? undefined : descriptionId}
           aria-disabled={answered || undefined}
           onPointerEnter={onIntent}
           onFocus={onIntent}

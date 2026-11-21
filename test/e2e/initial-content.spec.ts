@@ -57,6 +57,14 @@ for (const path of publicRoutes) {
       await response?.finished();
       await scripts.expectHeld();
       await expectReadable(page.getByRole('navigation', { name: 'Hauptnavigation' }));
+      if (path === '/') {
+        const footer = page
+          .getByRole('contentinfo')
+          .getByRole('navigation', { name: 'Rechtliche Links' });
+        for (const name of ['Impressum', 'Datenschutz', 'Barrierefreiheit']) {
+          await expectReadable(footer.getByRole('link', { name, exact: true }));
+        }
+      }
       const main = page.getByRole('main');
       await expectReadable(main.getByRole('heading', { level: 1 }));
       if (path === learningPaths.qLearning) {
@@ -78,6 +86,62 @@ for (const path of publicRoutes) {
       await page.keyboard.press('Space');
       await expect(appearance).toBeChecked({ checked: !checked });
       expect(failures).toEqual([]);
+    } finally {
+      scripts.release();
+    }
+  });
+}
+
+for (const [path, status, heading, message, returnLabel, destination] of [
+  [
+    learningPaths.qLearningPractice,
+    200,
+    'Lernen durch Belohnung',
+    'Coming Soon',
+    'Zum Lernlabor',
+    learningPaths.hub,
+  ],
+  [
+    '/missing-before-hydration',
+    404,
+    'Seite nicht gefunden',
+    'Vielleicht wurde die Seite verschoben oder der Link ist veraltet.',
+    'Zurück zur Startseite',
+    '/',
+  ],
+  [
+    '/500',
+    500,
+    'Diese Seite konnte nicht geladen werden',
+    'Bitte versuche es später erneut.',
+    'Zur Startseite',
+    '/',
+  ],
+] as const) {
+  test(`availability and the return link are readable before hydration at ${path}`, async ({
+    page,
+  }) => {
+    const scripts = await holdApplicationScripts(page);
+    try {
+      const response = await page.goto(path, { waitUntil: 'commit' });
+      expect(response?.status()).toBe(status);
+      await response?.finished();
+      await scripts.expectHeld();
+      const main = page.getByRole('main');
+      const title = main.getByRole('heading', { name: heading, exact: true });
+      const explanation = main.getByText(message, { exact: true });
+      const back = main.getByRole('link', { name: returnLabel, exact: true });
+      await expectReadable(title);
+      await expectReadable(explanation);
+      await expectReadable(back);
+      await expect(back).toHaveAttribute('href', destination);
+      await scripts.expectHeld();
+      scripts.release();
+      await page.waitForLoadState('load');
+      await expect(title).toBeVisible();
+      await expect(explanation).toBeVisible();
+      await back.press('Enter');
+      await expect(page).toHaveURL(destination);
     } finally {
       scripts.release();
     }
@@ -139,7 +203,7 @@ test('the focused header trigger remains keyboard-operable across hydration', as
   }
 });
 
-test('the static error header retains its triggers across hydration and a viewport change', async ({
+test('the static error header retains focus and starts only the matching menu', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 412, height: 823 });
@@ -155,12 +219,12 @@ test('the static error header retains its triggers across hydration and a viewpo
       includeHidden: true,
     });
     await expect(mobile).toBeVisible();
-    const mobileBefore = await mobile.elementHandle();
-    const desktopBefore = await desktop.elementHandle();
+    await expect(desktop).toBeAttached();
     await mobile.focus();
     scripts.release();
     await page.waitForLoadState('load');
     await expect(mobile).toBeFocused();
+    await expect(desktop).toHaveCount(0);
     await mobile.press('Enter');
     const overview = page.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
     await expect(overview).toBeVisible();
@@ -169,8 +233,7 @@ test('the static error header retains its triggers across hydration and a viewpo
 
     await page.setViewportSize({ width: 1280, height: 823 });
     await expect(desktop).toBeVisible();
-    expect(await desktop.evaluate((node, first) => node === first, desktopBefore)).toBe(true);
-    expect(await mobileBefore.evaluate((node) => node.isConnected)).toBe(true);
+    await expect(page.locator('.header-menu-mobile')).toHaveCount(0);
     await desktop.press('Enter');
     await expect(overview).toBeVisible();
     await page.keyboard.press('Escape');
@@ -203,14 +266,23 @@ for (const [width, colorScheme] of [
       const local = dialog.locator('label[for="privacy-consent"]');
       const model = dialog.locator('label[for="model-consent"]');
       await expectReadable(local);
-      await expect(local).toContainText(/Bilder[\s\S]*Kamerabilder[\s\S]*Merkmale[\s\S]*lokal/);
+      await expect(local).toContainText(
+        'Beim Lernen und Testen bleiben Bilder und daraus gewonnene Daten in meinem Browser.',
+      );
+      await expect(local).toContainText('Über die Kamera entscheide ich extra.');
       await expect(local.getByRole('link')).toHaveAttribute('href', '/datenschutz');
       await expectReadable(model);
-      await expect(model).toContainText(
-        /KI-Modell[\s\S]*Google über Kaggle[\s\S]*Google und Kaggle meine IP-Adresse/,
-      );
+      await expect(model).toContainText('das KI-Modell von Google über Kaggle lädt');
+      await expect(model).toContainText('damit ich die Bilderkennung ausprobieren kann');
+      await expect(model).toContainText('meine IP-Adresse (meine Internetadresse)');
       await expect(model.getByRole('link')).toHaveAttribute('href', '/datenschutz');
       await expectReadable(dialog.getByRole('note'));
+      await expect(dialog.getByRole('note')).toContainText(
+        'Auch ohne Zustimmung kannst du über Bilderkennung lesen',
+      );
+      await expect(dialog.getByRole('note')).toContainText(
+        'beim Laden des Modells und später unter dem Training',
+      );
       const choices = dialog.getByRole('checkbox');
       await expect(choices).toHaveCount(2);
       for (const choice of await choices.all()) {
