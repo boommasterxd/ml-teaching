@@ -462,9 +462,10 @@ glass header's width and aligns with its outer edges. From `md` it anchors to th
 shared button.
 The menu trigger sets the shared Button's Animate UI tap scale to 1 so Base UI
 positions the panel against a stable rectangle during pointer and keyboard press.
-The toolbar gives the brand and appearance controls equal inline insets from
-the rounded ends. It defines the menu offset at its mobile and desktop breakpoints to
-align the appearance menu with the navigation flyouts.
+The toolbar centers the brand mark and appearance trigger in the rounded ends.
+Their inline insets derive from the toolbar radius and each element's size.
+The mobile and desktop menu offsets align the appearance menu with the navigation
+flyouts.
 Initial learning consent remains eager. The loading and camera steps mount on
 activation in the same dialog. Intent on a confirmation or image-preview trigger
 prepares one shared module. The workspace mounts one active dialog at a time and

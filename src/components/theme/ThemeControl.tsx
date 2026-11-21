@@ -96,6 +96,7 @@ export function ThemeControl() {
         type="button"
         variant="ghost"
         size="icon-sm"
+        className="size-(--theme-trigger-size)"
         tapScale={1}
         aria-label="Darstellung einstellen"
         aria-haspopup="menu"
