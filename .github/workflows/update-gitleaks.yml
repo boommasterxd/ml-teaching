@@ -31,7 +31,17 @@ jobs:
           echo "Current: $current | Latest: $latest"
           if [ -z "$latest" ] || [ "$latest" = "$current" ]; then echo "Up to date."; exit 0; fi
           branch="chore/gitleaks-${latest}"
-          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then echo "Branch exists."; exit 0; fi
+          gh auth setup-git
+          if timeout 30s git ls-remote --exit-code --heads origin "refs/heads/$branch" >/dev/null; then
+            echo "Branch exists."
+            exit 0
+          else
+            lookup_status=$?
+            if [[ "$lookup_status" != 2 ]]; then
+              echo "Could not check the remote update branch (exit $lookup_status)." >&2
+              exit "$lookup_status"
+            fi
+          fi
           checksum=$(curl -sSfL --max-time 60 "https://github.com/gitleaks/gitleaks/releases/download/v${latest}/gitleaks_${latest}_checksums.txt" | grep "linux_x64.tar.gz" | awk '{print $1}')
           [[ "$checksum" =~ ^[a-f0-9]{64}$ ]] || { echo "Invalid upstream checksum"; exit 1; }
           git config user.name "github-actions[bot]"
@@ -41,7 +51,6 @@ jobs:
           mv "$RUNNER_TEMP/gitleaks-version.json" .github/gitleaks-version.json
           git add .github/gitleaks-version.json
           git commit -m "ci: bump gitleaks ${current} -> ${latest}"
-          gh auth setup-git
           git push -u origin "$branch"
           cat > "$RUNNER_TEMP/pr-body.md" <<'BODY'
           ## Problem

@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url';
-import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
+import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD } from 'next/constants.js';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -51,6 +51,9 @@ const nextConfig = {
 
 /** @param {string} phase @param {{defaultConfig: {pageExtensions: string[]}}} context */
 export default function configureNext(phase, { defaultConfig }) {
+  if (phase === PHASE_PRODUCTION_BUILD) {
+    return { ...nextConfig, typescript: { tsconfigPath: 'tsconfig.build.json' } };
+  }
   if (phase !== PHASE_DEVELOPMENT_SERVER) return nextConfig;
   return {
     ...nextConfig,

@@ -38,12 +38,15 @@ artifacts fail closed. No framework version allowlist blocks normal compatible
 updates. The project uses Next.js 16.4.6 and React 19.3.1; a provider adapter is
 selected only from the actual deployment environment.
 
-The runtime modules preserve the template's behavior. Project adaptations are the
-public route selections, actual static error UI, app-specific image and model
-origins, local data-image sources and central security headers. No unsafe inline or
-eval directives are introduced. Model weights require only connect access to the
-specific Google/TF Hub/Kaggle origins. WebGL is selected, so no speculative WASM
-script permission or worker source is added.
+Project adaptations include the public route selections, static error UI,
+app-specific image and model origins, local data-image sources and central security
+headers. The adapter also uses the native routing rules as the single CSP source
+for regular static responses in builds without a provider adapter. Next.js appends
+prerender metadata headers to routing headers, so regular `.meta` files are
+validated and included in the build manifest without a second CSP value. Error
+metadata and composed provider builds retain the template's header persistence.
+Model weights require only connect access to the specific Google/TF Hub/Kaggle
+origins. The WebGL runtime needs neither WASM script permission nor a worker source.
 
 Public HTML has `public, max-age=300, must-revalidate`. Five minutes balances
 browser reuse with content freshness; native RSC/error/variant behavior remains

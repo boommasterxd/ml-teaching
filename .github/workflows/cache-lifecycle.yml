@@ -12,6 +12,7 @@ on:
       - Secret scan
       - Update gitleaks version
       - Dependency cache
+      - Dependency cache reconciliation
       - Copilot
       - Copilot code review
       - Copilot cloud agent

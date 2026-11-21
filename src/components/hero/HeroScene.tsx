@@ -92,7 +92,8 @@ function Scene({ children, poster }: HeroSceneProps) {
             {viewportReady && available && Field && (
               <Field
                 sharpDesktopStart
-                paused={paused || !inView}
+                paused={paused}
+                inView={inView}
                 onUnavailable={onUnavailable}
                 onRendered={onRendered}
               />

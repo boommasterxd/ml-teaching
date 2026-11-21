@@ -1,68 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
-import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-checks';
+import {
+  diagnostics,
+  expectAccessible,
+  observeViewTransitions,
+  settleEntryAnimations,
+} from './browser-checks';
 import {
   expectAlignedTrainingCards,
   expectHeaderLayout,
   settleLandingReveals,
 } from './training-keyboard';
 import { learningPaths } from '../../src/lib/learning-paths';
-
-type TransitionSnapshot = {
-  root: boolean;
-  outgoingPages: number;
-  incomingPages: number;
-  back: boolean;
-};
-type TransitionObserver = typeof window & {
-  observedTransitions: Promise<TransitionSnapshot | 'skipped'>[];
-};
-
-async function observeViewTransitions(page: Page) {
-  await page.addInitScript(() => {
-    const observedTransitions: TransitionObserver['observedTransitions'] = [];
-    Object.assign(window, { observedTransitions });
-    const start = document.startViewTransition;
-    if (!start) return;
-    document.startViewTransition = new Proxy(start, {
-      apply(target, thisArg, args) {
-        const transition = Reflect.apply(target, thisArg, args) as ViewTransition;
-        observedTransitions.push(
-          transition.ready.then(
-            () => {
-              const effects = document
-                .getAnimations()
-                .map((animation) => animation.effect)
-                .filter((effect) => effect instanceof KeyframeEffect);
-              const pageLayers = (side: 'old' | 'new') => {
-                const prefix = `::view-transition-${side}(`;
-                return effects.filter(
-                  ({ pseudoElement }) =>
-                    pseudoElement?.startsWith(prefix) && pseudoElement !== `${prefix}root)`,
-                );
-              };
-              const outgoing = pageLayers('old');
-              const incoming = pageLayers('new');
-              // The browser assigns a width to the captured root group even without an animation.
-              const rootGroup = getComputedStyle(
-                document.documentElement,
-                '::view-transition-group(root)',
-              );
-              return {
-                root: Number.isFinite(Number.parseFloat(rootGroup.width)),
-                outgoingPages: new Set(outgoing.map(({ pseudoElement }) => pseudoElement)).size,
-                incomingPages: new Set(incoming.map(({ pseudoElement }) => pseudoElement)).size,
-                back: transition.types.has('nav-back'),
-              };
-            },
-            () => 'skipped',
-          ),
-        );
-        return transition;
-      },
-    });
-  });
-  return () => page.evaluate(() => Promise.all((window as TransitionObserver).observedTransitions));
-}
 
 async function observeMenuShifts(page: Page) {
   await page.evaluate(() => {
@@ -302,10 +250,7 @@ test('the transparent home header lets the hero receive clicks and keeps its nav
   expect(failures).toEqual([]);
 });
 
-test('static documents, native navigation and strict CSP preserve visible content', async ({
-  page,
-  request,
-}) => {
+test('static documents preserve strict CSP and visible content', async ({ page, request }) => {
   const failures = diagnostics(page);
   const routes: [string, string | RegExp][] = [
     ['/', /Du probierst\.\s*Deine KI lernt\./],
@@ -319,6 +264,9 @@ test('static documents, native navigation and strict CSP preserve visible conten
   for (const [path, heading] of routes) {
     const response = await request.get(path);
     expect(response.status()).toBe(200);
+    expect(
+      response.headersArray().filter(({ name }) => /^content-security-policy$/i.test(name)),
+    ).toHaveLength(1);
     expect(response.headers()['content-security-policy']).not.toMatch(/unsafe-inline|unsafe-eval/);
     expect(response.headers()['cache-control']).toBe('public, max-age=300, must-revalidate');
     expect(response.headers()['strict-transport-security']).toBe(

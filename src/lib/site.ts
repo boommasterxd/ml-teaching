@@ -12,6 +12,10 @@ export const siteConfig = {
 export const webSiteId = `${siteConfig.url}/#website`;
 export const webApplicationId = `${siteConfig.url}/#application`;
 
+export function learningResourceId(path: string) {
+  return `${siteConfig.url}${path}#learning-resource`;
+}
+
 const socialImage = {
   url: `${siteConfig.url}/opengraph-image`,
   width: 1200,

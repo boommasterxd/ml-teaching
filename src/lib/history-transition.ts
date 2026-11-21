@@ -2,6 +2,7 @@ import { learningPaths } from './learning-paths';
 
 const historyBackType = 'history-back';
 const historyForwardType = 'history-forward';
+export const errorRecoveryStylesheetHref = '/error-recovery-transition.css';
 
 /** The initial training dialog belongs to the top layer, above the page content. */
 export function canCaptureRoute(pathname: string | null) {
@@ -10,29 +11,61 @@ export function canCaptureRoute(pathname: string | null) {
 
 function observePageCommit(
   content: HTMLElement,
-  skip: () => void,
-  matchesDestination: () => boolean = () => true,
+  navigation: Navigation,
+  destination: Pick<NavigationDestination, 'key' | 'url'>,
+  transition: ViewTransition,
+  lifetime?: AbortSignal,
 ) {
   const { promise, resolve } = Promise.withResolvers<void>();
-  // Browser history can settle before Next has committed the destination content.
-  const observer = new MutationObserver(() => {
-    if (matchesDestination()) finish();
-    else cancel();
-  });
-  const timeout = window.setTimeout(cancel, 200);
-  let settled = false;
+  const { pathname } = new URL(destination.url);
+  const listeners = new AbortController();
+  // History can change before Next commits the destination content.
+  const observer = new MutationObserver(checkCommit);
+
+  function checkCommit() {
+    if (
+      navigation.currentEntry?.key === destination.key &&
+      location.href === destination.url &&
+      content.dataset.routePath === pathname
+    )
+      finish();
+  }
+
   function finish() {
-    settled = true;
     observer.disconnect();
-    window.clearTimeout(timeout);
+    listeners.abort();
+    lifetime?.removeEventListener('abort', cancel);
     resolve();
   }
+
   function cancel() {
-    if (settled) return;
-    skip();
+    if (!listeners.signal.aborted) transition.skipTransition();
     finish();
   }
-  observer.observe(content, { attributeFilter: ['data-route-capture'] });
+
+  observer.observe(content, { attributeFilter: ['data-route-path'] });
+  const options = { signal: listeners.signal };
+  navigation.addEventListener('currententrychange', checkCommit, options);
+  navigation.addEventListener(
+    'navigate',
+    (event) => {
+      if (event.destination.url !== destination.url) cancel();
+    },
+    options,
+  );
+  window.addEventListener('pagehide', cancel, options);
+  window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener(
+    'change',
+    (event) => {
+      if (event.matches) cancel();
+    },
+    options,
+  );
+  if (lifetime?.aborted) cancel();
+  else lifetime?.addEventListener('abort', cancel, { once: true });
+  // The browser may skip a capture, including when its own update deadline expires.
+  void transition.ready.catch(finish);
+  checkCommit();
   return { promise, cancel };
 }
 
@@ -48,6 +81,7 @@ function animateBrowserTraversal(
   event: NavigateEvent,
   content: HTMLElement,
   back: boolean,
+  lifetime: AbortSignal,
 ) {
   const matchesDestination = () =>
     navigation.currentEntry?.key === event.destination.key &&
@@ -61,8 +95,10 @@ function animateBrowserTraversal(
         async update() {
           const destination = observePageCommit(
             content,
-            () => transition.skipTransition(),
-            matchesDestination,
+            navigation,
+            event.destination,
+            transition,
+            lifetime,
           );
           const checkInterruption = () => {
             // A router state replacement can abort the intercepted event while keeping its entry.
@@ -119,7 +155,13 @@ export function subscribeToHistoryTransitions(navigation: Navigation, content: H
         !canCaptureRoute(destination.pathname)
       )
         return;
-      animateBrowserTraversal(navigation, event, content, event.destination.index < current.index);
+      animateBrowserTraversal(
+        navigation,
+        event,
+        content,
+        event.destination.index < current.index,
+        subscription.signal,
+      );
     },
     { signal: subscription.signal },
   );
@@ -130,13 +172,14 @@ export function subscribeToHistoryTransitions(navigation: Navigation, content: H
 export function goBackWithTransition(navigation: Navigation, entry: NavigationHistoryEntry) {
   const active = document.activeViewTransition;
   if (active?.types.has(historyBackType)) return true;
-  if (!supportsHistorySnapshots()) return false;
+  if (active || !entry.url || !supportsHistorySnapshots()) return false;
   const content = document.querySelector<HTMLElement>('[data-route-capture]');
   if (!content) return false;
+  const destination = { url: entry.url, key: entry.key };
   const transition = document.startViewTransition({
     types: ['nav-back', historyBackType],
     update() {
-      const route = observePageCommit(content, () => transition.skipTransition());
+      const route = observePageCommit(content, navigation, destination, transition);
       const { committed, finished } = navigation.traverseTo(entry.key);
       void committed?.catch(route.cancel);
       void finished?.catch(route.cancel);

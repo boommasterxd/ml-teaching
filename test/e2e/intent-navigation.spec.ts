@@ -3,6 +3,7 @@ import {
   diagnostics,
   expectAccessible,
   expectMenuHighlight,
+  observeViewTransitions,
   settleEntryAnimations,
 } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
@@ -320,6 +321,97 @@ test('finished link preparation supplies the complete page on first activation a
   } finally {
     network.release();
   }
+});
+
+async function followPreparedRoute(
+  page: Page,
+  link: Locator,
+  path: string,
+  content: Locator,
+  text: string,
+) {
+  const requests: Request[] = [];
+  const recordDestination = (request: Request) => {
+    if (new URL(request.url()).pathname === path && request.headers().rsc === '1') {
+      requests.push(request);
+    }
+  };
+  page.on('request', recordDestination);
+  try {
+    const prepared = page.waitForResponse((response) => {
+      const request = response.request();
+      return (
+        new URL(request.url()).pathname === path &&
+        request.headers().rsc === '1' &&
+        Boolean(request.headers()['next-router-segment-prefetch']?.endsWith('/__PAGE__'))
+      );
+    });
+    await link.focus();
+    await expect(link).toBeFocused();
+    const payload = await prepared;
+    expect(payload.ok()).toBe(true);
+    expect(payload.headers()['content-type']).toContain('text/x-component');
+    expect(await payload.text()).toContain(text);
+    await settleEntryAnimations(page);
+    const preparedRequests = requests.length;
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(path);
+    await expect(content).toBeVisible();
+    await settleEntryAnimations(page);
+    expect(requests).toHaveLength(preparedRequests);
+  } finally {
+    page.off('request', recordDestination);
+  }
+}
+
+test('keyboard preparation preserves page capture rules across the learning routes', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'no-preference' });
+  const transitions = await observeViewTransitions(page);
+  const failures = diagnostics(page);
+  await page.goto(learningPaths.hub);
+  await settleEntryAnimations(page);
+  expect(await transitions()).toEqual([]);
+
+  const main = page.getByRole('main');
+  await followPreparedRoute(
+    page,
+    main.getByRole('link', { name: 'Bilderkennung verstehen', exact: true }),
+    learningPaths.images,
+    main.getByRole('heading', { level: 1, name: /Was sieht die KI\?/ }),
+    'Was sieht die KI?',
+  );
+  const imageTransition = { root: false, outgoingPages: 1, incomingPages: 1, back: false };
+  expect(await transitions()).toEqual([imageTransition]);
+
+  const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  const trainingTitle = 'Eigenes Bilderkennungsmodell trainieren | ML Teaching';
+  // Flight carries a reference to the client screen and the route metadata.
+  // The consent dialog is rendered by that screen after activation.
+  await followPreparedRoute(
+    page,
+    main.getByRole('link', { name: 'Eigenes Bildmodell trainieren', exact: true }),
+    learningPaths.imagePractice,
+    consent,
+    trainingTitle,
+  );
+  await expect(page).toHaveTitle(trainingTitle);
+  await expect(consent.getByRole('button', { name: 'Zustimmen', exact: true })).toBeDisabled();
+  await page.keyboard.press('Tab');
+  await expect
+    .poll(() => consent.evaluate((dialog) => dialog.contains(document.activeElement)))
+    .toBe(true);
+  await expectAccessible(page);
+  const [first, ...rest] = await transitions();
+  expect(first).toEqual(imageTransition);
+  expect(
+    rest.filter(
+      (capture) =>
+        capture !== 'skipped' && (capture.root || capture.outgoingPages || capture.incomingPages),
+    ),
+  ).toEqual([]);
+  expect(failures).toEqual([]);
 });
 
 test('failed preparation keeps the first hover feedback and the link remains keyboard operable', async ({

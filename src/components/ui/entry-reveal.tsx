@@ -34,6 +34,21 @@ function loadTarget(kind: EntryKind, offset: number, complete: boolean) {
   return kind === 'navigation' ? { x: [offset, 0] } : { y: [offset, 0] };
 }
 
+function isErrorRecoveryArrival() {
+  if (document.activeViewTransition?.types.has('error-recovery')) return true;
+  const arrival = window.navigation?.activation;
+  if (
+    !('onpagereveal' in window) ||
+    !arrival?.from?.url ||
+    arrival.navigationType === 'reload' ||
+    location.pathname !== '/'
+  )
+    return false;
+  // Hydration can start after the native transition has already finished.
+  const from = new URL(arrival.from.url);
+  return from.origin === location.origin && from.pathname === '/500';
+}
+
 /** SSG stays visible. First-screen entry never fades text; offscreen groups reveal only once. */
 export function EntryReveal({
   children,
@@ -58,10 +73,15 @@ export function EntryReveal({
       configured.current = true;
       const rect = element.getBoundingClientRect();
       const visible = rect.bottom > 0 && rect.top < window.innerHeight;
-      if (visible && !scrollOnly && (initialEntry || activation)) setAdmission('load');
+      if (
+        visible &&
+        !scrollOnly &&
+        (activation || (initialEntry && (kind === 'shell' || !isErrorRecoveryArrival())))
+      )
+        setAdmission('load');
       else if (!visible && rect.bottom >= 0) setAdmission('scroll');
     },
-    [active, initialEntry, activation, scrollOnly, viewportReady],
+    [active, initialEntry, activation, kind, scrollOnly, viewportReady],
   );
   const moving = !reduce && !focused;
   const scroll = admission === 'scroll' && moving;

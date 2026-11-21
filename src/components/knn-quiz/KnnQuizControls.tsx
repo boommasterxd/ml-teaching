@@ -55,9 +55,22 @@ export function KnnQuizInput({ state }: { state: KnnQuizState }) {
   );
 }
 
-export function KnnQuizAnswer({ state }: { state: KnnQuizState }) {
+export function KnnQuizAnswer({
+  state,
+  onKeyboardSuccess,
+}: {
+  state: KnnQuizState;
+  onKeyboardSuccess: () => void;
+}) {
   const ready = state.selected.length === state.k;
+  const disabled = !ready || state.result === 'correct';
   const successTitle = state.winner === null ? 'Gleichstand erkannt!' : 'Richtig zugeordnet!';
+
+  function chooseAnswer(signal: KnnQuizState['winner'], keyboard: boolean) {
+    if (disabled) return;
+    state.chooseClass(signal);
+    if (keyboard && signal === state.winner) onKeyboardSuccess();
+  }
   return (
     <div className="min-w-0">
       <FieldSet className="gap-3 lg:gap-6">
@@ -66,8 +79,8 @@ export function KnnQuizAnswer({ state }: { state: KnnQuizState }) {
           <Button
             variant="outline"
             className="min-h-11"
-            disabled={!ready || state.result === 'correct'}
-            onClick={() => state.chooseClass('dog')}
+            disabled={disabled}
+            onClick={(event) => chooseAnswer('dog', event.detail === 0)}
           >
             <Dog data-icon="inline-start" aria-hidden="true" />
             Hund
@@ -75,8 +88,8 @@ export function KnnQuizAnswer({ state }: { state: KnnQuizState }) {
           <Button
             variant="outline"
             className="min-h-11"
-            disabled={!ready || state.result === 'correct'}
-            onClick={() => state.chooseClass('cat')}
+            disabled={disabled}
+            onClick={(event) => chooseAnswer('cat', event.detail === 0)}
           >
             <Cat data-icon="inline-start" aria-hidden="true" />
             Katze
@@ -84,8 +97,8 @@ export function KnnQuizAnswer({ state }: { state: KnnQuizState }) {
           <Button
             variant="outline"
             className="min-h-11"
-            disabled={!ready || state.result === 'correct'}
-            onClick={() => state.chooseClass(null)}
+            disabled={disabled}
+            onClick={(event) => chooseAnswer(null, event.detail === 0)}
           >
             Gleichstand
           </Button>

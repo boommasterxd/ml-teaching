@@ -538,8 +538,9 @@ Reduced motion uses the library's instant height change and opacity feedback.
   the main content out of capture. Eligible browser Back and Forward traversals
   use the Navigation API's precommit support when available; the legal Back control
   also applies Flow layers to native history traversal. The browser owns this capture
-  because a cached history restore can bypass React's view transition. If the
-  restored page does not commit promptly, the capture yields to normal navigation.
+  because a cached history restore can bypass React's view transition. Capture
+  follows the matching history entry and rendered route commit. Interruption,
+  failed navigation or browser cancellation releases the pending capture.
   Reduced motion opts out of page capture. Unsupported browsers retain
   normal navigation. The consent-withdrawal
   link deliberately reloads the document to discard the in-memory workspace. It
@@ -550,6 +551,11 @@ Reduced motion uses the library's instant height change and opacity feedback.
   Entering the image-training route opens its native consent dialog immediately.
   This destination opts out of page snapshots because document transitions paint
   above the native modal. Its setup steps retain their own component transitions.
+  The native 500 document and the homepage opt in to the browser's document
+  transition for recovery. The shared fade captures the main content, with the
+  shell outside the capture. Reduced motion disables the opt-in. The homepage
+  stylesheet follows its route lifetime, and its initially visible content skips
+  the additional component entrance after a 500 recovery.
   During the Animate UI theme wipe, only the theme Switch receives a separate
   named live capture. Its old capture is transparent and its group has no independent
   animation, so the existing Animate UI thumb spring remains visible immediately
@@ -628,10 +634,11 @@ Reduced motion uses the library's instant height change and opacity feedback.
   initial markup. Exiting classes become inert and hidden from assistive technology
   immediately; focus moves to a remaining neighbor or the workspace heading.
   Supported `AnimatePresence mode="sync"` retains the fading exit in document flow,
-  then Motion's `layout="position"` reflows the remaining classes. Motion 14.9.1's
-  `popLayout` requires a runtime-injected empty style element, which the strict SSG
-  hash CSP forbids. Sync presence preserves one motion owner without adding an
-  empty-style hash, nonce, custom geometry engine or relaxed policy.
+  then Motion's `layout="position"` reflows the remaining classes. Motion's
+  `popLayout` appends a style element at runtime before inserting the positioning rule.
+  The strict SSG hash CSP blocks that style element. Sync presence preserves one
+  motion owner without adding an empty-style hash, nonce, custom geometry engine
+  or relaxed policy.
 - The educational illustration has four ordered stages: an Input placeholder replaced by a 112px image after selection,
   labeled conceptual feature maps, a nearest-neighbor diagram and a separate vote
   readout. Animate UI Shine scans the selected example; Effect reveals edges,
@@ -738,8 +745,8 @@ changing the mounted components or their motion owners.
 The educational illustration preserves its example image,
 labeled feature maps, neighbor points, connecting paths and class labels before enabling its
 interactive component.
-These are explicit integrations for the installed Animate UI 2.4.6 and Motion
-14.9.1 producers, not permission to omit primary content or relax the CSP.
+These integrations preserve the initial content and the existing CSP with
+the installed Animate UI and Motion components.
 
 Shared `ActionFeedback` keeps AnimateIcon in a layout-neutral `display: contents`
 parent and places ButtonPrimitive's press Slot directly on the native button or

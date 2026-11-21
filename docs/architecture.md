@@ -161,6 +161,10 @@ and keeps selections in memory.
 
 ## Public discovery
 
+ML Teaching is a free, ad-free learning site. The learning hub publishes
+`CollectionPage` structured data that references the available image recognition
+lesson and practice by their canonical `LearningResource` identifiers.
+
 The generated `robots.txt` allows all user agents on all paths and identifies the
 sitemap. It has no separate rules for search, model training or user-initiated
 retrieval; services follow this guidance according to their own crawler behavior.

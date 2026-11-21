@@ -3,17 +3,20 @@ export const PrivacyOverview = (
     <h2>1. Datenschutz auf einen Blick</h2>
     <h3>Kurz erklärt</h3>
     <p>
-      Wenn du diese Website öffnest, bekommt der Server technische Informationen wie deine
-      IP-Adresse. So weiß der Server, wohin er die Seite schicken soll.
+      Wenn du die Website öffnest, erhält unser Hostinganbieter Vercel die Internetadresse deiner
+      Verbindung. Diese Adresse heißt IP-Adresse. Sie hilft dabei, dir die Seite zu schicken.
     </p>
     <p>
-      Wenn du das Bildtraining startest und zustimmst, lädt dein Browser ein Modell von Google.
-      Dabei erhalten Google und Kaggle technische Informationen wie deine IP-Adresse. Deine
-      Trainingsbilder bleiben in deinem Browser. Die Kamera schaltest du extra frei.
+      Wenn du dem Bildtraining zustimmst, lädt dein Browser das KI-Modell bei Google und Kaggle.
+      Dabei erhalten beide deine IP-Adresse und erfahren zum Beispiel, welchen Browser du nutzt und
+      wann du das Modell abrufst. Deine Trainingsbilder und die daraus gewonnenen Daten bleiben in
+      deinem Browser. Über die Kamera entscheidest du extra. Auch ohne Zustimmung kannst du über
+      Bilderkennung lesen und dir auf der Startseite die Beispiele zum Lernen mit Belohnung ansehen.
     </p>
     <p>
-      Über „Einwilligung widerrufen“ kannst du das Training beenden. Dabei werden die Bilder und das
-      trainierte Modell aus der geöffneten Seite entfernt.
+      Mit ‚Einwilligung widerrufen‘ beendest du das Bildtraining. Die Kamera wird ausgeschaltet und
+      die Website verwirft deine Trainingsbilder und das trainierte Modell. Google und Kaggle können
+      Angaben zum früheren Abruf weiterhin speichern.
     </p>
     <p>
       Du kannst uns fragen, welche Daten wir über dich haben, und verlangen, dass wir falsche Daten
