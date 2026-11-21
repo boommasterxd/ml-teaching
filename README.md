@@ -74,8 +74,9 @@ processing run in the browser. See [architecture](docs/architecture.md) and the
 
 ## Contributing and security
 
-Work on a branch and use English Conventional Commits. See [AGENTS.md](AGENTS.md)
-for repository rules and the documentation index. Merging and publication require
+The repository owner and invited collaborators can open pull requests. Work on a
+branch and use English Conventional Commits. See [AGENTS.md](AGENTS.md) for
+repository rules and the documentation index. Merging and publication require
 explicit authorization.
 
 Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).

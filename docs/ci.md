@@ -24,7 +24,7 @@ final `CI` check accepts successful selected jobs and explicitly excluded skippe
 jobs only. Invalid plans, planning failures, cancellations and unexpected skips fail.
 The workflow, planner and final validation run from the simulated PR merge checkout.
 The [security checks decision](decisions/ci-trust-boundary.md) records the accepted
-CI provenance and the planned transition to GitHub Secret Scanning.
+CI provenance and the complementary roles of Gitleaks and GitHub Secret Scanning.
 
 ## Dependency cache lifecycle
 
@@ -155,6 +155,11 @@ the base revision's manifest and policy, preserve default scanner rules and do n
 accept PR-controlled ignore fingerprints. The monthly updater proposes a normal PR
 changing the scanner manifest.
 
+GitHub Secret Scanning, repository push protection and CodeQL default setup are
+enabled alongside the required Gitleaks check. The
+[visibility decision](decisions/public-repository-visibility.md) records the
+accepted exposure of existing history.
+
 `Validate PR Title` checks Conventional Commit titles with the intentional Dependabot
 actor exception. Dependabot auto-merge reads metadata without executing PR code and
 enables ordinary protected squash auto-merge only for same-repository npm minor or
@@ -162,9 +167,11 @@ patch updates authored and triggered by Dependabot. Major and GitHub Actions upd
 require manual integration.
 
 The active GitHub rules require `CI`, `gitleaks` and `Validate PR Title`, enforce an
-up-to-date branch and allow only squash integration. Actions policy requires full
-commit-SHA pinning. Workflows from private-repository fork pull requests require
-administrator approval and receive neither write tokens nor secrets or variables.
+up-to-date branch and allow only squash integration. GitHub defaults to the
+commit title for a single-commit squash merge and the pull request title for a
+multi-commit squash merge. Actions policy requires full commit-SHA pinning. The
+fork workflow approval policy is `all_external_contributors`. Approved fork
+pull request workflows run with a read-only token and without repository secrets.
 Repository Projects are disabled. These are saved provider controls; workflow
 files alone do not activate them. Merging and publication still require explicit
 authorization.
