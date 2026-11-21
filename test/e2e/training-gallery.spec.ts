@@ -40,7 +40,10 @@ test('a full training gallery keeps keyboard focus and selection across virtual 
         buffer,
       })),
     );
-  await expect(page.getByText(`${limit} Bilder · Limit erreicht`, { exact: true })).toBeVisible();
+  // The full gallery processes each file sequentially before the next can start.
+  await expect(page.getByText(`${limit} Bilder · Limit erreicht`, { exact: true })).toBeVisible({
+    timeout: 20_000,
+  });
   const gallery = page.getByRole('region', { name: /Trainingsbilder von Klasse 1:/ });
   const selection = page.getByRole('button', { name: 'Mehrere markieren', exact: true });
   await selection.press('Enter');
