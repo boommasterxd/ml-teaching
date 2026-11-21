@@ -186,23 +186,26 @@ does not affect inclusion or ranking in Google Search.
    kernels are reusable within the document.
 3. When the models are ready, the dialog presents the optional camera choice.
    Camera access starts only after separate camera consent and browser permission.
-   The visible collection step can use the stream. The prediction step requests a
-   stream on explicit start when a trained classifier and camera consent are present.
+   The visible collection step requests the stream while consent is active. The
+   prediction step starts it automatically after activation with a trained classifier
+   and camera consent.
    Selected local files and captures are resized for local feature extraction.
 4. Training requires complete selected upload batches and no active image work.
    New capture and file selection are disabled during training. It creates a
    replacement KNN classifier from one normalized feature matrix per class. A stale
    or abandoned training run cannot publish its result. Retired classifiers and
    models are disposed after their active users release them.
-5. Prediction processes one frame at a time. Stopping, leaving the prediction step
-   or hiding the document stops inference and releases its stream. Returning to a
-   visible prediction step requires a fresh start. Training uses no camera stream.
+5. Prediction processes one frame at a time. Turning the camera off or hiding the
+   document stops inference and releases the stream. Switching directly between
+   collection and prediction reuses the stream, while entering training releases
+   it. Returning to a visible prediction step reconnects while consent is active.
    Route cleanup stops camera tracks and disposes classifiers and models.
 
-With camera consent, intent to start the live preview prepares a local PCA
-projection of the normalized training features in interruptible batches without
-requesting a stream. The fitted axes and projected examples are reused while the
-ordered class IDs and their image arrays are unchanged, including across name edits.
+Activating the live view or expressing intent through its Play control can prepare
+a local PCA projection of the normalized training features in interruptible batches.
+Play intent alone never requests a camera stream. The fitted axes and projected
+examples are reused while the ordered class IDs and their image arrays are
+unchanged, including across name edits.
 While visible, the plot samples the same embedding already produced for live
 classification and moves its marker independently from the classifier, which uses
 the full feature vector.

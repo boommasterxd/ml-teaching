@@ -7,17 +7,17 @@ import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host'
 beforeEach(installBrowserHost);
 afterEach(restoreBrowserHost);
 
-function CameraControls({
+function CapturePreview({
   disabled = false,
   stream = null,
   onFileUpload = vi.fn(),
-  isCameraSwitching = false,
+  pending = false,
   onSwitchCamera = vi.fn(),
 }: {
   disabled?: boolean;
   stream?: MediaStream | null;
   onFileUpload?: () => void;
-  isCameraSwitching?: boolean;
+  pending?: boolean;
   onSwitchCamera?: () => void;
 }) {
   const [recording, setRecording] = useState(false);
@@ -25,10 +25,15 @@ function CameraControls({
   return (
     <CameraPreview
       disabled={disabled}
-      stream={stream}
-      facingMode="user"
-      isCameraSwitching={isCameraSwitching}
-      onSwitchCamera={onSwitchCamera}
+      camera={{
+        stream,
+        facingMode: 'user',
+        active: Boolean(stream) || pending,
+        pending,
+        failed: false,
+        onToggle: vi.fn(),
+        onSwitch: onSwitchCamera,
+      }}
       isRecording={recording}
       onStartRecording={() => setRecording(true)}
       onStopRecording={() => setRecording(false)}
@@ -40,7 +45,7 @@ function CameraControls({
 
 describe('camera preview controls', () => {
   it('starts on button activation and keeps recording until the same button is activated again', () => {
-    render(<CameraControls stream={{} as MediaStream} />);
+    render(<CapturePreview stream={{} as MediaStream} />);
     const record = screen.getByRole('button', { name: 'Aufnehmen' });
     fireEvent.pointerDown(record, { pointerType: 'mouse' });
     expect(screen.getByRole('button', { name: 'Aufnehmen' })).toBe(record);
@@ -53,7 +58,7 @@ describe('camera preview controls', () => {
   it('records only while holding a touch press and does not toggle back on after release', () => {
     vi.useFakeTimers();
     try {
-      render(<CameraControls stream={{} as MediaStream} />);
+      render(<CapturePreview stream={{} as MediaStream} />);
       const record = screen.getByRole('button', { name: 'Aufnehmen' });
       const touch = { pointerType: 'touch', pointerId: 1, isPrimary: true };
       fireEvent.pointerDown(record, touch);
@@ -75,7 +80,7 @@ describe('camera preview controls', () => {
   it('stops recording when the document becomes hidden', () => {
     const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
     try {
-      render(<CameraControls stream={{} as MediaStream} />);
+      render(<CapturePreview stream={{} as MediaStream} />);
       fireEvent.click(screen.getByRole('button', { name: 'Aufnehmen' }));
       hidden.mockReturnValue(true);
       fireEvent(document, new Event('visibilitychange'));
@@ -103,7 +108,7 @@ describe('camera preview controls', () => {
     );
     const stop = vi.fn();
     const stream = { getTracks: () => [{ stop }] } as unknown as MediaStream;
-    const { rerender } = render(<CameraControls stream={stream} />);
+    const { rerender } = render(<CapturePreview stream={stream} />);
     const video = screen.getByLabelText<HTMLVideoElement>('Kameravorschau für Trainingsaufnahme');
     const record = screen.getByRole('button', { name: 'Aufnehmen' });
     expect(video.srcObject ?? null).toBeNull();
@@ -120,7 +125,7 @@ describe('camera preview controls', () => {
     expect(stop).not.toHaveBeenCalled();
 
     const nextStream = {} as MediaStream;
-    rerender(<CameraControls stream={nextStream} />);
+    rerender(<CapturePreview stream={nextStream} />);
     expect(video.srcObject).toBeNull();
     act(() => updateVisibility(true));
     expect(screen.getByLabelText('Kameravorschau für Trainingsaufnahme')).toBe(video);
@@ -131,20 +136,20 @@ describe('camera preview controls', () => {
   it('keeps the focused switch button during stream replacement and blocks duplicate switches', () => {
     const stream = {} as MediaStream;
     const onSwitchCamera = vi.fn();
-    const { rerender } = render(<CameraControls stream={stream} onSwitchCamera={onSwitchCamera} />);
+    const { rerender } = render(<CapturePreview stream={stream} onSwitchCamera={onSwitchCamera} />);
     const cameraSwitch = screen.getByRole('button', { name: 'Kamera wechseln' });
     act(() => cameraSwitch.focus());
     fireEvent.click(cameraSwitch);
     expect(onSwitchCamera).toHaveBeenCalledOnce();
 
-    rerender(<CameraControls isCameraSwitching onSwitchCamera={onSwitchCamera} />);
+    rerender(<CapturePreview pending onSwitchCamera={onSwitchCamera} />);
     expect(screen.getByRole('button', { name: 'Kamera wechseln' })).toBe(cameraSwitch);
     expect(document.activeElement).toBe(cameraSwitch);
     expect(cameraSwitch.getAttribute('aria-disabled')).toBe('true');
     fireEvent.click(cameraSwitch);
     expect(onSwitchCamera).toHaveBeenCalledOnce();
 
-    rerender(<CameraControls stream={{} as MediaStream} onSwitchCamera={onSwitchCamera} />);
+    rerender(<CapturePreview stream={{} as MediaStream} onSwitchCamera={onSwitchCamera} />);
     expect(document.activeElement).toBe(cameraSwitch);
     fireEvent.click(cameraSwitch);
     expect(onSwitchCamera).toHaveBeenCalledTimes(2);
@@ -154,7 +159,7 @@ describe('camera preview controls', () => {
     const stream = {} as MediaStream;
     const onFileUpload = vi.fn();
     const { container, rerender, unmount } = render(
-      <CameraControls stream={stream} onFileUpload={onFileUpload} />,
+      <CapturePreview stream={stream} onFileUpload={onFileUpload} />,
     );
     const video = screen.getByLabelText('Kameravorschau für Trainingsaufnahme') as HTMLVideoElement;
     expect(video.srcObject).toBe(stream);
@@ -169,18 +174,24 @@ describe('camera preview controls', () => {
     const record = screen.getByRole('button', { name: 'Aufnehmen' });
     fireEvent.click(record);
     expect(screen.getByRole('button', { name: 'Aufnahme stoppen' })).toBe(record);
-    rerender(<CameraControls stream={null} onFileUpload={onFileUpload} />);
+    rerender(<CapturePreview stream={null} onFileUpload={onFileUpload} />);
     expect(video.srcObject).toBeNull();
-    expect(screen.queryByRole('button', { name: /Aufnehm|Aufnahme/ })).toBeNull();
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Aufnehmen' }).disabled).toBe(
+      true,
+    );
     expect(screen.queryByLabelText('Kameravorschau für Trainingsaufnahme')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Bilder auswählen' }));
     expect(openPicker).toHaveBeenCalledTimes(2);
-    rerender(<CameraControls disabled stream={stream} onFileUpload={onFileUpload} />);
+    rerender(<CapturePreview disabled stream={stream} onFileUpload={onFileUpload} />);
     expect(input.disabled).toBe(true);
     expect((screen.getByRole('button', { name: 'Aufnehmen' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+    const reopenedVideo = screen.getByLabelText<HTMLVideoElement>(
+      'Kameravorschau für Trainingsaufnahme',
+    );
+    expect(reopenedVideo.srcObject).toBe(stream);
     unmount();
-    expect(video.srcObject).toBeNull();
+    expect(reopenedVideo.srcObject).toBeNull();
   });
 });

@@ -24,14 +24,11 @@ function loadSpace() {
   return pending;
 }
 
-export function useDeferredPredictionSpace(
-  classes: readonly MLClass[],
-  enabled: boolean,
-  active: boolean,
-) {
+export function useDeferredPredictionSpace(classes: readonly MLClass[], active: boolean) {
   const [intent, setIntent] = useState<readonly MLClass[]>();
   const [state, setState] = useState<SpaceState>();
-  const shouldPrepare = enabled && (active || intent === classes);
+  const prepared = state?.source === classes && !('failed' in state);
+  const shouldPrepare = (active || intent === classes) && !prepared;
 
   useEffect(() => {
     if (!shouldPrepare) return;
@@ -52,11 +49,9 @@ export function useDeferredPredictionSpace(
   }, [classes, shouldPrepare]);
 
   return {
-    visible: enabled && active,
+    visible: active,
     result: state?.source === classes ? state : undefined,
-    prepare: () => {
-      if (enabled) setIntent(classes);
-    },
+    prepare: () => setIntent(classes),
   };
 }
 

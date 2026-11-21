@@ -121,54 +121,6 @@ export async function grantModelConsent(page: Page) {
   await dialog.getByRole('button', { name: 'Zustimmen', exact: true }).click();
 }
 
-type ExpectCameraActivity = (requests: number, live: number) => Promise<void>;
-
-export async function observeWorkspaceCamera(page: Page): Promise<ExpectCameraActivity> {
-  const activity = await page.evaluateHandle(() => {
-    const state = { requests: 0, tracks: [] as MediaStreamTrack[] };
-    const devices = navigator.mediaDevices;
-    const getUserMedia = devices.getUserMedia.bind(devices);
-    devices.getUserMedia = async (constraints) => {
-      state.requests++;
-      const stream = await getUserMedia(constraints);
-      state.tracks.push(...stream.getVideoTracks());
-      return stream;
-    };
-    return state;
-  });
-  return async (requests, live) => {
-    const snapshot = () =>
-      activity.evaluate(({ requests, tracks }) => ({
-        requests,
-        live: tracks.filter((track) => track.readyState === 'live').length,
-        ended: tracks.filter((track) => track.readyState === 'ended').length,
-      }));
-    await expect.poll(snapshot).toEqual({ requests, live, ended: requests - live });
-  };
-}
-
-export async function expectCameraToggleKeepsImages(
-  page: Page,
-  expectCamera: ExpectCameraActivity,
-) {
-  const enable = page.getByRole('button', { name: 'Kamera aktivieren', exact: true });
-  const consent = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
-  const allow = consent.getByRole('button', { name: 'Erlauben', exact: true });
-  await enable.press('Enter');
-  await allow.press('Enter');
-  await expectCamera(1, 1);
-  await page.getByRole('button', { name: 'Kamera ausschalten', exact: true }).press('Enter');
-  await expectCamera(1, 0);
-  await expect(page.getByRole('button', { name: 'Bilder sammeln', exact: true })).toBeFocused();
-  await expect(page.getByRole('textbox', { name: /^Name für Klasse / })).toHaveCount(2);
-  await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
-  await enable.press('Enter');
-  await expect(consent).toBeVisible();
-  await expectCamera(1, 0);
-  await allow.press('Enter');
-  await expectCamera(2, 1);
-}
-
 export async function withdrawTrainingConsent(page: Page) {
   await page.evaluate(() => {
     document.documentElement.dataset.withdrawalProbe = 'old-workspace';
@@ -336,7 +288,12 @@ export async function expectThemeKeepsTraining(page: Page) {
   ).toBeEnabled();
 }
 
-export async function openDeferredTrainingStep(page: Page, trigger: Locator, heading: Locator) {
+export async function openDeferredTrainingStep(
+  page: Page,
+  trigger: Locator,
+  heading: Locator,
+  whileLoading?: () => Promise<void>,
+) {
   const asset = '**/_next/static/chunks/*.js';
   const pending = Promise.withResolvers<void>();
   let loading = false;
@@ -357,94 +314,13 @@ export async function openDeferredTrainingStep(page: Page, trigger: Locator, hea
     ).toBeVisible();
     await expect(trigger).toBeFocused();
     await expect(heading).toHaveCount(0);
+    await whileLoading?.();
     pending.resolve();
     await expect(heading).toBeFocused();
   } finally {
     pending.resolve();
     await page.unroute(asset, hold);
   }
-}
-
-export async function expectLivePredictionControls(page: Page, expectCamera: ExpectCameraActivity) {
-  const preview = page.getByLabel('Kameravorschau für Vorhersage');
-  const space = page.getByRole('figure', { name: 'Merkmalsraum' });
-  const stop = page.getByRole('button', { name: 'Live-Vorhersage stoppen' });
-  const start = page.getByRole('button', { name: 'Live-Vorhersage starten' });
-  const frame = page.locator('[data-slot="prediction-camera"]');
-  const viewport = page.viewportSize()!;
-  await expect(preview).toHaveCount(0);
-  await expect(space).toBeVisible();
-  await expect(frame.getByRole('button', { name: 'Live-Vorhersage starten' })).toBeVisible();
-  await expectCamera(2, 0);
-  const recordStartSizes = await observePredictionSizes(frame);
-  await start.press('Enter');
-  await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
-  await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 2' })).toBeVisible();
-  await expect(space.getByRole('listitem').filter({ hasText: /Klasse 1.*10/ })).toBeVisible();
-  await expect(space.getByRole('listitem').filter({ hasText: /Klasse 2.*10/ })).toBeVisible();
-  await space.scrollIntoViewIfNeeded();
-  const marker = space.locator('[data-slot="prediction-live-point"]');
-  await expect(marker).toBeVisible();
-  await recordStartSizes();
-  await expectAccessible(page);
-  await page.setViewportSize({ width: 390, height: viewport.height });
-  await expect(space).toBeVisible();
-  await expect(preview).toBeVisible();
-  const recordMobileSizes = await observePredictionSizes(frame);
-  await stop.press('Space');
-  await expect(preview).toHaveCount(0);
-  await expectCamera(3, 0);
-  await start.press('Enter');
-  await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
-  await space.scrollIntoViewIfNeeded();
-  await expect(marker).toBeVisible();
-  await recordMobileSizes();
-  await page.setViewportSize(viewport);
-  await space.scrollIntoViewIfNeeded();
-  await expect(marker).toBeVisible();
-  const recordStopSizes = await observePredictionSizes(frame);
-  await stop.press('Space');
-  await expect(start).toBeFocused();
-  await expect(preview).toHaveCount(0);
-  await expect(space).toBeVisible();
-  await expect(marker).toHaveCount(0);
-  await expectCamera(4, 0);
-  await recordStopSizes();
-  await start.press('Enter');
-  await space.scrollIntoViewIfNeeded();
-  await expect(marker).toBeVisible();
-  const describe = space.getByRole('button', { name: 'Diagramm beschreiben', exact: true });
-  await describe.press('Enter');
-  await expect(space.getByRole('heading', { name: 'Diagrammbeschreibung' })).toBeFocused();
-  await expect(space.getByText(/^Kamerabild:/)).toBeVisible();
-  await expectAccessible(page);
-}
-
-async function observePredictionSizes(frame: ReturnType<Page['locator']>) {
-  const probe = await frame.evaluateHandle((node) => {
-    const panel = node.closest('section')!;
-    const sizes = new Set<string>();
-    const record = () =>
-      sizes.add(
-        [node, panel]
-          .map((element) => Math.round(element.getBoundingClientRect().height))
-          .join('/'),
-      );
-    record();
-    const observer = new ResizeObserver(record);
-    observer.observe(node);
-    observer.observe(panel);
-    return { observer, sizes, record };
-  });
-  return async () => {
-    const sizes = await probe.evaluate(({ observer, sizes, record }) => {
-      record();
-      observer.disconnect();
-      return [...sizes];
-    });
-    await probe.dispose();
-    expect(sizes).toHaveLength(1);
-  };
 }
 
 export async function expectKeyboardCapture(page: Page) {

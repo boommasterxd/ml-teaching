@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useRef, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { RotateCcw } from './icons/rotate-ccw';
 import Button from './Button';
@@ -10,17 +10,35 @@ const subscribeToFooter = () => () => {};
 const getFooterSlot = () => document.getElementById('footer-route-actions');
 const getServerSlot = () => null;
 
-export function TrainingFooterWithdrawal() {
+export function TrainingFooterWithdrawal({ onRevokeCamera }: { onRevokeCamera?: () => void }) {
   const slot = useSyncExternalStore(subscribeToFooter, getFooterSlot, getServerSlot);
+  const withdrawal = useRef<HTMLAnchorElement>(null);
   return slot
     ? createPortal(
-        <a
-          href={learningPaths.imagePractice}
-          aria-label={withdrawalLabel}
-          className="footer-link inline-flex min-h-6 items-center text-sm"
-        >
-          Einwilligung widerrufen
-        </a>,
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          {onRevokeCamera && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="footer-link min-h-11 px-0 font-normal hover:bg-transparent"
+              onClick={(event) => {
+                if (document.activeElement === event.currentTarget)
+                  withdrawal.current?.focus({ preventScroll: true });
+                onRevokeCamera();
+              }}
+            >
+              Kamera ausschalten
+            </Button>
+          )}
+          <a
+            ref={withdrawal}
+            href={learningPaths.imagePractice}
+            aria-label={withdrawalLabel}
+            className="footer-link inline-flex min-h-6 items-center text-sm"
+          >
+            Einwilligung widerrufen
+          </a>
+        </div>,
         slot,
       )
     : null;

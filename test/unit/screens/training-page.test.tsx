@@ -62,6 +62,11 @@ const originalMediaDevices = Object.getOwnPropertyDescriptor(navigator, 'mediaDe
 const originalCreateURL = Object.getOwnPropertyDescriptor(URL, 'createObjectURL');
 const originalRevokeURL = Object.getOwnPropertyDescriptor(URL, 'revokeObjectURL');
 
+function createCameraStream() {
+  const track = Object.assign(new EventTarget(), { stop: boundary.stopTrack, readyState: 'live' });
+  return { active: true, getTracks: () => [track] };
+}
+
 beforeEach(() => {
   installBrowserHost();
   vi.clearAllMocks();
@@ -69,11 +74,7 @@ beforeEach(() => {
     infer: vi.fn(boundary.tensor),
     dispose: vi.fn(),
   }));
-  const track = Object.assign(new EventTarget(), { stop: boundary.stopTrack, readyState: 'live' });
-  boundary.getUserMedia.mockResolvedValue({
-    active: true,
-    getTracks: () => [track],
-  });
+  boundary.getUserMedia.mockImplementation(async () => createCameraStream());
   Object.defineProperty(navigator, 'mediaDevices', {
     configurable: true,
     value: { getUserMedia: boundary.getUserMedia },
@@ -177,6 +178,47 @@ async function collectCupAndBookImages(container: HTMLElement) {
   await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2));
 }
 
+async function expectPredictionCameraLifecycle(steps: ReturnType<typeof within>) {
+  const confidence = { name: 'Konfidenz für Tasse' };
+  expect(boundary.getUserMedia).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Kamera aktivieren' }));
+  const allow = await screen.findByRole('button', { name: 'Erlauben' });
+  expect(boundary.getUserMedia).not.toHaveBeenCalled();
+
+  const pending = Promise.withResolvers<ReturnType<typeof createCameraStream>>();
+  boundary.getUserMedia.mockReturnValueOnce(pending.promise);
+  fireEvent.click(allow);
+  await screen.findByText('Kamera wird verbunden …');
+  expect(boundary.getUserMedia).toHaveBeenCalledOnce();
+  expect(screen.queryByRole('progressbar', confidence)).toBeNull();
+  await act(async () => pending.resolve(createCameraStream()));
+  const result = await screen.findByRole('progressbar', confidence);
+  expect(result.getAttribute('aria-valuenow')).toBe('100');
+  expect(boundary.getUserMedia).toHaveBeenCalledOnce();
+
+  fireEvent.click(steps.getByRole('button', { name: 'Training' }));
+  expect(screen.queryByRole('progressbar', confidence)).toBeNull();
+  expect(boundary.stopTrack).toHaveBeenCalledOnce();
+  expect(boundary.getUserMedia).toHaveBeenCalledOnce();
+  fireEvent.click(steps.getByRole('button', { name: 'Vorhersage' }));
+  await screen.findByRole('progressbar', confidence);
+  expect(boundary.getUserMedia).toHaveBeenCalledTimes(2);
+
+  fireEvent.click(steps.getByRole('button', { name: 'Bilder sammeln' }));
+  await screen.findAllByLabelText('Kameravorschau für Trainingsaufnahme');
+  expect(boundary.getUserMedia).toHaveBeenCalledTimes(2);
+  expect(boundary.stopTrack).toHaveBeenCalledOnce();
+  const [off] = screen.getAllByRole('button', { name: 'Kamera ausschalten' });
+  act(() => off.focus());
+  fireEvent.click(off);
+  expect(boundary.stopTrack).toHaveBeenCalledTimes(2);
+  expect(boundary.getUserMedia).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(screen.getAllByRole('button', { name: 'Kamera aktivieren' })[0]).toBe(off);
+  expect(document.activeElement).toBe(off);
+  expect(screen.getAllByText('10 Bilder')).toHaveLength(2);
+}
+
 describe('training page integration', () => {
   it('keeps processing opt-in, supports local training, enables camera later and confirms destructive changes', async () => {
     const { container, unmount } = render(
@@ -214,30 +256,7 @@ describe('training page integration', () => {
     const predictionHeading = await screen.findByRole('heading', { name: 'Vorhersage' });
     expect(currentStep()).toBe(steps.getByRole('button', { name: 'Vorhersage' }));
     expect(document.activeElement).toBe(predictionHeading);
-    fireEvent.click(screen.getByRole('button', { name: 'Kamera aktivieren' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Erlauben' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(boundary.getUserMedia).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Live-Vorhersage starten' }));
-    await screen.findByRole('progressbar', { name: 'Konfidenz für Tasse' });
-    expect(boundary.getUserMedia).toHaveBeenCalledOnce();
-    expect(
-      screen
-        .getByRole('progressbar', { name: 'Konfidenz für Tasse' })
-        .getAttribute('aria-valuenow'),
-    ).toBe('100');
-    fireEvent.click(steps.getByRole('button', { name: 'Training' }));
-    expect(screen.queryByRole('progressbar', { name: 'Konfidenz für Tasse' })).toBeNull();
-    expect(boundary.stopTrack).toHaveBeenCalledOnce();
-    fireEvent.click(steps.getByRole('button', { name: 'Vorhersage' }));
-    expect(screen.getByRole('button', { name: 'Live-Vorhersage starten' })).toBeTruthy();
-    expect(boundary.getUserMedia).toHaveBeenCalledOnce();
-    fireEvent.click(steps.getByRole('button', { name: 'Bilder sammeln' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Kamera ausschalten' }));
-    expect(boundary.stopTrack).toHaveBeenCalledTimes(2);
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Kamera aktivieren' })).toBeTruthy();
-    expect(screen.getAllByText('10 Bilder')).toHaveLength(2);
+    await expectPredictionCameraLifecycle(steps);
     const preview = await openSecondImagePreview();
     fireEvent.click(preview.getByRole('button', { name: 'Schließen' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
@@ -326,13 +345,17 @@ describe('training page integration', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('Kamerazugriff verweigert oder keine Kamera gefunden.');
     expect(within(alert).getByRole('button', { name: 'Seite neu laden' })).toBeTruthy();
-    const retry = screen.getByRole('button', { name: 'Kamera erneut verbinden' });
+    const [retry] = screen.getAllByRole('button', { name: 'Kamera erneut verbinden' });
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
     fireEvent.change(input, { target: { files: selectedImages('valid', 1) } });
     await screen.findByText('1 / 10 Bilder');
     expect(screen.getByRole('alert')).toBe(alert);
+    act(() => retry.focus());
     fireEvent.click(retry);
-    await waitFor(() => expect(boundary.getUserMedia).toHaveBeenCalledTimes(2));
+    await screen.findAllByLabelText('Kameravorschau für Trainingsaufnahme');
+    expect(boundary.getUserMedia).toHaveBeenCalledTimes(2);
+    expect(screen.getAllByRole('button', { name: 'Kamera ausschalten' })[0]).toBe(retry);
+    expect(document.activeElement).toBe(retry);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 

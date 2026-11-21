@@ -1,5 +1,6 @@
-import { Activity } from 'react';
+import { Activity, useMemo } from 'react';
 import type { useTrainingWorkspace } from '@/hooks/useTrainingWorkspace';
+import type { CameraView } from './CameraControls';
 import TrainingClassesPanel from './TrainingClassesPanel';
 import type { TrainingPanelModules, TrainingStep } from './training-panel-loading';
 
@@ -22,13 +23,21 @@ export default function TrainingPanels({
   onPrepare: (step: TrainingStep) => void;
 }) {
   const { resources, data, cardActions } = workspace;
-  const { consent, camera, prediction } = resources;
+  const { consent, camera, prediction, revokeCamera } = resources;
   const { classes } = data;
-  const onEnableCamera = camera.hasFailed
-    ? camera.retryCamera
-    : consent.cameraConsent
-      ? undefined
-      : consent.requestCameraConsent;
+  const { stream, facingMode, active, isPending, hasFailed, start, toggleCamera } = camera;
+  const cameraView = useMemo<CameraView>(
+    () => ({
+      stream,
+      facingMode,
+      active,
+      pending: isPending,
+      failed: hasFailed,
+      onToggle: active ? revokeCamera : start,
+      onSwitch: toggleCamera,
+    }),
+    [stream, facingMode, active, isPending, hasFailed, revokeCamera, start, toggleCamera],
+  );
   const { training: TrainingControls, prediction: PredictionPanel } = modules;
 
   return (
@@ -38,13 +47,8 @@ export default function TrainingPanels({
           entryReady={ready}
           classes={classes.classes}
           duplicateClassNames={data.duplicateClassNames}
-          stream={camera.stream}
-          isCameraPending={camera.isPending}
-          isCameraSwitching={camera.isSwitching}
-          cameraFailed={camera.hasFailed}
-          onEnableCamera={onEnableCamera}
-          onSwitchCamera={camera.toggleCamera}
-          facingMode={camera.facingMode}
+          camera={consent.hasGrantedCamera ? cameraView : undefined}
+          onEnableCamera={start}
           mainHeadingRef={resources.mainHeadingRef}
           cardActions={cardActions}
           onAddClass={classes.addClass}
@@ -74,19 +78,12 @@ export default function TrainingPanels({
         <Activity mode={step === 'prediction' ? 'visible' : 'hidden'}>
           <PredictionPanel
             entryReady={ready && step === 'prediction'}
-            stream={camera.stream}
+            camera={cameraView}
             classes={classes.classes}
             prediction={prediction.prediction}
             isPredicting={step === 'prediction' && prediction.isPredicting}
             hasTrainedModel={resources.hasTrainedModel}
-            facingMode={camera.facingMode}
             predictVideoRef={resources.predictVideoRef}
-            onStartPredicting={resources.startPredicting}
-            onStopPredicting={prediction.stopPredicting}
-            cameraAllowed={consent.cameraConsent}
-            onEnableCamera={consent.cameraConsent ? undefined : consent.requestCameraConsent}
-            cameraPending={step === 'prediction' && camera.isPending}
-            cameraFailed={resources.error?.category === 'camera'}
             subscribeToFeatures={prediction.subscribeToFeatures}
           />
         </Activity>
