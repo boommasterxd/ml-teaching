@@ -9,7 +9,6 @@ import {
   type RefCallback,
 } from 'react';
 import { usePathname } from 'next/navigation';
-import { ChevronDown } from 'lucide-react';
 import { learningPaths } from '@/lib/learning-paths';
 import { isMediumViewport, subscribeToMediumViewport } from '@/lib/media-queries';
 import {
@@ -27,6 +26,7 @@ import { Button } from './ui/button';
 import { Spinner } from './ui/spinner';
 import {
   firstNavigationMenuLink,
+  InitialNavigationMenuTrigger,
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
@@ -190,28 +190,24 @@ function StaticHeaderMenu({
         <ul className={navigationMenuListStyle} data-slot="navigation-menu-list">
           {!mobile && (
             <li>
-              <a
+              <IntentLink
                 href={home.href}
                 aria-current={pathname === home.href ? 'page' : undefined}
                 className={navigationMenuTriggerStyle}
                 data-header-control={home.href}
               >
                 {home.label}
-              </a>
+              </IntentLink>
             </li>
           )}
           {(mobile ? mobileMenus : desktopMenus).map(({ label }) => (
             <li key={label}>
-              <button
-                type="button"
-                className={navigationMenuTriggerStyle}
+              <InitialNavigationMenuTrigger
                 data-header-control={label}
                 data-current-section={!mobile && current === label ? '' : undefined}
-                aria-expanded={false}
               >
                 {label}
-                <ChevronDown size={28} className="ml-1 size-3" aria-hidden="true" />
-              </button>
+              </InitialNavigationMenuTrigger>
             </li>
           ))}
         </ul>

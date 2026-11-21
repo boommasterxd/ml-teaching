@@ -359,9 +359,10 @@ retain their larger touch targets on coarse-pointer devices.
 Below `md`, one Menü trigger exposes the same destinations. Unavailable learning items
 show their availability without a navigable URL. Enabled links use native intent preparation.
 Both lightweight trigger lists are delivered in static HTML and CSS selects the
-visible list at the shared breakpoint. The interactive header uses the same menu
-items and trigger classes. Once the browser resolves the viewport it mounts just
-the matching navigation tree. Focus carries over from the initial triggers.
+visible list at the shared breakpoint. The shared navigation control uses a Base
+UI button for the initial trigger. It shares its label, chevron and styles with
+the trigger inside the interactive menu. Once the browser resolves the viewport,
+it mounts just the matching navigation tree. Focus carries over from the initial triggers.
 Crossing the breakpoint closes the old panel.
 Base UI owns keyboard navigation and the trigger-to-panel relationship.
 Animate UI owns the panel transitions and the moving row highlight.
