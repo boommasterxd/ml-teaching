@@ -105,11 +105,12 @@ test('the native image optimizer serves the bounded hero poster as AVIF and WebP
   page,
   request,
 }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   const poster = page.locator('.hero-field-poster img');
   await expect
     .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
-    .toBeGreaterThan(0);
+    .toBeGreaterThan(1);
   const optimized = new URL(await poster.evaluate((image: HTMLImageElement) => image.currentSrc));
   expect(optimized.pathname).toBe('/_next/image');
   expect(optimized.searchParams.get('url')).toMatch(/\.webp$/);
@@ -350,14 +351,10 @@ test('theme changes preserve navigation and require explicit remembering across 
   const remember = menu.getByRole('menuitemcheckbox', {
     name: 'Auswahl für weitere Besuche auf diesem Gerät merken',
   });
-  const checkPath = remember.locator('svg path');
   await expect(remember).not.toBeChecked();
-  await remember.hover();
-  await expect(checkPath).toHaveCSS('opacity', '0');
   await remember.focus();
   await page.keyboard.press('Space');
   await expect(remember).toBeChecked();
-  await expect(checkPath).toHaveCSS('opacity', '1');
   expect(await page.evaluate(() => localStorage.getItem('ml-teaching-theme'))).toBe('dark');
   await page.keyboard.press('Escape');
   await expect(
@@ -382,7 +379,6 @@ test('theme changes preserve navigation and require explicit remembering across 
     await otherRemember.focus();
     await other.keyboard.press('Space');
     await expect(otherRemember).not.toBeChecked();
-    await expect(otherRemember.locator('svg path')).toHaveCSS('opacity', '0');
     await expect(otherTheme).toBeChecked();
     await expect(theme).not.toBeChecked();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'system');

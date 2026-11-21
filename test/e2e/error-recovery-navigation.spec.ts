@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { diagnostics, expectAccessible } from './browser-checks';
 
-const stylesheet = 'link[rel="stylesheet"][href="/error-recovery-transition.css"]';
+const stylesheet = 'style#error-recovery-transition';
 
 async function observeDocumentTransitions(page: Page) {
   await page.addInitScript(() => {
@@ -51,9 +51,7 @@ async function recoverFrom500(page: Page) {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   const html = await (await homepage).text();
   const head = html.match(/<head>[\s\S]*?<\/head>/)?.[0];
-  expect(head).toMatch(
-    /<link\b(?=[^>]*\brel="stylesheet")(?=[^>]*\bhref="\/error-recovery-transition\.css")/,
-  );
+  expect(head).toMatch(/<style\b[^>]*\bid="error-recovery-transition"[^>]*>/);
   await expect(page.locator(`head ${stylesheet}`)).toHaveAttribute(
     'media',
     '(prefers-reduced-motion: no-preference)',
@@ -80,7 +78,13 @@ test('the HTTP 500 recovery animates only the document crossing to the homepage'
   await expect(root).toHaveAttribute('data-recovery-transition', 'none');
   await page.getByRole('main').getByRole('link', { name: 'Lernlabor', exact: true }).click();
   await expect(page).toHaveURL('/lernen');
-  await expect(page.locator(stylesheet)).toHaveCount(0);
+  await expect(page.locator(stylesheet)).toHaveAttribute('media', 'not all');
+  await page.goBack();
+  await expect(page).toHaveURL('/');
+  await expect(page.locator(stylesheet)).toHaveAttribute(
+    'media',
+    '(prefers-reduced-motion: no-preference)',
+  );
   expect(
     failures.filter((message) => !/^Failed to load resource: .*status of 500\b/.test(message)),
   ).toEqual([]);

@@ -83,8 +83,9 @@ route preparation runs for the fallback homepage link. Actual history traversal
 reuses the browser's entry and the router's stored state.
 
 For App Router destinations, intent warms the build-rendered RSC payload and
-the modules referenced by it. The home poster and image explanation photos use
-the same responsive asset selection during intent and destination rendering.
+the modules referenced by it. The homepage still is prepared for reduced motion.
+It and the image explanation photos use the same responsive asset selection
+during intent and destination rendering.
 React Flow creates the destination's browser tree
 on actual navigation within the current document. Browser speculation prerenders
 a separate document, which cannot supply that same-document transition. Dialog
@@ -99,19 +100,20 @@ It requests the error artwork's playback module only when the recovery screen mo
 The first stylesheet includes the small shared surface rules and homepage layout
 rules. Bundling them together avoids separate render-blocking requests on the
 homepage and shares the stylesheet across internal navigation. Tailwind derives
-its utilities from application sources under `src/`. Turbopack favors fewer
-JavaScript requests for direct homepage, error and privacy-page visits. It also
-emits the constituent chunks of merged files so client navigation can reuse
-code already loaded. Menus, experiments and WebGL remain dynamically loaded.
+its utilities from application sources under `src/`. Next.js uses the default
+Turbopack chunking rules in local and Vercel builds. Optional menus, experiments
+and WebGL remain dynamically loaded.
 
-The homepage hero includes its headline and a responsive full-color WebP of the
-glass loop and both droplets in static HTML. The server supplies the poster markup to
-the interactive scene. Static asset imports give the native optimizer versioned poster
-URLs and let the browser reuse them across visits. Each source uses the first
+The homepage and static error pages deliver their heading, actions and artwork
+loading indicator in static HTML. The browser selects the responsive still
+immediately with reduced motion or scripting disabled. A renderer failure also
+loads the still. Static asset imports give the native optimizer versioned poster
+URLs and let the browser reuse them across visits. The native 500 page computes
+its responsive poster props at build time. Each source uses the first
 candidate that reaches its native resolution for higher display densities, so
 equivalent optimizer requests share a cache entry. While the artwork and document are
 visible, motion is enabled and playback is unpaused, the client loads the optional local WebGL
-renderer. Its first successful frame replaces the poster. Visibility and intent
+renderer. Its first successful frame replaces the loading indicator. Visibility and intent
 share the module import. The resolved component mounts directly on the client
 without a second Lazy/Suspense reveal that could trigger a page update transition.
 During playback, elapsed time turns the loop and moves the two droplets along
@@ -134,12 +136,14 @@ of three nearest neighbors once and derives the highlighted points, votes and
 output from the same examples. Its Euclidean plot is a simplified teaching schema;
 the live classifier uses the installed library's normalized feature similarity.
 The illustration never invokes the actual model or processes user images.
-The shared header ships its small panel module with the triggers so the first
-opening can start from the same state as later openings. Base UI mounts the
-portal and active rows on opening and handles positioning and focus.
-Animate UI owns entry and exit. The mobile panel takes its initial width from
-the toolbar anchor. Enabled rows prepare their destinations on navigation intent.
-Theme-menu intent loads its module, and the portal mounts on opening.
+The shared header renders its triggers and loads the navigation rows and their
+icons on pointer entry, focus or pointer down. Base UI keeps the trigger and
+positions its popup with a loading or retry state when it opens before the code
+arrives. Animate UI owns entry and exit. The mobile panel takes its initial width
+from the toolbar anchor. Enabled rows prepare their destinations on navigation
+intent. The appearance popup loads its Base UI menu on intent. It anchors to the
+header on mobile and to its shared button on desktop. The button retains its
+role across loading, focus and dismissal.
 
 The everyday recognition quiz samples three matching and three nonmatching examples
 from the 40-entry pool in `src/content/recognition-examples.ts`. Six complete choices

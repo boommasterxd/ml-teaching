@@ -115,6 +115,13 @@ static CSP configuration and checks each HTML status, including the native 404 a
 `test-results/lighthouse/routes/`. This mode exits unsuccessfully if any
 performance score falls below 100.
 
+For a local comparison, build with `NEXT_PUBLIC_DEFER_DECORATIVE_MOTION=1 npm run build`.
+Then use the same `npm start` command. This opt-in keeps the loading indicator,
+headline and static icons available while WebGL, parallax and animated icons wait for the
+document to load and paint. Input over the artwork or its playback control can
+prepare and start the visible WebGL scene earlier. A regular `npm run build`
+restores the default startup schedule.
+
 ## Build and recovery
 
 Run `npm run ci` and standalone `npm run typecheck` before the final production

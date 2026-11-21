@@ -120,35 +120,40 @@ test('canceling the first brand press restores the link without navigating', asy
   await expect(page).toHaveURL('/');
 });
 
-test('the homepage glass can start while its fallback image is still loading', async ({ page }) => {
+test('the homepage renders its glass loading indicator before scripts and skips the poster during playback', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  let release!: () => void;
-  const pendingPoster = new Promise<void>((resolve) => {
-    release = resolve;
+  const scripts = Promise.withResolvers<void>();
+  const scriptPattern = '**/_next/static/chunks/*.js';
+  await page.route(scriptPattern, async (route) => {
+    await scripts.promise;
+    await route.continue();
   });
-  let requestedPoster = false;
-  await page.route(
-    (url) =>
-      url.pathname === '/_next/image' &&
-      url.searchParams.get('url')?.includes('/hero-glass-mobile.') === true,
-    async (route) => {
-      requestedPoster = true;
-      await pendingPoster;
-      await route.continue();
-    },
-  );
+  const posters: string[] = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === '/_next/image' && url.searchParams.get('url')?.includes('/hero-glass'))
+      posters.push(request.url());
+  });
+  const spinner = page.getByRole('status', { name: 'Grafik wird geladen' });
   try {
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await expect.poll(() => requestedPoster).toBe(true);
-    await expect(page.locator('.hero-field')).toHaveAttribute('data-enhanced', 'true');
-    expect(await page.evaluate(() => document.readyState)).not.toBe('complete');
+    await page.goto('/', { waitUntil: 'commit' });
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(spinner).toBeVisible();
+    await expect(page.locator('.hero-field canvas')).toHaveCount(0);
   } finally {
-    release();
+    scripts.resolve();
+    await page.unrouteAll({ behavior: 'wait' });
   }
   await page.waitForLoadState('load');
+  await expect(page.locator('.hero-field')).toHaveAttribute('data-enhanced', 'true');
+  await expect(spinner).toHaveCount(0);
+  expect(posters).toEqual([]);
 
   const impulse = page.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
+  await expect(impulse).toBeEnabled();
   await page.getByRole('button', { name: 'Animationen pausieren' }).press('Enter');
   await expect(impulse).toBeDisabled();
   await page.getByRole('button', { name: 'Animationen fortsetzen' }).press('Enter');
@@ -292,6 +297,11 @@ test('static documents preserve strict CSP and visible content', async ({ page, 
     await page.goto(path);
     await expect(page.getByRole('heading', { name: heading, exact: true }).first()).toBeVisible();
     if (path === '/') {
+      const script = page.locator('script[src^="/_next/static/"][integrity]').first();
+      const chunk = await request.head((await script.getAttribute('src'))!);
+      expect(chunk.ok()).toBe(true);
+      expect(chunk.headers()['content-security-policy']).toBeUndefined();
+      expect(chunk.headers()['x-content-type-options']).toBe('nosniff');
       await expectHeaderLayout(page);
       await settleLandingReveals(page);
     }
@@ -438,7 +448,7 @@ test('the missing-page artwork supports keyboard playback and reduced-motion rec
   await expect(poster).toBeVisible();
   await expect
     .poll(() => poster.evaluate((image) => (image as HTMLImageElement).naturalWidth))
-    .toBeGreaterThan(0);
+    .toBeGreaterThan(1);
   await expect(impulse).toHaveCount(0);
   await expect(playback).toHaveCount(0);
   await expectAccessible(page);

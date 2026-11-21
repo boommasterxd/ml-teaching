@@ -12,6 +12,8 @@ import {
   writeAtomic,
 } from './artifacts.mjs';
 import {
+  errorFallbackRegex,
+  errorFallbackSource,
   outputPaths,
   outputPattern,
   persistNativeHeaders,
@@ -130,8 +132,8 @@ async function buildPolicies(context, options) {
   const nativeFile = await persistNativeHeaders(context, documents, fallbackPolicy, options);
   if (fallbackPolicy)
     context.routing.beforeMiddleware.unshift({
-      source: '/:path*',
-      sourceRegex: '^/(?!_next/static/).*$',
+      source: errorFallbackSource,
+      sourceRegex: errorFallbackRegex,
       headers: { 'Content-Security-Policy': fallbackPolicy },
     });
   const files = [

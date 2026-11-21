@@ -1,23 +1,44 @@
 'use client';
 
-import { useRef, type ReactNode, type RefObject } from 'react';
-import { motion, useMotionValue, useScroll, useTransform } from 'motion/react';
+import { useEffect, useRef, type ReactNode, type RefObject } from 'react';
+import {
+  motion,
+  useMotionValue,
+  useMotionValueEvent,
+  useScroll,
+  type MotionValue,
+} from 'motion/react';
 import { ReducedMotionConfig } from '@animate-ui/react/utils/motion';
 import Button from '@/components/Button';
 import { Pause } from '@/components/icons/pause';
 import { Play } from '@/components/icons/play';
 import { useHomePlayback } from '@/components/home/HomePlaybackProvider';
 import { useEntryViewportReady } from '@/components/ui/entry-policy';
+import { useMotionStart } from '@/components/ui/use-motion-start';
 import { useGlassField } from './use-glass-field';
 
-type HeroSceneProps = { children?: ReactNode; poster?: ReactNode };
+import GlassArtworkPlaceholder from './GlassArtworkPlaceholder';
+import type { ContourSources } from './contour-poster';
 
-function useParallax(root: RefObject<HTMLDivElement | null>, paused: boolean) {
+type HeroSceneProps = { children?: ReactNode; sources: ContourSources };
+
+function HeroParallax({
+  root,
+  paused,
+  offset,
+}: {
+  root: RefObject<HTMLDivElement | null>;
+  paused: boolean;
+  offset: MotionValue<number>;
+}) {
   const { scrollYProgress } = useScroll({ target: root, offset: ['start start', 'end start'] });
-  const pauseProgress = useMotionValue(0);
-  const progress = useTransform(() => (paused ? pauseProgress.get() : scrollYProgress.get()));
-  const fieldY = useTransform(progress, [0, 1], [0, -24]);
-  return { fieldY, capturePause: () => pauseProgress.set(scrollYProgress.get()) };
+  useMotionValueEvent(scrollYProgress, 'change', (progress) => {
+    if (!paused) offset.set(-24 * progress);
+  });
+  useEffect(() => {
+    if (!paused) offset.set(-24 * scrollYProgress.get());
+  }, [offset, paused, scrollYProgress]);
+  return null;
 }
 
 function PlaybackControl({
@@ -53,9 +74,10 @@ function PlaybackControl({
   );
 }
 
-function Scene({ children, poster }: HeroSceneProps) {
+function Scene({ children, sources }: HeroSceneProps) {
   const root = useRef<HTMLDivElement>(null);
   const viewportReady = useEntryViewportReady();
+  const motionReady = useMotionStart();
   const { paused, togglePause } = useHomePlayback();
   const {
     artwork,
@@ -69,7 +91,7 @@ function Scene({ children, poster }: HeroSceneProps) {
     onUnavailable,
     prepare,
   } = useGlassField(paused, viewportReady, { waitForDocumentLoad: false, retainOffscreen: true });
-  const { fieldY, capturePause } = useParallax(root, paused);
+  const fieldY = useMotionValue(0);
 
   return (
     <div
@@ -79,6 +101,7 @@ function Scene({ children, poster }: HeroSceneProps) {
       data-paused={paused || reduce || undefined}
       data-field-unavailable={failed || undefined}
     >
+      {motionReady && <HeroParallax root={root} paused={paused} offset={fieldY} />}
       <div className="hero-field-backdrop" aria-hidden="true" />
       <div className="landing-container hero-composition">
         {children}
@@ -86,9 +109,13 @@ function Scene({ children, poster }: HeroSceneProps) {
           <motion.div
             className="hero-field-art"
             initial={false}
-            style={available && inView ? { y: fieldY } : undefined}
+            style={motionReady && available && inView ? { y: fieldY } : undefined}
           >
-            {poster}
+            <GlassArtworkPlaceholder
+              sources={sources}
+              fallback={failed || (paused && !rendered)}
+              pending={!rendered && !reduce && !paused}
+            />
             {viewportReady && available && Field && (
               <Field
                 sharpDesktopStart
@@ -104,10 +131,7 @@ function Scene({ children, poster }: HeroSceneProps) {
           reduce={reduce}
           paused={paused}
           onIntent={prepare}
-          onToggle={() => {
-            capturePause();
-            togglePause();
-          }}
+          onToggle={togglePause}
         />
       </div>
     </div>

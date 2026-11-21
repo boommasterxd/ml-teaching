@@ -25,6 +25,25 @@
   display: none;
 }
 
+.hero-field-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: var(--primary);
+}
+
+noscript:has(> .hero-field-poster) + .hero-field-loading {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-field-loading {
+    display: none;
+  }
+}
+
 .hero-field-canvas canvas {
   display: block;
   width: 100%;

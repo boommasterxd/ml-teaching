@@ -10,5 +10,5 @@
 @source './components/theme';
 @source './components/icons';
 @source './components/animate-ui/icons';
-@source './components/hero/{ErrorGlassArtwork,ErrorGlassFrame,StaticContourPoster,TopographyField}.tsx';
-@source './components/ui/{action-feedback,alert,badge,button,dropdown-menu*,entry-*,menu-highlight,navigation-menu,switch,typography}.tsx';
+@source './components/hero/{ErrorGlassArtwork,ErrorGlassFrame,GlassArtworkPlaceholder,StaticContourPoster,TopographyField}.tsx';
+@source './components/ui/{action-feedback,alert,badge,button,dropdown-menu*,entry-*,menu-highlight,navigation-menu,spinner,switch,typography}.tsx';

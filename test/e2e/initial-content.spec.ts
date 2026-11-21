@@ -203,7 +203,7 @@ test('the focused header trigger remains keyboard-operable across hydration', as
   }
 });
 
-test('the static error header retains its triggers across hydration and a viewport change', async ({
+test('the static error header retains focus and starts only the matching menu', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 412, height: 823 });
@@ -219,12 +219,12 @@ test('the static error header retains its triggers across hydration and a viewpo
       includeHidden: true,
     });
     await expect(mobile).toBeVisible();
-    const mobileBefore = await mobile.elementHandle();
-    const desktopBefore = await desktop.elementHandle();
+    await expect(desktop).toBeAttached();
     await mobile.focus();
     scripts.release();
     await page.waitForLoadState('load');
     await expect(mobile).toBeFocused();
+    await expect(desktop).toHaveCount(0);
     await mobile.press('Enter');
     const overview = page.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
     await expect(overview).toBeVisible();
@@ -233,8 +233,7 @@ test('the static error header retains its triggers across hydration and a viewpo
 
     await page.setViewportSize({ width: 1280, height: 823 });
     await expect(desktop).toBeVisible();
-    expect(await desktop.evaluate((node, first) => node === first, desktopBefore)).toBe(true);
-    expect(await mobileBefore.evaluate((node) => node.isConnected)).toBe(true);
+    await expect(page.locator('.header-menu-mobile')).toHaveCount(0);
     await desktop.press('Enter');
     await expect(overview).toBeVisible();
     await page.keyboard.press('Escape');

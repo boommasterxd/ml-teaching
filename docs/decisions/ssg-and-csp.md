@@ -45,6 +45,9 @@ for regular static responses in builds without a provider adapter. Next.js appen
 prerender metadata headers to routing headers, so regular `.meta` files are
 validated and included in the build manifest without a second CSP value. Error
 metadata and composed provider builds retain the template's header persistence.
+The fallback route's source pattern excludes native static assets. Next.js
+compiles the source at startup, so the manifest regex carries the same exclusion
+for adapters that consume it directly.
 Model weights require only connect access to the specific Google/TF Hub/Kaggle
 origins. The WebGL runtime needs neither WASM script permission nor a worker source.
 

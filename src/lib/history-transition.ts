@@ -2,7 +2,6 @@ import { learningPaths } from './learning-paths';
 
 const historyBackType = 'history-back';
 const historyForwardType = 'history-forward';
-export const errorRecoveryStylesheetHref = '/error-recovery-transition.css';
 
 /** The initial training dialog belongs to the top layer, above the page content. */
 export function canCaptureRoute(pathname: string | null) {

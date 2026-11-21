@@ -14,19 +14,6 @@ const nextConfig = {
       { pathname: '/_next/static/immutable/media/**', search: '' },
     ],
   },
-  experimental: {
-    turbopackChunking: {
-      minChunkSize: 700_000,
-      maxChunkCountPerGroup: 2,
-      maxMergeChunkSize: 2_500_000,
-      firstPageLoadPriority: 1,
-      priorityBoost: 5,
-      requestCost: 1_500_000,
-      generateComponentChunks: true,
-      minComponentChunkSize: 100_000,
-      priorityRoutes: [/^\/$/, /^\/(?:500|_not-found|datenschutz)$/],
-    },
-  },
   async headers() {
     return [
       {

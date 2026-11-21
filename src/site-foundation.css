@@ -284,7 +284,7 @@
   }
 }
 .site-header-inner {
-  --theme-menu-offset: 15px;
+  --theme-menu-offset: 5px;
   position: relative;
   width: min(calc(100% - 2rem), 75rem);
   min-height: 3.2rem;
@@ -352,6 +352,10 @@
   padding: 0.45rem;
   background: var(--glass-surface);
   box-shadow: var(--glass-highlight);
+
+  @variant max-md {
+    width: var(--anchor-width);
+  }
 }
 [data-theme-menu] [role^='menuitem'] {
   border-radius: 0.8rem;

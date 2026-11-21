@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import IntentLink from '@/components/IntentLink';
 import AnimatedLink from '@/components/AnimatedLink';
-import ServerError from '@/pages/500';
+import ServerError, { getStaticProps } from '@/pages/500';
 import { AppRouterHost, testRouter } from '../helpers/app-router-host';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
@@ -71,7 +71,13 @@ describe('intent-only native navigation', () => {
     expect(testRouter.prefetch).not.toHaveBeenCalled();
   });
 
-  it('warms first-view images with the destination’s responsive selectors only on intent', async () => {
+  it('warms first-view images for reduced motion with the destination’s responsive selectors', async () => {
+    const media = vi.mocked(window.matchMedia);
+    const actual = media.getMockImplementation()!;
+    media.mockImplementation((query) => ({
+      ...actual(query),
+      matches: query === '(prefers-reduced-motion: reduce)',
+    }));
     window.history.replaceState(null, '', '/impressum');
     render(
       <>
@@ -149,7 +155,7 @@ describe('intent-only native navigation', () => {
   it('retains the Pages Router error recovery link in static output with its supplied adapter', () => {
     const markup = renderToStaticMarkup(
       <AppRouterHost>
-        <ServerError />
+        <ServerError {...getStaticProps().props} />
       </AppRouterHost>,
     );
     const document = new DOMParser().parseFromString(markup, 'text/html');

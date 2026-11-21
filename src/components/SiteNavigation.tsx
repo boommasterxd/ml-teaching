@@ -1,8 +1,17 @@
 'use client';
 
-import { Activity, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type RefCallback,
+} from 'react';
 import { usePathname } from 'next/navigation';
+import { ChevronDown } from 'lucide-react';
 import { learningPaths } from '@/lib/learning-paths';
+import { isMediumViewport, subscribeToMediumViewport } from '@/lib/media-queries';
 import {
   headerLearningGroups,
   headerLegalLinks,
@@ -10,14 +19,21 @@ import {
   type HeaderNavLink,
 } from '@/content/site-navigation';
 import IntentLink from './IntentLink';
-import { HeaderMenuPanel, HeaderMenuPopup } from './HeaderMenuPanel';
+import { loadHeaderMenu } from './header-menu-loader';
+import { useMenuModule } from './use-menu-module';
 import { MenuHighlightItem } from './ui/menu-highlight';
+import { Alert, AlertDescription } from './ui/alert';
+import { Button } from './ui/button';
+import { Spinner } from './ui/spinner';
 import {
+  firstNavigationMenuLink,
   NavigationMenu,
+  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
+  navigationMenuListStyle,
   navigationMenuTriggerStyle,
 } from './ui/navigation-menu';
 
@@ -38,6 +54,8 @@ const mobileMenus = [
 interface MenuProps {
   mobile?: boolean;
   pathname: string;
+  runtime: ReturnType<typeof useMenuModule<Awaited<ReturnType<typeof loadHeaderMenu>>>>;
+  focusRef: RefCallback<HTMLDivElement>;
 }
 
 interface OpenMenu {
@@ -59,6 +77,7 @@ function HomeNavigationItem({ active }: { active: boolean }) {
     <NavigationMenuItem>
       <MenuHighlightItem value={home.href}>
         <NavigationMenuLink
+          data-header-control={home.href}
           active={active}
           className={navigationMenuTriggerStyle}
           render={<IntentLink href={home.href} />}
@@ -70,18 +89,34 @@ function HomeNavigationItem({ active }: { active: boolean }) {
   );
 }
 
-function HeaderMenu({ mobile, pathname }: MenuProps) {
+function HeaderMenu({ mobile, pathname, runtime, focusRef }: MenuProps) {
   const menus = mobile ? mobileMenus : desktopMenus;
+  const { module, failed, prepare } = runtime;
+  const Groups = module?.HeaderMenuGroups;
+  const pendingFocus = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState<OpenMenu>({ pathname, value: null });
   if (open.pathname !== pathname) setOpen({ pathname, value: null });
   const value = open.pathname === pathname ? open.value : null;
   const current = mobile ? value : currentHeaderItem(pathname);
   const menuClass = mobile ? 'header-menu-mobile' : 'header-menu-desktop';
+
+  useEffect(() => {
+    if (!Groups || !value) return;
+    const trigger = pendingFocus.current;
+    pendingFocus.current = null;
+    if (trigger && trigger.ownerDocument.activeElement === trigger)
+      firstNavigationMenuLink(trigger)?.focus();
+  }, [Groups, value]);
+
   return (
     <NavigationMenu
+      ref={focusRef}
       value={value}
-      onValueChange={(next) => setOpen({ pathname, value: next })}
-      Popup={HeaderMenuPopup}
+      onValueChange={(next) => {
+        pendingFocus.current = null;
+        setOpen({ pathname, value: next });
+        if (next) prepare();
+      }}
       mobilePopup={mobile}
       className={menuClass}
     >
@@ -91,15 +126,35 @@ function HeaderMenu({ mobile, pathname }: MenuProps) {
           <NavigationMenuItem key={label} value={label}>
             <MenuHighlightItem value={label}>
               <NavigationMenuTrigger
+                data-header-control={label}
                 data-current-section={!mobile && current === label ? '' : undefined}
+                aria-busy={(value === label && !Groups && !failed) || undefined}
+                onPointerEnter={prepare}
+                onPointerDown={prepare}
+                onFocus={prepare}
+                onKeyDown={(event) => {
+                  if (event.key !== 'ArrowDown' || value !== label || Groups || failed) return;
+                  event.preventDefault();
+                  event.preventBaseUIHandler();
+                  pendingFocus.current = event.currentTarget;
+                }}
               >
                 {label}
               </NavigationMenuTrigger>
             </MenuHighlightItem>
-            <HeaderMenuPanel
-              groups={groups}
-              current={containsCurrentPage(groups, pathname) ? pathname : null}
-            />
+            <NavigationMenuContent
+              data-slot="navigation-menu-content"
+              className="header-menu-content"
+            >
+              {Groups ? (
+                <Groups
+                  groups={groups}
+                  current={containsCurrentPage(groups, pathname) ? pathname : null}
+                />
+              ) : (
+                <HeaderMenuLoading failed={failed} prepare={prepare} />
+              )}
+            </NavigationMenuContent>
           </NavigationMenuItem>
         ))}
       </NavigationMenuList>
@@ -107,16 +162,107 @@ function HeaderMenu({ mobile, pathname }: MenuProps) {
   );
 }
 
-export default function SiteNavigation() {
-  const pathname = usePathname() ?? '';
-  return (
-    <>
-      <Activity>
-        <HeaderMenu pathname={pathname} />
-      </Activity>
-      <Activity>
-        <HeaderMenu mobile pathname={pathname} />
-      </Activity>
-    </>
+function HeaderMenuLoading({ failed, prepare }: { failed: boolean; prepare: () => void }) {
+  return failed ? (
+    <Alert role="alert">
+      <AlertDescription>Das Menü konnte nicht geladen werden.</AlertDescription>
+      <Button variant="secondary" size="sm" onClick={prepare}>
+        Erneut versuchen
+      </Button>
+    </Alert>
+  ) : (
+    <span role="status" className="flex items-center gap-2 p-2 text-sm">
+      <Spinner aria-hidden="true" /> Menü wird geladen.
+    </span>
   );
 }
+
+function StaticHeaderMenu({
+  mobile,
+  pathname,
+  focusRef,
+}: Pick<MenuProps, 'mobile' | 'pathname' | 'focusRef'>) {
+  const current = currentHeaderItem(pathname);
+  const menuClass = mobile ? 'header-menu-mobile' : 'header-menu-desktop';
+  return (
+    <div className={`relative max-w-max ${menuClass}`} ref={focusRef}>
+      <div className="menu-highlight-container">
+        <ul className={navigationMenuListStyle} data-slot="navigation-menu-list">
+          {!mobile && (
+            <li>
+              <a
+                href={home.href}
+                aria-current={pathname === home.href ? 'page' : undefined}
+                className={navigationMenuTriggerStyle}
+                data-header-control={home.href}
+              >
+                {home.label}
+              </a>
+            </li>
+          )}
+          {(mobile ? mobileMenus : desktopMenus).map(({ label }) => (
+            <li key={label}>
+              <button
+                type="button"
+                className={navigationMenuTriggerStyle}
+                data-header-control={label}
+                data-current-section={!mobile && current === label ? '' : undefined}
+                aria-expanded={false}
+              >
+                {label}
+                <ChevronDown size={28} className="ml-1 size-3" aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function useHeaderFocus() {
+  const previous = useRef<string | null>(null);
+  return useCallback<RefCallback<HTMLDivElement>>((node) => {
+    if (!node) return;
+    if (previous.current !== null) {
+      const controls = [...node.querySelectorAll<HTMLElement>('[data-header-control]')];
+      const next = controls.find((control) => control.dataset.headerControl === previous.current);
+      (next ?? controls.find((control) => control.tagName === 'BUTTON'))?.focus({
+        preventScroll: true,
+      });
+      previous.current = null;
+    }
+    return () => {
+      const active = node.ownerDocument.activeElement;
+      if (!node.contains(active)) return;
+      previous.current =
+        active?.closest<HTMLElement>('[data-header-control]')?.dataset.headerControl ??
+        node.querySelector<HTMLElement>('[data-header-control][aria-expanded="true"]')?.dataset
+          .headerControl ??
+        '';
+    };
+  }, []);
+}
+
+export default function SiteNavigation() {
+  const pathname = usePathname() ?? '';
+  const runtime = useMenuModule(loadHeaderMenu);
+  const desktop = useSyncExternalStore(subscribeToMediumViewport, isMediumViewport, staticViewport);
+  const focusRef = useHeaderFocus();
+  return desktop === null ? (
+    <>
+      <StaticHeaderMenu pathname={pathname} focusRef={focusRef} />
+      <StaticHeaderMenu mobile pathname={pathname} focusRef={focusRef} />
+    </>
+  ) : (
+    <HeaderMenu
+      key={desktop ? 'desktop' : 'mobile'}
+      mobile={!desktop}
+      pathname={pathname}
+      runtime={runtime}
+      focusRef={focusRef}
+    />
+  );
+}
+
+const staticViewport = () => null;

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useInView } from 'motion/react';
 import { usePageVisible } from '@animate-ui/react/utils/use-page-visible';
+import { deferDecorativeMotion } from '@/lib/experimental-motion';
+import { useMotionStart } from '../ui/use-motion-start';
 import { useMotionPreference } from '../ui/use-motion-preference';
 
 type FieldComponent = typeof import('./TopographyField').default;
@@ -45,6 +47,8 @@ export function useGlassField(
   const inView = useInView(artwork, { amount: retainOffscreen ? 'some' : 0.05 });
   const visible = usePageVisible();
   const { reduce } = useMotionPreference();
+  const motionReady = useMotionStart();
+  const [interested, setInterested] = useState(false);
   const [Field, setField] = useState<FieldComponent | null>(null);
   const [failed, setFailed] = useState(false);
   const [renderState, setRenderState] = useState<RenderState>('pending');
@@ -57,7 +61,7 @@ export function useGlassField(
   }, []);
   const rendered = renderState === 'rendered';
   const available = visible && !reduce && !failed && (inView || (retainOffscreen && rendered));
-  const active = inView && available && !paused && viewportReady;
+  const active = inView && available && !paused && viewportReady && (motionReady || interested);
 
   useEffect(() => {
     if (!active) return;
@@ -71,7 +75,7 @@ export function useGlassField(
         .catch(() => {
           if (current) setFailed(true);
         });
-    }, waitForDocumentLoad);
+    }, waitForDocumentLoad && !deferDecorativeMotion);
     return () => {
       current = false;
       cancel();
@@ -79,7 +83,9 @@ export function useGlassField(
   }, [active, waitForDocumentLoad]);
 
   const prepare = () => {
-    if (!reduce && !failed) void prepareField().catch(() => {});
+    if (reduce || failed) return;
+    if (deferDecorativeMotion) setInterested(true);
+    void prepareField().catch(() => {});
   };
   return {
     artwork,
