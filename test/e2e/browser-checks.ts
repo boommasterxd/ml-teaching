@@ -131,6 +131,7 @@ type TransitionSnapshot = {
   outgoingPages: number;
   incomingPages: number;
   back: boolean;
+  setupDialog?: 'enter' | 'exit';
 };
 type TransitionObserver = typeof window & {
   observedTransitions: Promise<TransitionSnapshot | 'skipped'>[];
@@ -156,11 +157,23 @@ export async function observeViewTransitions(page: Page) {
                 const prefix = `::view-transition-${side}(`;
                 return effects.filter(
                   ({ pseudoElement }) =>
-                    pseudoElement?.startsWith(prefix) && pseudoElement !== `${prefix}root)`,
+                    pseudoElement?.startsWith(prefix) &&
+                    pseudoElement !== `${prefix}root)` &&
+                    pseudoElement !== `${prefix}training-setup)`,
                 );
               };
               const outgoing = pageLayers('old');
               const incoming = pageLayers('new');
+              const setupDialog = effects.some(
+                ({ pseudoElement }) => pseudoElement === '::view-transition-new(training-setup)',
+              )
+                ? 'enter'
+                : effects.some(
+                      ({ pseudoElement }) =>
+                        pseudoElement === '::view-transition-old(training-setup)',
+                    )
+                  ? 'exit'
+                  : undefined;
               // The browser assigns a width to the captured root group even without an animation.
               const rootGroup = getComputedStyle(
                 document.documentElement,
@@ -171,6 +184,7 @@ export async function observeViewTransitions(page: Page) {
                 outgoingPages: new Set(outgoing.map(({ pseudoElement }) => pseudoElement)).size,
                 incomingPages: new Set(incoming.map(({ pseudoElement }) => pseudoElement)).size,
                 back: transition.types.has('nav-back'),
+                ...(setupDialog && { setupDialog }),
               };
             },
             () => 'skipped',

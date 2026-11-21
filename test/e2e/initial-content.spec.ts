@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { diagnostics, expectAccessible } from './browser-checks';
+import { diagnostics, expectAccessible, observeViewTransitions } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
 import { headerLegalLinks } from '../../src/content/site-navigation';
 
@@ -312,13 +312,14 @@ for (const [width, colorScheme] of [
   [390, 'dark'],
   [1280, 'light'],
 ] as const) {
-  test(`complete initial consent survives hydration at ${width}px`, async ({ page }) => {
+  test(`complete initial consent survives hydration at ${width}px`, async ({ page, baseURL }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ colorScheme });
     const failures = diagnostics(page);
+    const transitions = await observeViewTransitions(page);
     const external: string[] = [];
     page.on('request', (request) => {
-      if (new URL(request.url()).origin !== 'http://127.0.0.1:3100') external.push(request.url());
+      if (new URL(request.url()).origin !== baseURL) external.push(request.url());
     });
     const scripts = await holdApplicationScripts(page);
     try {
@@ -382,6 +383,7 @@ for (const [width, colorScheme] of [
         else await expect(confirm).toBeEnabled();
       }
       await expectAccessible(page);
+      expect(await transitions()).toEqual([]);
       await cancel.focus();
       await page.keyboard.press('Enter');
       await expect(page).toHaveURL(new RegExp(`${learningPaths.images}$`));
