@@ -369,6 +369,14 @@
 [data-theme-menu] [role^='menuitem'] {
   border-radius: 0.8rem;
 }
+/* Animate UI has no row-stagger option. Match the header navigation's single popup entrance. */
+[data-theme-menu] :is([role^='menuitem'], [data-slot='dropdown-menu-label'], [role='separator']) {
+  filter: none !important;
+  translate: none !important;
+}
+[data-theme-menu] :is([data-slot='dropdown-menu-label'], [role='separator']) {
+  opacity: 1 !important;
+}
 .site-header [data-variant='outline'] {
   border-color: var(--glass-line);
   background: color-mix(in srgb, var(--foreground) 5%, transparent);

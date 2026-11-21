@@ -172,13 +172,16 @@ primitives emit an inline-styled hidden input, which the static CSP rejects.
 The shared wrappers keep each button stable through hydration and preserve the
 animated thumb and checkmark. These controls update local React state.
 Dropdown menu items retain full opacity while Animate UI staggers their translation
-and blur. The installed primitive exposes no item-opacity option, so the shared
-content wrapper fixes enabled-item opacity with an important utility to preserve
-text contrast during entry. Disabled items retain their separate opacity state.
+and blur in the legal dropdown. The shared content wrapper fixes enabled-item
+opacity with an important utility to preserve text contrast during entry. Disabled
+items retain their separate opacity state.
 Base UI owns keyboard activation in dropdowns. Animate UI owns popup entry,
 exit and pointer feedback. A closing popup immediately becomes inert during exit.
-The appearance menu aligns all rows at the same inset. Its moving highlight
-follows hover and keyboard focus, and checked choices use red, semibold text.
+The appearance menu uses the same popup fade and scale as the header navigation
+at both breakpoints. The installed Animate UI primitive exposes no row-stagger
+option, so scoped styles keep the rows sharp and stationary inside the popup
+and show its label and separator with it. All rows share the same inset. The moving
+highlight follows hover and keyboard focus, and checked choices use red, semibold text.
 `LearningCard` composes CardHeader, CardTitle and CardDescription for each of
 the three training steps. A red icon and step number share a row above the title.
 The image explanation presents the technique before its interactive animation
