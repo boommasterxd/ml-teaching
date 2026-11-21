@@ -20,7 +20,7 @@ export default function ServerError({ poster }: InferGetStaticPropsType<typeof g
           code="500"
           title="Diese Seite konnte nicht geladen werden"
           description="Bitte versuche es später erneut."
-          artwork={<ErrorGlassArtwork sources={poster} preload={false} />}
+          artwork={<ErrorGlassArtwork sources={poster} />}
         >
           <AnimatedLink href="/" size="lg">
             Zur Startseite

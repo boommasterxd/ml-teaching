@@ -71,7 +71,7 @@ export function DeferredPredictionSpace({
 }) {
   if (!result) {
     return (
-      <PredictionPlotPlaceholder>
+      <PredictionPlotPlaceholder classes={classes}>
         <Text
           variant="muted"
           role="status"
@@ -85,7 +85,7 @@ export function DeferredPredictionSpace({
   }
   if ('failed' in result) {
     return (
-      <PredictionPlotPlaceholder>
+      <PredictionPlotPlaceholder classes={classes}>
         <Text variant="muted" className="absolute inset-0 grid place-items-center p-2 text-center">
           Der Merkmalsraum konnte nicht angezeigt werden.
         </Text>

@@ -10,7 +10,10 @@ const mocks = vi.hoisted(() => ({
   toastError: vi.fn(),
   setClassifier: vi.fn(),
   retryCamera: vi.fn(),
+  stream: {} as MediaStream,
+  streamRef: { current: null as MediaStream | null },
   reportCameraError: undefined as ((category: 'camera', message: string) => void) | undefined,
+  reportCameraReady: undefined as (() => void) | undefined,
   classifier: {
     addExample: vi.fn(),
     dispose: vi.fn(),
@@ -35,11 +38,17 @@ vi.mock('@/hooks/useCameraStream', () => ({
     consented: boolean,
     _isLoading: boolean,
     onError: typeof mocks.reportCameraError,
+    needed = true,
+    onReady?: () => void,
   ) => {
     mocks.reportCameraError = onError;
+    mocks.reportCameraReady = onReady;
+    const stream = consented && needed ? mocks.stream : null;
+    mocks.streamRef.current = stream;
     return {
       facingMode: 'user',
-      stream: consented ? {} : null,
+      stream,
+      streamRef: mocks.streamRef,
       toggleCamera: vi.fn(),
       retryCamera: mocks.retryCamera,
     };
@@ -80,6 +89,7 @@ afterEach(() => vi.unstubAllGlobals());
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.modelReady = true;
+  vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
   let next = 0;
   mocks.extract.mockImplementation(async () => image(`image-${next++}`));
   vi.stubGlobal(
@@ -128,6 +138,10 @@ describe('local training workspace', () => {
 
   it('does not train over an unfinished camera frame', async () => {
     const { result } = renderHook(() => useTrainingWorkspace());
+    act(() => {
+      result.current.resources.consent.grantConsent();
+      result.current.resources.consent.grantCameraConsent();
+    });
     await collectMinimumImages(result);
     let finish!: (image: MLImage) => void;
     mocks.extract.mockImplementationOnce(
@@ -220,7 +234,7 @@ describe('local training workspace', () => {
   });
 
   it('trains collected features, starts prediction and invalidates it after a data change', async () => {
-    const { result } = renderHook(() => useTrainingWorkspace());
+    const { result } = renderHook(() => useTrainingWorkspace('prediction'));
     act(() => result.current.resources.startPredicting());
     expect(result.current.resources.prediction.isPredicting).toBe(false);
     await collectMinimumImages(result);
@@ -237,6 +251,8 @@ describe('local training workspace', () => {
     act(() => result.current.resources.consent.grantConsent());
     act(() => result.current.resources.consent.grantCameraConsent());
     act(() => result.current.resources.startPredicting());
+    expect(result.current.resources.prediction.isPredicting).toBe(false);
+    act(() => mocks.reportCameraReady?.());
     expect(result.current.resources.prediction.isPredicting).toBe(true);
     act(() => result.current.data.classes.removeImage('class-1', 'image-0'));
     expect(result.current.resources.hasTrainedModel).toBe(false);
@@ -245,13 +261,14 @@ describe('local training workspace', () => {
   });
 
   it('stops live prediction on camera loss and retries without restarting it', async () => {
-    const { result } = renderHook(() => useTrainingWorkspace());
+    const { result } = renderHook(() => useTrainingWorkspace('prediction'));
     act(() => result.current.resources.consent.grantConsent());
     act(() => result.current.resources.consent.grantCameraConsent());
     await collectMinimumImages(result);
     act(() => result.current.data.trainModel());
     await waitFor(() => expect(result.current.resources.hasTrainedModel).toBe(true));
     act(() => result.current.resources.startPredicting());
+    act(() => mocks.reportCameraReady?.());
     expect(result.current.resources.prediction.isPredicting).toBe(true);
 
     act(() => mocks.reportCameraError?.('camera', 'Verbindung unterbrochen'));
@@ -263,6 +280,32 @@ describe('local training workspace', () => {
     expect(result.current.resources.error).toBeNull();
     expect(result.current.resources.hasTrainedModel).toBe(true);
     expect(result.current.resources.prediction.isPredicting).toBe(false);
+  });
+
+  it('retains existing images and ignores an unfinished frame after camera withdrawal', async () => {
+    const { result } = renderHook(() => useTrainingWorkspace());
+    act(() => {
+      result.current.resources.consent.grantConsent();
+      result.current.resources.consent.grantCameraConsent();
+    });
+    const { cardActions: actions } = result.current;
+    await act(async () => actions.onAddImageExample('class-1', document.createElement('img')));
+    expect(result.current.cardActions).toBe(actions);
+    const pending = Promise.withResolvers<MLImage>();
+    mocks.extract.mockReturnValueOnce(pending.promise);
+    let capture!: Promise<void> | void;
+    act(() => {
+      capture = actions.onAddExample('class-1', document.createElement('video'));
+    });
+    act(() => result.current.resources.revokeCamera());
+    await act(async () => {
+      pending.resolve(image('discarded'));
+      await capture;
+    });
+    expect(result.current.resources.consent.hasConsented).toBe(true);
+    expect(result.current.resources.consent.cameraConsent).toBe(false);
+    expect(result.current.resources.consent.showCameraModal).toBe(false);
+    expect(result.current.data.classes.classes[0].images.map(({ id }) => id)).toEqual(['image-0']);
   });
 
   it('passes extraction failures to the upload batch and still validates class changes', async () => {

@@ -5,19 +5,39 @@ import {
   type FeatureProjection,
   type ProjectedPosition,
 } from '@/lib/feature-projection';
-import type { MLClass } from '@/types/ml';
+import type { MLClass, MLImage } from '@/types/ml';
 import PredictionPointCloud from './PredictionPointCloud';
 
-const projections = new WeakMap<readonly MLClass[], FeatureProjection>();
+type ProjectionInput = Pick<MLClass, 'id' | 'images'>;
+
+const projections = new WeakMap<
+  readonly MLImage[],
+  { inputs: readonly ProjectionInput[]; projection: FeatureProjection }
+>();
 const sampleIntervalMs = 125;
 
 /** Reuse the fitted space while this immutable set of training images is current. */
 export async function prepareSpace(classes: readonly MLClass[], signal: AbortSignal) {
-  const cached = projections.get(classes);
-  if (cached) return cached;
+  signal.throwIfAborted();
+  const key = classes.find(({ images }) => images.length)?.images;
+  const cached = key && projections.get(key);
+  if (
+    cached?.inputs.length === classes.length &&
+    classes.every(
+      ({ id, images }, index) =>
+        cached.inputs[index].id === id && cached.inputs[index].images === images,
+    )
+  )
+    return cached.projection;
+
   const projection = await fitFeatureProjection(classes, signal);
   signal.throwIfAborted();
-  projections.set(classes, projection);
+  if (key) {
+    projections.set(key, {
+      inputs: classes.map(({ id, images }) => ({ id, images })),
+      projection,
+    });
+  }
   return projection;
 }
 

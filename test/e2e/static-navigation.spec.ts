@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type APIResponse, type Page } from '@playwright/test';
 import {
   diagnostics,
   expectAccessible,
@@ -100,25 +100,35 @@ test('the brand scrolls to the top of an already open homepage without a page tr
   expect(await transitions()).toEqual([]);
 });
 
-test('canceling the first brand press restores the link without navigating', async ({ page }) => {
-  await page.goto('/500');
-  const brand = page
-    .getByRole('banner')
-    .getByRole('link', { name: 'ML Teaching – Startseite', exact: true });
-  const scale = () =>
-    brand.evaluate((node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).a);
-  await expect(brand).toBeVisible();
-  await brand.hover();
-  await page.mouse.down();
-  await expect.poll(scale).toBeLessThan(0.985);
+for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+  test(`canceling the first brand press keeps the link usable with motion ${reducedMotion}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto('/500');
+    const brand = page
+      .getByRole('banner')
+      .getByRole('link', { name: 'ML Teaching – Startseite', exact: true });
+    const scale = () =>
+      brand.evaluate((node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).a);
+    await expect(brand).toBeVisible();
+    await brand.hover();
+    await page.mouse.down();
+    if (reducedMotion === 'reduce') {
+      await settleEntryAnimations(page);
+      expect(await scale()).toBe(1);
+    } else {
+      await expect.poll(scale).toBeLessThan(0.985);
+    }
 
-  await page.mouse.move(20, 160);
-  await page.mouse.up();
-  await expect.poll(scale).toBeCloseTo(1);
-  await expect(page).toHaveURL('/500');
-  await brand.press('Enter');
-  await expect(page).toHaveURL('/');
-});
+    await page.mouse.move(20, 160);
+    await page.mouse.up();
+    await expect.poll(scale).toBeCloseTo(1);
+    await expect(page).toHaveURL('/500');
+    await brand.press('Enter');
+    await expect(page).toHaveURL('/');
+  });
+}
 
 test('the homepage renders its glass loading indicator before scripts and skips the poster during playback', async ({
   page,
@@ -255,6 +265,15 @@ test('the transparent home header lets the hero receive clicks and keeps its nav
   expect(failures).toEqual([]);
 });
 
+function expectStrictCsp(response: APIResponse) {
+  const policies = response
+    .headersArray()
+    .filter(({ name }) => name.toLowerCase() === 'content-security-policy');
+  expect(policies).toHaveLength(1);
+  expect(policies[0].value).toContain("default-src 'none'");
+  expect(policies[0].value).not.toMatch(/unsafe-inline|unsafe-eval/);
+}
+
 test('static documents preserve strict CSP and visible content', async ({ page, request }) => {
   const failures = diagnostics(page);
   const routes: [string, string | RegExp][] = [
@@ -269,10 +288,7 @@ test('static documents preserve strict CSP and visible content', async ({ page, 
   for (const [path, heading] of routes) {
     const response = await request.get(path);
     expect(response.status()).toBe(200);
-    expect(
-      response.headersArray().filter(({ name }) => /^content-security-policy$/i.test(name)),
-    ).toHaveLength(1);
-    expect(response.headers()['content-security-policy']).not.toMatch(/unsafe-inline|unsafe-eval/);
+    expectStrictCsp(response);
     expect(response.headers()['cache-control']).toBe('public, max-age=300, must-revalidate');
     expect(response.headers()['strict-transport-security']).toBe(
       'max-age=31536000; includeSubDomains; preload',
@@ -312,10 +328,17 @@ test('static documents preserve strict CSP and visible content', async ({ page, 
   const xml = await sitemap.text();
   expect(xml).toContain(`${learningPaths.images}</loc>`);
   expect(xml).not.toContain(`${learningPaths.qLearning}</loc>`);
-  const missing = await request.get('/this-page-does-not-exist');
+  const missingPath = '/this-page-does-not-exist';
+  const missing = await request.get(missingPath);
   expect(missing.status()).toBe(404);
-  expect(missing.headers()['content-security-policy']).toBeTruthy();
+  expectStrictCsp(missing);
   expect(await missing.text()).toContain('Seite nicht gefunden');
+  const missingHead = await request.head(missingPath);
+  expect(missingHead.status()).toBe(404);
+  expectStrictCsp(missingHead);
+  expect(missingHead.headers()['content-security-policy']).toBe(
+    missing.headers()['content-security-policy'],
+  );
   const serverError = await page.context().newPage();
   try {
     const response = await serverError.goto('/500');
@@ -450,7 +473,7 @@ test('the missing-page artwork supports keyboard playback and reduced-motion rec
     .poll(() => poster.evaluate((image) => (image as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(1);
   await expect(impulse).toHaveCount(0);
-  await expect(playback).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Bewegung reduziert' })).toBeDisabled();
   await expectAccessible(page);
   await home.press('Enter');
   await expect(page).toHaveURL('/');

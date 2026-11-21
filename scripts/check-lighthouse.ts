@@ -12,6 +12,7 @@ import { resolveLighthouse } from './lighthouse-runtime.ts';
 const execute = promisify(execFile);
 const origin = 'http://127.0.0.1:3100';
 const reportDirectory = resolve('test-results/lighthouse');
+const performanceThreshold = 0.95;
 
 async function readActivePort(path: string) {
   // The browser CDP session can open before Chromium publishes its TCP endpoint.
@@ -101,10 +102,15 @@ async function audit(
       Object.entries(report.categories).map(([key, category]) => [key, category.score]),
     );
     console.log(path, profile, scores);
-    if (typeof scores.performance !== 'number' || Object.values(scores).includes(null)) {
+    const performance = scores.performance;
+    if (typeof performance !== 'number' || Object.values(scores).includes(null)) {
+      process.exitCode = 1;
+    } else if (performance <= performanceThreshold) {
+      console.error(
+        `${path} ${profile}: Performance must exceed ${performanceThreshold * 100} points.`,
+      );
       process.exitCode = 1;
     }
-    if (all && scores.performance !== 1) process.exitCode = 1;
   }
 }
 

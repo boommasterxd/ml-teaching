@@ -67,14 +67,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Return Vercel's skip code only for a complete, verified non-runtime delta. */
-export function ignoreBuild(previous: string, current: string, readGit: ReadGit = git): 0 | 1 {
+function classifyBuild(previous: string, current: string, readGit: ReadGit) {
+  if (!previous) return 'previous-revision-missing';
+  if (!current) return 'current-revision-missing';
+  if (!revision.test(previous) || !revision.test(current)) return 'invalid-revision';
+
+  let failureReason = 'checkout-read-failed';
   try {
-    if (!revision.test(previous) || !revision.test(current)) return 1;
-    if (readGit(['rev-parse', 'HEAD']).trim() !== current) return 1;
+    if (readGit(['rev-parse', 'HEAD']).trim() !== current) return 'checkout-mismatch';
+    failureReason = 'ancestry-check-failed';
     readGit(['merge-base', '--is-ancestor', previous, current]);
+    failureReason = 'diff-read-failed';
     const output = readGit(['diff', '--name-only', '--no-renames', '-z', previous, current]);
-    if (!output || !output.endsWith('\0')) return 1;
+    if (!output) return 'empty-diff';
+    if (!output.endsWith('\0')) return 'invalid-diff';
+
+    failureReason = 'manifest-check-failed';
     const paths = output.slice(0, -1).split('\0');
     const safe = paths.every((path) => {
       if (path === 'package.json') {
@@ -85,15 +93,29 @@ export function ignoreBuild(previous: string, current: string, readGit: ReadGit 
       }
       return nonRuntime.some((pattern) => pattern.test(path));
     });
-    return safe ? 0 : 1;
+    return safe ? 'non-runtime-diff' : 'unclassified-or-runtime-change';
   } catch {
-    return 1;
+    return failureReason;
   }
+}
+
+/** Return Vercel's skip code only for a complete, verified non-runtime delta. */
+export function ignoreBuild(
+  previous: string,
+  current: string,
+  readGit: ReadGit = git,
+  report?: (reason: string) => void,
+): 0 | 1 {
+  const reason = classifyBuild(previous, current, readGit);
+  report?.(reason);
+  return reason === 'non-runtime-diff' ? 0 : 1;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   process.exitCode = ignoreBuild(
     process.env.VERCEL_GIT_PREVIOUS_SHA ?? '',
     process.env.VERCEL_GIT_COMMIT_SHA ?? '',
+    git,
+    (reason) => console.log(`[ignore-build] ${reason}`),
   );
 }

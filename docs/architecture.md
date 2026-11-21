@@ -104,25 +104,24 @@ its utilities from application sources under `src/`. Next.js uses the default
 Turbopack chunking rules in local and Vercel builds. Optional menus, experiments
 and WebGL remain dynamically loaded.
 
-The homepage and static error pages deliver their heading, actions and artwork
-loading indicator in static HTML. The browser selects the responsive still
-immediately with reduced motion or scripting disabled. A renderer failure also
-loads the still. Static asset imports give the native optimizer versioned poster
-URLs and let the browser reuse them across visits. The native 500 page computes
-its responsive poster props at build time. Each source uses the first
-candidate that reaches its native resolution for higher display densities, so
-equivalent optimizer requests share a cache entry. While the artwork and document are
-visible, motion is enabled and playback is unpaused, the client loads the optional local WebGL
-renderer. Its first successful frame replaces the loading indicator. Visibility and intent
-share the module import. The resolved component mounts directly on the client
+The homepage and static error pages deliver their headings, actions and artwork
+loading indicator in static HTML. When the artwork and document are visible and
+motion is allowed, the client starts loading the shared WebGL renderer after the
+initial paint. Visibility and intent share the module import. The first draw
+replaces the indicator. The resolved component mounts directly on the client
 without a second Lazy/Suspense reveal that could trigger a page update transition.
+Reduced motion, disabled scripting and renderer failure use a responsive still.
+Static asset imports give the native optimizer versioned poster URLs that the
+browser can reuse across visits. Each source uses the first candidate that reaches
+its native resolution, so equivalent optimizer requests share a cache entry.
 During playback, elapsed time turns the loop and moves the two droplets along
 separate paths outside it.
-Local input deforms their surfaces and lights the glass. Explicit pause retains the
-last GPU image and freezes playback. Scrolling the homepage artwork out of view
-also pauses playback, retaining one bounded canvas until the page exits, the tab
-is hidden or reduced motion is requested. Scrolling back resumes the same animation
-time. The error artwork releases its GPU resources when it scrolls out of view.
+Local input deforms their surfaces and lights the glass. Explicit pause or scrolling
+the artwork out of view freezes playback on the retained canvas. These conditions
+also detach the homepage's parallax scroll subscription. Scrolling back resumes
+from the same animation time. Leaving the page, hiding the tab or requesting
+reduced motion releases the canvas and renderer. See the
+[playback decision](decisions/error-artwork-and-menus.md#shader-playback).
 This renderer is independent of consent-gated ML WebGL and processes no training
 data. The educational illustration starts with a server-rendered Input placeholder,
 labeled feature maps, neighbor points and class labels. Intent loads its animation module, prepares a
@@ -187,21 +186,26 @@ does not affect inclusion or ranking in Google Search.
    kernels are reusable within the document.
 3. When the models are ready, the dialog presents the optional camera choice.
    Camera access starts only after separate camera consent and browser permission.
-   A rejected request or ended track offers an explicit retry. Selected local files
-   and captures are resized for local feature extraction.
+   The visible collection step can use the stream. The prediction step requests a
+   stream on explicit start when a trained classifier and camera consent are present.
+   Selected local files and captures are resized for local feature extraction.
 4. Training requires complete selected upload batches and no active image work.
    New capture and file selection are disabled during training. It creates a
    replacement KNN classifier from one normalized feature matrix per class. A stale
    or abandoned training run cannot publish its result. Retired classifiers and
    models are disposed after their active users release them.
-5. Prediction processes one frame at a time. Stopping or leaving invalidates late
-   results. Route cleanup stops camera tracks and disposes classifiers and models.
+5. Prediction processes one frame at a time. Stopping, leaving the prediction step
+   or hiding the document stops inference and releases its stream. Returning to a
+   visible prediction step requires a fresh start. Training uses no camera stream.
+   Route cleanup stops camera tracks and disposes classifiers and models.
 
-Intent to start the live preview prepares a local PCA
-projection of the normalized training features in interruptible batches. The fitted
-axes and point cloud are reused for the same training dataset. While visible, the
-plot samples the same embedding already produced for live classification and moves
-its marker independently from the classifier, which uses the full feature vector.
+With camera consent, intent to start the live preview prepares a local PCA
+projection of the normalized training features in interruptible batches without
+requesting a stream. The fitted axes and projected examples are reused while the
+ordered class IDs and their image arrays are unchanged, including across name edits.
+While visible, the plot samples the same embedding already produced for live
+classification and moves its marker independently from the classifier, which uses
+the full feature vector.
 Images, features, class names and classifier state are never sent to an app server.
 Local file preparation shares one global FIFO slot across classes, with at most
 15 waiting files. Before native decoding, bounded file bytes and header dimensions
@@ -219,12 +223,21 @@ hint. Pointer entry, keyboard focus and touch intent on the upload and capture
 controls prepare the shared row module. Direct file selection and the first
 collected image also start or reuse the same import. Rendering and measurement of
 real rows begin when image data is available and are released after the last
-image is removed. Prediction attaches its video once the camera stream and
-trained model are ready.
-Camera previews attach video while visible or while a capture is active; capture
-stops when the document is hidden. Training and prediction panels prepare on user
-intent. Failed panel loads offer a retry; a failed chunk that requires a document
-reload warns that in-memory training data will be lost.
+image is removed. Capture and image-removal callbacks read current class and dialog
+state without changing identity on each gallery update.
+
+Prediction attaches its video once the stream and active prediction are ready.
+Collection previews attach video while visible or while a capture is active.
+Hiding the document stops capture and releases the camera tracks. Returning to the
+collection step in a visible document can reconnect the camera while consent remains
+active. Turning the camera off clears the app's camera consent. Enabling it again
+opens the camera choice while retaining the local training workspace. A superseded
+camera request stops any tracks it receives late. A capture finishing after its
+stream becomes inactive or its class is reset is discarded.
+
+Training and prediction panels prepare on user intent. Failed panel loads offer a
+retry. A failed chunk that requires a document reload warns that in-memory training
+data will be lost.
 There are no shared server entities, reactive joins or SQL operations
 that justify TanStack DB, Table, Drizzle or Turso. Class-name editing remains a
 small local field without a separate form submission or validation schema.

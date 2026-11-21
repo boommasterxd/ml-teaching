@@ -51,7 +51,7 @@ function ToastList() {
             >
               <Primitive.Content
                 data-slot="toast-content"
-                className="flex h-full items-center gap-3 p-4 transition-opacity data-behind:opacity-0 data-expanded:opacity-100 motion-reduce:transition-none"
+                className="flex h-full items-center gap-3 p-4 data-behind:opacity-0 data-expanded:opacity-100"
               >
                 <ToastIcon type={item.type} />
                 <Primitive.Title

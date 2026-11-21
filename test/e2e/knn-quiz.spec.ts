@@ -82,7 +82,7 @@ async function expectResponsivePlot(exercise: Locator, width: number) {
   return geometry.plot;
 }
 
-async function expectConnections(exercise: Locator) {
+async function expectConnections(exercise: Locator, expectedCount = 3) {
   const distances = await exercise.evaluate((section) => {
     const center = (element: Element) => {
       const rect = element.getBoundingClientRect();
@@ -114,7 +114,7 @@ async function expectConnections(exercise: Locator) {
       },
     );
   });
-  expect(distances).toHaveLength(3);
+  expect(distances).toHaveLength(expectedCount);
   for (const distance of distances) {
     expect(distance.start).toBeLessThan(1);
     expect(distance.end).toBeLessThan(1);
@@ -155,10 +155,9 @@ async function expectOddNeighborVote(exercise: Locator, count: number) {
 
 for (const [width, colorScheme] of [
   [320, 'dark'],
-  [712, 'light'],
   [1280, 'light'],
 ] as const) {
-  test(`KNN exercise supports retries, voting and new rounds at ${width}px`, async ({ page }) => {
+  test(`KNN controls fit and support keyboard selection at ${width}px`, async ({ page }) => {
     const failures = diagnostics(page);
     await page.setViewportSize({ width, height: 1000 });
     await page.emulateMedia({
@@ -175,80 +174,104 @@ for (const [width, colorScheme] of [
     expect(points[3].distance - points[2].distance).toBeGreaterThan(
       Math.min(plot.width, plot.height) * 0.14,
     );
-    await expect(exercise.getByRole('button', { name: 'Hund', exact: true })).toBeDisabled();
-    await points.at(-1)!.control.focus();
+    const nearest = points[0].control;
+    await nearest.focus();
+    await expect(nearest).toBeInViewport();
     await page.keyboard.press('Enter');
-    await expect(points.at(-1)!.control).toHaveAttribute('aria-pressed', 'false');
-    await expect(page.getByRole('tooltip')).toContainText('Suche näher an der Raute.');
+    await expect(nearest).toHaveAttribute('aria-pressed', 'true');
+    await expect(nearest).toBeFocused();
+    await expectConnections(exercise, 1);
     await expectAccessible(page);
-    await page.keyboard.press('Escape');
-    await expect(page.getByRole('tooltip')).toHaveCount(0);
-    const accessiblePoints = await rankedAccessibleTargets(exercise);
-    for (const point of accessiblePoints.slice(0, 3)) {
-      await point.control.focus();
-      await page.keyboard.press('Enter');
-      await expect(point.control).toHaveAttribute('aria-pressed', 'true');
-    }
-    await expectConnections(exercise);
-    if (width === 712) await expectResizeContinuity(exercise, page);
-    const dogs = accessiblePoints
-      .slice(0, 3)
-      .filter((point) => point.label.startsWith('Hund')).length;
-    const winner = dogs >= 2 ? 'Hund' : 'Katze';
-    const loser = dogs >= 2 ? 'Katze' : 'Hund';
-    const wrongAnswer = exercise.getByRole('button', { name: loser, exact: true });
-    await wrongAnswer.focus();
-    await page.keyboard.press('Enter');
-    await expect(exercise.getByRole('alert')).toContainText('Zähle noch einmal.');
-    await expect(wrongAnswer).toBeFocused();
-    await exercise.getByRole('button', { name: winner, exact: true }).focus();
-    await page.keyboard.press('Enter');
-    const restart = exercise.getByRole('button', { name: 'Neue Runde', exact: true });
-    await expect(restart).toBeFocused();
-    const disabledPoints = exercise
-      .getByRole('button', { name: /^(Hund|Katze), Punkt / })
-      .and(page.locator(':disabled'));
-    await expect(disabledPoints).toHaveCount(12);
-    await expect(exercise.getByRole('alert')).toContainText('Richtig zugeordnet!');
-    await expect(exercise.getByRole('status')).toContainText(
-      `2 von 3 Nachbarn stimmen für ${winner}`,
-    );
-    await expectAccessible(page);
-    const before = await plottedData(exercise);
-    await page.keyboard.press('Enter');
-    await expect(exercise.getByRole('status')).toContainText('Neue Runde.');
-    await expect(disabledPoints).toHaveCount(0);
-    expect(await plottedData(exercise)).not.toEqual(before);
-    await slider.focus();
-    const stablePoints = await plottedData(exercise);
-    await page.keyboard.press('ArrowRight');
-    await expect(slider).toHaveAttribute('aria-valuenow', '4');
-    await expect(exercise.getByText('K = 4 · 0 von 4 gefunden')).toBeVisible();
-    await page.keyboard.press('End');
-    await expect(slider).toHaveAttribute('aria-valuenow', '10');
-    expect(await plottedData(exercise)).toEqual(stablePoints);
-    if (width === 712) {
-      const nearest = (await rankedTargets(exercise)).slice(0, 10);
-      for (const point of nearest) await point.control.click();
-      await expect(exercise.getByText('K = 10 · 10 von 10 gefunden')).toBeVisible();
-      await slider.focus();
-      await page.keyboard.press('Home');
-      await expect(slider).toHaveAttribute('aria-valuenow', '1');
-      await expectOddNeighborVote(exercise, 1);
-      await slider.focus();
-      await page.keyboard.press('ArrowRight');
-      await expect(slider).toHaveAttribute('aria-valuenow', '2');
-      for (const point of (await rankedTargets(exercise)).slice(0, 2)) await point.control.click();
-      await exercise.getByRole('button', { name: 'Gleichstand', exact: true }).click();
-      await expect(exercise.getByRole('alert')).toContainText('Gleichstand erkannt!');
-      await expectAccessible(page);
-    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
       false,
     );
     expect(failures).toEqual([]);
   });
 }
+
+test('KNN exercise supports retries, voting limits, and new rounds', async ({ page }) => {
+  const failures = diagnostics(page);
+  const width = 712;
+  await page.setViewportSize({ width, height: 1000 });
+  await page.goto(learningPaths.images);
+  const exercise = page.getByRole('region', { name: 'Welche Nachbarn zählen?' });
+  await exercise.scrollIntoViewIfNeeded();
+  const slider = exercise.getByRole('slider');
+  await expect(slider).toHaveAttribute('aria-valuenow', '3');
+  const points = await rankedTargets(exercise);
+  const plot = await expectResponsivePlot(exercise, width);
+  expect(points[3].distance - points[2].distance).toBeGreaterThan(
+    Math.min(plot.width, plot.height) * 0.14,
+  );
+  await expect(exercise.getByRole('button', { name: 'Hund', exact: true })).toBeDisabled();
+  await points.at(-1)!.control.focus();
+  await page.keyboard.press('Enter');
+  await expect(points.at(-1)!.control).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('tooltip')).toContainText('Suche näher an der Raute.');
+  await expectAccessible(page);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+  const accessiblePoints = await rankedAccessibleTargets(exercise);
+  for (const point of accessiblePoints.slice(0, 3)) {
+    await point.control.focus();
+    await page.keyboard.press('Enter');
+    await expect(point.control).toHaveAttribute('aria-pressed', 'true');
+  }
+  await expectConnections(exercise);
+  await expectResizeContinuity(exercise, page);
+  const dogs = accessiblePoints
+    .slice(0, 3)
+    .filter((point) => point.label.startsWith('Hund')).length;
+  const winner = dogs >= 2 ? 'Hund' : 'Katze';
+  const loser = dogs >= 2 ? 'Katze' : 'Hund';
+  const wrongAnswer = exercise.getByRole('button', { name: loser, exact: true });
+  await wrongAnswer.focus();
+  await page.keyboard.press('Enter');
+  await expect(exercise.getByRole('alert')).toContainText('Zähle noch einmal.');
+  await expect(wrongAnswer).toBeFocused();
+  await exercise.getByRole('button', { name: winner, exact: true }).focus();
+  await page.keyboard.press('Enter');
+  const restart = exercise.getByRole('button', { name: 'Neue Runde', exact: true });
+  await expect(restart).toBeFocused();
+  const disabledPoints = exercise
+    .getByRole('button', { name: /^(Hund|Katze), Punkt / })
+    .and(page.locator(':disabled'));
+  await expect(disabledPoints).toHaveCount(12);
+  await expect(exercise.getByRole('alert')).toContainText('Richtig zugeordnet!');
+  await expect(exercise.getByRole('status')).toContainText(
+    `2 von 3 Nachbarn stimmen für ${winner}`,
+  );
+  await expectAccessible(page);
+  const before = await plottedData(exercise);
+  await page.keyboard.press('Enter');
+  await expect(exercise.getByRole('status')).toContainText('Neue Runde.');
+  await expect(disabledPoints).toHaveCount(0);
+  expect(await plottedData(exercise)).not.toEqual(before);
+  await slider.focus();
+  const stablePoints = await plottedData(exercise);
+  await page.keyboard.press('ArrowRight');
+  await expect(slider).toHaveAttribute('aria-valuenow', '4');
+  await expect(exercise.getByText('K = 4 · 0 von 4 gefunden')).toBeVisible();
+  await page.keyboard.press('End');
+  await expect(slider).toHaveAttribute('aria-valuenow', '10');
+  expect(await plottedData(exercise)).toEqual(stablePoints);
+  const nearest = (await rankedTargets(exercise)).slice(0, 10);
+  for (const point of nearest) await point.control.click();
+  await expect(exercise.getByText('K = 10 · 10 von 10 gefunden')).toBeVisible();
+  await slider.focus();
+  await page.keyboard.press('Home');
+  await expect(slider).toHaveAttribute('aria-valuenow', '1');
+  await expectOddNeighborVote(exercise, 1);
+  await slider.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(slider).toHaveAttribute('aria-valuenow', '2');
+  for (const point of (await rankedTargets(exercise)).slice(0, 2)) await point.control.click();
+  await exercise.getByRole('button', { name: 'Gleichstand', exact: true }).click();
+  await expect(exercise.getByRole('alert')).toContainText('Gleichstand erkannt!');
+  await expectAccessible(page);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  expect(failures).toEqual([]);
+});
 
 test('touch opens and dismisses an everyday quiz explanation', async ({ browser, baseURL }) => {
   const page = await browser.newPage({

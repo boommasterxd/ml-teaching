@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils';
 import type { MLClass } from '@/types/ml';
 import { KnnQuery } from './network/KnnArtwork';
 import Button from './Button';
-import { Heading } from './ui/typography';
+import { Check } from './icons/check';
+import { Heading, Text } from './ui/typography';
 
 export const plotWidth = 320;
 export const plotHeight = 168;
@@ -25,13 +26,16 @@ export function markerPath({ x, y }: ProjectedPosition, shape: MarkerShape, radi
 }
 
 export function getMarkerStyles(classes: readonly MLClass[]) {
-  const colorCounts = new Map<string, number>();
-  return classes.map(({ id, name, color, images }) => {
-    const previous = colorCounts.get(color) ?? 0;
-    colorCounts.set(color, previous + 1);
-    return { id, name, color, count: images.length, shape: shapes[previous % shapes.length] };
-  });
+  return classes.map(({ id, name, color, images }, index) => ({
+    id,
+    name,
+    color,
+    count: images.length,
+    shape: shapes[index % shapes.length],
+  }));
 }
+
+type ClassMarker = ReturnType<typeof getMarkerStyles>[number];
 
 export function PredictionPlot({
   children,
@@ -76,46 +80,92 @@ export function PredictionDescriptionButton({
   );
 }
 
-export function PredictionPlotPlaceholder({ children }: { children?: ReactNode }) {
+export function PredictionPlotPlaceholder({
+  classes,
+  children,
+}: {
+  classes: readonly MLClass[];
+  children?: ReactNode;
+}) {
   return (
     <>
       <PredictionPlot>{children}</PredictionPlot>
       <PredictionDescriptionButton />
+      <PredictionLegend markers={getMarkerStyles(classes)} />
     </>
   );
 }
 
-const DiagramLegend = memo(function DiagramLegend({ classes }: { classes: readonly MLClass[] }) {
+function LegendMarker({ name, color, shape, count }: ClassMarker) {
   return (
-    <ul
-      role="list"
-      aria-label="Legende"
-      className="flex min-w-0 flex-wrap items-start gap-x-4 gap-y-1 text-xs leading-4 text-muted-foreground"
-    >
-      <li className="inline-flex items-start gap-1.5">
-        <svg viewBox="-9 -9 18 18" className="size-4 shrink-0" aria-hidden="true">
-          <KnnQuery x={0} y={0} />
-        </svg>
-        Kamerabild
-      </li>
-      {getMarkerStyles(classes).map(({ id, name, color, shape, count }) => (
-        <li key={id} className="inline-flex min-w-0 items-start gap-1.5">
+    <>
+      <svg viewBox="-9 -9 18 18" className="size-4 shrink-0" aria-hidden="true">
+        <path
+          d={markerPath({ x: 0, y: 0 }, shape, 4)}
+          className={cn('fill-(--class-on-surface)', classColorClasses(color))}
+        />
+      </svg>
+      <span className="min-w-0 wrap-anywhere">
+        {name}{' '}
+        <span className="whitespace-nowrap tabular-nums">
+          {count}
+          <span className="sr-only"> Trainingsbilder</span>
+        </span>
+      </span>
+    </>
+  );
+}
+
+export const PredictionLegend = memo(function PredictionLegend({
+  markers,
+  selected,
+  onSelect,
+}: {
+  markers: readonly ClassMarker[];
+  selected?: string | null;
+  onSelect?: (id: string | null) => void;
+}) {
+  const filter = markers.length > shapes.length ? onSelect : undefined;
+  return (
+    <>
+      {filter && (
+        <Text variant="muted" className="text-xs">
+          Wähle eine Klasse, um nur ihre Punkte zu sehen. Wähle sie erneut, um alle Punkte zu sehen.
+        </Text>
+      )}
+      <ul
+        role="list"
+        aria-label="Legende"
+        className="flex min-w-0 flex-wrap items-start gap-x-4 gap-y-1 text-xs leading-4 text-muted-foreground"
+      >
+        <li className="inline-flex items-center gap-1.5">
           <svg viewBox="-9 -9 18 18" className="size-4 shrink-0" aria-hidden="true">
-            <path
-              d={markerPath({ x: 0, y: 0 }, shape, 4)}
-              className={cn('fill-(--class-on-surface)', classColorClasses(color))}
-            />
+            <KnnQuery x={0} y={0} />
           </svg>
-          <span className="min-w-0 wrap-anywhere">
-            {name}{' '}
-            <span className="whitespace-nowrap tabular-nums">
-              {count}
-              <span className="sr-only"> Trainingsbilder</span>
-            </span>
-          </span>
+          Kamerabild
         </li>
-      ))}
-    </ul>
+        {markers.map((marker) => (
+          <li key={marker.id} className="inline-flex min-w-0 items-start gap-1.5">
+            {filter ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-auto min-h-11 max-w-full min-w-0 text-left whitespace-normal"
+                aria-pressed={selected === marker.id}
+                onClick={() => filter(selected === marker.id ? null : marker.id)}
+              >
+                <LegendMarker {...marker} />
+                <span aria-hidden="true" className="size-4 shrink-0">
+                  {selected === marker.id && <Check animate={false} data-icon="inline-end" />}
+                </span>
+              </Button>
+            ) : (
+              <LegendMarker {...marker} />
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
   );
 });
 
@@ -134,8 +184,7 @@ export default function PredictionDiagram({
       <Heading as="h3" id={title} className="text-sm">
         Merkmalsraum (2D-Projektion)
       </Heading>
-      {children || <PredictionPlotPlaceholder />}
-      <DiagramLegend classes={classes} />
+      {children || <PredictionPlotPlaceholder classes={classes} />}
       <figcaption id={description} className="sr-only">
         Der Klassifikator vergleicht alle Bildmerkmale. Eine gestrichelte Markierung am Rand zeigt
         ein Kamerabild außerhalb des Ausschnitts.

@@ -1,4 +1,5 @@
 import { fitFeatureProjection } from '@/lib/feature-projection';
+import { prepareSpace } from '@/components/PredictionSpace';
 import type { MLClass } from '@/types/ml';
 import { describe, expect, it } from 'vitest';
 
@@ -16,6 +17,18 @@ function trainingClass(id: string, vectors: number[][]): MLClass {
 }
 
 describe('training feature projection', () => {
+  it('reuses the fitted space after a rename and refits when the examples change', async () => {
+    const cat = trainingClass('cat', [[1, 0]]);
+    const dog = trainingClass('dog', [[0, 1]]);
+    const { signal } = new AbortController();
+    const first = await prepareSpace([cat, dog], signal);
+    const renamed = { ...dog, name: 'Hund' };
+    expect(await prepareSpace([cat, renamed], signal)).toBe(first);
+    const changed = { ...renamed, images: [...dog.images, ...cat.images] };
+    const next = await prepareSpace([cat, changed], signal);
+    expect(next).not.toBe(first);
+    expect(next.points.filter(({ classId }) => classId === 'dog')).toHaveLength(2);
+  });
   it('puts each example and its live equivalent in the same normalized feature space', async () => {
     const classes = [
       trainingClass('cat', [

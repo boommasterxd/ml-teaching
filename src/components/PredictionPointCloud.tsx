@@ -12,6 +12,7 @@ import {
   getMarkerStyles,
   markerPath,
   PredictionDescriptionButton,
+  PredictionLegend,
   PredictionPlot,
   plotHeight as height,
   plotViewBox,
@@ -89,7 +90,7 @@ function getScale(points: readonly ProjectedExample[]) {
 }
 
 function getSeries(
-  classes: readonly MLClass[],
+  markers: ReturnType<typeof getMarkerStyles>,
   points: readonly ProjectedExample[],
   scale: number,
 ): PointSeries[] {
@@ -100,7 +101,7 @@ function getSeries(
     if (group) group.push(mapped);
     else byClass.set(classId, [mapped]);
   }
-  return getMarkerStyles(classes).map(({ id, name, color, shape }) => {
+  return markers.map(({ id, name, color, shape }) => {
     const examples = byClass.get(id) ?? [];
     const counts = regionNames.map(() => 0);
     const path = examples
@@ -240,17 +241,23 @@ export default memo(function PredictionPointCloud({
   position,
 }: PointCloudProps) {
   const scale = useMemo(() => getScale(points), [points]);
-  const series = useMemo(() => getSeries(classes, points, scale), [classes, points, scale]);
+  const markers = useMemo(() => getMarkerStyles(classes), [classes]);
+  const series = useMemo(() => getSeries(markers, points, scale), [markers, points, scale]);
   const coordinates = position && toPlot(position, scale);
   const marker = coordinates && plotMarker(coordinates);
   const description = useId();
   const [snapshot, setSnapshot] = useState<ReturnType<typeof describePlot>>();
+  const [selected, setSelected] = useState<string | null>(null);
+  const visibleSeries = useMemo(
+    () => (selected ? series.filter(({ id }) => id === selected) : series),
+    [selected, series],
+  );
 
   return (
     <>
       <PredictionPlot ref={area}>
         <div className="pointer-events-none absolute inset-0">
-          <TrainingPointLayer series={series} />
+          <TrainingPointLayer series={visibleSeries} />
           {marker && (
             <svg viewBox={plotViewBox} className="absolute inset-0 size-full" aria-hidden="true">
               <CameraPoint {...marker} />
@@ -263,6 +270,7 @@ export default memo(function PredictionPointCloud({
         onClick={() => setSnapshot(describePlot(series, coordinates, marker))}
       />
       {snapshot && <PlotDescription id={description} snapshot={snapshot} />}
+      <PredictionLegend markers={markers} selected={selected} onSelect={setSelected} />
     </>
   );
 });

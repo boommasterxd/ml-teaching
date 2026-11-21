@@ -68,11 +68,12 @@ export const PrivacyCollection = (
       Verantwortlichkeit von Vercel und zu Drittlandübermittlungen finden Sie im Abschnitt ‚Vercel‘.
     </p>
     <p>
-      Vercel bewahrt die für dieses Projekt erfassten CDN-Abrufdaten, Laufzeitprotokolle und
-      Firewall-Verkehrsdaten nach eigenen Angaben bis zu 30 Tage auf. Für weitere Sicherheitsdaten,
-      die Vercel in eigener Verantwortung verarbeitet, richtet sich die Aufbewahrung danach, wie
-      lange sie zur Erkennung und Abwehr von Missbrauch oder zur Untersuchung von
-      Sicherheitsvorfällen benötigt werden.
+      Vercel bewahrt die Protokolle über Seiten- und Dateiabrufe für dieses Projekt bis zu 30 Tage
+      auf. Für Verkehrsdaten der Firewall gilt eine Aufbewahrung von bis zu 30 Tagen. Soweit beim
+      Aufruf einer Seite oder Datei Laufzeitprotokolle entstehen, bewahrt Vercel sie bis zu 30 Tage
+      auf. Weitere Sicherheitsdaten, die Vercel in eigener Verantwortung verarbeitet, bewahrt Vercel
+      so lange auf, wie es sie zur Erkennung und Abwehr von Missbrauch oder zur Untersuchung von
+      Sicherheitsvorfällen benötigt.
     </p>
     <p>
       Wir leiten diese Protokolle nicht an weitere Dienste weiter und speichern keine eigenen
@@ -219,6 +220,11 @@ export const PrivacyCollection = (
       erforderlich sind. Soweit eine gesetzliche Aufbewahrungspflicht besteht, löschen wir die Daten
       nach Ablauf der maßgeblichen Frist. Gelöschte E-Mails können im Papierkorb des Postfachs für
       bis zu 30 Tage verbleiben.
+    </p>
+    <p>
+      Bei einer regulären Löschung des gesamten Postfachs kann Hostinger die darin enthaltenen
+      Nachrichten nach eigenen Angaben bis zu 30 Tage wiederherstellen. Danach löscht Hostinger die
+      Daten des gelöschten Postfachs endgültig.
     </p>
   </>
 );

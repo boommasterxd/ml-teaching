@@ -1,5 +1,5 @@
 /** Camera tracks belong to one consent/facing-mode effect, including late requests. */
-import { useState, useEffect, useRef, useCallback, useEffectEvent } from 'react';
+import { useState, useLayoutEffect, useRef, useCallback, useEffectEvent } from 'react';
 import { CAMERA } from '../constants';
 import type { ErrorCategory } from '../types/errors';
 
@@ -20,12 +20,21 @@ async function openCamera(facingMode: CameraRequest['facingMode']) {
   });
 }
 
+function stopCameraTracks(tracks: MediaStreamTrack[], onTrackEnded?: () => void) {
+  for (const track of tracks) {
+    if (onTrackEnded) track.removeEventListener('ended', onTrackEnded);
+    track.stop();
+  }
+}
+
 export function useCameraStream(
   cameraConsent: boolean,
   isModelLoading: boolean,
   onError: (category: Extract<ErrorCategory, 'camera'>, msg: string) => void,
+  needed = true,
+  onReady?: () => void,
 ) {
-  const cameraActive = cameraConsent && !isModelLoading;
+  const cameraActive = cameraConsent && !isModelLoading && needed;
   const [request, setRequest] = useState<CameraRequest>({
     active: cameraActive,
     facingMode: 'user',
@@ -44,8 +53,9 @@ export function useCameraStream(
   const streamRef = useRef<MediaStream | null>(null);
   const failedRequestRef = useRef<CameraRequest | null>(null);
   const reportError = useEffectEvent(onError);
+  const reportReady = useEffectEvent(() => onReady?.());
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!request.active) return;
     let active = true;
     let ownedStream: MediaStream | null = null;
@@ -54,10 +64,7 @@ export function useCameraStream(
     function releaseCamera() {
       if (streamRef.current === ownedStream) streamRef.current = null;
       ownedStream = null;
-      for (const track of tracks) {
-        track.removeEventListener('ended', handleTrackEnded);
-        track.stop();
-      }
+      stopCameraTracks(tracks, handleTrackEnded);
       tracks = [];
     }
 
@@ -80,7 +87,7 @@ export function useCameraStream(
         return;
       }
       if (!active) {
-        mediaStream.getTracks().forEach((track) => track.stop());
+        stopCameraTracks(mediaStream.getTracks());
         return;
       }
       tracks = mediaStream.getTracks();
@@ -88,7 +95,10 @@ export function useCameraStream(
       streamRef.current = mediaStream;
       for (const track of tracks) track.addEventListener('ended', handleTrackEnded);
       if (tracks.some((track) => track.readyState === 'ended')) handleTrackEnded();
-      else setResult({ request, stream: mediaStream });
+      else {
+        setResult({ request, stream: mediaStream });
+        reportReady();
+      }
     }
     void requestCamera();
     return () => {

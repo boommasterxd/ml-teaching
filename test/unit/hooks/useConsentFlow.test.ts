@@ -26,6 +26,13 @@ describe('useConsentFlow', () => {
     expect(result.current.cameraDeclined).toBe(false);
     expect(result.current.cameraConsent).toBe(true);
     expect(result.current.showCameraModal).toBe(false);
+    act(() => result.current.revokeCameraConsent());
+    expect(result.current.hasConsented).toBe(true);
+    expect(result.current.cameraConsent).toBe(false);
+    expect(result.current.showCameraModal).toBe(false);
+    act(() => result.current.requestCameraConsent());
+    expect(result.current.showCameraModal).toBe(true);
+    expect(result.current.cameraConsent).toBe(false);
   });
   describe('initial state', () => {
     it('hasConsented starts as false', () => {

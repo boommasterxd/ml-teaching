@@ -33,6 +33,9 @@ async function observeDocumentTransitions(page: Page) {
 async function recoverFrom500(page: Page) {
   const response = await page.goto('/500');
   expect(response?.status()).toBe(500);
+  await expect(
+    page.getByRole('heading', { name: 'Diese Seite konnte nicht geladen werden' }),
+  ).toBeVisible();
   const root = page.locator('html');
   await expect(root).toHaveAttribute('data-recovery-transition', 'none');
   await expect(page.locator(`head ${stylesheet}`)).toHaveAttribute(
@@ -95,4 +98,49 @@ test('the recovery link also works with reduced motion', async ({ page }) => {
   await observeDocumentTransitions(page);
   await recoverFrom500(page);
   await expect(page.locator('html')).toHaveAttribute('data-recovery-transition', 'none');
+});
+
+test('the static 500 artwork starts automatically and supports keyboard pause and reduced motion', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'no-preference' });
+  const posterRequests: string[] = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === '/_next/image') posterRequests.push(request.url());
+  });
+  expect((await page.goto('/500'))?.status()).toBe(500);
+  const artwork = page.locator('#error-glass-art');
+  const canvas = artwork.locator('canvas');
+  const impulse = page.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
+  const playback = page.getByRole('button', { name: /^Animation (pausieren|fortsetzen)$/ });
+  await expect(artwork).toHaveAttribute('data-enhanced', 'true');
+  expect(posterRequests).toEqual([]);
+  const initialCanvas = await canvas.elementHandle();
+
+  await page.getByRole('main').getByRole('link', { name: 'Zur Startseite' }).focus();
+  await page.keyboard.press('Tab');
+  await expect(impulse).toBeFocused();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Tab');
+  await expect(playback).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(playback).toHaveAccessibleName('Animation fortsetzen');
+  await expect(impulse).toBeDisabled();
+  await page.keyboard.press('Space');
+  await expect(impulse).toBeEnabled();
+  expect(await canvas.evaluate((current, initial) => current === initial, initialCanvas)).toBe(
+    true,
+  );
+  await expectAccessible(page);
+
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await expect(canvas).toHaveCount(0);
+  const poster = artwork.locator('picture img');
+  await expect(poster).toBeVisible();
+  await expect
+    .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(1);
+  await expect(page.getByRole('button', { name: 'Bewegung reduziert' })).toBeDisabled();
 });

@@ -73,8 +73,9 @@ function assertNoPolicy(headers, pathname) {
 /** Persist only the existing native prerender metadata; no request rewriting.
  * @param {import('./types.js').BuildContext} context @param {import('./types.js').PreparedOutput} document
  * @param {import('./types.js').Options} options
+ * @param {boolean} routingOwnsErrorPolicy
  */
-async function persistDocument(context, document, options) {
+async function persistDocument(context, document, options, routingOwnsErrorPolicy = false) {
   assertNoPolicy(document.fallback?.initialHeaders ?? {}, document.pathname);
   const normalPage = !options.errorRoutes?.includes(document.pathname);
   if (normalPage) assertCacheHeaders(document.fallback?.initialHeaders ?? {}, document.pathname);
@@ -84,9 +85,8 @@ async function persistDocument(context, document, options) {
     const meta = await readJson(context.distDir, metaFile);
     assertNoPolicy(meta.headers ?? {}, document.pathname);
     if (normalPage) assertCacheHeaders(meta.headers ?? {}, document.pathname);
-    // Native routing already sets the policy on regular pages. Next appends any
-    // policy from their prerender metadata to that same response.
-    if (!normalPage || options.providerAdapter) {
+    // Next appends prerender headers to the policy already set by native routing.
+    if (options.providerAdapter || (!normalPage && !routingOwnsErrorPolicy)) {
       meta.headers = { ...meta.headers, 'content-security-policy': document.policy };
       await replaceArtifact(context.distDir, metaFile, JSON.stringify(meta));
       document.fallback.initialHeaders = {
@@ -158,7 +158,9 @@ async function buildPolicies(context, options) {
     });
     if (cacheRoute) context.routing.beforeMiddleware.push(cacheRoute);
   }
-  for (const copy of errorCopies) files.push(...(await persistDocument(context, copy, options)));
+  for (const copy of errorCopies) {
+    files.push(...(await persistDocument(context, copy, options, Boolean(fallbackPolicy))));
+  }
   const identities = [
     ...assetIdentities,
     ...(await Promise.all(
