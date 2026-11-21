@@ -32,6 +32,10 @@ export function useConsentFlow() {
     setCameraDeclined(false);
   }, []);
   const declineCameraConsent = useCallback(() => setCameraDeclined(true), []);
+  const revokeCameraConsent = useCallback(() => {
+    setCameraConsent(false);
+    setCameraDeclined(true);
+  }, []);
   const requestCameraConsent = useCallback(() => setCameraDeclined(false), []);
 
   return {
@@ -41,6 +45,7 @@ export function useConsentFlow() {
     grantConsent,
     grantCameraConsent,
     declineCameraConsent,
+    revokeCameraConsent,
     requestCameraConsent,
     showConsentModal: !hasConsented,
     showCameraModal: hasConsented && !cameraConsent && !cameraDeclined,

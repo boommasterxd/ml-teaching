@@ -8,7 +8,6 @@ import { useMotionStart } from '../ui/use-motion-start';
 import { useMotionPreference } from '../ui/use-motion-preference';
 
 type FieldComponent = typeof import('./TopographyField').default;
-type RenderState = 'pending' | 'rendered' | 'released';
 
 let fieldModule: Promise<typeof import('./TopographyField')> | undefined;
 
@@ -38,29 +37,19 @@ function afterFirstPaint(prepare: () => void, waitForDocumentLoad: boolean) {
 export function useGlassField(
   paused: boolean,
   viewportReady: boolean,
-  {
-    waitForDocumentLoad = true,
-    retainOffscreen = false,
-  }: { waitForDocumentLoad?: boolean; retainOffscreen?: boolean } = {},
+  waitForDocumentLoad = false,
 ) {
   const artwork = useRef<HTMLDivElement>(null);
-  const inView = useInView(artwork, { amount: retainOffscreen ? 'some' : 0.05 });
+  const inView = useInView(artwork);
   const visible = usePageVisible();
   const { reduce } = useMotionPreference();
   const motionReady = useMotionStart();
   const [interested, setInterested] = useState(false);
   const [Field, setField] = useState<FieldComponent | null>(null);
   const [failed, setFailed] = useState(false);
-  const [renderState, setRenderState] = useState<RenderState>('pending');
+  const [rendered, onRendered] = useState(false);
   const onUnavailable = useCallback(() => setFailed(true), []);
-  const onRendered = useCallback((ready: boolean) => {
-    setRenderState((state) => {
-      if (ready) return 'rendered';
-      return state === 'rendered' ? 'released' : state;
-    });
-  }, []);
-  const rendered = renderState === 'rendered';
-  const available = visible && !reduce && !failed && (inView || (retainOffscreen && rendered));
+  const available = visible && !reduce && !failed && (inView || rendered);
   const active = inView && available && !paused && viewportReady && (motionReady || interested);
 
   useEffect(() => {
@@ -95,7 +84,6 @@ export function useGlassField(
     failed,
     reduce,
     rendered,
-    hasRendered: renderState !== 'pending',
     onRendered,
     onUnavailable,
     prepare,

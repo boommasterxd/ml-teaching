@@ -1,52 +1,32 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import { Moon as StaticMoon, Sun as StaticSun } from 'lucide-react';
 import { ChevronDown } from '../icons/chevron-down';
 import { Moon } from '../icons/moon';
 import { Sun } from '../icons/sun';
 import Button from '../Button';
-import { Alert, AlertDescription } from '../ui/alert';
+import { DeferredMenuLoadError } from '../DeferredMenuLoadError';
 import { Switch } from '../ui/switch';
 import { Spinner } from '../ui/spinner';
-import { useMenuModule } from '../use-menu-module';
+import { useMenuModule, usePendingMenuDismissal } from '../use-menu-module';
 import { loadThemeMenu } from './theme-menu-loader';
 import { useTheme } from './ThemeProvider';
 
 function useDeferredThemeMenu() {
-  const trigger = useRef<HTMLButtonElement>(null);
-  const area = useRef<HTMLDivElement>(null);
   const [opening, setOpening] = useState<'first' | 'last' | null>(null);
   const { module, failed, prepare } = useMenuModule(loadThemeMenu);
   const Menu = module?.ThemeMenu;
   const open = opening !== null;
+  const { area, trigger } = usePendingMenuDismissal({
+    active: open && !Menu,
+    popupSelector: '[data-theme-menu]',
+    onDismiss: () => setOpening(null),
+  });
   function activate(position: 'first' | 'last') {
     setOpening(open ? null : position);
     if (!open) prepare();
   }
-
-  useEffect(() => {
-    if (!open || Menu) return;
-    const escape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.defaultPrevented) return;
-      event.preventDefault();
-      setOpening(null);
-      trigger.current?.focus({ preventScroll: true });
-    };
-    const outside = (event: Event) => {
-      const target = event.target;
-      if (!(target instanceof Element) || area.current?.contains(target)) return;
-      if (!target.closest('[data-theme-menu]')) setOpening(null);
-    };
-    document.addEventListener('keydown', escape);
-    document.addEventListener('pointerdown', outside);
-    document.addEventListener('focusin', outside);
-    return () => {
-      document.removeEventListener('keydown', escape);
-      document.removeEventListener('pointerdown', outside);
-      document.removeEventListener('focusin', outside);
-    };
-  }, [open, Menu]);
 
   return { trigger, area, Menu, opening, open, failed, prepare, activate, setOpening };
 }
@@ -124,18 +104,12 @@ export function ThemeControl() {
         </span>
       )}
       {open && failed && (
-        <Alert className="absolute right-0 top-full mt-2 w-64" role="alert">
-          <AlertDescription>Das Darstellungsmenü konnte nicht geladen werden.</AlertDescription>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              trigger.current?.focus({ preventScroll: true });
-              prepare();
-            }}
-          >
-            Erneut versuchen
-          </Button>
-        </Alert>
+        <DeferredMenuLoadError
+          className="absolute right-0 top-full mt-2 w-64"
+          message="Das Darstellungsmenü konnte nicht geladen werden."
+          trigger={trigger}
+          retry={prepare}
+        />
       )}
     </div>
   );

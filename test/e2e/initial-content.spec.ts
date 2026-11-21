@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { diagnostics, expectAccessible } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
+import { headerLegalLinks } from '../../src/content/site-navigation';
 
 async function holdApplicationScripts(page: Page) {
   let held = 0;
@@ -35,6 +36,65 @@ async function expectReadable(content: Locator) {
       return element.getClientRects().length > 0;
     }),
   ).toBe(true);
+}
+
+async function expectReadableLink(link: Locator, href: string) {
+  await expectReadable(link);
+  await expect(link).toHaveAttribute('href', href);
+}
+
+async function expectLearningHub(main: Locator) {
+  await expectReadableLink(
+    main.getByRole('link', { name: 'Bilderkennung verstehen' }),
+    learningPaths.images,
+  );
+  await expectReadableLink(
+    main.getByRole('link', { name: 'Eigenes Bildmodell trainieren' }),
+    learningPaths.imagePractice,
+  );
+  const pending = main.getByRole('button', { name: 'Coming Soon' });
+  await expectReadable(pending);
+  await expect(pending).toBeDisabled();
+}
+
+async function expectImageExercises(main: Locator) {
+  const network = main.getByRole('list', { name: 'Vom Beispielbild zur Ausgabe' });
+  for (const name of ['Beispielbild', 'MobileNet', 'KNN', 'Mehrheit gewinnt']) {
+    await expectReadable(network.getByRole('heading', { name, exact: true }));
+  }
+  await expectReadable(main.getByRole('button', { name: 'Katzenbild zeigen' }));
+  await expectReadable(main.getByRole('button', { name: 'Hundebild zeigen' }));
+  const everyday = main.getByRole('region', { name: 'Wo steckt Bilderkennung drin?' });
+  await expectReadable(everyday.getByText(/Wähle die drei Beispiele/));
+  const choices = everyday.getByRole('button', { name: /^Auswählen: / });
+  await expect(choices).toHaveCount(6);
+  for (const choice of await choices.all()) await expectReadable(choice);
+  const neighbors = main.getByRole('region', { name: 'Welche Nachbarn zählen?' });
+  await expectReadable(neighbors.getByText(/Finde die nächsten Nachbarn/));
+  await expectReadable(neighbors.getByRole('button', { name: 'Übung öffnen' }));
+  await expectReadableLink(
+    main.getByRole('link', { name: 'Jetzt ausprobieren' }),
+    learningPaths.imagePractice,
+  );
+}
+
+async function expectLegalNavigation(page: Page, path: string) {
+  const sidebar = page.getByRole('complementary').filter({
+    has: page.getByRole('navigation', { name: 'Informationsseiten', includeHidden: true }),
+  });
+  const navigation = sidebar.getByRole('navigation', { name: 'Informationsseiten' });
+  for (const { href, label } of headerLegalLinks) {
+    const link = navigation.getByRole('link', { name: label, exact: true });
+    await expectReadableLink(link, href);
+    if (href === path) await expect(link).toHaveAttribute('aria-current', 'page');
+    else await expect(link).not.toHaveAttribute('aria-current', 'page');
+  }
+  if (path === '/datenschutz') {
+    const viewport = page.viewportSize()!;
+    await page.setViewportSize({ width: 390, height: viewport.height });
+    await expectReadable(sidebar.getByRole('button', { name: 'Informationen', exact: true }));
+    await page.setViewportSize(viewport);
+  }
 }
 
 const publicRoutes = [
@@ -75,6 +135,11 @@ for (const path of publicRoutes) {
         await expectReadable(main.getByRole('heading', { level: 2 }).first());
         await expectReadable(main.locator('p:not(.sr-only)').first());
         await expectReadable(main.getByRole('link').first());
+      }
+      if (path === learningPaths.hub) await expectLearningHub(main);
+      if (path === learningPaths.images) await expectImageExercises(main);
+      if (headerLegalLinks.some(({ href }) => href === path)) {
+        await expectLegalNavigation(page, path);
       }
       await scripts.expectHeld();
       scripts.release();

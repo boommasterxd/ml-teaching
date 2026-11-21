@@ -69,6 +69,71 @@ test('a failed navigation chunk can be retried from the open menu', async ({ pag
   await expect(trigger).toBeFocused();
 });
 
+test('the information trigger keeps press and focus as its first intent load settles', async ({
+  page,
+}) => {
+  const failures = diagnostics(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+  await page.goto('/datenschutz');
+
+  const trigger = page.getByRole('button', { name: 'Informationen', exact: true });
+  const menu = page.getByRole('menu', { name: 'Informationen', exact: true });
+  const scale = () =>
+    trigger.evaluate((node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).a);
+  const scripts = '**/_next/static/chunks/*.js';
+  const allowScripts = Promise.withResolvers<void>();
+  let requested = false;
+  await page.route(scripts, async (route) => {
+    requested = true;
+    await allowScripts.promise;
+    await route.continue();
+  });
+
+  try {
+    await trigger.hover();
+    await expect.poll(() => requested).toBe(true);
+    await trigger.focus();
+    await page.mouse.down();
+    await expect.poll(scale).toBeLessThan(0.995);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(trigger).toHaveAttribute('aria-busy', 'true');
+    await expect(trigger).toBeFocused();
+    await expect(menu).toHaveCount(0);
+
+    const chunkResponse = page.waitForResponse(async (response) => {
+      if (!response.ok() || response.request().resourceType() !== 'script') return false;
+      return (await response.text()).includes('data-legal-mobile-menu');
+    });
+    allowScripts.resolve();
+    await chunkResponse;
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+    await expect(menu).toBeVisible();
+    await expect
+      .poll(() => menu.evaluate((popup) => popup.contains(document.activeElement)))
+      .toBe(true);
+    await expect.poll(scale).toBeLessThan(0.995);
+
+    await page.mouse.move(1, 1);
+    await page.mouse.up();
+    await expect.poll(scale).toBeCloseTo(1);
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await trigger.hover();
+    await trigger.press('Enter');
+    await expect(menu.getByRole('menuitem', { name: 'Impressum' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(trigger).toBeFocused();
+    await expectAccessible(page);
+    expect(failures).toEqual([]);
+  } finally {
+    allowScripts.resolve();
+    await page.unrouteAll({ behavior: 'wait' });
+  }
+});
+
 test('only the visible navigation is active and an open panel closes across the breakpoint', async ({
   page,
 }) => {

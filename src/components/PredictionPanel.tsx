@@ -30,6 +30,7 @@ interface PredictionPanelProps {
   onStartPredicting: () => void;
   onStopPredicting: () => void;
   onEnableCamera?: () => void;
+  cameraAllowed?: boolean;
   cameraPending: boolean;
   cameraFailed?: boolean;
   subscribeToFeatures: SubscribePredictionFeatures;
@@ -90,15 +91,18 @@ function PredictionAction({
   onStartPredicting,
   onStopPredicting,
   onStartIntent,
+  pending,
 }: Pick<PredictionPanelProps, 'isPredicting' | 'onStartPredicting' | 'onStopPredicting'> & {
   onStartIntent: () => void;
+  pending: boolean;
 }) {
   const Icon = isPredicting ? Square : Play;
-  const prepare = isPredicting ? undefined : onStartIntent;
+  const prepare = isPredicting || pending ? undefined : onStartIntent;
   return (
     <Button
       variant={isPredicting ? 'secondary' : 'default'}
-      onClick={isPredicting ? onStopPredicting : onStartPredicting}
+      onClick={pending ? undefined : isPredicting ? onStopPredicting : onStartPredicting}
+      aria-disabled={pending || undefined}
       onPointerEnter={prepare}
       onPointerDown={prepare}
       onFocus={prepare}
@@ -173,11 +177,16 @@ function cameraDescription({
   onEnableCamera,
   cameraPending,
   cameraFailed,
-}: Pick<PredictionPanelProps, 'stream' | 'onEnableCamera' | 'cameraPending' | 'cameraFailed'>) {
+  cameraAllowed,
+}: Pick<
+  PredictionPanelProps,
+  'stream' | 'onEnableCamera' | 'cameraAllowed' | 'cameraPending' | 'cameraFailed'
+>) {
   if (stream) return 'Die Kamera ist bereit.';
   if (cameraPending) return 'Kamera wird verbunden.';
   if (cameraFailed) return 'Die Kameraverbindung ist unterbrochen.';
   if (onEnableCamera) return 'Aktiviere die Kamera für die Vorhersage.';
+  if (cameraAllowed) return 'Die Kamera startet mit der Live-Vorhersage.';
   return 'Für die Live-Vorhersage wird eine Kamera benötigt.';
 }
 
@@ -194,11 +203,12 @@ function PredictionCamera({
   onStartPredicting,
   onStopPredicting,
   onEnableCamera,
+  cameraAllowed = Boolean(stream),
   cameraPending,
   cameraFailed,
   onStartIntent,
 }: CameraProps & { onStartIntent: () => void }) {
-  const playable = Boolean(stream);
+  const playable = cameraAllowed;
   const canEnable = Boolean(onEnableCamera && !cameraPending);
   return (
     <div
@@ -209,7 +219,13 @@ function PredictionCamera({
         <CameraFeed facingMode={facingMode} predictVideoRef={predictVideoRef} stream={stream} />
       ) : (
         <PredictionPlaceholder
-          description={cameraDescription({ stream, onEnableCamera, cameraPending, cameraFailed })}
+          description={cameraDescription({
+            stream,
+            onEnableCamera,
+            cameraAllowed,
+            cameraPending,
+            cameraFailed,
+          })}
           pending={cameraPending}
           compact
           className={cn(
@@ -225,10 +241,11 @@ function PredictionCamera({
             onStartPredicting={onStartPredicting}
             onStopPredicting={onStopPredicting}
             onStartIntent={onStartIntent}
+            pending={cameraPending}
           />
         ) : canEnable ? (
           <Button variant="outline" className="min-h-11" onClick={onEnableCamera}>
-            {cameraFailed ? 'Kamera erneut verbinden' : 'Kamera aktivieren'}
+            Kamera aktivieren
           </Button>
         ) : null}
       </div>
@@ -244,7 +261,7 @@ function PredictionWorkspace({
 }: Omit<PredictionPanelProps, 'entryReady' | 'hasTrainedModel'>) {
   const { isPredicting, stream } = camera;
   const live = isPredicting && Boolean(stream);
-  const space = useDeferredPredictionSpace(classes, Boolean(stream), live);
+  const space = useDeferredPredictionSpace(classes, camera.cameraAllowed ?? Boolean(stream), live);
   return (
     <div className="grid items-start gap-4 @lg/prediction:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
       <PredictionCamera {...camera} onStartIntent={space.prepare} />

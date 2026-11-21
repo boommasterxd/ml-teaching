@@ -121,6 +121,54 @@ export async function grantModelConsent(page: Page) {
   await dialog.getByRole('button', { name: 'Zustimmen', exact: true }).click();
 }
 
+type ExpectCameraActivity = (requests: number, live: number) => Promise<void>;
+
+export async function observeWorkspaceCamera(page: Page): Promise<ExpectCameraActivity> {
+  const activity = await page.evaluateHandle(() => {
+    const state = { requests: 0, tracks: [] as MediaStreamTrack[] };
+    const devices = navigator.mediaDevices;
+    const getUserMedia = devices.getUserMedia.bind(devices);
+    devices.getUserMedia = async (constraints) => {
+      state.requests++;
+      const stream = await getUserMedia(constraints);
+      state.tracks.push(...stream.getVideoTracks());
+      return stream;
+    };
+    return state;
+  });
+  return async (requests, live) => {
+    const snapshot = () =>
+      activity.evaluate(({ requests, tracks }) => ({
+        requests,
+        live: tracks.filter((track) => track.readyState === 'live').length,
+        ended: tracks.filter((track) => track.readyState === 'ended').length,
+      }));
+    await expect.poll(snapshot).toEqual({ requests, live, ended: requests - live });
+  };
+}
+
+export async function expectCameraToggleKeepsImages(
+  page: Page,
+  expectCamera: ExpectCameraActivity,
+) {
+  const enable = page.getByRole('button', { name: 'Kamera aktivieren', exact: true });
+  const consent = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
+  const allow = consent.getByRole('button', { name: 'Erlauben', exact: true });
+  await enable.press('Enter');
+  await allow.press('Enter');
+  await expectCamera(1, 1);
+  await page.getByRole('button', { name: 'Kamera ausschalten', exact: true }).press('Enter');
+  await expectCamera(1, 0);
+  await expect(page.getByRole('button', { name: 'Bilder sammeln', exact: true })).toBeFocused();
+  await expect(page.getByRole('textbox', { name: /^Name für Klasse / })).toHaveCount(2);
+  await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
+  await enable.press('Enter');
+  await expect(consent).toBeVisible();
+  await expectCamera(1, 0);
+  await allow.press('Enter');
+  await expectCamera(2, 1);
+}
+
 export async function withdrawTrainingConsent(page: Page) {
   await page.evaluate(() => {
     document.documentElement.dataset.withdrawalProbe = 'old-workspace';
@@ -317,7 +365,7 @@ export async function openDeferredTrainingStep(page: Page, trigger: Locator, hea
   }
 }
 
-export async function expectLivePredictionControls(page: Page) {
+export async function expectLivePredictionControls(page: Page, expectCamera: ExpectCameraActivity) {
   const preview = page.getByLabel('Kameravorschau für Vorhersage');
   const space = page.getByRole('figure', { name: 'Merkmalsraum' });
   const stop = page.getByRole('button', { name: 'Live-Vorhersage stoppen' });
@@ -327,6 +375,7 @@ export async function expectLivePredictionControls(page: Page) {
   await expect(preview).toHaveCount(0);
   await expect(space).toBeVisible();
   await expect(frame.getByRole('button', { name: 'Live-Vorhersage starten' })).toBeVisible();
+  await expectCamera(2, 0);
   const recordStartSizes = await observePredictionSizes(frame);
   await start.press('Enter');
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
@@ -344,6 +393,7 @@ export async function expectLivePredictionControls(page: Page) {
   const recordMobileSizes = await observePredictionSizes(frame);
   await stop.press('Space');
   await expect(preview).toHaveCount(0);
+  await expectCamera(3, 0);
   await start.press('Enter');
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
   await space.scrollIntoViewIfNeeded();
@@ -358,6 +408,7 @@ export async function expectLivePredictionControls(page: Page) {
   await expect(preview).toHaveCount(0);
   await expect(space).toBeVisible();
   await expect(marker).toHaveCount(0);
+  await expectCamera(4, 0);
   await recordStopSizes();
   await start.press('Enter');
   await space.scrollIntoViewIfNeeded();
@@ -421,51 +472,6 @@ export async function expectPreviewDeletion(
   await expect(page.getByRole('textbox', { name: 'Name für Klasse 2: Klasse 2' })).toBeFocused();
   await expect(page.getByText('9 / 10 Bilder', { exact: true })).toHaveCount(1);
   await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(1);
-}
-
-export async function expectGalleryFocusAcrossResize(page: Page) {
-  await page.setViewportSize({ width: 390, height: 844 });
-  const gallery = page.getByRole('region', { name: /Trainingsbilder von Klasse 1:/ });
-  const thumbnail = gallery.getByRole('button', { name: 'Bild 5 vergrößern', exact: true });
-  const selection = page.getByRole('button', { name: 'Mehrere markieren', exact: true }).first();
-  await selection.press('Enter');
-  const cancel = page.getByRole('button', { name: 'Auswahl abbrechen', exact: true });
-  await expect(cancel).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(gallery).toBeFocused();
-  const first = gallery.getByRole('button', { name: 'Bild 1 auswählen', exact: true });
-  await first.press('Space');
-  await expect(first).toHaveAttribute('aria-pressed', 'true');
-  await cancel.focus();
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: '1 ausgewähltes Bild löschen' })).toBeFocused();
-  await cancel.press('Enter');
-  await expect(selection).toBeFocused();
-  const row = gallery.locator('[style*="grid-template-columns"]').first();
-  await expect(row).toHaveCSS('grid-template-columns', /^(\S+\s+){3}\S+$/);
-  await thumbnail.focus();
-  await expect(thumbnail).toBeFocused();
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await expect(row).toHaveCSS('grid-template-columns', /^(\S+\s+){5}\S+$/);
-  await expect(thumbnail).toBeFocused();
-  await page.keyboard.press('Enter');
-  const preview = page.getByRole('dialog', { name: 'Bild 5 aus Klasse 1' });
-  await expect(preview).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(thumbnail).toBeFocused();
-  await gallery.evaluate((node) => {
-    node.scrollTop = node.scrollHeight;
-  });
-  await expect(
-    gallery.getByRole('img', { name: 'Trainingsbeispiel 10', exact: true }),
-  ).toBeInViewport();
-  await gallery.evaluate((node) => {
-    node.scrollTop = 0;
-  });
-  await expect(
-    gallery.getByRole('img', { name: 'Trainingsbeispiel 1', exact: true }),
-  ).toBeInViewport();
-  await expect(thumbnail).toBeFocused();
 }
 
 export async function expectCancelledResetKeepsImages(page: Page) {

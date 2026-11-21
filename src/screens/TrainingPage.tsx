@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTrainingWorkspace } from '../hooks/useTrainingWorkspace';
 import PageHeader from '../components/PageHeader';
@@ -84,12 +84,17 @@ function TrainingPipeline({
   );
 }
 
-function useTrainingNavigation(canTrain: boolean, canPredict: boolean, stopPrediction: () => void) {
+function useTrainingNavigation(
+  canTrain: boolean,
+  canPredict: boolean,
+  stopPrediction: () => void,
+  selection: TrainingStep,
+  setSelection: Dispatch<SetStateAction<TrainingStep>>,
+) {
   const { modules, prepared, status, prepare, open } = useTrainingPanelLoading(
     canTrain,
     canPredict,
   );
-  const [selection, setSelection] = useState<TrainingStep>('images');
   const navigation = useRef<HTMLElement>(null);
   const previous = useRef(selection);
   const moveFocus = useRef(true);
@@ -165,10 +170,34 @@ function getSetupStep({
   return showCameraPrompt ? 'camera' : null;
 }
 
+function CameraWithdrawal({
+  navigation,
+  revoke,
+}: {
+  navigation: React.RefObject<HTMLElement | null>;
+  revoke: () => void;
+}) {
+  return (
+    <Button
+      variant="outline"
+      className="min-h-11 self-start"
+      onClick={() => {
+        navigation.current
+          ?.querySelector<HTMLButtonElement>('[aria-current="step"]')
+          ?.focus({ preventScroll: true });
+        revoke();
+      }}
+    >
+      Kamera ausschalten
+    </Button>
+  );
+}
+
 /** Browser-only ML workspace inside a build-rendered App Router page. */
 export default function TrainingPage() {
   const router = useRouter();
-  const workspace = useTrainingWorkspace();
+  const [selection, setSelection] = useState<TrainingStep>('images');
+  const workspace = useTrainingWorkspace(selection);
   const { resources, data, dialogs } = workspace;
   const { error, consent, models, prediction } = resources;
   const modelFailed = error?.category === 'model';
@@ -179,7 +208,13 @@ export default function TrainingPage() {
   if (initialSetup && setupStep === null) setInitialSetup(false);
   const ready = !initialSetup && Boolean(models.mobilenetModel) && !models.isModelLoading;
   const canPredict = data.canTrain && resources.hasTrainedModel && !data.training.isTraining;
-  const flow = useTrainingNavigation(data.canTrain, canPredict, prediction.stopPredicting);
+  const flow = useTrainingNavigation(
+    data.canTrain,
+    canPredict,
+    prediction.stopPredicting,
+    selection,
+    setSelection,
+  );
   const prepareReturn = () => prepareRoute(router, learningPaths.images);
   const declineConsent = () => router.push(learningPaths.images, { transitionTypes: ['nav-back'] });
   return (
@@ -210,6 +245,9 @@ export default function TrainingPage() {
             onReturn={modelFailed ? declineConsent : undefined}
             onReturnIntent={modelFailed ? prepareReturn : undefined}
           />
+        )}
+        {consent.cameraConsent && (
+          <CameraWithdrawal navigation={flow.navigation} revoke={resources.revokeCamera} />
         )}
         <TrainingPanelFeedback
           status={flow.status}

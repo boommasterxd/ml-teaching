@@ -3,12 +3,14 @@
 ## Runtime and installation
 
 Use Node.js 26.x, the current approved LTS major, with npm and the committed
-lockfile. TypeScript 6.0 is selected because the installed Next.js lint integration
-requires a TypeScript version below 6.1; the inherited TypeScript 7 setting is not
-compatible with that peer contract. ESLint 9.39 is the newest compatible major for
-the installed Next.js React, import and accessibility lint plugins. ESLint 10 is
-currently outside those plugins' declared peer ranges, so it is not forced into
-the toolchain. Update these coordinated versions when their peer contracts permit.
+lockfile. TypeScript 6.0 satisfies the installed lint toolchain's upper peer bound
+of 6.1. The lockfile selects ESLint 10.15.0 because
+[ESLint 9 is end of life](https://eslint.org/version-support/).
+[Next.js 16.4.6 tests its lint configuration with ESLint 10.11.0](https://github.com/vercel/next.js/blob/v16.4.6/test/production/eslint-config-next/eslint-config-next.test.ts).
+npm 12 installs the locked tree with peer warnings for `eslint-plugin-import`,
+`eslint-plugin-jsx-a11y` and `eslint-plugin-react`, whose declared ranges end at
+ESLint 9. These peer gaps remain a compatibility risk. Keep the blocking lint
+check when changing any part of the toolchain.
 Transitive low/moderate advisories remain in development lint and UI tooling.
 npm's proposed forced fixes replace the selected tools with incompatible major
 versions, so they are not applied automatically. The separate
@@ -111,9 +113,11 @@ the command does not install or update tools. Prepare any required local fallbac
 separately under the repository's installation controls.
 The default run measures the homepage and saves reports under
 `test-results/lighthouse/`. With `--all`, the command reads the route list from the
-static CSP configuration and checks each HTML status, including the native 404 and 500. It runs each device profile sequentially and stores per-route reports under
-`test-results/lighthouse/routes/`. This mode exits unsuccessfully if any
-performance score falls below 100.
+static CSP configuration and checks each HTML status, including the native 404
+and 500. It runs each device profile sequentially and stores per-route reports
+under `test-results/lighthouse/routes/`. Both modes require a Lighthouse
+Performance score strictly above 95 points for each measured route on mobile and
+desktop. A score of exactly 95 causes the command to exit unsuccessfully.
 
 For a local comparison, build with `NEXT_PUBLIC_DEFER_DECORATIVE_MOTION=1 npm run build`.
 Then use the same `npm start` command. This opt-in keeps the loading indicator,
@@ -124,10 +128,11 @@ restores the default startup schedule.
 
 ## Build and recovery
 
-Run `npm run ci` and standalone `npm run typecheck` before the final production
-build. Native `next typegen` loads the production-build configuration, so the
-adapter conservatively invalidates an existing CSP success marker. It does not
-produce a publishable build; rebuild before starting production afterward.
+Run `npm run ci` before the final production build. It includes `npm run typecheck`,
+which is also available as a targeted standalone check. Native `next typegen`
+loads the production-build configuration, so the adapter conservatively
+invalidates an existing CSP success marker. Rebuild before starting production
+afterward.
 
 `npm run build` invalidates any old CSP success marker, runs one native `next build`
 and verifies the resulting manifest. The production build uses

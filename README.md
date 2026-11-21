@@ -1,101 +1,84 @@
-# ML Teaching
+<p align="center">
+  <img src="./public/apple-icon.png" width="64" height="64" alt="" />
+</p>
 
-ML Teaching is a free, ad-free machine learning resource for children in German.
-Choose a learning area, discover image classification, and train a model directly
-in your browser. Watch two example paths in the homepage preview of learning
-through rewards.
+<h1 align="center">ML Teaching</h1>
 
-[Open ML Teaching](https://mlteaching.boomapps.de) ·
-[Source](https://github.com/boommasterxd/ml-teaching) · [Quick start](#quick-start) ·
-[Architecture](docs/architecture.md) ·
-[Development](docs/development.md) · [Security](SECURITY.md)
+<p align="center">
+  Explore how machines learn. A free, ad-free learning lab in German where children
+  can try image recognition and train a classifier in their browser.
+</p>
+
+<p align="center">
+  <a href="https://mlteaching.boomapps.de/lernen">Open the learning lab</a> ·
+  <a href="#quick-start">Run locally</a> ·
+  <a href="docs/architecture.md">Explore the architecture</a>
+</p>
 
 ## What you can do
 
-| Workflow                                              | Result                                                                                         |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Choose a learning area                                | Open the image lesson or training workspace. The Q-learning lesson and exercise are planned.   |
-| Explore the image-classification demonstration        | Follow an illustrated classification step by step.                                             |
-| Play the everyday image-recognition quiz              | Find three matching uses, reveal explanations and start another round.                         |
-| Try the KNN exercise in the image lesson              | Set K, select the nearest points and choose the class with the most votes or a tie.            |
-| Choose light, dark or system appearance               | Use a temporary choice, or explicitly remember it for later visits.                            |
-| Collect webcam images or select local files           | Build named training classes without uploading images.                                         |
-| Extract MobileNet features and train a KNN classifier | Compare examples locally using TensorFlow.js and WebGL.                                        |
-| Test live predictions                                 | See class confidence and revise your training data.                                            |
-| Reset the learning workspace                          | Discard classes, examples, trained KNN data and predictions; retain consent and camera access. |
-| Leave or reload the learning workspace                | Discard the in-memory workspace and consent; release camera and model resources.               |
+| Activity                      | What you do                                                                              |
+| ----------------------------- | ---------------------------------------------------------------------------------------- |
+| Explore image recognition     | Follow an illustrated example from image to predicted class.                             |
+| Try two exercises             | Find everyday uses of image recognition and classify points with KNN.                    |
+| Train your own classifier     | Collect webcam images or choose local files, then test predictions.                      |
+| Preview reward-based learning | Watch two example paths on the homepage. The Q-learning lesson and exercise are planned. |
 
 ## Quick start
 
-Use **Node.js 26.x LTS** and npm. A modern browser with WebGL is required for
-training. Webcam access requires HTTPS, or localhost during development.
+Use Node.js 26.x LTS and npm. Training requires a browser with WebGL. Camera access
+requires HTTPS or localhost and separate browser permission.
 
 ```sh
 npm ci --no-audit
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000), enter the learning lab, choose image
-recognition and open its practice page. Accept the optional model download before
-training, then separately allow camera access if you want to capture images.
-
-For the native production server:
-
-```sh
-npm run build
-npm start
-```
-
-ML Teaching is independent of Google Teachable Machine.
+Open [localhost:3000](http://localhost:3000), choose **Bilderkennung** in the
+learning lab and open the practice page. The required model downloads after you
+consent. You can supply local image files without enabling the camera.
 
 ## Data, providers and costs
 
-Training images, class names, extracted features and the trained KNN classifier stay
-in browser memory. The app has no database, account system or image-upload API.
-Consent is not persisted. Reloading discards the workspace and asks again.
-Quiz answers and progress also stay in memory and are discarded by reset or reload.
-Appearance follows the system by default. Its separate light/dark/system preference
-is saved locally only when you explicitly enable remembering for future visits.
+Training images, class names, features and classifier state stay in browser
+memory. Quiz progress and model consent are also temporary. The appearance
+setting is stored on your device only when you choose to remember it.
 
-After explicit consent, the browser downloads pretrained MobileNet weights from
-Google. Google receives connection metadata during those downloads; the app sends
-no training images. Model files can remain in the browser's ordinary HTTP cache.
-Vercel processes website connection data. See the in-app
-[privacy page source](src/screens/PrivacyPage.tsx) and
-[deployment boundaries](docs/deployment.md).
+The browser downloads pretrained MobileNet weights after consent. Google and
+Kaggle receive connection metadata during the download, and model files can
+remain in the browser's HTTP cache. Vercel processes website connection data.
+See the [privacy policy](https://mlteaching.boomapps.de/datenschutz).
 
-There are no application API keys or paid model APIs to configure. Hosting bandwidth
-and native image optimization can incur provider costs. No billing estimates or
-provider plan guarantees are implied. The app has no analytics or externally
-hosted fonts. Geist is served from a local asset.
+The app has no accounts, database, image-upload API or analytics. It serves
+fonts locally and requires no API keys or paid model services. Hosting bandwidth
+and image optimization can incur provider costs. See [deployment](docs/deployment.md)
+for the hosting setup.
 
 ## Development
 
 ```sh
-npm run ci                 # Formatting, lint, types, boundaries, quality, audit and coverage
-npm run build              # One native Next build with strict hash-CSP verification
+npm run ci
+npm run audit
+npm run build
 npx playwright install --only-shell chromium
-npm run test:e2e           # Native production server, keyboard, consent and axe checks
-npm run audit              # Full dependency tree, including development dependencies
+npm run test:e2e
 ```
 
-Full test commands remain unfiltered locally, including when `CI=true`.
-[Development](docs/development.md) explains focused checks;
-[CI](docs/ci.md) explains the PR selection and required gate.
+Run `npm start` to serve the verified production build locally. Playwright starts
+its own production server for browser tests. See [development](docs/development.md)
+for prerequisites and focused checks, and [CI](docs/ci.md) for PR checks.
 
-Pages and layouts are Server Components, rendered at build time. Browser-only ML,
-camera and interactive controls live in small client subtrees. See
-[architecture](docs/architecture.md), [design system](docs/design-system.md), and
-[the SSG/CSP decision](docs/decisions/ssg-and-csp.md).
+Next.js builds public pages with strict hash-based CSP. TensorFlow.js and camera
+processing run in the browser. See [architecture](docs/architecture.md) and the
+[design system](docs/design-system.md) for the application boundaries and shared UI.
 
 ## Contributing and security
 
-Work on a development branch. Use English Conventional Commits and keep changes
-reviewable. Merging, manual publication and provider changes require explicit
-authorization. See [AGENTS.md](AGENTS.md) for the documentation index and repository
-controls.
+Work on a branch and use English Conventional Commits. See [AGENTS.md](AGENTS.md)
+for repository rules and the documentation index. Merging and publication require
+explicit authorization.
 
-Report vulnerabilities using [SECURITY.md](SECURITY.md). Application code uses the
-[MIT license](LICENSE.txt). Upstream components and icons retain their own license
-terms, including Animate UI's Commons Clause condition; see
-[third-party notices](docs/third-party-notices.md).
+Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+Application code uses the [MIT license](LICENSE.txt). See the
+[third-party notices](docs/third-party-notices.md) for upstream license terms,
+including Animate UI's Commons Clause.

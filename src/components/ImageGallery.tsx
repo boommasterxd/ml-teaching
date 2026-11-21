@@ -118,9 +118,12 @@ function GalleryToolbar({
 }: GalleryToolbarProps) {
   return (
     <div className="flex min-h-9 shrink-0 items-center justify-between gap-1">
-      <span className="text-sm font-medium text-foreground">
-        {isSelectionMode ? `${selectedCount} ausgewählt` : 'Bildergalerie'}
-      </span>
+      <div className="text-sm font-medium text-foreground">
+        {!isSelectionMode && <span>Bildergalerie</span>}
+        <span role="status" aria-atomic="true">
+          {isSelectionMode ? `${selectedCount} ausgewählt` : ''}
+        </span>
+      </div>
       <div className="flex gap-1">
         <Button
           ref={modeButtonRef}

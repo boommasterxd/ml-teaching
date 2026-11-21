@@ -72,7 +72,7 @@ describe('training image gallery', () => {
           onRemoveImages={vi.fn()}
         />,
       );
-      expect(screen.getByRole('status').textContent).toBe('Galerie wird geladen.');
+      expect(screen.getByText('Galerie wird geladen.').getAttribute('role')).toBe('status');
       await act(async () => rows.reject(new Error('Gallery code temporarily unavailable')));
       expect(screen.getByRole('alert').textContent).toBe(
         'Die Galerie konnte nicht geladen werden.',
@@ -93,7 +93,7 @@ describe('training image gallery', () => {
     const props = { label, color: '#dc2626', onImageClick: vi.fn(), onRemoveImages: vi.fn() };
     try {
       const { rerender } = render(<Gallery {...props} images={[makeImage('first')]} />);
-      expect(screen.getByRole('status').textContent).toBe('Galerie wird geladen.');
+      expect(screen.getByText('Galerie wird geladen.').getAttribute('role')).toBe('status');
       rerender(<Gallery {...props} images={[]} />);
       const galleryRows = await vi.importActual<typeof import('@/components/ImageGalleryRows')>(
         '@/components/ImageGalleryRows',
@@ -152,13 +152,17 @@ describe('training image gallery', () => {
     fireEvent.click(mode);
     expect(screen.getByRole('button', { name: 'Auswahl abbrechen' })).toBe(mode);
     expect(document.activeElement).toBe(mode);
+    const selectionStatus = screen.getByRole('status');
+    expect(selectionStatus.textContent).toBe('0 ausgewählt');
     const first = screen.getByRole('button', { name: 'Bild 1 auswählen', pressed: false });
+    act(() => first.focus());
     fireEvent.click(first);
     expect(screen.getByRole('button', { name: 'Bild 1 auswählen', pressed: true })).toBe(first);
+    expect(document.activeElement).toBe(first);
     fireEvent.click(screen.getByRole('button', { name: 'Bild 3 auswählen' }));
-    expect(screen.getByText('2 ausgewählt')).toBeTruthy();
+    expect(selectionStatus.textContent).toBe('2 ausgewählt');
     fireEvent.click(first);
-    expect(screen.getByText('1 ausgewählt')).toBeTruthy();
+    expect(selectionStatus.textContent).toBe('1 ausgewählt');
     fireEvent.click(mode);
     expect(screen.getByRole('button', { name: 'Mehrere markieren' })).toBe(mode);
     expect(document.activeElement).toBe(mode);

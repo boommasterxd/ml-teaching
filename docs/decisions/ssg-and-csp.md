@@ -42,12 +42,15 @@ Project adaptations include the public route selections, static error UI,
 app-specific image and model origins, local data-image sources and central security
 headers. The adapter also uses the native routing rules as the single CSP source
 for regular static responses in builds without a provider adapter. Next.js appends
-prerender metadata headers to routing headers, so regular `.meta` files are
-validated and included in the build manifest without a second CSP value. Error
-metadata and composed provider builds retain the template's header persistence.
-The fallback route's source pattern excludes native static assets. Next.js
-compiles the source at startup, so the manifest regex carries the same exclusion
-for adapters that consume it directly.
+prerender metadata headers to routing headers. In native builds without a
+provider adapter, the routing fallback also supplies the single CSP for unknown
+URLs served by the verified `_not-found` copy. This strict policy includes the
+trusted hashes from both static error documents. The adapter validates and binds
+the native copy's HTML and metadata to the build manifest without adding a second
+CSP header. Explicit error outputs and composed provider builds retain the
+template's header persistence. The fallback route's source pattern excludes
+native static assets. Next.js compiles the source at startup, so the manifest
+regex carries the same exclusion for adapters that consume it directly.
 Model weights require only connect access to the specific Google/TF Hub/Kaggle
 origins. The WebGL runtime needs neither WASM script permission nor a worker source.
 

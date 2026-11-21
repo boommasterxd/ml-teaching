@@ -10,6 +10,10 @@ import {
   run,
 } from './cache-fixtures';
 
+const codeqlWorkflow = { name: 'CodeQL', path: '.github/workflows/codeql.yml' };
+const codeqlKey = (sha: string, runId = 20) =>
+  `codeql-overlay-base-database-1-js-${sha}-${runId}-1`;
+
 describe('cache lifecycle', () => {
   it('removes only API-confirmed closed PR caches without an associated active run', () => {
     const api = new FixtureApi();
@@ -66,6 +70,38 @@ describe('cache lifecycle', () => {
     const result = runLifecycle(options(api));
     expect(result.deleted).toEqual([]);
     expect(result.deferred).toBe(1);
+  });
+
+  it('ignores CodeQL proof candidates from non-main refs or empty caches', () => {
+    const api = new FixtureApi();
+    const opts = options(api, 'workflow_run');
+    opts.policy.codeqlWorkflows = [codeqlWorkflow];
+    api.caches = [
+      cache(1, codeqlKey(previousHead)),
+      cache(2, codeqlKey(opts.sha, 21), 'refs/heads/topic', true),
+      { ...cache(3, codeqlKey(opts.sha, 22), 'refs/heads/main', true), size_in_bytes: 0 },
+    ];
+    expect(runLifecycle(opts).deleted).toEqual([]);
+    expect(api.caches.map(({ id }) => id)).toEqual([1, 2, 3]);
+  });
+
+  it('retires older CodeQL snapshots separately for each cache version', () => {
+    const api = new FixtureApi();
+    const opts = options(api, 'workflow_run');
+    opts.policy.codeqlWorkflows = [codeqlWorkflow];
+    api.triggering = run({
+      id: 20,
+      ...codeqlWorkflow,
+      event: 'schedule',
+    });
+    api.caches = [
+      cache(1, codeqlKey(previousHead)),
+      { ...cache(2, codeqlKey(previousHead)), version: 'v2' },
+      cache(3, codeqlKey(opts.sha), 'refs/heads/main', true),
+      { ...cache(4, codeqlKey(opts.sha), 'refs/heads/main', true), version: 'v2' },
+    ];
+    expect(runLifecycle(opts).deleted.map(({ id }) => id)).toEqual([1, 2]);
+    expect(api.caches.map(({ id }) => id)).toEqual([3, 4]);
   });
 
   it('fails without deleting anything if main moves during planning', () => {

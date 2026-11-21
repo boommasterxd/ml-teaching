@@ -83,9 +83,10 @@ export default function TrainingPanels({
             predictVideoRef={resources.predictVideoRef}
             onStartPredicting={resources.startPredicting}
             onStopPredicting={prediction.stopPredicting}
-            onEnableCamera={onEnableCamera}
-            cameraPending={camera.isPending}
-            cameraFailed={camera.hasFailed}
+            cameraAllowed={consent.cameraConsent}
+            onEnableCamera={consent.cameraConsent ? undefined : consent.requestCameraConsent}
+            cameraPending={step === 'prediction' && camera.isPending}
+            cameraFailed={resources.error?.category === 'camera'}
             subscribeToFeatures={prediction.subscribeToFeatures}
           />
         </Activity>

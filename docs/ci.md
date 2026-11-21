@@ -8,7 +8,7 @@ installs the lockfile with `npm ci --no-audit`.
 
 The dependency-free planner reads the complete merge-base-to-head Git diff. Renames
 include both endpoints, and deletions remain part of the scope. Its plan records the
-base, head and merge revisions; consumers reject a different checked-out revision.
+base, head and merge revisions. Consumers reject a different checked-out revision.
 
 | Complete changed scope                                                                         | Selected work                                                          |
 | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
@@ -22,8 +22,9 @@ jobs use regular runners; job-level conditions prevent allocation of unselected
 substantive jobs. Superseded runs for the same PR are cancelled. The unconditional
 final `CI` check accepts successful selected jobs and explicitly excluded skipped
 jobs only. Invalid plans, planning failures, cancellations and unexpected skips fail.
-The CI workflow and final gate use the simulated PR merge checkout. The maintainer
-accepts that workflow provenance for this repository.
+The workflow, planner and final validation run from the simulated PR merge checkout.
+The [security checks decision](decisions/ci-trust-boundary.md) records the accepted
+CI provenance and the planned transition to GitHub Secret Scanning.
 
 ## Dependency cache lifecycle
 
@@ -66,12 +67,14 @@ in the denominator. Initial and dependency-changing installs are tracked separat
 This is a target, not a measured hit rate; retention and capacity remain unchanged
 pending workload evidence, without a separate keepalive job or a paid increase.
 
-The lifecycle engine in `.github/scripts/cache-lifecycle/` is the unchanged
-canonical JavaScript runtime from the GitHub plugin 1.5.0's
-`templates/cache-lifecycle/`, with its upstream type declarations. The local
+The lifecycle engine in `.github/scripts/cache-lifecycle/` uses the canonical
+GitHub plugin template with its upstream type declarations. The core and planner
+modules use the template from version 1.5.6. CodeQL cache proof requires nonempty
+caches from the default branch, and separate cache versions are evaluated
+independently. The repository currently manages only npm caches. The local
 `.github/scripts/cache.ts` adapter uses TypeScript and the strict project
 typecheck. The runtime and adapter retain the same file, function, complexity and
-duplication gates; there is no separate custom cache-deletion engine.
+duplication gates.
 
 ## Local interfaces and limits
 
@@ -82,8 +85,8 @@ and unit coverage. These commands also remain available individually in
 and audit execution failures; development dependencies remain installed. Before an
 authorized integration, run the separate full local `npm audit --include=dev` and
 review development-only findings.
-The development-only [minimatch advisory](https://github.com/advisories/GHSA-g3hv-75wg-m249)
-is accepted until a compatible upstream update is available.
+The [minimatch decision](decisions/minimatch-development-advisory.md) records the
+scope and remaining risk of the accepted development-only advisory.
 
 Application code, own tooling, root configurations and tests require at most
 100 lines per function, 500 lines per source file including CSS,

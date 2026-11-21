@@ -40,17 +40,18 @@ export const PrivacyInformation = (
     <h3>Bereitstellung personenbezogener Daten</h3>
     <h4>Bereitstellung und erforderliche Angaben</h4>
     <p>
-      Die Nutzung der Lernfunktion und die Kontaktaufnahme sind freiwillig. Für die Darstellung der
-      Website werden die im Abschnitt „Server-Log-Dateien“ beschriebenen technischen
-      Verbindungsdaten benötigt. Für das Bildtraining wählen Sie selbst Bildbeispiele aus oder
-      erlauben den Kamerazugriff. Für eine Antwort auf eine E-Mail-Anfrage benötigen wir eine
+      Die Nutzung der Lernfunktion und die Kontaktaufnahme sind freiwillig. Damit wir Ihnen die
+      angeforderte Seite oder Datei senden können, benötigt Vercel die IP-Adresse Ihrer Verbindung
+      und die Angabe, welche Seite oder Datei Ihr Browser anfordert. Die zusätzliche Protokollierung
+      für den sicheren Betrieb erläutern wir im Abschnitt „Server-Log-Dateien“. Für das Bildtraining
+      können Sie Bilddateien auswählen oder mit Ihrer Kamera Bilder aufnehmen. Die Bildbeispiele
+      verbleiben in Ihrem Browser. Für eine Antwort auf eine E-Mail-Anfrage benötigen wir eine
       erreichbare E-Mail-Adresse und die zur Bearbeitung Ihres Anliegens erforderlichen Angaben.
     </p>
     <p>
-      Es besteht keine gesetzliche oder vertragliche Pflicht, uns Bildbeispiele oder eine
-      Kontaktanfrage bereitzustellen. Die Bereitstellung ist für einen Vertragsschluss über diese
-      Website nicht erforderlich. Sie sind nicht verpflichtet, optionale Funktionen zu aktivieren
-      oder Kontakt aufzunehmen.
+      Es besteht keine gesetzliche oder vertragliche Pflicht, Bildbeispiele für die Lernfunktion zu
+      verwenden oder uns zu kontaktieren. Für einen Vertragsschluss über diese Website sind
+      Bildbeispiele und Kontaktangaben nicht erforderlich.
     </p>
     <h4>Folgen einer Nichtbereitstellung</h4>
     <p>
@@ -93,6 +94,13 @@ export const PrivacyInformation = (
       widerrufen. Wählen Sie dazu in der Lernfunktion „Einwilligung widerrufen“, laden Sie die Seite
       neu oder schließen Sie sie. Die Rechtmäßigkeit der bis zum Widerruf erfolgten Verarbeitung
       bleibt unberührt.
+    </p>
+    <p>
+      Mit „Kamera ausschalten“ können Sie Ihre separate Zustimmung zur Kameranutzung jederzeit mit
+      Wirkung für die Zukunft widerrufen. Die Lernfunktion beendet den Kamerazugriff. Bereits
+      gesammelte Bildbeispiele und ein trainierter Klassifikator bleiben für die aktuelle Nutzung im
+      Browser verfügbar. Wenn Sie die Kamera erneut einschalten möchten, fragt die Lernfunktion Ihre
+      Zustimmung erneut ab.
     </p>
     <h3>
       Widerspruchsrecht gegen die Datenerhebung in besonderen Fällen sowie gegen Direktwerbung (Art.

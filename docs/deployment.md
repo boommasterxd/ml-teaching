@@ -43,6 +43,14 @@ or any Git error also build. Git reads have a five-second timeout and a bounded
 output buffer. Comparing the entire deployment gap preserves runtime changes from
 skipped intermediate commits.
 
+Keep the native Git checkout metadata available to the Ignore Build Step. Vercel
+already excludes local `.git` metadata from CLI uploads by default.
+
+The command logs one fixed decision code prefixed with `[ignore-build]`.
+The codes distinguish missing revisions, checkout or ancestry problems, failed
+diff or manifest checks, and the classification of a valid diff. The diagnostic
+omits revision values, changed paths and Git error output.
+
 Intentional provider-setting changes require the provider's Ignore Build Step
 bypass when manually redeploying. The source script does not establish a saved
 Ignore Build Step or other active project settings; verify both before relying on
