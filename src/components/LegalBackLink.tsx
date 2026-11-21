@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { useShouldReduceMotion } from '@animate-ui/react/utils/motion';
-import { canCaptureRoute, goBackWithTransition } from '@/lib/history-transition';
+import { goBackWithTransition } from '@/lib/history-transition';
 import AnimatedLink from './AnimatedLink';
 import { ArrowLeft } from './icons/arrow-left';
 
@@ -86,7 +86,6 @@ export default function LegalBackLink() {
           entry?.sameDocument &&
           previousPath &&
           previousPath !== location.pathname &&
-          canCaptureRoute(previousPath) &&
           goBackWithTransition(navigation, entry)
         )
           return;
