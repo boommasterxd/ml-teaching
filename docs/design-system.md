@@ -578,8 +578,9 @@ Reduced motion uses the library's instant height change and opacity feedback.
   React may skip that visual transition to preserve synchronous interaction; do not
   delay navigation or focus to serialize decorative work.
   Entering the image-training route opens its native consent dialog immediately.
-  This destination opts out of page snapshots because document transitions paint
-  above the native modal. Its setup steps retain their own component transitions.
+  The browser captures the top-layer dialog separately from the page content
+  during navigation and animates both with the same Flow direction. The dialog
+  stays modal throughout. Its setup steps retain their own component transitions.
   The native 500 document and the homepage opt in to the browser's document
   transition for recovery. The shared fade captures the main content, with the
   shell outside the capture. Every App Router document includes the same hashed

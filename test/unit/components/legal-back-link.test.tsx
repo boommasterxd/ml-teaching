@@ -4,7 +4,6 @@ import type { NextRouter } from 'next/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import LegalBackLink from '@/components/LegalBackLink';
 import { goBackWithTransition, subscribeToHistoryTransitions } from '@/lib/history-transition';
-import { learningPaths } from '@/lib/learning-paths';
 import { AppRouterHost, testRouter } from '../helpers/app-router-host';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
@@ -16,12 +15,12 @@ function commitHistoryEntry(navigation: Navigation, key: string, url: string, in
   navigation.dispatchEvent(new Event('currententrychange'));
 }
 
-function installNavigation(traverseTo = vi.fn<Navigation['traverseTo']>(), target = '/lernen') {
+function installNavigation(traverseTo = vi.fn<Navigation['traverseTo']>()) {
   const entry = {
     key: learningEntryKey,
     index: 0,
     sameDocument: true,
-    url: new URL(target, window.location.href).href,
+    url: new URL('/lernen', window.location.href).href,
   } as NavigationHistoryEntry;
   const navigation = Object.assign(new EventTarget(), {
     currentEntry: { index: 1 },
@@ -119,12 +118,10 @@ describe('legal page back navigation', () => {
     history.replaceState(null, '', originalUrl);
   });
 
-  it.each(['no View Transition API', 'no transition-type selector', 'the training consent dialog'])(
+  it.each(['no View Transition API', 'no transition-type selector'])(
     'returns to the previous page when the browser has %s',
     async (limitation) => {
-      const target =
-        limitation === 'the training consent dialog' ? learningPaths.imagePractice : '/lernen';
-      const { navigation } = installNavigation(undefined, target);
+      const { navigation } = installNavigation();
       const transition = limitation === 'no View Transition API' ? null : installTransition();
       if (limitation === 'no transition-type selector')
         vi.mocked(CSS.supports).mockReturnValue(false);
@@ -137,7 +134,7 @@ describe('legal page back navigation', () => {
         { wrapper: AppRouterHost },
       );
       const back = screen.getByRole('link', { name: 'Zurück' });
-      expect(back.getAttribute('href')).toBe(target);
+      expect(back.getAttribute('href')).toBe('/lernen');
       fireEvent.focus(back);
       expect(testRouter.prefetch).not.toHaveBeenCalled();
       await act(async () => {
@@ -256,13 +253,12 @@ describe('legal page back navigation', () => {
     }
   });
 
-  it('leaves the consent dialog, same-page entries and existing browser visuals to the browser', () => {
+  it('leaves same-page entries and existing browser visuals to the browser', () => {
     vi.stubGlobal('NavigationPrecommitController', class {});
     const { navigation } = installNavigation();
     const { start } = installTransition();
     const stop = subscribeToHistoryTransitions(navigation, document.createElement('main'));
     try {
-      expect(dispatchTraversal(navigation, learningPaths.imagePractice, 0)).not.toHaveBeenCalled();
       expect(
         dispatchTraversal(navigation, location.pathname + '#section', 0),
       ).not.toHaveBeenCalled();

@@ -367,7 +367,7 @@ async function followPreparedRoute(
 test('keyboard preparation preserves page capture rules across the learning routes', async ({
   page,
 }) => {
-  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'no-preference' });
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
   const transitions = await observeViewTransitions(page);
   const failures = diagnostics(page);
   await page.goto(learningPaths.hub);
@@ -403,14 +403,24 @@ test('keyboard preparation preserves page capture rules across the learning rout
     .poll(() => consent.evaluate((dialog) => dialog.contains(document.activeElement)))
     .toBe(true);
   await expectAccessible(page);
-  const [first, ...rest] = await transitions();
-  expect(first).toEqual(imageTransition);
-  expect(
-    rest.filter(
-      (capture) =>
-        capture !== 'skipped' && (capture.root || capture.outgoingPages || capture.incomingPages),
-    ),
-  ).toEqual([]);
+  const trainingTransition = { ...imageTransition, setupDialog: 'enter' };
+  expect(await transitions()).toEqual([imageTransition, trainingTransition]);
+
+  await page.keyboard.press('Escape');
+  await expect(page).toHaveURL(learningPaths.images);
+  await settleEntryAnimations(page);
+  const declineTransition = { ...imageTransition, back: true, setupDialog: 'exit' };
+  expect(await transitions()).toEqual([imageTransition, trainingTransition, declineTransition]);
+
+  await page.goBack();
+  await expect(consent).toBeVisible();
+  await settleEntryAnimations(page);
+  expect(await transitions()).toEqual([
+    imageTransition,
+    trainingTransition,
+    declineTransition,
+    { ...trainingTransition, back: true },
+  ]);
   expect(failures).toEqual([]);
 });
 

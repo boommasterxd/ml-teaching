@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { EntryViewportReadyContext, InitialEntryContext } from '@/components/ui/entry-policy';
 import { useMotionPreference } from '@/components/ui/use-motion-preference';
-import { canCaptureRoute, subscribeToHistoryTransitions } from '@/lib/history-transition';
+import { subscribeToHistoryTransitions } from '@/lib/history-transition';
 
 // Exact trusted bytes emitted by Motion's AnimateView reset hook, also hashed during SSG.
 export const VIEW_TRANSITION_RESET = `
@@ -35,7 +35,7 @@ export function PageTransition({
   const pathname = usePathname();
   const page = pageKey ?? pathname;
   const { reduce } = useMotionPreference();
-  const canAnimateArrival = !reduce && canCaptureRoute(pathname);
+  const canAnimateArrival = !reduce && pathname !== null;
   const [arrival, setArrival] = useState({ page, initial: true, ready: true, alternate: false });
   const capture = arrival.alternate ? 'page-b' : 'page-a';
   // Separate snapshots keep each page's own scroll position and dimensions.
