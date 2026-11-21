@@ -171,10 +171,11 @@ maintained documentation change.
 | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
 | [`docs/architecture.md`](docs/architecture.md)                                                         | Describes route, component and browser ML boundaries.           |
 | [`docs/ci.md`](docs/ci.md)                                                                             | Explains protected PR planning, jobs and quality controls.      |
-| [`docs/decisions/ci-trust-boundary.md`](docs/decisions/ci-trust-boundary.md)                           | Records CI provenance and the Gitleaks updater decision.        |
+| [`docs/decisions/ci-trust-boundary.md`](docs/decisions/ci-trust-boundary.md)                           | Records CI provenance and complementary secret scanning.        |
 | [`docs/decisions/error-artwork-and-menus.md`](docs/decisions/error-artwork-and-menus.md)               | Records the shared playback and menu-loading decisions.         |
 | [`docs/decisions/hostinger-mail-retention.md`](docs/decisions/hostinger-mail-retention.md)             | Records confirmed mailbox recovery and open backup retention.   |
 | [`docs/decisions/minimatch-development-advisory.md`](docs/decisions/minimatch-development-advisory.md) | Records the limited development-only advisory acceptance.       |
+| [`docs/decisions/public-repository-visibility.md`](docs/decisions/public-repository-visibility.md)     | Records accepted exposure of existing repository history.       |
 | [`docs/decisions/ssg-and-csp.md`](docs/decisions/ssg-and-csp.md)                                       | Records static rendering and guarded CSP integration.           |
 | [`docs/deployment.md`](docs/deployment.md)                                                             | Defines the Vercel release workflow and publication boundaries. |
 | [`docs/design-system.md`](docs/design-system.md)                                                       | Defines shared UI, motion, accessibility and integration rules. |
