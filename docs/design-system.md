@@ -406,19 +406,18 @@ A persistent live status announces the selected image count during selection mod
 The class marker, gallery illustration and selected thumbnail badge use the same
 theme-aware class accent. Class names identify each group. Class counters show
 progress toward the training minimum, then the collected total.
-The first class card and prediction step offer camera activation after the
-optional camera choice is declined or the camera is turned off. Turning it off
-releases its stream, clears the app's camera consent and returns focus to the
-current step control. Re-enabling opens the camera choice again. A failed collection
-request offers a reconnect action. A failed prediction request can be retried
-from the same start control. Local image uploads remain available.
-Each capture preview places the shared camera switch in its lower-right corner.
-The completed training
-status offers an action that opens the prediction step without starting the camera preview.
-The prediction card keeps its camera frame and result areas in place before, during
-and after live prediction. Start and stop share one control inside the frame.
-The control retains focus while the camera connects. The video appears once
-prediction starts, and the confidence bars are empty until results arrive.
+The first class card offers camera activation when the initial camera choice is
+declined. Capture and prediction previews share the same controls. Play and pause
+share the lower-left button, and the camera switch sits in the lower-right corner.
+Both buttons stay mounted in place during stream changes. Pause releases
+the stream and withdraws camera consent. Play reopens the camera choice after
+withdrawal and retries a failed connection while consent is active. Capture frames
+stay available after the first grant. During training or when no preview can turn
+off the camera, its withdrawal action sits beside the general withdrawal in the footer.
+Local image uploads remain available.
+With camera consent, live prediction starts when the trained prediction step opens.
+The prediction card keeps its camera frame and result areas in place, and confidence
+bars are empty until results arrive.
 The camera and confidence readout share a row when the card is wide enough.
 The PCA diagram reserves its plot, description control and legend below the
 confidence bars before prediction starts.
@@ -488,8 +487,8 @@ activation in the same dialog. Intent on a confirmation or image-preview trigger
 prepares one shared module. The workspace mounts one active dialog at a time and
 supports cancelling a pending first opening with Escape. Upload and capture
 intent warm the thumbnail module. Its virtualizer mounts when there are images
-to display. Preparing the prediction space on intent fits or reuses PCA without
-opening the camera. The prediction video attaches after explicit activation.
+to display. Play intent can prepare the local prediction space. The video attaches
+when the trained prediction step is active and the authorized stream is ready.
 TensorFlow and model imports remain consent-gated and are never prepared on intent.
 
 ## Motion ownership

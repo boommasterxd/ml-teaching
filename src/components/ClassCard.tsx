@@ -54,10 +54,7 @@ export interface ClassCardActions extends CaptureActions {
 /**
  * Props for the ClassCard component.
  */
-interface ClassCardProps extends Pick<
-  CameraPreviewProps,
-  'stream' | 'facingMode' | 'isCameraSwitching' | 'onSwitchCamera'
-> {
+interface ClassCardProps extends Pick<CameraPreviewProps, 'camera'> {
   position: number;
   cameraFallback?: React.ReactNode;
   /** The ML class data to display and manage. */
@@ -237,10 +234,9 @@ const ClassCard = memo(function ClassCard({
   isDuplicate,
   actions,
   cameraFallback,
-  ...camera
+  camera,
 }: ClassCardProps) {
   const { onRemoveImages, onImageClick } = actions;
-  const showCamera = camera.stream || camera.isCameraSwitching;
   const { videoRef, isRecording, startRecording, stopRecording, handleFileUpload } =
     useClassCapture(cls, actions);
 
@@ -266,13 +262,13 @@ const ClassCard = memo(function ClassCard({
       <CardContent
         className={cn(
           'grid min-w-0 gap-3 px-4 @md/training-class:px-5',
-          showCamera
+          camera
             ? '@xl/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]'
             : 'lg:flex-1 lg:content-between',
         )}
       >
         <CameraPreview
-          {...camera}
+          camera={camera}
           disabled={actions.captureDisabled || cls.images.length >= ML.MAX_IMAGES_PER_CLASS}
           isRecording={isRecording}
           onStartRecording={startRecording}
@@ -285,7 +281,7 @@ const ClassCard = memo(function ClassCard({
         {cameraFallback && <div className="col-span-full">{cameraFallback}</div>}
         <ImageGallery
           className={
-            showCamera ? '@xl/training-class:h-auto @xl/training-class:[contain:size]' : undefined
+            camera ? '@xl/training-class:h-auto @xl/training-class:[contain:size]' : undefined
           }
           label={`Trainingsbilder von Klasse ${position}: ${cls.name.trim() || 'ohne Namen'}, scrollbar`}
           images={cls.images}

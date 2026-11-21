@@ -73,54 +73,56 @@ describe('training and prediction controls', () => {
   });
 
   it('requires a camera for live prediction and exposes class confidence and stop controls', () => {
-    const onStartPredicting = vi.fn();
-    const onStopPredicting = vi.fn();
+    const onToggle = vi.fn();
     const stream = {} as MediaStream;
+    const camera = {
+      stream: null,
+      active: false,
+      pending: false,
+      failed: false,
+      facingMode: 'user' as const,
+      onToggle,
+      onSwitch: vi.fn(),
+    };
+    const liveCamera = { ...camera, active: true, stream };
     const base = {
       classes: makeClasses(10),
       prediction: null,
       isPredicting: false,
       hasTrainedModel: true,
-      stream: null,
-      facingMode: 'user' as const,
+      camera,
       predictVideoRef: { current: null },
-      onStartPredicting,
-      onStopPredicting,
-      onEnableCamera: vi.fn(),
-      cameraPending: false,
       subscribeToFeatures: () => () => {},
     };
     const { rerender } = render(
-      <PredictionPanel {...base} hasTrainedModel={false} stream={stream} />,
+      <PredictionPanel {...base} hasTrainedModel={false} camera={liveCamera} />,
     );
     expect(base.predictVideoRef.current).toBeNull();
     expect(screen.getByRole('heading', { name: 'Vorhersage' }).id).toBe('training-prediction');
     expect(screen.getByText(/Trainiere zuerst dein Modell/)).toBeTruthy();
     rerender(<PredictionPanel {...base} />);
-    expect(screen.queryByRole('button', { name: 'Live-Vorhersage starten' })).toBeNull();
-    expect(screen.getByText(/Aktiviere die Kamera/)).toBeTruthy();
-    rerender(<PredictionPanel {...base} onEnableCamera={undefined} />);
-    expect(screen.queryByRole('button', { name: 'Kamera aktivieren' })).toBeNull();
-    rerender(<PredictionPanel {...base} stream={stream} />);
-    expect(base.predictVideoRef.current).toBeNull();
-    const start = screen.getByRole('button', { name: 'Live-Vorhersage starten' });
-    const frame = start.closest('[data-slot="prediction-camera"]');
-    expect(frame).not.toBeNull();
-    expect(screen.queryByRole('progressbar')).toBeNull();
+    const start = screen.getByRole('button', { name: 'Kamera aktivieren' });
+    expect(screen.getByText('Kamera aus')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Kamera wechseln' }).getAttribute('aria-disabled'),
+    ).toBe('true');
     fireEvent.click(start);
-    expect(onStartPredicting).toHaveBeenCalledOnce();
-    rerender(<PredictionPanel {...base} stream={stream} isPredicting />);
-    const preview = screen.getByLabelText('Kameravorschau für Vorhersage');
+    expect(onToggle).toHaveBeenCalledOnce();
+    rerender(<PredictionPanel {...base} camera={{ ...camera, active: true, pending: true }} />);
+    expect(screen.getByText('Kamera wird verbunden …')).toBeTruthy();
+    expect(base.predictVideoRef.current).toBeNull();
+    expect(screen.getByRole('button', { name: 'Kamera ausschalten' })).toBe(start);
+    rerender(<PredictionPanel {...base} camera={liveCamera} isPredicting />);
+    const preview = screen.getByLabelText<HTMLVideoElement>('Kameravorschau für Vorhersage');
     expect(base.predictVideoRef.current).toBe(preview);
-    expect((preview as HTMLVideoElement).srcObject).toBe(stream);
-    expect(frame?.contains(preview)).toBe(true);
+    expect(preview.srcObject).toBe(stream);
     expect(screen.getByText('Die Vorhersage wird vorbereitet.')).toBeTruthy();
     expect(screen.queryByRole('progressbar')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Live-Vorhersage stoppen' })).toBe(start);
+    expect(screen.getByRole('button', { name: 'Kamera ausschalten' })).toBe(start);
     rerender(
       <PredictionPanel
         {...base}
-        stream={stream}
+        camera={liveCamera}
         isPredicting
         prediction={{ label: 'red', confidences: { red: 0.85, blue: 0.15 } }}
       />,
@@ -133,14 +135,12 @@ describe('training and prediction controls', () => {
     expect(
       screen.getByRole('progressbar', { name: 'Konfidenz für Blau' }).getAttribute('aria-valuenow'),
     ).toBe('15');
-    fireEvent.click(screen.getByRole('button', { name: 'Live-Vorhersage stoppen' }));
-    expect(onStopPredicting).toHaveBeenCalledOnce();
-    rerender(<PredictionPanel {...base} stream={stream} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Kamera ausschalten' }));
+    expect(onToggle).toHaveBeenCalledTimes(2);
+    rerender(<PredictionPanel {...base} />);
     expect(preview.isConnected).toBe(false);
-    expect(frame?.contains(screen.getByRole('button', { name: 'Live-Vorhersage starten' }))).toBe(
-      true,
-    );
-    expect((preview as HTMLVideoElement).srcObject).toBeNull();
+    expect(screen.getByRole('button', { name: 'Kamera aktivieren' })).toBe(start);
+    expect(preview.srcObject).toBeNull();
     expect(base.predictVideoRef.current).toBeNull();
   });
 

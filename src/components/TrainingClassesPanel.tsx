@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { ArrowRight } from './icons/arrow-right';
 import { Plus } from './icons/plus';
 import { Camera } from './icons/camera';
@@ -7,12 +7,12 @@ import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import ClassCard from './ClassCard';
 import type { ClassCardActions } from './ClassCard';
+import type { CameraView } from './CameraControls';
 import Button from './Button';
 import { Empty, EmptyDescription, EmptyHeader } from './ui/empty';
 import { AnimatedList, AnimatedListItem } from './ui/animated-list';
 import { Heading, Text } from './ui/typography';
 import { EntryReveal } from './ui/entry-reveal';
-import { Spinner } from './ui/spinner';
 import { cn } from '@/lib/utils';
 
 /**
@@ -24,15 +24,8 @@ interface TrainingClassesPanelProps {
   classes: MLClass[];
   /** Set of class names that appear more than once (used to show duplicate warnings). */
   duplicateClassNames: Set<string>;
-  /** Active camera stream passed down to each ClassCard for live capture. */
-  stream: MediaStream | null;
-  /** Camera facing mode: front-facing ('user') or rear-facing ('environment'). */
-  facingMode: 'user' | 'environment';
-  isCameraPending: boolean;
-  isCameraSwitching: boolean;
-  cameraFailed: boolean;
-  onEnableCamera?: () => void;
-  onSwitchCamera: () => void;
+  camera?: CameraView;
+  onEnableCamera: () => void;
   /** Ref to the main heading element for programmatic focus management. */
   mainHeadingRef: React.RefObject<HTMLHeadingElement | null>;
   /** Callbacks for all actions a ClassCard can trigger (rename, delete, add image, etc.). */
@@ -168,13 +161,8 @@ function CollectionActions({
 export default function TrainingClassesPanel({
   classes,
   duplicateClassNames,
-  stream,
-  facingMode,
-  isCameraPending,
-  isCameraSwitching,
-  cameraFailed,
+  camera,
   onEnableCamera,
-  onSwitchCamera,
   mainHeadingRef,
   cardActions,
   entryReady = true,
@@ -183,40 +171,12 @@ export default function TrainingClassesPanel({
   onContinueIntent,
   canContinue,
 }: TrainingClassesPanelProps) {
-  const activeCameraTrigger = useRef<HTMLButtonElement>(null);
-  const handleCameraSwitch = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
-    (event) => {
-      if (isCameraPending) return;
-      const button = event.currentTarget;
-      activeCameraTrigger.current = button === document.activeElement ? button : null;
-      onSwitchCamera();
-    },
-    [isCameraPending, onSwitchCamera],
+  const cameraControl = !camera && (
+    <Button variant="outline" className="min-h-11" onClick={onEnableCamera}>
+      <Camera data-icon="inline-start" aria-hidden="true" />
+      Kamera aktivieren
+    </Button>
   );
-  useLayoutEffect(() => {
-    const trigger = activeCameraTrigger.current;
-    if (!trigger || isCameraPending) return;
-    activeCameraTrigger.current = null;
-    if (trigger.isConnected || document.activeElement !== document.body) return;
-    if (stream) mainHeadingRef.current?.focus();
-  }, [isCameraPending, mainHeadingRef, stream]);
-
-  const cameraControl =
-    !stream &&
-    !isCameraSwitching &&
-    (isCameraPending ? (
-      <p role="status" className="flex min-h-9 items-center gap-2 text-sm text-muted-foreground">
-        <Spinner aria-hidden="true" />
-        Kamera wird verbunden
-      </p>
-    ) : (
-      onEnableCamera && (
-        <Button variant="outline" onClick={onEnableCamera}>
-          <Camera data-icon="inline-start" aria-hidden="true" />
-          {cameraFailed ? 'Kamera erneut verbinden' : 'Kamera aktivieren'}
-        </Button>
-      )
-    ));
 
   return (
     <section aria-labelledby="training-images" className="flex min-w-0 flex-col gap-5">
@@ -243,10 +203,7 @@ export default function TrainingClassesPanel({
                   cls={cls}
                   position={index + 1}
                   isDuplicate={duplicateClassNames.has(cls.name.trim())}
-                  stream={stream}
-                  facingMode={facingMode}
-                  isCameraSwitching={isCameraSwitching}
-                  onSwitchCamera={handleCameraSwitch}
+                  camera={camera}
                   cameraFallback={index === 0 ? cameraControl : undefined}
                   actions={cardActions}
                 />

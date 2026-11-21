@@ -18,8 +18,9 @@ export default function CameraStep({ onDecline, onConfirm }: CameraStepProps) {
         Berechtigung zur Kameranutzung
       </DialogTitle>
       <DialogDescription id="camera-modal-desc" className="leading-relaxed">
-        Die Kamera ist optional. Sie können Trainingsbilder mit der Kamera aufnehmen oder ohne
-        Kamerazugriff vorhandene Bilder von Ihrem Gerät auswählen.{' '}
+        Die Kamera ist optional. Nach Ihrer Freigabe startet sie beim Sammeln von Trainingsbildern
+        und in der Live-Vorhersage automatisch. Für das Training können Sie auch Bilder von Ihrem
+        Gerät auswählen.{' '}
         <strong>
           Die erfassten Bilddaten werden ausschließlich lokal im Browser verarbeitet und zu keinem
           Zeitpunkt an externe Server übermittelt oder dort gespeichert.

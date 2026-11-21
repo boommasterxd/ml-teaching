@@ -27,10 +27,6 @@ describe('class card', () => {
       cls,
       position: 1,
       isDuplicate: false,
-      stream: null,
-      facingMode: 'user' as const,
-      isCameraSwitching: false,
-      onSwitchCamera: vi.fn(),
       actions,
     };
     const { rerender } = render(<ClassCard {...props} />);

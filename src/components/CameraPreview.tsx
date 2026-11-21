@@ -2,20 +2,16 @@ import type React from 'react';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { Camera } from './icons/camera';
 import { Square } from './icons/square';
-import { SwitchCamera } from './icons/switch-camera';
 import { Upload } from './icons/upload';
 import Button from './Button';
+import CameraControls, { type CameraView } from './CameraControls';
 import { Input } from './ui/input';
-import { Spinner } from './ui/spinner';
 import { cn } from '../lib/utils';
 import { IMAGE_INPUT_ACCEPT } from '../lib/image-input-policy';
 
 export interface CameraPreviewProps {
   disabled: boolean;
-  stream: MediaStream | null;
-  facingMode: 'user' | 'environment';
-  isCameraSwitching: boolean;
-  onSwitchCamera: React.MouseEventHandler<HTMLButtonElement>;
+  camera?: CameraView;
   isRecording: boolean;
   onStartRecording: () => void;
   onStopRecording: () => void;
@@ -131,9 +127,9 @@ function usePreviewVisibility(previewRef: React.RefObject<HTMLDivElement | null>
   return visible;
 }
 
-function LiveCameraPreview(props: CameraPreviewProps) {
-  const { disabled, stream, facingMode, isCameraSwitching, onSwitchCamera, videoRef, isRecording } =
-    props;
+function LiveCameraPreview(props: CameraPreviewProps & { camera: CameraView }) {
+  const { disabled, camera, videoRef, isRecording } = props;
+  const { stream, facingMode } = camera;
   const previewRef = useRef<HTMLDivElement>(null);
   const visible = usePreviewVisibility(previewRef);
   const attachedStream = visible || isRecording ? stream : null;
@@ -149,33 +145,25 @@ function LiveCameraPreview(props: CameraPreviewProps) {
 
   return (
     <div className="grid w-full min-w-0 max-w-80 gap-2 justify-self-center">
-      <div ref={previewRef} className="relative aspect-[4/3]">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          aria-label="Kameravorschau für Trainingsaufnahme"
-          className={cn(
-            'absolute inset-0 size-full rounded-2xl bg-media-surface object-cover',
-            facingMode === 'user' && 'transform scale-x-[-1]',
-          )}
-        />
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute right-2 bottom-2 size-11 shadow-sm"
-          aria-label="Kamera wechseln"
-          title="Kamera wechseln"
-          aria-disabled={isCameraSwitching || undefined}
-          onClick={isCameraSwitching ? undefined : onSwitchCamera}
-        >
-          {isCameraSwitching ? (
-            <Spinner aria-hidden="true" />
-          ) : (
-            <SwitchCamera data-icon aria-hidden="true" />
-          )}
-        </Button>
+      <div
+        ref={previewRef}
+        data-slot="camera-preview"
+        className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-media-surface"
+      >
+        {stream && (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            aria-label="Kameravorschau für Trainingsaufnahme"
+            className={cn(
+              'absolute inset-0 size-full object-cover',
+              facingMode === 'user' && 'transform scale-x-[-1]',
+            )}
+          />
+        )}
+        <CameraControls camera={camera} />
       </div>
       <RecordButton {...props} disabled={disabled || !stream} />
     </div>
@@ -185,15 +173,15 @@ function LiveCameraPreview(props: CameraPreviewProps) {
 /** Camera attachment and capture cleanup follow the browser stream. */
 export default function CameraPreview(props: CameraPreviewProps) {
   const {
-    stream,
+    camera,
     isRecording,
     onStopRecording,
     onFileUpload,
     disabled,
     fileActions,
     onCaptureIntent,
-    isCameraSwitching,
   } = props;
+  const stream = camera?.stream;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endCapture = useEffectEvent(onStopRecording);
   useEffect(() => {
@@ -246,7 +234,7 @@ export default function CameraPreview(props: CameraPreviewProps) {
         />
         {fileActions}
       </div>
-      {(stream || isCameraSwitching) && <LiveCameraPreview {...props} />}
+      {camera && <LiveCameraPreview {...props} camera={camera} />}
     </>
   );
 }

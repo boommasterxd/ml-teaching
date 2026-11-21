@@ -10,21 +10,23 @@ import sharp from 'sharp';
 import { failSyntheticModel, routeSyntheticModel } from './synthetic-model';
 import { expectNetworkLayout } from './network-layout';
 import {
+  expectCameraToggleKeepsImages,
+  expectLivePredictionControls,
+  observeWorkspaceCamera,
+} from './training-camera';
+import {
   captureSetupDialog,
   classLayout,
-  expectCameraToggleKeepsImages,
   expectStableNameValidation,
   expectKeyboardCapture,
   expectCancelledResetKeepsImages,
   expectEmptyTrainingAfterConsent,
-  expectLivePredictionControls,
   expectPreviewDeletion,
   expectThemeControlAlignment,
   expectThemeKeepsTraining,
   expectThemeMenuTriggers,
   expectImmediateThemeFeedback,
   grantModelConsent,
-  observeWorkspaceCamera,
   openDeferredTrainingStep,
   openThemeMenu,
   settleLandingReveals,
@@ -441,7 +443,9 @@ test('local images train a real browser classifier, predict and reset without up
   );
   await expect(page.getByRole('textbox')).toHaveCount(0);
   await expectCamera(2, 0);
-  await expect(page.getByRole('button', { name: 'Kamera ausschalten' })).toBeVisible();
+  await expect(
+    page.getByRole('contentinfo').getByRole('button', { name: 'Kamera ausschalten', exact: true }),
+  ).toBeVisible();
   const train = page.getByRole('button', {
     name: /^(Modell trainieren|Trainiere …|Modell neu trainieren)$/,
   });
@@ -453,17 +457,23 @@ test('local images train a real browser classifier, predict and reset without up
     page,
     page.getByRole('button', { name: 'Weiter zur Vorhersage' }),
     page.getByRole('heading', { name: 'Vorhersage', exact: true }),
+    () => expectCamera(2, 0),
   );
   await expect(page.getByRole('heading', { name: 'Training', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Kamera ausschalten' })).toBeVisible();
   await expectLivePredictionControls(page, expectCamera);
   await steps.getByRole('button', { name: 'Training', exact: true }).click();
   await expect(page.getByText('Training abgeschlossen', { exact: true })).toBeVisible();
   await expectCamera(5, 0);
   await steps.getByRole('button', { name: 'Bilder sammeln', exact: true }).click();
   await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
+  await expectCamera(6, 1);
+  const predictionStep = steps.getByRole('button', { name: 'Vorhersage', exact: true });
+  await predictionStep.click();
+  await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
+  await expectCamera(6, 1);
+  await steps.getByRole('button', { name: 'Bilder sammeln', exact: true }).click();
   await expectPreviewDeletion(page, expectAccessible);
-  await expect(steps.getByRole('button', { name: 'Vorhersage', exact: true })).toBeDisabled();
+  await expect(predictionStep).toBeDisabled();
   const resetClass = page.getByRole('button', { name: /^Bilder der Klasse 1:/ });
   await resetClass.click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Zurücksetzen' }).click();

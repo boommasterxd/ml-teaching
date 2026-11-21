@@ -49,12 +49,13 @@ function useStopPredictionOnHide(stopPredicting: () => void) {
 
 function useCameraPromptFocus(showCameraPrompt: boolean, canUseModels: boolean) {
   const mainHeadingRef = useRef<HTMLHeadingElement>(null);
-  const previousCameraPrompt = useRef(false);
+  const initialPrompt = useRef<'waiting' | 'open' | 'closed'>('waiting');
   useEffect(() => {
-    if (previousCameraPrompt.current && !showCameraPrompt && canUseModels) {
+    if (initialPrompt.current === 'waiting' && showCameraPrompt) initialPrompt.current = 'open';
+    if (initialPrompt.current === 'open' && !showCameraPrompt && canUseModels) {
+      initialPrompt.current = 'closed';
       mainHeadingRef.current?.focus({ preventScroll: true });
     }
-    previousCameraPrompt.current = showCameraPrompt;
   }, [showCameraPrompt, canUseModels]);
   return mainHeadingRef;
 }
@@ -69,15 +70,14 @@ function useTrainingResources(step: TrainingStep) {
   const canUseModels = !models.isModelLoading && models.mobilenetModel !== null;
   const showCameraPrompt = consent.showCameraModal && canUseModels;
   const mainHeadingRef = useCameraPromptFocus(showCameraPrompt, canUseModels);
-  const [predictionRequested, setPredictionRequested] = useState(false);
+  const [predictionFailed, setPredictionFailed] = useState(false);
   const visible = useSyncExternalStore(
     subscribeToVisibility,
     () => !document.hidden,
     () => true,
   );
-  const cameraNeeded =
-    visible &&
-    (step === 'images' || (step === 'prediction' && hasTrainedModel && predictionRequested));
+  const predictionWanted = step === 'prediction' && hasTrainedModel && !predictionFailed;
+  const cameraNeeded = visible && (step === 'images' || predictionWanted);
   const camera = useCameraStream(
     consent.cameraConsent && canUseModels,
     models.isModelLoading,
@@ -92,52 +92,64 @@ function useTrainingResources(step: TrainingStep) {
     reportPredictionError,
     camera.facingMode === 'user',
   );
-  const { stopPredicting: stopInference, startPredicting: activatePrediction } = prediction;
-  const stopPredicting = useCallback(() => {
-    stopInference();
-    setPredictionRequested(false);
-  }, [stopInference]);
+  const { stopPredicting, startPredicting: activatePrediction } = prediction;
+  useLayoutEffect(() => {
+    if (!predictionWanted || !visible || !camera.stream) return;
+    activatePrediction();
+    return stopPredicting;
+  }, [predictionWanted, visible, camera.stream, activatePrediction, stopPredicting]);
   useStopPredictionOnHide(stopPredicting);
   function handleCameraReady() {
-    if (step === 'prediction' && predictionRequested && !document.hidden) activatePrediction();
+    if (error?.category === 'camera') clearError();
   }
   function reportPredictionError(category: 'prediction', message: string) {
     stopPredicting();
+    setPredictionFailed(true);
     reportOperationError(category, message);
   }
   function reportCameraError(category: 'camera', message: string) {
     stopPredicting();
     setError(category, message);
   }
-  const { retryCamera: requestCameraRetry } = camera;
-  const retryCamera = useCallback(() => {
+  const { retryCamera, toggleCamera } = camera;
+  const { cameraConsent, requestCameraConsent, revokeCameraConsent } = consent;
+  const startCamera = useCallback(() => {
+    if (!cameraConsent) {
+      requestCameraConsent();
+      return;
+    }
     if (error?.category === 'camera') clearError();
-    requestCameraRetry();
-  }, [error?.category, clearError, requestCameraRetry]);
+    setPredictionFailed(false);
+    retryCamera();
+  }, [cameraConsent, requestCameraConsent, error?.category, clearError, retryCamera]);
+  const switchCamera = useCallback(() => {
+    stopPredicting();
+    toggleCamera();
+  }, [stopPredicting, toggleCamera]);
+  const revokeCamera = useCallback(() => {
+    stopPredicting();
+    setPredictionFailed(false);
+    revokeCameraConsent();
+    if (error?.category === 'camera') clearError();
+  }, [stopPredicting, revokeCameraConsent, error?.category, clearError]);
   const invalidateModel = useCallback(() => {
     stopPredicting();
+    setPredictionFailed(false);
     setClassifier(null);
     setHasTrainedModel(false);
   }, [setClassifier, stopPredicting]);
-  const startPredicting = useCallback(() => {
-    if (step !== 'prediction' || !hasTrainedModel || !consent.cameraConsent || document.hidden)
-      return;
-    if (error?.category === 'camera') clearError();
-    setPredictionRequested(true);
-  }, [step, hasTrainedModel, consent.cameraConsent, error?.category, clearError]);
-  const revokeCamera = () => {
-    stopPredicting();
-    consent.revokeCameraConsent();
-    if (error?.category === 'camera') clearError();
-  };
   return {
     error,
     consent,
     models,
-    camera: { ...camera, retryCamera },
-    prediction: { ...prediction, stopPredicting },
+    camera: {
+      ...camera,
+      active: cameraConsent && !camera.hasFailed && (step === 'images' || predictionWanted),
+      start: startCamera,
+      toggleCamera: switchCamera,
+    },
+    prediction,
     invalidateModel,
-    startPredicting,
     revokeCamera,
     hasTrainedModel,
     setHasTrainedModel,
