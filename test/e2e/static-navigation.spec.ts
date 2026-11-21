@@ -59,7 +59,9 @@ test('training consent fits a short viewport and preserves the desktop class row
   await expect(page).toHaveURL(learningPaths.imagePractice);
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   await expect(dialog).toBeVisible();
-  expect(await transitions()).toEqual([]);
+  expect(await transitions()).toEqual([
+    { root: false, outgoingPages: 1, incomingPages: 1, back: false, setupDialog: 'enter' },
+  ]);
   await expect(dialog.getByRole('button', { name: 'Zustimmen' })).toBeInViewport();
   await expectAccessible(page);
   await expectAlignedTrainingCards(page);

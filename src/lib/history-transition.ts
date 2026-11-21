@@ -1,12 +1,5 @@
-import { learningPaths } from './learning-paths';
-
 const historyBackType = 'history-back';
 const historyForwardType = 'history-forward';
-
-/** The initial training dialog belongs to the top layer, above the page content. */
-export function canCaptureRoute(pathname: string | null) {
-  return pathname !== null && pathname !== learningPaths.imagePractice;
-}
 
 function observePageCommit(
   content: HTMLElement,
@@ -150,8 +143,7 @@ export function subscribeToHistoryTransitions(navigation: Navigation, content: H
         !current ||
         event.destination.index < 0 ||
         event.destination.index === current.index ||
-        destination.pathname === location.pathname ||
-        !canCaptureRoute(destination.pathname)
+        destination.pathname === location.pathname
       )
         return;
       animateBrowserTraversal(
