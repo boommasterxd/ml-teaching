@@ -1,6 +1,6 @@
 'use client';
 
-import type { Ref } from 'react';
+import { useRef, type Ref } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/Button';
 import { RotateCcw } from '@/components/icons/rotate-ccw';
@@ -10,13 +10,14 @@ import { KnnQuizInput, KnnQuizAnswer } from './KnnQuizControls';
 
 export default function KnnQuiz({ titleRef }: { titleRef?: Ref<HTMLHeadingElement> }) {
   const state = useKnnQuiz();
+  const restartButton = useRef<HTMLButtonElement>(null);
   return (
     <Card className="knn-quiz-card gap-4 lg:gap-6">
       <CardHeader className="knn-quiz-header flex flex-row flex-wrap items-center justify-between gap-3">
         <CardTitle as="h3" tabIndex={-1} ref={titleRef}>
           Hund oder Katze?
         </CardTitle>
-        <Button variant="ghost" className="min-h-11" onClick={state.restart}>
+        <Button ref={restartButton} variant="ghost" className="min-h-11" onClick={state.restart}>
           <RotateCcw data-icon="inline-start" aria-hidden="true" />
           Neue Runde
         </Button>
@@ -24,7 +25,7 @@ export default function KnnQuiz({ titleRef }: { titleRef?: Ref<HTMLHeadingElemen
       <CardContent className="knn-quiz-layout">
         <KnnQuizInput state={state} />
         <KnnQuizPlot state={state} />
-        <KnnQuizAnswer state={state} />
+        <KnnQuizAnswer state={state} onKeyboardSuccess={() => restartButton.current?.focus()} />
       </CardContent>
     </Card>
   );

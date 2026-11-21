@@ -1,10 +1,8 @@
 'use client';
 
-import { useCallback, useState, type RefObject } from 'react';
+import { useState } from 'react';
 import { AnimateIcon } from '@animate-ui/react/icons';
-import { NavigationMenu as Primitive } from '@animate-ui/react/primitives/base-ui/navigation-menu';
 import type { HeaderNavGroup, HeaderNavLink } from '@/content/site-navigation';
-import { cn } from '@/lib/utils';
 import IntentLink from './IntentLink';
 import { ArrowRight } from './icons/arrow-right';
 import { headerMenuIcons } from './site-navigation-icons';
@@ -52,7 +50,7 @@ function Destination({ link, current }: { link: HeaderNavLink; current: string |
   );
 }
 
-function HeaderMenuGroups({
+export function HeaderMenuGroups({
   groups,
   current,
 }: {
@@ -85,48 +83,5 @@ function HeaderMenuGroups({
         ))}
       </div>
     </MenuHighlight>
-  );
-}
-
-export function HeaderMenuPanel({
-  groups,
-  current,
-}: {
-  groups: readonly HeaderNavGroup[];
-  current: string | null;
-}) {
-  return (
-    <Primitive.Content data-slot="navigation-menu-content" className="header-menu-content">
-      <HeaderMenuGroups groups={groups} current={current} />
-    </Primitive.Content>
-  );
-}
-
-export function HeaderMenuPopup({
-  root,
-  mobile,
-}: {
-  root: RefObject<HTMLDivElement | null>;
-  mobile?: boolean;
-}) {
-  const mobileAnchor = useCallback(() => root.current?.parentElement ?? null, [root]);
-  return (
-    <Primitive.Portal container={root}>
-      <Primitive.Positioner
-        className="header-menu-positioner"
-        anchor={mobile ? mobileAnchor : undefined}
-        // Keep the desktop offset parent stable from measurement to first paint.
-        positionMethod={mobile ? 'absolute' : 'fixed'}
-        sideOffset={mobile ? 5 : 12}
-        collisionAvoidance={{ side: 'none', align: 'none', fallbackAxisSide: 'none' }}
-      >
-        <Primitive.Popup
-          render={<div />}
-          className={cn('header-menu-panel', mobile && 'header-menu-panel-mobile')}
-        >
-          <Primitive.Viewport className="header-menu-viewport" />
-        </Primitive.Popup>
-      </Primitive.Positioner>
-    </Primitive.Portal>
   );
 }

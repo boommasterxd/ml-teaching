@@ -1,12 +1,10 @@
 'use client';
 
-import { useSyncExternalStore, type ComponentType } from 'react';
+import type { ComponentType } from 'react';
 import type { IconProps } from '@animate-ui/react/icons';
 import type { LucideIcon } from 'lucide-react';
 
-const subscribe = () => () => {};
-const clientSnapshot = () => true;
-const serverSnapshot = () => false;
+import { useMotionStart } from '../ui/use-motion-start';
 
 /** Motion's initial style attributes are excluded from strict-CSP static HTML. */
 export function clientIcon<T extends string>(
@@ -14,8 +12,8 @@ export function clientIcon<T extends string>(
   Fallback: LucideIcon,
 ) {
   return function ClientIcon(props: IconProps<T>) {
-    const isClient = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
-    if (isClient) return <Animated {...props} />;
+    const motionReady = useMotionStart();
+    if (motionReady) return <Animated {...props} />;
     const hidden = props['aria-hidden'];
 
     return (

@@ -3,9 +3,10 @@
 ## Scope and publication
 
 - Product: ML Teaching. Intended canonical origin: `https://mlteaching.boomapps.de`.
-- Keep this migration on `Codex/development-nextjs-ssg`. Do not merge to or push
-  `main`, deploy, connect publishing integrations or change DNS without explicit
-  authorization. The legacy host may still deploy `main`.
+- Work on a branch and integrate through a protected pull request. Vercel builds
+  Production from `main` as described in [the deployment guide](docs/deployment.md).
+  Merges, manual deployments, publishing integrations and DNS changes require
+  explicit authorization.
 - Use English technical documentation and identifiers; German UI and legal text.
   Commits and PR titles use English Conventional Commits. No commit/push/PR is
   implied by source-edit authority. Authorized integration uses squash merge.
@@ -168,7 +169,7 @@ maintained documentation change.
 | [`docs/architecture.md`](docs/architecture.md)                   | Describes route, component and browser ML boundaries.           |
 | [`docs/ci.md`](docs/ci.md)                                       | Explains protected PR planning, jobs and quality controls.      |
 | [`docs/decisions/ssg-and-csp.md`](docs/decisions/ssg-and-csp.md) | Records static rendering and guarded CSP integration.           |
-| [`docs/deployment.md`](docs/deployment.md)                       | Defines the prepared Vercel target and publication boundaries.  |
+| [`docs/deployment.md`](docs/deployment.md)                       | Defines the Vercel release workflow and publication boundaries. |
 | [`docs/design-system.md`](docs/design-system.md)                 | Defines shared UI, motion, accessibility and integration rules. |
 | [`docs/development.md`](docs/development.md)                     | Documents runtime, commands and local verification.             |
 | [`docs/third-party-notices.md`](docs/third-party-notices.md)     | Documents upstream component and icon license notices.          |

@@ -16,6 +16,7 @@ export default function KnnQuizPoint({
   distance,
   query,
   selected,
+  disabled,
   errorAttempt,
   k,
   onChoose,
@@ -25,6 +26,7 @@ export default function KnnQuizPoint({
   distance: number;
   query: KnnPosition;
   selected: boolean;
+  disabled: boolean;
   errorAttempt: number;
   k: number;
   onChoose: (id: string) => void;
@@ -34,6 +36,7 @@ export default function KnnQuizPoint({
   const timing = useTempoTransition(motionTokens.transition.shake);
   const draw = useTempoTransition(motionTokens.transition.fade);
   const shake = motionTokens.shift.shake;
+  const showError = !disabled && Boolean(errorAttempt);
   const placement = {
     left: `${point.x}%`,
     top: `${point.y}%`,
@@ -43,7 +46,7 @@ export default function KnnQuizPoint({
   return (
     // Feedback survives the browser's delayed focus scroll; only user dismissal clears it.
     <Tooltip
-      open={Boolean(errorAttempt)}
+      open={showError}
       onOpenChange={(open, { reason }) => {
         if (!open && (reason === 'escape-key' || reason === 'outside-press')) onDismiss();
       }}
@@ -54,11 +57,12 @@ export default function KnnQuizPoint({
           <Button
             variant="ghost"
             size="icon-lg"
-            className="knn-point-control size-(--knn-point-size)"
+            className="knn-point-control size-(--knn-point-size) disabled:opacity-100"
             style={placement}
+            disabled={disabled}
             aria-label={`${point.signal === 'dog' ? 'Hund' : 'Katze'}, Punkt ${point.id.replace('point-', '')}, Abstand zur Raute: ${distance.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Einheiten`}
             aria-pressed={selected}
-            aria-invalid={Boolean(errorAttempt) || undefined}
+            aria-invalid={showError || undefined}
             onClick={() => onChoose(point.id)}
             onBlur={() => {
               if (errorAttempt) onDismiss();
@@ -68,7 +72,7 @@ export default function KnnQuizPoint({
               asChild
               initial={false}
               animate={{
-                x: errorAttempt && !reduce ? [0, -shake, shake, -shake * 0.66, shake * 0.66, 0] : 0,
+                x: showError && !reduce ? [0, -shake, shake, -shake * 0.66, shake * 0.66, 0] : 0,
               }}
               transition={timing}
               key={errorAttempt}

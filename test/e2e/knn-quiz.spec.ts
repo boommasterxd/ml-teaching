@@ -161,7 +161,10 @@ for (const [width, colorScheme] of [
   test(`KNN exercise supports retries, voting and new rounds at ${width}px`, async ({ page }) => {
     const failures = diagnostics(page);
     await page.setViewportSize({ width, height: 1000 });
-    await page.emulateMedia({ colorScheme });
+    await page.emulateMedia({
+      colorScheme,
+      reducedMotion: width === 320 ? 'reduce' : 'no-preference',
+    });
     await page.goto(learningPaths.images);
     const exercise = page.locator('section[aria-labelledby="section-knn-quiz"]');
     await exercise.scrollIntoViewIfNeeded();
@@ -193,17 +196,28 @@ for (const [width, colorScheme] of [
       .filter((point) => point.label.startsWith('Hund')).length;
     const winner = dogs >= 2 ? 'Hund' : 'Katze';
     const loser = dogs >= 2 ? 'Katze' : 'Hund';
-    await exercise.getByRole('button', { name: loser, exact: true }).click();
+    const wrongAnswer = exercise.getByRole('button', { name: loser, exact: true });
+    await wrongAnswer.focus();
+    await page.keyboard.press('Enter');
     await expect(exercise.getByRole('alert')).toContainText('Zähle noch einmal.');
-    await exercise.getByRole('button', { name: winner, exact: true }).click();
+    await expect(wrongAnswer).toBeFocused();
+    await exercise.getByRole('button', { name: winner, exact: true }).focus();
+    await page.keyboard.press('Enter');
+    const restart = exercise.getByRole('button', { name: 'Neue Runde', exact: true });
+    await expect(restart).toBeFocused();
+    const disabledPoints = exercise
+      .getByRole('button', { name: /^(Hund|Katze), Punkt / })
+      .and(page.locator(':disabled'));
+    await expect(disabledPoints).toHaveCount(12);
     await expect(exercise.getByRole('alert')).toContainText('Richtig zugeordnet!');
     await expect(exercise.getByRole('status')).toContainText(
       `2 von 3 Nachbarn stimmen für ${winner}`,
     );
     await expectAccessible(page);
     const before = await plottedData(exercise);
-    await exercise.getByRole('button', { name: 'Neue Runde', exact: true }).click();
+    await page.keyboard.press('Enter');
     await expect(exercise.getByRole('status')).toContainText('Neue Runde.');
+    await expect(disabledPoints).toHaveCount(0);
     expect(await plottedData(exercise)).not.toEqual(before);
     await slider.focus();
     const stablePoints = await plottedData(exercise);

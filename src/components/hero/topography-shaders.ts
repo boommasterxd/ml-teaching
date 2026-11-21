@@ -1,6 +1,12 @@
 // Adapted from the official Animate UI Topography registry. See docs/third-party-notices.md.
 import { DIGIT_GEOMETRY, DIGIT_SCENE } from './glass-digit-geometry';
-import { LENS, RING_BOUND, RING_PROFILE, SCENE_VARYINGS } from './topography-geometry';
+import {
+  DROPLET_GEOMETRY,
+  LENS,
+  RING_BOUND,
+  RING_PROFILE,
+  SCENE_VARYINGS,
+} from './topography-geometry';
 
 export { VERTEX } from './topography-geometry';
 
@@ -30,9 +36,7 @@ ${SCENE_VARYINGS}
 ${LENS}
 ${RING_BOUND}
 ${RING_PROFILE}
-
-bool traceLarge;
-bool traceSmall;
+${DROPLET_GEOMETRY}
 
 vec3 interaction(vec2 point) {
   vec3 response = vec3(lift * 0.13 * exp(-length(point - hill) / hillRadius), 0.0, 0.0);
@@ -57,7 +61,7 @@ vec3 interaction(vec2 point) {
   return response;
 }
 
-float ringDistance(vec3 p, float breath) {
+float distanceToGlass(vec3 p, float breath) {
   float radius = length(p.xy);
   vec2 spine, axes, bank;
   ringProfile(p.xy / max(0.001, radius), breath, spine, axes, bank);
@@ -65,32 +69,27 @@ float ringDistance(vec3 p, float breath) {
   return (length(section / axes) - 1.0) * min(axes.x, axes.y);
 }
 
-float dropDistance(vec3 p, vec4 drop, vec3 stretch) {
-  vec3 d = p - drop.xyz;
-  float axial = dot(d, stretch);
-  return sqrt(max(0.0, dot(d, d) - axial * axial)) - drop.w;
-}
-
-// The stretched silhouette plus its sampling margin stays inside the reserved clearance.
-bool nearDrop(vec3 origin, vec3 ray, vec4 drop, vec3 stretch) {
-  vec3 offset = cross(drop.xyz - origin, ray);
-  float bound = drop.w * inversesqrt(1.0 - dot(stretch, stretch)) + 0.025;
-  return dot(offset, offset) < bound * bound;
-}
-
-float distanceToGlass(vec3 p, float breath) {
-  if (traceLarge) return dropDistance(p, largeDrop, largeStretch.xyz);
-  if (traceSmall) return dropDistance(p, smallDrop, smallStretch.xyz);
-  return ringDistance(p, breath);
+vec2 ringTraceRange(vec3 origin, vec3 direction) {
+  // Enclose every ring profile, including the positive-distance edge fade.
+  const float sphere = 1.102;
+  const float height = 0.663;
+  float center = -dot(origin, direction);
+  vec3 offset = origin + direction * center;
+  float halfChord = sqrt(max(0.0, sphere * sphere - dot(offset, offset)));
+  // The camera constrains this ray to point toward negative z.
+  vec2 slab = (vec2(height, -height) - origin.z) / direction.z;
+  return vec2(max(0.0, max(slab.x, center - halfChord)), min(slab.y, center + halfChord));
 }
 
 vec3 traceFront(vec3 origin, vec3 direction, float breath, out float closest) {
-  float travel = 0.0;
+  vec2 range = ringTraceRange(origin, direction);
+  float travel = range.x;
   float previous = 2.0;
   float stride = 0.0;
   closest = 2.0;
   vec3 hit = origin;
   for (int i = 0; i < 68; i++) {
+    if (travel > range.y) break;
     vec3 position = origin + direction * travel;
     float distance = distanceToGlass(position, breath);
     if (distance < closest) {
@@ -98,7 +97,6 @@ vec3 traceFront(vec3 origin, vec3 direction, float breath, out float closest) {
       hit = position;
     }
     if (distance < 0.0) return position + direction * (stride * distance / (previous - distance));
-    if (travel > 2.1) break;
     previous = distance;
     stride = max(0.021, distance * 0.57);
     travel += stride;
@@ -209,19 +207,24 @@ void main() {
   vec3 right = cameraRight.xyz, up = cameraUp.xyz, eye = cameraEye.xyz;
   float breath = cameraEye.w;
   vec3 origin = right * p.x + up * p.y + eye * 1.12;
-  traceLarge = nearDrop(origin, -eye, largeDrop, largeStretch.xyz);
-  traceSmall = nearDrop(origin, -eye, smallDrop, smallStretch.xyz);
-  if (!traceLarge && !traceSmall && dot(p, p) > ringBound * ringBound) {
+  bool traceLarge = nearDrop(origin, -eye, largeDrop, largeStretch.xyz);
+  bool traceSmall = nearDrop(origin, -eye, smallDrop, smallStretch.xyz);
+  bool traceDrop = traceLarge || traceSmall;
+  if (!traceDrop && dot(p, p) > ringBound * ringBound) {
     gl_FragColor = vec4(0.0);
     return;
   }
   float closest;
-  vec3 front = traceFront(origin, -eye, breath, closest);
+  vec4 drop = traceLarge ? largeDrop : smallDrop;
+  vec3 stretch = traceLarge ? largeStretch.xyz : smallStretch.xyz;
+  vec3 front;
+  if (traceDrop) front = dropFront(origin, -eye, drop, stretch, closest);
+  else front = traceFront(origin, -eye, breath, closest);
   if (closest > 0.046) {
     gl_FragColor = vec4(0.0);
     return;
   }
-  vec3 normal = surfaceNormal(front, breath);
+  vec3 normal = traceDrop ? normalize(dropMetric(front - drop.xyz, stretch)) : surfaceNormal(front, breath);
   float facing = max(0.0, dot(normal, eye));
   if (closest < 0.0) closest = -max(0.002, 0.13 * facing * facing);
   vec3 response = interaction(point);
@@ -229,12 +232,12 @@ void main() {
   vec2 tiltLight = (rotation * vec2(pointer.x, -pointer.y)) * lift * 0.17;
   normal = normalize(normal + vec3(flow + response.x * 1.1 + tiltLight.x, tiltLight.y - response.x, 0.0));
   vec3 transmitted = refract(-eye, normal, 1.0 / 1.49);
-  vec3 exitPoint = traceExit(front, transmitted, breath);
-  vec3 back = surfaceNormal(exitPoint, breath);
+  vec3 exitPoint = traceDrop ? dropExit(front, transmitted, drop, stretch) : traceExit(front, transmitted, breath);
+  vec3 back = traceDrop ? normalize(dropMetric(exitPoint - drop.xyz, stretch)) : surfaceNormal(exitPoint, breath);
   // Resolve both interfaces in full precision before quantizing the reflected and refracted light.
   vec3 frontView = vec3(dot(right, normal), dot(up, normal), dot(eye, normal));
   vec3 backView = vec3(dot(right, back), dot(up, back), dot(eye, back));
-  vec2 pulse = traceLarge || traceSmall ? vec2(0.0) : response.yz;
+  vec2 pulse = traceDrop ? vec2(0.0) : response.yz;
   vec3 color = glass(frontView, backView, length(exitPoint - front), pulse);
   if (traceLarge) color += dropletLight(frontView, phase * 2.3, largeStretch.w);
   if (traceSmall) color += dropletLight(frontView, phase * 3.1 + 1.4, smallStretch.w);

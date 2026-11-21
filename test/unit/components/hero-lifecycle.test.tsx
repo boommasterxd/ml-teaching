@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import HeroScene from '@/components/hero/HeroScene';
+import { heroPosterImages } from '@/components/hero/poster-assets';
 import { EntryViewportReadyContext } from '@/components/ui/entry-policy';
 import { HomePlaybackProvider, useHomePlayback } from '@/components/home/HomePlaybackProvider';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
@@ -51,7 +52,7 @@ describe('decorative hero lifetime', () => {
     const hero = (ready: boolean) => (
       <EntryViewportReadyContext value={ready}>
         <HomePlaybackProvider>
-          <HeroScene />
+          <HeroScene sources={heroPosterImages} />
         </HomePlaybackProvider>
       </EntryViewportReadyContext>
     );
@@ -66,7 +67,7 @@ describe('decorative hero lifetime', () => {
   it('retains the paused GPU image and disposes it only when the document is hidden', async () => {
     const { container } = render(
       <HomePlaybackProvider>
-        <HeroScene />
+        <HeroScene sources={heroPosterImages} />
       </HomePlaybackProvider>,
     );
     await waitFor(() => expect(container.querySelector('canvas')).not.toBeNull());
@@ -89,7 +90,7 @@ describe('decorative hero lifetime', () => {
     lifecycle.available = false;
     const { container } = render(
       <HomePlaybackProvider>
-        <HeroScene />
+        <HeroScene sources={heroPosterImages} />
         <PlaybackReadout />
       </HomePlaybackProvider>,
     );

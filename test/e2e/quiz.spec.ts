@@ -6,9 +6,10 @@ import { learningPaths } from '../../src/lib/learning-paths';
 test.use({ hasTouch: true });
 
 async function currentRound(quiz: Locator) {
-  const names = await quiz
-    .getByRole('button', { name: /^Auswählen: / })
-    .evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')));
+  const choices = quiz.getByRole('button', { name: /^Auswählen: / });
+  const names = await choices.evaluateAll((buttons) =>
+    buttons.map((button) => button.getAttribute('aria-label')),
+  );
   const round = names.map((name) => {
     const example = QUIZ_EXAMPLES.find((item) => name === `Auswählen: ${item.title}`);
     if (!example) throw new Error('Quiz choice is missing from the everyday example pool.');
@@ -17,6 +18,11 @@ async function currentRound(quiz: Locator) {
   expect(round).toHaveLength(6);
   expect(new Set(round.map((example) => example.id)).size).toBe(6);
   expect(round.filter((example) => example.correct)).toHaveLength(3);
+  await Promise.all(
+    round.map((example, index) =>
+      expect(choices.nth(index)).toHaveAccessibleDescription(example.description),
+    ),
+  );
   return round;
 }
 

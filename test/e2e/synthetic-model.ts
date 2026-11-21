@@ -1,4 +1,5 @@
-import type { Page, Route } from '@playwright/test';
+import type { Page, Request, Route } from '@playwright/test';
+import { learningPaths } from '../../src/lib/learning-paths';
 
 const modelDirectory = 'https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/classification/2/';
 const weightsFile = 'synthetic-weights.bin';
@@ -51,6 +52,36 @@ const syntheticModel = {
 
 const cors = { 'access-control-allow-origin': '*' };
 
+const learningDocuments = new Set<string>([
+  learningPaths.images,
+  learningPaths.imagePractice,
+  '/datenschutz',
+]);
+const assets =
+  /^(?:\/_next\/static\/(?:chunks\/[\w./-]+\.(?:js|css)|media\/[\w.-]+\.(?:webp|woff2))|\/favicon(?:-(?:dark|light))?\.svg|\/apple-icon\.png)$/;
+
+function isExpectedLocalRead(url: URL, request: Request) {
+  const resourceType = request.resourceType();
+  const query = url.searchParams;
+  if (learningDocuments.has(url.pathname)) {
+    if (request.isNavigationRequest()) return query.size === 0;
+    if (request.headers().rsc !== '1') return false;
+    return query.size === 0 || (query.size === 1 && /^[\w-]{1,16}$/.test(query.get('_rsc') ?? ''));
+  }
+  if (assets.test(url.pathname)) {
+    return (
+      query.size === 0 && ['script', 'stylesheet', 'font', 'image', 'other'].includes(resourceType)
+    );
+  }
+  if (url.pathname !== '/_next/image' || resourceType !== 'image') return false;
+  return (
+    query.size === 3 &&
+    /^\/_next\/static\/media\/[\w.-]+\.webp$/.test(query.get('url') ?? '') &&
+    /^\d{1,4}$/.test(query.get('w') ?? '') &&
+    /^\d{1,3}$/.test(query.get('q') ?? '')
+  );
+}
+
 export async function routeSyntheticModel(
   page: Page,
   baseURL: string,
@@ -61,8 +92,9 @@ export async function routeSyntheticModel(
   let unexpectedRequests = 0;
   await page.route(/^https?:\/\//, async (route) => {
     const request = route.request();
+    const url = new URL(request.url());
     const readsOnly = ['GET', 'HEAD'].includes(request.method()) && !request.postDataBuffer();
-    if (readsOnly && new URL(request.url()).origin === expectedOrigin) {
+    if (readsOnly && url.origin === expectedOrigin && isExpectedLocalRead(url, request)) {
       return route.continue();
     }
     const file = modelFiles.get(request.url());

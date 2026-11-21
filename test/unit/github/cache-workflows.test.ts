@@ -176,6 +176,7 @@ describe('dependency-cache workflow contracts', () => {
       'gitleaks',
       'update-gitleaks',
       'dependency-cache',
+      'dependency-cache-reconciliation',
     ]) {
       const name = /^name: (.+)$/m.exec(read(`workflows/${file}.yml`))?.[1];
       expect(cleanup).toContain(`      - ${name}\n`);

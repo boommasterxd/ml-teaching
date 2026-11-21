@@ -1,9 +1,11 @@
 # ML Teaching
 
-Explore machine learning through a German interface for children. Choose a learning
-area, discover image classification, and train a model directly in your browser.
-Watch two example paths in the homepage preview of learning through rewards.
+ML Teaching is a free, ad-free machine learning resource for children in German.
+Choose a learning area, discover image classification, and train a model directly
+in your browser. Watch two example paths in the homepage preview of learning
+through rewards.
 
+[Open ML Teaching](https://mlteaching.boomapps.de) ·
 [Source](https://github.com/boommasterxd/ml-teaching) · [Quick start](#quick-start) ·
 [Architecture](docs/architecture.md) ·
 [Development](docs/development.md) · [Security](SECURITY.md)
@@ -15,6 +17,7 @@ Watch two example paths in the homepage preview of learning through rewards.
 | Choose a learning area                                | Open the image lesson or training workspace. The Q-learning lesson and exercise are planned.   |
 | Explore the image-classification demonstration        | Follow an illustrated classification step by step.                                             |
 | Play the everyday image-recognition quiz              | Find three matching uses, reveal explanations and start another round.                         |
+| Try the KNN exercise in the image lesson              | Set K, select the nearest points and choose the class with the most votes or a tie.            |
 | Choose light, dark or system appearance               | Use a temporary choice, or explicitly remember it for later visits.                            |
 | Collect webcam images or select local files           | Build named training classes without uploading images.                                         |
 | Extract MobileNet features and train a KNN classifier | Compare examples locally using TensorFlow.js and WebGL.                                        |
@@ -43,8 +46,6 @@ npm run build
 npm start
 ```
 
-The source targets **ML Teaching** at `https://mlteaching.boomapps.de` on Vercel.
-The new domain and provider configuration are prepared separately from publication.
 ML Teaching is independent of Google Teachable Machine.
 
 ## Data, providers and costs
@@ -59,14 +60,14 @@ is saved locally only when you explicitly enable remembering for future visits.
 After explicit consent, the browser downloads pretrained MobileNet weights from
 Google. Google receives connection metadata during those downloads; the app sends
 no training images. Model files can remain in the browser's ordinary HTTP cache.
-The proposed Vercel host processes website connection data. See the in-app
+Vercel processes website connection data. See the in-app
 [privacy page source](src/screens/PrivacyPage.tsx) and
 [deployment boundaries](docs/deployment.md).
 
 There are no application API keys or paid model APIs to configure. Hosting bandwidth
 and native image optimization can incur provider costs. No billing estimates or
-provider plan guarantees are implied. The app has no analytics, advertising or
-externally hosted fonts. Geist is served from a local asset.
+provider plan guarantees are implied. The app has no analytics or externally
+hosted fonts. Geist is served from a local asset.
 
 ## Development
 
@@ -90,12 +91,11 @@ camera and interactive controls live in small client subtrees. See
 ## Contributing and security
 
 Work on a development branch. Use English Conventional Commits and keep changes
-reviewable. Publication, merging and provider changes require explicit authorization;
-this migration must remain off `main` until approved. See [AGENTS.md](AGENTS.md) for
-the complete documentation index and repository controls.
+reviewable. Merging, manual publication and provider changes require explicit
+authorization. See [AGENTS.md](AGENTS.md) for the documentation index and repository
+controls.
 
 Report vulnerabilities using [SECURITY.md](SECURITY.md). Application code uses the
 [MIT license](LICENSE.txt). Upstream components and icons retain their own license
 terms, including Animate UI's Commons Clause condition; see
-[third-party notices](docs/third-party-notices.md). No downloadable release is
-published by this source migration.
+[third-party notices](docs/third-party-notices.md).

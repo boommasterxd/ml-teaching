@@ -48,38 +48,35 @@ export const PrivacyCollection = (
     </p>
     <p>Die Darstellungseinstellung ist unabhängig von Ihrer Einwilligung zur KI-Lernfunktion.</p>
     <h3>Server-Log-Dateien</h3>
-    <p>Bei Aufrufen dieser Website werden technische Protokolldaten verarbeitet.</p>
-    <h4>Erfasste Protokolldaten</h4>
+    <h4>Protokolldaten, Zwecke und Rechtsgrundlage</h4>
     <p>
-      Hierzu gehören IP-Adresse, Zeitpunkt des Aufrufs, angeforderte Seite oder Datei sowie Browser-
-      und Verbindungsinformationen. Vercel kann aus der IP-Adresse Land und Stadt ableiten.
+      Bei Aufrufen dieser Website verarbeitet Vercel technische Protokolldaten. Dazu gehören die
+      IP-Adresse, der Zeitpunkt des Aufrufs, die angeforderte Seite oder Datei sowie Angaben zum
+      Browser und zur Verbindung. Vercel kann aus der IP-Adresse Land und Stadt ableiten. Wenn die
+      Firewall eingreift, können auch die angewendete Sicherheitsregel und die Maßnahme erfasst
+      werden.
     </p>
-    <h4>Zwecke der Verarbeitung und gegebenenfalls Zusammenführung mit anderen Datenquellen</h4>
     <p>
-      Die Verarbeitung dient der Auslieferung der Website, der Fehleranalyse und der Abwehr
-      missbräuchlicher Zugriffe. Die Anwendung führt keine eigenen Zugriffsprofile für Werbung oder
-      Reichweitenmessung. Für die Verarbeitung von Dienstmetadaten durch Vercel gelten die im
-      Abschnitt „Vercel“ beschriebenen Datenschutzrollen.
-    </p>
-    <h4>Rechtsgrundlagen und gegebenenfalls berechtigte Interessen</h4>
-    <p>
-      Rechtsgrundlage für die von uns veranlasste Verarbeitung ist Art. 6 Abs. 1 lit. f DSGVO. Unser
-      berechtigtes Interesse liegt in der sicheren und funktionsfähigen Bereitstellung der Website
-      und der Aufklärung technischer Störungen.
+      Wir veranlassen diese Verarbeitung, um die Website sicher und zuverlässig auszuliefern,
+      technische Störungen zu untersuchen und missbräuchliche Zugriffe abzuwehren. Rechtsgrundlage
+      ist Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse liegt in der sicheren und
+      funktionsfähigen Bereitstellung der Website.
     </p>
     <h4>Empfänger und Speicherdauer</h4>
     <p>
-      Empfänger ist Vercel als Hostinganbieter. Die Unterscheidung zwischen Auftragsverarbeitung und
-      eigener Verantwortlichkeit sowie die Informationen zu Drittlandübermittlungen finden Sie im
-      Abschnitt „Vercel“.
+      Empfänger ist Vercel als Hostinganbieter. Informationen zur Auftragsverarbeitung, zur eigenen
+      Verantwortlichkeit von Vercel und zu Drittlandübermittlungen finden Sie im Abschnitt ‚Vercel‘.
     </p>
     <p>
-      Vercel hält die in den Projektprotokollen erfassten Abrufe nach eigenen Angaben bis zu 30 Tage
-      vor. Für Sicherheitsprotokolle gelten die Aufbewahrungskriterien im Abschnitt „Vercel“. Soweit
-      Vercel Sicherheitsprotokolle in eigener Verantwortlichkeit verarbeitet, richten sich Löschung
-      oder Anonymisierung danach, wie lange die Daten zur Erkennung und Abwehr von Missbrauch oder
-      zur Untersuchung von Sicherheitsvorfällen benötigt werden. Wir exportieren die Zugriffs- und
-      Sicherheitsprotokolle nicht automatisch.
+      Vercel bewahrt die für dieses Projekt erfassten CDN-Abrufdaten, Laufzeitprotokolle und
+      Firewall-Verkehrsdaten nach eigenen Angaben bis zu 30 Tage auf. Für weitere Sicherheitsdaten,
+      die Vercel in eigener Verantwortung verarbeitet, richtet sich die Aufbewahrung danach, wie
+      lange sie zur Erkennung und Abwehr von Missbrauch oder zur Untersuchung von
+      Sicherheitsvorfällen benötigt werden.
+    </p>
+    <p>
+      Wir leiten diese Protokolle nicht an weitere Dienste weiter und speichern keine eigenen
+      Kopien.
     </p>
     <h3>Einsatz von KI auf der Website</h3>
     <p>

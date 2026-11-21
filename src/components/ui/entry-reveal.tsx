@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
-import { MotionConfig } from 'motion/react';
+import { cancelFrame, frame, MotionConfig } from 'motion/react';
 import { motionTokens, ReducedMotionContext } from '@animate-ui/react/utils/motion';
 import { useEntryViewportReady, useInitialEntry } from './entry-policy';
 import { EntryTarget } from './entry-target';
@@ -34,6 +34,21 @@ function loadTarget(kind: EntryKind, offset: number, complete: boolean) {
   return kind === 'navigation' ? { x: [offset, 0] } : { y: [offset, 0] };
 }
 
+function isErrorRecoveryArrival() {
+  if (document.activeViewTransition?.types.has('error-recovery')) return true;
+  const arrival = window.navigation?.activation;
+  if (
+    !('onpagereveal' in window) ||
+    !arrival?.from?.url ||
+    arrival.navigationType === 'reload' ||
+    location.pathname !== '/'
+  )
+    return false;
+  // Hydration can start after the native transition has already finished.
+  const from = new URL(arrival.from.url);
+  return from.origin === location.origin && from.pathname === '/500';
+}
+
 /** SSG stays visible. First-screen entry never fades text; offscreen groups reveal only once. */
 export function EntryReveal({
   children,
@@ -48,21 +63,33 @@ export function EntryReveal({
   const initialEntry = useInitialEntry();
   const viewportReady = useEntryViewportReady();
   const { preference, reduce } = useMotionPreference();
+  const target = useRef<HTMLElement>(null);
+  const attach = useCallback((element: HTMLElement | null) => {
+    target.current = element;
+  }, []);
   const configured = useRef(false);
   const [admission, setAdmission] = useState<Admission>('static');
   const [focused, setFocused] = useState(false);
   const [loadComplete, setLoadComplete] = useState(false);
-  const attach = useCallback(
-    (element: HTMLElement | null) => {
-      if (!element || !active || !viewportReady || configured.current) return;
+  useEffect(() => {
+    const element = target.current;
+    if (!element || !active || !viewportReady || configured.current) return;
+    const read = () => {
       configured.current = true;
       const rect = element.getBoundingClientRect();
       const visible = rect.bottom > 0 && rect.top < window.innerHeight;
-      if (visible && !scrollOnly && (initialEntry || activation)) setAdmission('load');
+      if (
+        visible &&
+        !scrollOnly &&
+        (activation || (initialEntry && (kind === 'shell' || !isErrorRecoveryArrival())))
+      )
+        setAdmission('load');
       else if (!visible && rect.bottom >= 0) setAdmission('scroll');
-    },
-    [active, initialEntry, activation, scrollOnly, viewportReady],
-  );
+    };
+    // Group geometry reads outside the hydration commit and before Motion writes.
+    frame.read(read);
+    return () => cancelFrame(read);
+  }, [active, initialEntry, activation, kind, scrollOnly, viewportReady]);
   const moving = !reduce && !focused;
   const scroll = admission === 'scroll' && moving;
   const offset = distances[kind] * (kind === 'navigation' ? -1 : 1);
@@ -88,7 +115,7 @@ export function EntryReveal({
           inView={scroll}
           inViewOnce
           inViewMargin="0px 0px -12px"
-          fade={scroll}
+          fade={scroll && (kind === 'surface' || kind === 'navigation')}
           slide={
             scroll
               ? { direction: kind === 'navigation' ? 'right' : 'up', offset: scrollOffset }

@@ -71,6 +71,7 @@ export default function KnnQuizPlot({ state }: { state: KnnQuizState }) {
               distance={Math.sqrt(squaredDistance(point, state.round.query))}
               query={state.round.query}
               selected={state.selected.includes(point.id)}
+              disabled={state.result === 'correct'}
               errorAttempt={state.error?.id === point.id ? state.error.attempt : 0}
               k={state.k}
               onChoose={state.choosePoint}

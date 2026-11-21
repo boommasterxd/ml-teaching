@@ -1,7 +1,7 @@
 import JsonLd from '@/components/JsonLd';
 import ImageRecognitionPage from '@/screens/ImageRecognitionPage';
 import { learningPaths } from '@/lib/learning-paths';
-import { pageMetadata, siteConfig, webApplicationId } from '@/lib/site';
+import { learningResourceId, pageMetadata, siteConfig, webApplicationId } from '@/lib/site';
 
 export const dynamic = 'error';
 const title = 'Bilderkennung verstehen';
@@ -14,7 +14,7 @@ export default function ImageLearningPage() {
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': ['WebPage', 'LearningResource'],
-    '@id': `${url}#learning-resource`,
+    '@id': learningResourceId(learningPaths.images),
     url,
     name: title,
     description,

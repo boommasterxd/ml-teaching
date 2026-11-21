@@ -3,8 +3,6 @@
 The `CI` workflow validates pull requests targeting `main` against GitHub's simulated
 merge commit. It uses the supported Node.js `26.x` major with `check-latest: true` and
 installs the lockfile with `npm ci --no-audit`.
-These workflow descriptions apply to this development branch. The existing `main`
-and provider behavior remain separate until authorized integration.
 
 ## Check selection
 
@@ -168,5 +166,7 @@ Repository Projects are disabled. These are saved provider controls; workflow
 files alone do not activate them. Merging and publication still require explicit
 authorization.
 GitHub does not deploy or repeat application CI automatically after merging.
-Vercel's native Git integration owns Preview and Production builds; deployment,
-promotion and provider configuration require their own authorization.
+Vercel builds Production from eligible Git commits on `main`. Previews are
+created manually through the Vercel CLI or REST API with explicit authorization.
+Manual deployments, promotions and provider configuration require their own
+authorization. See [the deployment guide](deployment.md).

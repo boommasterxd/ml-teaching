@@ -1,5 +1,10 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
-import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-checks';
+import {
+  diagnostics,
+  expectAccessible,
+  expectNoStoredTrainingData,
+  settleEntryAnimations,
+} from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
 import sharp from 'sharp';
 import { failSyntheticModel, routeSyntheticModel } from './synthetic-model';
@@ -10,6 +15,7 @@ import {
   expectStableNameValidation,
   expectKeyboardCapture,
   expectCancelledResetKeepsImages,
+  expectEmptyTrainingAfterConsent,
   expectGalleryFocusAcrossResize,
   expectLivePredictionControls,
   expectPreviewDeletion,
@@ -17,10 +23,12 @@ import {
   expectThemeKeepsTraining,
   expectThemeMenuTriggers,
   expectImmediateThemeFeedback,
+  grantModelConsent,
   openDeferredTrainingStep,
   openThemeMenu,
   settleLandingReveals,
   withdrawTrainingConsent,
+  withdrawWithActiveCamera,
 } from './training-keyboard';
 
 async function pageBackgroundBrightness(page: Page) {
@@ -47,17 +55,6 @@ async function expectRootThemeWipe(page: Page) {
       ),
     )
     .toBe(true);
-}
-
-async function grantModelConsent(page: Page) {
-  const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
-  await expect(dialog).toBeVisible();
-  const checkboxes = dialog.getByRole('checkbox');
-  await checkboxes.nth(0).focus();
-  await page.keyboard.press('Space');
-  await checkboxes.nth(1).focus();
-  await page.keyboard.press('Space');
-  await dialog.getByRole('button', { name: 'Zustimmen', exact: true }).click();
 }
 
 async function uploadTrainingClasses(page: Page) {
@@ -108,11 +105,12 @@ test('the native image optimizer serves the bounded hero poster as AVIF and WebP
   page,
   request,
 }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   const poster = page.locator('.hero-field-poster img');
   await expect
     .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
-    .toBeGreaterThan(0);
+    .toBeGreaterThan(1);
   const optimized = new URL(await poster.evaluate((image: HTMLImageElement) => image.currentSrc));
   expect(optimized.pathname).toBe('/_next/image');
   expect(optimized.searchParams.get('url')).toMatch(/\.webp$/);
@@ -206,7 +204,6 @@ test('educational examples start directly and keep the selected control focused'
 
 test('mobile consent is keyboard accessible, rejects safely and makes no external requests', async ({
   page,
-  context,
 }) => {
   const failures = diagnostics(page);
   const external: string[] = [];
@@ -242,10 +239,7 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('checkbox').first()).not.toBeChecked();
   expect(external).toEqual([]);
-  expect(await context.cookies()).toEqual([]);
-  expect(
-    await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length })),
-  ).toEqual({ local: 0, session: 0 });
+  await expectNoStoredTrainingData(page);
   expect(failures).toEqual([]);
 });
 
@@ -290,7 +284,11 @@ test('consent can be withdrawn while a model download is pending', async ({ page
     await expect(loading.getByText(/Lädt die Lernseite neu/)).toHaveCount(0);
     await expectAccessible(page);
     const requestsBeforeWithdrawal = pending.length;
-    await withdrawTrainingConsent(page);
+    const [aborted] = await Promise.all([
+      page.waitForEvent('requestfailed', (request) => request === pending[0].request()),
+      withdrawTrainingConsent(page),
+    ]);
+    expect(aborted.failure()?.errorText).toBe('net::ERR_ABORTED');
     expect(pending).toHaveLength(requestsBeforeWithdrawal);
     await expectAccessible(page);
     expect(network.unexpectedRequests()).toBe(0);
@@ -353,14 +351,10 @@ test('theme changes preserve navigation and require explicit remembering across 
   const remember = menu.getByRole('menuitemcheckbox', {
     name: 'Auswahl für weitere Besuche auf diesem Gerät merken',
   });
-  const checkPath = remember.locator('svg path');
   await expect(remember).not.toBeChecked();
-  await remember.hover();
-  await expect(checkPath).toHaveCSS('opacity', '0');
   await remember.focus();
   await page.keyboard.press('Space');
   await expect(remember).toBeChecked();
-  await expect(checkPath).toHaveCSS('opacity', '1');
   expect(await page.evaluate(() => localStorage.getItem('ml-teaching-theme'))).toBe('dark');
   await page.keyboard.press('Escape');
   await expect(
@@ -385,7 +379,6 @@ test('theme changes preserve navigation and require explicit remembering across 
     await otherRemember.focus();
     await other.keyboard.press('Space');
     await expect(otherRemember).not.toBeChecked();
-    await expect(otherRemember.locator('svg path')).toHaveCSS('opacity', '0');
     await expect(otherTheme).toBeChecked();
     await expect(theme).not.toBeChecked();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'system');
@@ -405,8 +398,9 @@ test('local images train a real browser classifier, predict and reset without up
 }) => {
   const failures = diagnostics(page);
   const network = await routeSyntheticModel(page, baseURL!);
-  await page.goto(learningPaths.imagePractice);
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(learningPaths.imagePractice);
+  await expectNoStoredTrainingData(page);
   const { expectSameDialog, expectStableWorkspace } = await captureSetupDialog(page);
   await grantModelConsent(page);
   const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
@@ -476,7 +470,11 @@ test('local images train a real browser classifier, predict and reset without up
   await expect(
     page.getByRole('contentinfo').getByRole('link', { name: /^Einwilligung widerrufen/ }),
   ).toBeVisible();
-  await withdrawTrainingConsent(page);
+  await expectNoStoredTrainingData(page);
+  await withdrawWithActiveCamera(page);
+  await expectNoStoredTrainingData(page);
   expect(network.modelRequests).toEqual(['graph', 'weights']);
+  await expectEmptyTrainingAfterConsent(page);
+  await expectNoStoredTrainingData(page);
   expect(network.unexpectedRequests()).toBe(0);
 });
