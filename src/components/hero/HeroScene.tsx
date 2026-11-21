@@ -1,13 +1,8 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode, type RefObject } from 'react';
-import {
-  motion,
-  useMotionValue,
-  useMotionValueEvent,
-  useScroll,
-  type MotionValue,
-} from 'motion/react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { scroll } from 'motion';
+import { motion, useMotionValue } from 'motion/react';
 import { ReducedMotionConfig } from '@animate-ui/react/utils/motion';
 import Button from '@/components/Button';
 import { Pause } from '@/components/icons/pause';
@@ -21,25 +16,6 @@ import GlassArtworkPlaceholder from './GlassArtworkPlaceholder';
 import type { ContourSources } from './contour-poster';
 
 type HeroSceneProps = { children?: ReactNode; sources: ContourSources };
-
-function HeroParallax({
-  root,
-  paused,
-  offset,
-}: {
-  root: RefObject<HTMLDivElement | null>;
-  paused: boolean;
-  offset: MotionValue<number>;
-}) {
-  const { scrollYProgress } = useScroll({ target: root, offset: ['start start', 'end start'] });
-  useMotionValueEvent(scrollYProgress, 'change', (progress) => {
-    if (!paused) offset.set(-24 * progress);
-  });
-  useEffect(() => {
-    if (!paused) offset.set(-24 * scrollYProgress.get());
-  }, [offset, paused, scrollYProgress]);
-  return null;
-}
 
 function PlaybackControl({
   reduce,
@@ -90,8 +66,20 @@ function Scene({ children, sources }: HeroSceneProps) {
     onRendered,
     onUnavailable,
     prepare,
-  } = useGlassField(paused, viewportReady, { waitForDocumentLoad: false, retainOffscreen: true });
+  } = useGlassField(paused, viewportReady);
   const fieldY = useMotionValue(0);
+  const parallaxVisible = motionReady && viewportReady && available && inView;
+  const parallaxRunning = parallaxVisible && !paused;
+
+  useEffect(() => {
+    const target = root.current;
+    if (!parallaxRunning || !target) return;
+    // Keep the previous offset until Motion measures the current scroll position.
+    return scroll((progress) => fieldY.set(-24 * progress), {
+      target,
+      offset: ['start start', 'end start'],
+    });
+  }, [fieldY, parallaxRunning]);
 
   return (
     <div
@@ -101,7 +89,6 @@ function Scene({ children, sources }: HeroSceneProps) {
       data-paused={paused || reduce || undefined}
       data-field-unavailable={failed || undefined}
     >
-      {motionReady && <HeroParallax root={root} paused={paused} offset={fieldY} />}
       <div className="hero-field-backdrop" aria-hidden="true" />
       <div className="landing-container hero-composition">
         {children}
@@ -109,7 +96,7 @@ function Scene({ children, sources }: HeroSceneProps) {
           <motion.div
             className="hero-field-art"
             initial={false}
-            style={motionReady && available && inView ? { y: fieldY } : undefined}
+            style={parallaxVisible ? { y: fieldY } : undefined}
           >
             <GlassArtworkPlaceholder
               sources={sources}

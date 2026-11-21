@@ -14,6 +14,10 @@ export const PrivacyOverview = (
       Bilderkennung lesen und dir auf der Startseite die Beispiele zum Lernen mit Belohnung ansehen.
     </p>
     <p>
+      Mit „Kamera ausschalten“ beendest du die Kameranutzung. Deine bereits gesammelten Bilder und
+      dein Training bleiben im Browser erhalten.
+    </p>
+    <p>
       Mit ‚Einwilligung widerrufen‘ beendest du das Bildtraining. Die Kamera wird ausgeschaltet und
       die Website verwirft deine Trainingsbilder und das trainierte Modell. Google und Kaggle können
       Angaben zum früheren Abruf weiterhin speichern.

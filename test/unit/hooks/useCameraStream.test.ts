@@ -246,6 +246,32 @@ describe('useCameraStream', () => {
   });
 
   describe('Cleanup bei Unmount', () => {
+    it('stops a late stream after demand ends and waits until the camera is needed again', async () => {
+      const track = makeMockTrack();
+      const pending = Promise.withResolvers<MediaStream>();
+      const replacement = makeMockStream();
+      const getUserMedia = vi
+        .fn()
+        .mockReturnValueOnce(pending.promise)
+        .mockResolvedValueOnce(replacement);
+      const onReady = vi.fn();
+      vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+      const { result, rerender } = renderHook(
+        ({ needed }) => useCameraStream(true, false, vi.fn(), needed, onReady),
+        { initialProps: { needed: true } },
+      );
+      rerender({ needed: false });
+      await act(async () => pending.resolve(makeMockStream([track])));
+      expect(track.stop).toHaveBeenCalledOnce();
+      expect(result.current.stream).toBeNull();
+      expect(getUserMedia).toHaveBeenCalledOnce();
+      expect(onReady).not.toHaveBeenCalled();
+
+      await act(async () => rerender({ needed: true }));
+      expect(result.current.stream).toBe(replacement);
+      expect(getUserMedia).toHaveBeenCalledTimes(2);
+      expect(onReady).toHaveBeenCalledOnce();
+    });
     it('stops tracks when permission resolves after unmount', async () => {
       let allow!: (stream: MediaStream) => void;
       const pending = new Promise<MediaStream>((resolve) => {

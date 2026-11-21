@@ -305,15 +305,18 @@ in `src/components/legal.css`; route transitions retain the existing native owne
 The static 404 and 500 documents and the App Router recovery screen share
 `PublicErrorScene`. Status text and recovery actions remain visible in the initial
 render. The 404 uses three separately modeled glass digits in the shared
-Topography renderer. The 500 and recovery screen use its ring. The static
-error pages reserve the artwork area and display the shared Spinner until the
-first frame. Their local poster is the still for reduced motion, disabled
-scripting or unavailable WebGL.
+Topography renderer. The 500 and recovery screen use its ring. Like the homepage,
+both static error pages reserve the artwork area, display the shared Spinner until
+the first frame and start playback automatically when the artwork is visible.
+Pointer and keyboard intent prepare the shared renderer. An optimized responsive
+poster covers reduced motion, disabled scripting and unavailable WebGL.
 The App Router recovery screen renders the poster immediately and loads the
 playback component when the recovery screen mounts. If playback fails to load,
 the poster and recovery actions stay available. Visible artwork or pointer
 intent prepares the shared renderer.
 Visible scenes support pointer, touch and keyboard impulses and a pause control.
+The [playback and menu-loading decisions](decisions/error-artwork-and-menus.md)
+record why these interactions share their implementations.
 
 Official project-local Codex guidance lives in `.agents/skills/shadcn/` and
 `.agents/skills/animate-ui/`, installed from `shadcn/ui` (canonical upstream
@@ -337,6 +340,9 @@ activation toggles capture. Holding the touch button records until release or ge
 cancellation. Capture ends when the document is hidden.
 Adding or removing images leaves the surrounding controls in place. Container queries set
 thumbnail columns from the gallery's own width. TanStack Virtual reads the same CSS column count.
+It retains the focused row and mounts only the current window with overscan.
+Browser Find cannot locate gallery items whose rows are unmounted. Scroll the
+gallery to bring those rows into view.
 The homepage hero places the glass beside the text at `md`. The loop and droplets
 share one scroll-parallax layer.
 
@@ -396,28 +402,38 @@ full-width row groups upload, reset and removal.
 Narrow cards retain more space for the upload label and show reset and removal
 as icons with accessible names. The gallery's fixed-height area includes its
 selection controls so collecting the first image keeps the card height stable.
+A persistent live status announces the selected image count during selection mode.
 The class marker, gallery illustration and selected thumbnail badge use the same
 theme-aware class accent. Class names identify each group. Class counters show
-progress toward the training minimum, then the collected total;
-the first class card and the prediction step offer camera activation after the
-optional camera prompt is declined. A failed camera request or interrupted track
-offers an explicit retry. Local image uploads remain available.
+progress toward the training minimum, then the collected total.
+The first class card and prediction step offer camera activation after the
+optional camera choice is declined or the camera is turned off. Turning it off
+releases its stream, clears the app's camera consent and returns focus to the
+current step control. Re-enabling opens the camera choice again. A failed collection
+request offers a reconnect action. A failed prediction request can be retried
+from the same start control. Local image uploads remain available.
 Each capture preview places the shared camera switch in its lower-right corner.
 The completed training
 status offers an action that opens the prediction step without starting the camera preview.
 The prediction card keeps its camera frame and result areas in place before, during
-and after live prediction. Start and stop share one control inside the frame. The
-video attaches on activation, and the confidence bars are empty until results arrive.
+and after live prediction. Start and stop share one control inside the frame.
+The control retains focus while the camera connects. The video appears once
+prediction starts, and the confidence bars are empty until results arrive.
 The camera and confidence readout share a row when the card is wide enough.
-The PCA diagram reserves space below the confidence bars before prediction starts.
+The PCA diagram reserves its plot, description control and legend below the
+confidence bars before prediction starts.
 During live prediction, it shows a scatter plot with one point per training image
 and a diamond for the current camera frame. When the panel uses two columns, the
 camera frame stretches to the bottom of the legend. The title identifies the 2D
 projection, and the figure description explains it for assistive technology.
 An optional text description captures the last displayed projection as a stable
 snapshot, including class regions and examples nearest to the camera point.
-The plot reuses the lesson's diamond, class palette and typography. A packed SVG
-path per class keeps the point cloud separate from the Animate UI marker motion.
+The plot reuses the lesson's diamond, class palette and typography. Training
+classes use circles, squares and triangles in sequence. When shapes repeat, the
+live legend lets users isolate one class via pressed-state buttons and select it
+again to restore all points. Filtering keeps the camera marker and projection
+scale stable. A packed SVG path per class keeps the point cloud separate from
+the Animate UI marker motion.
 The workspace panels, dialogs, gallery and camera preview use shared theme and media tokens.
 SiteBrand is a small client boundary so Animate UI's press Slot receives a concrete
 Link element. Passing the server-produced Link through that Slot can resolve to an
@@ -472,7 +488,8 @@ activation in the same dialog. Intent on a confirmation or image-preview trigger
 prepares one shared module. The workspace mounts one active dialog at a time and
 supports cancelling a pending first opening with Escape. Upload and capture
 intent warm the thumbnail module. Its virtualizer mounts when there are images
-to display. The prediction video attaches when the model and camera are ready.
+to display. Preparing the prediction space on intent fits or reuses PCA without
+opening the camera. The prediction video attaches after explicit activation.
 TensorFlow and model imports remain consent-gated and are never prepared on intent.
 
 ## Motion ownership
@@ -615,21 +632,22 @@ Reduced motion uses the library's instant height change and opacity feedback.
   over its motion after hydration. The first successful draw removes it.
   Where parallel compilation is available, the renderer checks the readiness of
   both GPU programs on its frame loop.
-  Visibility and intent share one renderer import promise. The homepage starts
-  preparing the renderer after the visible hero has had a chance to paint, even
-  while the document is still loading. Static error artwork uses the same schedule.
+  Visibility and intent share one renderer import promise. The homepage and the
+  static error pages start preparing the renderer after the visible artwork has
+  had a chance to paint, even while the document is still loading.
   The in-app recovery artwork keeps its static poster while playback loads.
   The resolved component mounts directly on the client after any incoming page
   transition.
   The poster is used for reduced motion, unsupported WebGL or context loss.
   Reduced motion, a hidden tab or a lost context unmounts the enhancement and
   disposes its renderer.
-  The homepage pauses the render loop when the artwork leaves the viewport
-  and retains its single bounded canvas for the active page. Scrolling back
-  resumes the same frame without reinitializing WebGL. Error artwork releases
-  its renderer offscreen. Explicit pause retains the current GPU image,
-  stops frame, pointer-spring and ripple playback, and freezes parallax. Resuming
-  continues the same animation time. Resizing can redraw the paused image without
+  The homepage and error artwork pause the render loop when the artwork leaves
+  the viewport and retain a single bounded canvas for the active page. Scrolling
+  back resumes the same frame without reinitializing WebGL. Explicit pause retains the current GPU image,
+  stops frame, pointer-spring and ripple playback, and freezes parallax. Pausing
+  or scrolling away detaches the parallax scroll subscription. On resume, the
+  current scroll position updates the retained offset and playback continues at
+  the same animation time. Resizing can redraw the paused image without
   advancing time. No CPU animation fallback runs. The scene performs
   no ML inference or external data request.
   The artwork responds to a completed tap and leaves touch scrolling available.

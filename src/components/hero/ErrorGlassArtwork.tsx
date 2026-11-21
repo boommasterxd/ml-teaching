@@ -13,43 +13,44 @@ import { useGlassField } from './use-glass-field';
 interface ErrorGlassArtworkProps {
   digits?: boolean;
   sources: ContourSources;
-  preload?: boolean;
   keepInitialPoster?: boolean;
 }
 
-function ErrorGlassScene({ digits, sources, preload, keepInitialPoster }: ErrorGlassArtworkProps) {
+function ErrorGlassScene({ digits, sources, keepInitialPoster }: ErrorGlassArtworkProps) {
   const [paused, setPaused] = useState(false);
   const viewportReady = useEntryViewportReady();
   const {
     artwork,
     Field,
     available,
+    inView,
     failed,
     reduce,
     rendered,
-    hasRendered,
     onRendered,
     onUnavailable,
     prepare,
-  } = useGlassField(paused, viewportReady, { waitForDocumentLoad: !!keepInitialPoster });
-  const Icon = paused ? Play : Pause;
-  const artworkState = failed ? 'fallback' : hasRendered || reduce ? 'rendered' : 'loading';
+  } = useGlassField(paused, viewportReady, keepInitialPoster);
+  const stopped = paused || reduce;
+  const Icon = stopped || failed ? Play : Pause;
 
   return (
     <div className="error-glass">
       <ErrorGlassFrame
         sources={sources}
-        preload={preload}
-        artworkState={keepInitialPoster ? undefined : artworkState}
+        keepInitialPoster={keepInitialPoster}
+        fallback={failed || (paused && !rendered)}
+        pending={!rendered && !stopped}
         ref={artwork}
         data-enhanced={(available && rendered) || undefined}
-        data-paused={paused || undefined}
+        data-paused={stopped || undefined}
         data-field-unavailable={failed || undefined}
         onPointerEnter={prepare}
       >
         {viewportReady && available && Field && (
           <Field
             paused={paused}
+            inView={inView}
             shape={digits ? 'digits' : 'ring'}
             onUnavailable={onUnavailable}
             onRendered={onRendered}
@@ -57,17 +58,26 @@ function ErrorGlassScene({ digits, sources, preload, keepInitialPoster }: ErrorG
         )}
       </ErrorGlassFrame>
       <div className="error-glass-controls">
-        {hasRendered && !failed && !reduce && (
-          <Button
-            variant="outline"
-            size="sm"
-            aria-controls="error-glass-art"
-            onClick={() => setPaused((value) => !value)}
-          >
-            <Icon data-icon="inline-start" aria-hidden="true" />
-            {paused ? 'Animation fortsetzen' : 'Animation pausieren'}
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          size="sm"
+          aria-controls="error-glass-art"
+          aria-pressed={paused}
+          disabled={reduce || failed}
+          onPointerEnter={prepare}
+          onPointerDown={prepare}
+          onFocus={prepare}
+          onClick={() => setPaused((value) => !value)}
+        >
+          <Icon data-icon="inline-start" aria-hidden="true" />
+          {failed
+            ? 'Animation nicht verfügbar'
+            : reduce
+              ? 'Bewegung reduziert'
+              : paused
+                ? 'Animation fortsetzen'
+                : 'Animation pausieren'}
+        </Button>
       </div>
     </div>
   );

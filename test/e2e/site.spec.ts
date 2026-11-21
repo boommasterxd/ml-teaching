@@ -12,11 +12,11 @@ import { expectNetworkLayout } from './network-layout';
 import {
   captureSetupDialog,
   classLayout,
+  expectCameraToggleKeepsImages,
   expectStableNameValidation,
   expectKeyboardCapture,
   expectCancelledResetKeepsImages,
   expectEmptyTrainingAfterConsent,
-  expectGalleryFocusAcrossResize,
   expectLivePredictionControls,
   expectPreviewDeletion,
   expectThemeControlAlignment,
@@ -24,6 +24,7 @@ import {
   expectThemeMenuTriggers,
   expectImmediateThemeFeedback,
   grantModelConsent,
+  observeWorkspaceCamera,
   openDeferredTrainingStep,
   openThemeMenu,
   settleLandingReveals,
@@ -400,6 +401,7 @@ test('local images train a real browser classifier, predict and reset without up
   const network = await routeSyntheticModel(page, baseURL!);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(learningPaths.imagePractice);
+  const expectCamera = await observeWorkspaceCamera(page);
   await expectNoStoredTrainingData(page);
   const { expectSameDialog, expectStableWorkspace } = await captureSetupDialog(page);
   await grantModelConsent(page);
@@ -425,9 +427,10 @@ test('local images train a real browser classifier, predict and reset without up
   await expect(confirmRemoval).toHaveCount(0);
   await expect(removeClass).toBeFocused();
   await expect(page.locator('video')).toHaveCount(0);
+  await expectCamera(0, 0);
   await uploadTrainingClasses(page);
-  await expectGalleryFocusAcrossResize(page);
   await expectCancelledResetKeepsImages(page);
+  await expectCameraToggleKeepsImages(page, expectCamera);
   const steps = page.getByRole('navigation', { name: 'Trainingsablauf' });
   const next = page.getByRole('button', { name: 'Weiter zum Training' });
   await expect(next).toHaveCount(2);
@@ -437,6 +440,8 @@ test('local images train a real browser classifier, predict and reset without up
     page.getByRole('heading', { name: 'Training', exact: true }),
   );
   await expect(page.getByRole('textbox')).toHaveCount(0);
+  await expectCamera(2, 0);
+  await expect(page.getByRole('button', { name: 'Kamera ausschalten' })).toBeVisible();
   const train = page.getByRole('button', {
     name: /^(Modell trainieren|Trainiere …|Modell neu trainieren)$/,
   });
@@ -450,13 +455,11 @@ test('local images train a real browser classifier, predict and reset without up
     page.getByRole('heading', { name: 'Vorhersage', exact: true }),
   );
   await expect(page.getByRole('heading', { name: 'Training', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Kamera aktivieren', exact: true }).click();
-  await expect(camera).toBeVisible();
-  await camera.getByRole('button', { name: 'Erlauben' }).click();
-  await expect(camera).toHaveCount(0);
-  await expectLivePredictionControls(page);
+  await expect(page.getByRole('button', { name: 'Kamera ausschalten' })).toBeVisible();
+  await expectLivePredictionControls(page, expectCamera);
   await steps.getByRole('button', { name: 'Training', exact: true }).click();
   await expect(page.getByText('Training abgeschlossen', { exact: true })).toBeVisible();
+  await expectCamera(5, 0);
   await steps.getByRole('button', { name: 'Bilder sammeln', exact: true }).click();
   await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
   await expectPreviewDeletion(page, expectAccessible);

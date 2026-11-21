@@ -6,7 +6,7 @@ export const dynamic = 'error';
 export const metadata = {
   ...pageMetadata(
     'Lernen durch Belohnung',
-    'Die Q-Learning-Übung im Lernlabor von ML Teaching.',
+    'Die Q-Learning-Übung für das Lernlabor von ML Teaching ist geplant.',
     learningPaths.qLearningPractice,
   ),
   robots: { index: false, follow: true },

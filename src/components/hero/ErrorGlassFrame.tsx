@@ -3,30 +3,26 @@ import StaticContourPoster from './StaticContourPoster';
 import type { ContourSources } from './contour-poster';
 import GlassArtworkPlaceholder from './GlassArtworkPlaceholder';
 
-type ArtworkState = 'loading' | 'rendered' | 'fallback';
-
 export default function ErrorGlassFrame({
   sources,
   children,
-  preload,
-  artworkState,
+  keepInitialPoster,
+  fallback = false,
+  pending = false,
   ...props
 }: ComponentProps<'div'> & {
   sources: ContourSources;
-  preload?: boolean;
-  artworkState?: ArtworkState;
+  keepInitialPoster?: boolean;
+  fallback?: boolean;
+  pending?: boolean;
 }) {
   return (
     <div id="error-glass-art" className="error-glass-viewport" {...props}>
       <div className="hero-field-art">
-        {artworkState === undefined ? (
-          <StaticContourPoster sources={sources} preload={preload} />
+        {keepInitialPoster ? (
+          <StaticContourPoster sources={sources} preload={false} />
         ) : (
-          <GlassArtworkPlaceholder
-            sources={sources}
-            fallback={artworkState === 'fallback'}
-            pending={artworkState === 'loading'}
-          />
+          <GlassArtworkPlaceholder sources={sources} fallback={fallback} pending={pending} />
         )}
         {children}
       </div>

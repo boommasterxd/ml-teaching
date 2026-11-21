@@ -16,7 +16,6 @@ test-results/
 /.codex-attachments/
 
 # Development-only content; native build and CSP inputs remain included
-.git/
 .github/
 .agents/
 docs/

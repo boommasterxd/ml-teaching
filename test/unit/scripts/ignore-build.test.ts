@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { ignoreBuild } from '../../../scripts/ignore-build';
 
@@ -86,15 +87,35 @@ describe('Vercel build admission', () => {
     expect(ignoreBuild(previous, current, history(['package.json'], ['{', '{}']))).toBe(1);
   });
 
-  it('builds when history is absent, divergent, unavailable or truncated', () => {
+  it('prints one fixed reason and builds when the provider passes a malformed revision', () => {
+    const result = spawnSync(process.execPath, ['scripts/ignore-build.ts'], {
+      encoding: 'utf8',
+      timeout: 5_000,
+      env: {
+        NODE_ENV: 'test',
+        VERCEL_GIT_PREVIOUS_SHA: previous,
+        VERCEL_GIT_COMMIT_SHA: 'unexpected\nvalue',
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout.trimEnd()).toBe('[ignore-build] invalid-revision');
+    expect(result.stderr).toBe('');
+  });
+
+  it('reports a fixed ancestry failure reason without forwarding Git error text', () => {
+    const reasons: string[] = [];
+    const readGit = (args: string[]) => {
+      if (args[0] === 'merge-base') throw new Error('unexpected Git error text');
+      return history(['README.md'])(args);
+    };
+    expect(ignoreBuild(previous, current, readGit, (reason) => reasons.push(reason))).toBe(1);
+    expect(reasons).toEqual(['ancestry-check-failed']);
+  });
+
+  it('builds when revisions are missing or invalid, the checkout differs, or the diff is truncated', () => {
     expect(ignoreBuild('', current, history(['README.md']))).toBe(1);
     expect(ignoreBuild(previous, 'invalid', history(['README.md']))).toBe(1);
     expect(ignoreBuild(previous, current, () => 'different')).toBe(1);
-    const unavailable = (args: string[]) => {
-      if (args[0] === 'merge-base') throw new Error('Missing history, timeout or buffer limit');
-      return `${current}\n`;
-    };
-    expect(ignoreBuild(previous, current, unavailable)).toBe(1);
     expect(
       ignoreBuild(previous, current, (args) =>
         args[0] === 'diff' ? 'README.md' : history([])(args),

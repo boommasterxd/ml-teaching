@@ -166,6 +166,17 @@ const selectedImages = (prefix: string, count = 10) =>
     (_, index) => new File([imageBytes], `${prefix}-${index}.png`, { type: 'image/png' }),
   );
 
+async function collectCupAndBookImages(container: HTMLElement) {
+  const names = screen.getAllByRole('textbox');
+  fireEvent.change(names[0], { target: { value: 'Tasse' } });
+  fireEvent.change(names[1], { target: { value: 'Buch' } });
+  const inputs = container.querySelectorAll<HTMLInputElement>('input[type="file"]');
+  fireEvent.change(inputs[0], { target: { files: selectedImages('tasse') } });
+  await screen.findByText('10 Bilder');
+  fireEvent.change(inputs[1], { target: { files: selectedImages('buch') } });
+  await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2));
+}
+
 describe('training page integration', () => {
   it('keeps processing opt-in, supports local training, enables camera later and confirms destructive changes', async () => {
     const { container, unmount } = render(
@@ -186,14 +197,7 @@ describe('training page integration', () => {
         .getAllByRole<HTMLButtonElement>('button', { name: 'Weiter zum Training' })
         .every(({ disabled }) => disabled),
     ).toBe(true);
-    const names = screen.getAllByRole('textbox');
-    fireEvent.change(names[0], { target: { value: 'Tasse' } });
-    fireEvent.change(names[1], { target: { value: 'Buch' } });
-    const inputs = container.querySelectorAll<HTMLInputElement>('input[type="file"]');
-    fireEvent.change(inputs[0], { target: { files: selectedImages('tasse') } });
-    await screen.findByText('10 Bilder');
-    fireEvent.change(inputs[1], { target: { files: selectedImages('buch') } });
-    await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2));
+    await collectCupAndBookImages(container);
     expect(currentStep()).toBe(steps.getByRole('button', { name: 'Bilder sammeln' }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Weiter zum Training' })[0]);
     expect(screen.getByText('Ansicht wird geladen …')).toBeTruthy();
@@ -213,9 +217,10 @@ describe('training page integration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Kamera aktivieren' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Erlauben' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(boundary.getUserMedia).toHaveBeenCalledOnce();
+    expect(boundary.getUserMedia).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Live-Vorhersage starten' }));
     await screen.findByRole('progressbar', { name: 'Konfidenz für Tasse' });
+    expect(boundary.getUserMedia).toHaveBeenCalledOnce();
     expect(
       screen
         .getByRole('progressbar', { name: 'Konfidenz für Tasse' })
@@ -223,9 +228,15 @@ describe('training page integration', () => {
     ).toBe('100');
     fireEvent.click(steps.getByRole('button', { name: 'Training' }));
     expect(screen.queryByRole('progressbar', { name: 'Konfidenz für Tasse' })).toBeNull();
+    expect(boundary.stopTrack).toHaveBeenCalledOnce();
     fireEvent.click(steps.getByRole('button', { name: 'Vorhersage' }));
     expect(screen.getByRole('button', { name: 'Live-Vorhersage starten' })).toBeTruthy();
+    expect(boundary.getUserMedia).toHaveBeenCalledOnce();
     fireEvent.click(steps.getByRole('button', { name: 'Bilder sammeln' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Kamera ausschalten' }));
+    expect(boundary.stopTrack).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Kamera aktivieren' })).toBeTruthy();
     expect(screen.getAllByText('10 Bilder')).toHaveLength(2);
     const preview = await openSecondImagePreview();
     fireEvent.click(preview.getByRole('button', { name: 'Schließen' }));
