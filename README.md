@@ -4,6 +4,7 @@ Explore machine learning through a German interface for children. Choose a learn
 area, discover image classification, and train a model directly in your browser.
 Watch two example paths in the homepage preview of learning through rewards.
 
+[Open ML Teaching](https://mlteaching.boomapps.de) ·
 [Source](https://github.com/boommasterxd/ml-teaching) · [Quick start](#quick-start) ·
 [Architecture](docs/architecture.md) ·
 [Development](docs/development.md) · [Security](SECURITY.md)
@@ -43,8 +44,6 @@ npm run build
 npm start
 ```
 
-The source targets **ML Teaching** at `https://mlteaching.boomapps.de` on Vercel.
-The new domain and provider configuration are prepared separately from publication.
 ML Teaching is independent of Google Teachable Machine.
 
 ## Data, providers and costs
@@ -59,7 +58,7 @@ is saved locally only when you explicitly enable remembering for future visits.
 After explicit consent, the browser downloads pretrained MobileNet weights from
 Google. Google receives connection metadata during those downloads; the app sends
 no training images. Model files can remain in the browser's ordinary HTTP cache.
-The proposed Vercel host processes website connection data. See the in-app
+Vercel processes website connection data. See the in-app
 [privacy page source](src/screens/PrivacyPage.tsx) and
 [deployment boundaries](docs/deployment.md).
 
@@ -90,12 +89,11 @@ camera and interactive controls live in small client subtrees. See
 ## Contributing and security
 
 Work on a development branch. Use English Conventional Commits and keep changes
-reviewable. Publication, merging and provider changes require explicit authorization;
-this migration must remain off `main` until approved. See [AGENTS.md](AGENTS.md) for
-the complete documentation index and repository controls.
+reviewable. Merging, manual publication and provider changes require explicit
+authorization. See [AGENTS.md](AGENTS.md) for the documentation index and repository
+controls.
 
 Report vulnerabilities using [SECURITY.md](SECURITY.md). Application code uses the
 [MIT license](LICENSE.txt). Upstream components and icons retain their own license
 terms, including Animate UI's Commons Clause condition; see
-[third-party notices](docs/third-party-notices.md). No downloadable release is
-published by this source migration.
+[third-party notices](docs/third-party-notices.md).

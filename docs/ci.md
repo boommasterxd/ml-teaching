@@ -168,5 +168,7 @@ Repository Projects are disabled. These are saved provider controls; workflow
 files alone do not activate them. Merging and publication still require explicit
 authorization.
 GitHub does not deploy or repeat application CI automatically after merging.
-Vercel's native Git integration owns Preview and Production builds; deployment,
-promotion and provider configuration require their own authorization.
+Vercel builds Production from eligible Git commits on `main`. Previews are
+created manually through the Vercel CLI or REST API with explicit authorization.
+Manual deployments, promotions and provider configuration require their own
+authorization. See [the deployment guide](deployment.md).

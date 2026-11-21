@@ -1,26 +1,19 @@
 # Deployment boundaries
 
-## Prepared target
+## Production target
 
-The intended host is Vercel and the intended canonical origin is
-`https://mlteaching.boomapps.de`. `src/lib/site.ts` owns the public identity used by
-metadata, robots, sitemap and llms.txt. This source migration does not establish DNS,
-TLS, a Vercel project, domain ownership or a live deployment.
-
-All work stays on `Codex/development-nextjs-ssg`. Do not merge to or push `main`,
-activate an existing hosting integration, change DNS or publish without explicit
-user authorization. Existing hosting can still react to `main`; keeping work on
-the development branch is a release boundary.
+The `boom-apps/ml-teaching` Vercel project serves `https://mlteaching.boomapps.de`
+and is connected to `boommasterxd/ml-teaching`. `src/lib/site.ts` owns the public
+identity used by metadata, robots, sitemap and llms.txt. The legacy Coolify app
+has automatic deployments disabled.
 
 ## Native Vercel setup
 
-After explicit provider setup authorization, verify the `boom-apps` team and create
-or select the intended `ml-teaching` project. Inspect effective settings and active
-GitHub protections before connecting a repository that can publish. Use native
-Next.js detection with Node.js 26.x, install command `npm ci --no-audit`, and build
-command `npm run build`. Do not override the native output directory. Use Frankfurt
-(`fra1`) for any actually required compute in this database-free project; public
-SSG does not need per-request rendering.
+The project uses the native Next.js preset and output, Node.js 26.x,
+`npm ci --no-audit` for installation, `npm run build` for builds and `npm run dev`
+for development. Function defaults use Fluid Compute in Frankfurt (`fra1`) with
+Standard resources and a 20-second timeout. The public pages are prerendered at
+build time.
 
 The CSP adapter composes the installed native provider adapter through an explicit
 absolute `NEXT_ADAPTER_PATH` or `CSP_PROVIDER_ADAPTER`. A Vercel build without a
@@ -28,16 +21,17 @@ provider adapter fails closed. Never hardcode a global CLI installation or bypas
 `npm run build` with direct `next build`. Verify actual provider hooks and output
 before publication; local native output does not prove hosted adaptation.
 
-`vercel.json` disables automatic Git deployments for all branches except `main`.
-This source rule neither connects the repository nor authorizes publication from
-`main`; provider setup and publication remain separate decisions. Automatic
-feature-branch Previews are not part of this workflow. Manual Preview deployment
-requires explicit authorization. Keep GitHub quality checks separate from native
-Vercel publication; no Actions deploy workflow or token exists here. Do not set
-repository duplicates of saved provider settings.
+Vercel evaluates commits from protected squash merges into `main` for native
+Production builds. Its Production Git policy allows the connected repository.
+Vercel automatically assigns the Production domains after a successful build.
+Commits skipped by the Ignore Build Step leave the current deployment in service.
+`vercel.json` limits automatic deployments to `main`, and Preview accepts only CLI
+and REST API deployments. Manual
+Preview and Production deployments require explicit authorization. GitHub Actions
+runs the required pull request checks, including the production dependency audit.
+Vercel owns publication, and GitHub Actions has no deployment workflow or token.
 
-The prepared Ignore Build Step is `node scripts/ignore-build.ts`; it must be saved
-in the intended provider project during authorized setup. The script compares
+The project uses `node scripts/ignore-build.ts` as its Ignore Build Step. The script compares
 `VERCEL_GIT_PREVIOUS_SHA`, the last successful deployment for that project and
 branch, with `VERCEL_GIT_COMMIT_SHA`, which must match the checked-out `HEAD`.
 It skips only a verified, nonempty delta containing maintained Markdown, declared
@@ -64,9 +58,10 @@ list or prove live headers.
 
 There are no application mutation endpoints, image-upload API, auth flows or shared
 databases. Native image optimization must remain outside custom restrictive WAF
-rules. Assess actual generated platform routes, bot management and method coverage
-when provisioning, without introducing client fingerprinting or broad page/RSC
-blocks. Do not add BotID solely because this is hosted on Vercel.
+rules. Vercel Bot Protection uses `challenge`. AI bots remain subject to general
+bot protection without an additional AI-bot rule. Vercel Authentication protects
+deployment URLs while the custom domain serves the public app. Do not add BotID
+solely because this is hosted on Vercel.
 
 No application secrets are required. Never pull private environment values just to
 verify setup. `.vercelignore` excludes local secrets and unnecessary development
@@ -76,9 +71,9 @@ The root `.codex-attachments/` directory is excluded from both Git and Vercel up
 
 ## Publication acceptance
 
-Before an authorized release, verify saved settings, native adapter composition,
-actual static deployment outputs, domain/TLS, delivered headers, canonical URLs,
-RSC aliases and the browser consent/training flow on that exact deployment. Do not
-infer these facts from a successful local build. Maintain the same HTML, hashes,
-assets and headers during rollback, and retain assets for the configured five-minute
-browser HTML freshness.
+Verify saved settings before releasing. Once the deployment is Ready, verify that
+the Production domain points to the intended commit. Check the native adapter,
+prerendered output, HTTPS, delivered headers, canonical URLs, RSC delivery and the
+browser consent/training flow on that deployment. Keep HTML, hashes, assets and
+headers from the same build during rollback, and retain assets for the configured
+five-minute browser HTML freshness.
