@@ -75,6 +75,7 @@ export function PageTransition({
       <div
         data-slot="page-transition"
         data-route-capture={capture}
+        data-route-path={pathname}
         className={cn('page-transition', className)}
         {...props}
       >

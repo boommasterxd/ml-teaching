@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url';
-import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
+import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD } from 'next/constants.js';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -13,19 +13,6 @@ const nextConfig = {
       { pathname: '/_next/static/media/**', search: '' },
       { pathname: '/_next/static/immutable/media/**', search: '' },
     ],
-  },
-  experimental: {
-    turbopackChunking: {
-      minChunkSize: 700_000,
-      maxChunkCountPerGroup: 2,
-      maxMergeChunkSize: 2_500_000,
-      firstPageLoadPriority: 1,
-      priorityBoost: 5,
-      requestCost: 1_500_000,
-      generateComponentChunks: true,
-      minComponentChunkSize: 100_000,
-      priorityRoutes: [/^\/$/, /^\/(?:500|_not-found|datenschutz)$/],
-    },
   },
   async headers() {
     return [
@@ -51,6 +38,9 @@ const nextConfig = {
 
 /** @param {string} phase @param {{defaultConfig: {pageExtensions: string[]}}} context */
 export default function configureNext(phase, { defaultConfig }) {
+  if (phase === PHASE_PRODUCTION_BUILD) {
+    return { ...nextConfig, typescript: { tsconfigPath: 'tsconfig.build.json' } };
+  }
   if (phase !== PHASE_DEVELOPMENT_SERVER) return nextConfig;
   return {
     ...nextConfig,

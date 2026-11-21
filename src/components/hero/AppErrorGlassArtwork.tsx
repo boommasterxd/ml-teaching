@@ -25,7 +25,7 @@ export default function AppErrorGlassArtwork() {
   }, []);
 
   return Artwork ? (
-    <Artwork sources={errorRingPosterImages} preload={false} />
+    <Artwork keepInitialPoster sources={errorRingPosterImages} preload={false} />
   ) : (
     <div className="error-glass">
       <ErrorGlassFrame sources={errorRingPosterImages} preload={false} />

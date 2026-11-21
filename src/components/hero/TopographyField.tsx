@@ -5,26 +5,29 @@ import { useMotionValue, useSpring } from 'motion/react';
 import Button from '@/components/Button';
 import { GlassImpulses } from './glass-impulses';
 import type { GlassShape } from './topography-gl';
-import { useTopographyRenderer } from './use-topography-renderer';
+import { useTopographyRenderer, type FieldPlayback } from './use-topography-renderer';
 
 interface PointerPoint {
   clientX: number;
   clientY: number;
 }
 
-function useFieldMotion(paused: boolean) {
+function useFieldMotion(playback: FieldPlayback) {
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
   const raised = useMotionValue(0);
   const x = useSpring(pointerX, { stiffness: 120, damping: 20 });
   const y = useSpring(pointerY, { stiffness: 120, damping: 20 });
   const lift = useSpring(raised, { stiffness: 80, damping: 18 });
-  const running = useMotionValue(!paused);
+  const playbackValue = useMotionValue(playback);
+  const paused = playback !== 'running';
   const wasPaused = useRef(paused);
   const [ripples] = useState(() => new GlassImpulses());
-  const values = useMemo(() => ({ x, y, lift, ripples, running }), [x, y, lift, ripples, running]);
+  const values = useMemo(
+    () => ({ x, y, lift, ripples, playback: playbackValue }),
+    [x, y, lift, ripples, playbackValue],
+  );
   useEffect(() => {
-    running.set(!paused);
     ripples.setPaused(paused);
     if (paused) {
       for (const value of [x, y, lift]) value.stop();
@@ -34,7 +37,8 @@ function useFieldMotion(paused: boolean) {
       lift.set(raised.get());
     }
     wasPaused.current = paused;
-  }, [paused, running, ripples, x, y, lift, pointerX, pointerY, raised]);
+    playbackValue.set(playback);
+  }, [paused, playback, playbackValue, ripples, x, y, lift, pointerX, pointerY, raised]);
   useEffect(() => () => ripples.clear(), [ripples]);
   return { values, pointerX, pointerY, raised };
 }
@@ -43,18 +47,22 @@ function useFieldMotion(paused: boolean) {
 export default function TopographyField({
   onUnavailable,
   onRendered,
-  paused = false,
+  paused: userPaused = false,
+  inView = true,
   shape = 'ring',
   sharpDesktopStart = false,
 }: {
   onUnavailable: () => void;
   onRendered: (ready: boolean) => void;
   paused?: boolean;
+  inView?: boolean;
   shape?: GlassShape;
   sharpDesktopStart?: boolean;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const { values, pointerX, pointerY, raised } = useFieldMotion(paused);
+  const playback = inView ? (userPaused ? 'paused' : 'running') : 'offscreen';
+  const paused = playback !== 'running';
+  const { values, pointerX, pointerY, raised } = useFieldMotion(playback);
   const { ripples } = values;
   useTopographyRenderer(canvas, values, onUnavailable, onRendered, shape, sharpDesktopStart);
   function point(event: PointerPoint, fromKeyboard = false) {

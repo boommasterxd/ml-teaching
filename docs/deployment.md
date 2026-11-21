@@ -11,7 +11,8 @@ has automatic deployments disabled.
 
 The project uses the native Next.js preset and output, Node.js 26.x,
 `npm ci --no-audit` for installation, `npm run build` for builds and `npm run dev`
-for development. Function defaults use Fluid Compute in Frankfurt (`fra1`) with
+for development. The native build uses Next.js's default Turbopack chunking.
+Function defaults use Fluid Compute in Frankfurt (`fra1`) with
 Standard resources and a 20-second timeout. The public pages are prerendered at
 build time.
 

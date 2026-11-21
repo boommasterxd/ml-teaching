@@ -14,9 +14,10 @@ interface ErrorGlassArtworkProps {
   digits?: boolean;
   sources: ContourSources;
   preload?: boolean;
+  keepInitialPoster?: boolean;
 }
 
-function ErrorGlassScene({ digits, sources, preload }: ErrorGlassArtworkProps) {
+function ErrorGlassScene({ digits, sources, preload, keepInitialPoster }: ErrorGlassArtworkProps) {
   const [paused, setPaused] = useState(false);
   const viewportReady = useEntryViewportReady();
   const {
@@ -30,14 +31,16 @@ function ErrorGlassScene({ digits, sources, preload }: ErrorGlassArtworkProps) {
     onRendered,
     onUnavailable,
     prepare,
-  } = useGlassField(paused, viewportReady);
+  } = useGlassField(paused, viewportReady, { waitForDocumentLoad: !!keepInitialPoster });
   const Icon = paused ? Play : Pause;
+  const artworkState = failed ? 'fallback' : hasRendered || reduce ? 'rendered' : 'loading';
 
   return (
     <div className="error-glass">
       <ErrorGlassFrame
         sources={sources}
         preload={preload}
+        artworkState={keepInitialPoster ? undefined : artworkState}
         ref={artwork}
         data-enhanced={(available && rendered) || undefined}
         data-paused={paused || undefined}

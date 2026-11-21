@@ -115,6 +115,13 @@ static CSP configuration and checks each HTML status, including the native 404 a
 `test-results/lighthouse/routes/`. This mode exits unsuccessfully if any
 performance score falls below 100.
 
+For a local comparison, build with `NEXT_PUBLIC_DEFER_DECORATIVE_MOTION=1 npm run build`.
+Then use the same `npm start` command. This opt-in keeps the loading indicator,
+headline and static icons available while WebGL, parallax and animated icons wait for the
+document to load and paint. Input over the artwork or its playback control can
+prepare and start the visible WebGL scene earlier. A regular `npm run build`
+restores the default startup schedule.
+
 ## Build and recovery
 
 Run `npm run ci` and standalone `npm run typecheck` before the final production
@@ -123,7 +130,11 @@ adapter conservatively invalidates an existing CSP success marker. It does not
 produce a publishable build; rebuild before starting production afterward.
 
 `npm run build` invalidates any old CSP success marker, runs one native `next build`
-and verifies the resulting manifest. `npm start` verifies it again before native
+and verifies the resulting manifest. The production build uses
+`tsconfig.build.json` for application code, build configuration, CSP declarations
+and generated Next.js types. It inherits the project compiler options. The
+blocking `npm run typecheck` uses `tsconfig.json` and also checks tests and
+TypeScript tooling. `npm start` verifies the manifest again before native
 `next start`. A failed or modified build cannot reuse a previous manifest. Rebuild
 from source after changing the content, runtime, lockfile or configuration.
 

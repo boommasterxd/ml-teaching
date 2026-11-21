@@ -111,6 +111,16 @@ export async function captureSetupDialog(page: Page) {
   return { expectSameDialog, expectStableWorkspace };
 }
 
+export async function grantModelConsent(page: Page) {
+  const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  await expect(dialog).toBeVisible();
+  for (const checkbox of await dialog.getByRole('checkbox').all()) {
+    await checkbox.focus();
+    await page.keyboard.press('Space');
+  }
+  await dialog.getByRole('button', { name: 'Zustimmen', exact: true }).click();
+}
+
 export async function withdrawTrainingConsent(page: Page) {
   await page.evaluate(() => {
     document.documentElement.dataset.withdrawalProbe = 'old-workspace';
@@ -126,6 +136,48 @@ export async function withdrawTrainingConsent(page: Page) {
   ).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`${learningPaths.imagePractice}$`));
   expect(await page.locator('html').getAttribute('data-withdrawal-probe')).toBeNull();
+}
+
+export async function withdrawWithActiveCamera(page: Page) {
+  // Keep the actual tracks in a same-origin window that survives the workspace reload.
+  const [observer] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.evaluate(() => {
+      const tracks = new Set(
+        [...document.querySelectorAll('video')].flatMap(({ srcObject }) =>
+          srcObject instanceof MediaStream ? srcObject.getTracks() : [],
+        ),
+      );
+      if (!tracks.size || [...tracks].some((track) => track.readyState !== 'live'))
+        throw new Error('The training workspace has no live camera tracks.');
+      const observer = window.open();
+      if (!observer) throw new Error('The camera observer could not be opened.');
+      Object.assign(observer, { cameraTracks: [...tracks] });
+    }),
+  ]);
+  try {
+    await withdrawTrainingConsent(page);
+    await expect
+      .poll(() =>
+        observer.evaluate(() => {
+          const { cameraTracks } = window as unknown as { cameraTracks: MediaStreamTrack[] };
+          return cameraTracks.every((track) => track.readyState === 'ended');
+        }),
+      )
+      .toBe(true);
+  } finally {
+    await observer.close();
+  }
+}
+
+export async function expectEmptyTrainingAfterConsent(page: Page) {
+  await grantModelConsent(page);
+  await page.getByRole('button', { name: 'Ohne Kamera fortfahren' }).click();
+  await expect(page.getByText('0 / 10 Bilder', { exact: true })).toHaveCount(2);
+  const steps = page.getByRole('navigation', { name: 'Trainingsablauf' });
+  for (const name of ['Training', 'Vorhersage']) {
+    await expect(steps.getByRole('button', { name, exact: true })).toBeDisabled();
+  }
 }
 
 export async function expectHeaderLayout(page: Page) {

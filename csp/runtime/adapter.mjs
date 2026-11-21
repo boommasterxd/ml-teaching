@@ -12,6 +12,8 @@ import {
   writeAtomic,
 } from './artifacts.mjs';
 import {
+  errorFallbackRegex,
+  errorFallbackSource,
   outputPaths,
   outputPattern,
   persistNativeHeaders,
@@ -82,13 +84,17 @@ async function persistDocument(context, document, options) {
     const meta = await readJson(context.distDir, metaFile);
     assertNoPolicy(meta.headers ?? {}, document.pathname);
     if (normalPage) assertCacheHeaders(meta.headers ?? {}, document.pathname);
-    meta.headers = { ...meta.headers, 'content-security-policy': document.policy };
-    await replaceArtifact(context.distDir, metaFile, JSON.stringify(meta));
+    // Native routing already sets the policy on regular pages. Next appends any
+    // policy from their prerender metadata to that same response.
+    if (!normalPage || options.providerAdapter) {
+      meta.headers = { ...meta.headers, 'content-security-policy': document.policy };
+      await replaceArtifact(context.distDir, metaFile, JSON.stringify(meta));
+      document.fallback.initialHeaders = {
+        ...document.fallback.initialHeaders,
+        'content-security-policy': document.policy,
+      };
+    }
     files.push(metaFile);
-    document.fallback.initialHeaders = {
-      ...document.fallback.initialHeaders,
-      'content-security-policy': document.policy,
-    };
   }
   await replaceArtifact(context.distDir, document.filePath, document.html);
   return files;
@@ -126,8 +132,8 @@ async function buildPolicies(context, options) {
   const nativeFile = await persistNativeHeaders(context, documents, fallbackPolicy, options);
   if (fallbackPolicy)
     context.routing.beforeMiddleware.unshift({
-      source: '/:path*',
-      sourceRegex: '^/(?!_next/static/).*$',
+      source: errorFallbackSource,
+      sourceRegex: errorFallbackRegex,
       headers: { 'Content-Security-Policy': fallbackPolicy },
     });
   const files = [

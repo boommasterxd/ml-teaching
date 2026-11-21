@@ -3,8 +3,6 @@
 The `CI` workflow validates pull requests targeting `main` against GitHub's simulated
 merge commit. It uses the supported Node.js `26.x` major with `check-latest: true` and
 installs the lockfile with `npm ci --no-audit`.
-These workflow descriptions apply to this development branch. The existing `main`
-and provider behavior remain separate until authorized integration.
 
 ## Check selection
 

@@ -213,6 +213,29 @@ describe('active glass field ownership', () => {
     act(() => resize());
     expect(host.draw).toHaveBeenCalledTimes(draws + 1);
     expect(host.draw.mock.lastCall![0].time).toBe(34);
+    const pausedWidth = canvas!.width;
+    rerender(
+      <TopographyField
+        paused
+        inView={false}
+        onUnavailable={onUnavailable}
+        onRendered={onRendered}
+      />,
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ width: 460, height: 370 }),
+    );
+    act(resize);
+    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ width: 490, height: 390 }),
+    );
+    act(resize);
+    expect(canvas!.width).toBe(pausedWidth);
+    expect(host.draw).toHaveBeenCalledTimes(draws + 1);
+    rerender(<TopographyField paused onUnavailable={onUnavailable} onRendered={onRendered} />);
+    expect(container.querySelector('canvas')).toBe(canvas);
+    expect(host.draw).toHaveBeenCalledTimes(draws + 2);
+    expect(host.draw.mock.lastCall![0]).toMatchObject({ width: 490, height: 390, time: 34 });
     rerender(<TopographyField onUnavailable={onUnavailable} onRendered={onRendered} />);
     expect(host.animations[0]!.play).toHaveBeenCalledTimes(1);
     expect(host.render).toHaveBeenLastCalledWith(tick, true);

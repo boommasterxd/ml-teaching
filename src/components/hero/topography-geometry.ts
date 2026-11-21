@@ -42,6 +42,46 @@ void ringProfile(vec2 u, float breath, out vec2 spine, out vec2 axes, out vec2 b
 }
 `;
 
+export const DROPLET_GEOMETRY = `
+// The stretch projects one component out of the spherical distance metric.
+vec3 dropMetric(vec3 p, vec3 stretch) {
+  return p - stretch * dot(p, stretch);
+}
+
+// The stretched silhouette plus its sampling margin stays inside the reserved clearance.
+bool nearDrop(vec3 origin, vec3 ray, vec4 drop, vec3 stretch) {
+  vec3 offset = cross(drop.xyz - origin, ray);
+  float bound = drop.w * inversesqrt(1.0 - dot(stretch, stretch)) + 0.025;
+  return dot(offset, offset) < bound * bound;
+}
+
+vec3 dropFront(vec3 origin, vec3 ray, vec4 drop, vec3 stretch, out float closest) {
+  vec3 direction = dropMetric(ray, stretch);
+  float curvature = dot(ray, direction);
+  float center = -dot(origin - drop.xyz, direction) / curvature;
+  vec3 offset = origin - drop.xyz + ray * center;
+  float distanceSquared = dot(offset, dropMetric(offset, stretch));
+  closest = sqrt(max(0.0, distanceSquared)) - drop.w;
+  // A miss still samples the tangent region for the soft silhouette.
+  float halfChord = sqrt(max(0.0, (drop.w * drop.w - distanceSquared) / curvature));
+  return origin + ray * (center - halfChord);
+}
+
+vec3 dropExit(vec3 front, vec3 ray, vec4 drop, vec3 stretch) {
+  vec3 offset = front - drop.xyz;
+  vec3 samplePoint = offset + 0.006 * ray;
+  float radiusSquared = drop.w * drop.w;
+  // Touching the outside of the droplet leaves no transmission path.
+  if (dot(samplePoint, dropMetric(samplePoint, stretch)) >= radiusSquared) return front;
+  vec3 direction = dropMetric(ray, stretch);
+  float curvature = dot(ray, direction);
+  float slope = dot(offset, direction);
+  float constant = dot(offset, dropMetric(offset, stretch)) - radiusSquared;
+  float travel = (-slope + sqrt(max(0.0, slope * slope - curvature * constant))) / curvature;
+  return front + ray * travel;
+}
+`;
+
 export const VERTEX = `
 precision highp float;
 attribute vec2 position;

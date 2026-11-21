@@ -42,6 +42,7 @@
   --class-pink-on-surface: #8f466e;
   --header-height: 4.5rem;
   --header-border-width: 1px;
+  --brand-mark-size: 1.62rem;
   --radius: 0.95rem;
   --glass-radius: clamp(1.5rem, 3vw, 2rem);
   --glass-surface: linear-gradient(145deg, #ffffff09, transparent 48%), var(--card);
@@ -284,14 +285,19 @@
   }
 }
 .site-header-inner {
-  --theme-menu-offset: 15px;
+  --pill-height: 3.2rem;
+  --pill-radius: calc(var(--pill-height) / 2);
+  --pill-border: 1px;
+  --theme-trigger-size: calc(var(--spacing) * 8);
+  --theme-menu-offset: 5px;
   position: relative;
   width: min(calc(100% - 2rem), 75rem);
-  min-height: 3.2rem;
+  min-height: var(--pill-height);
   margin-inline: auto;
-  padding-inline: clamp(0.95rem, 4.5vw, 1.2rem);
-  border: 1px solid var(--glass-line);
-  border-radius: 999px;
+  padding-inline: calc(var(--pill-radius) - var(--brand-mark-size) / 2 - var(--pill-border))
+    calc(var(--pill-radius) - var(--theme-trigger-size) / 2 - var(--pill-border));
+  border: var(--pill-border) solid var(--glass-line);
+  border-radius: var(--pill-radius);
   background: linear-gradient(130deg, #ffffff0b, transparent 45%), var(--glass-chrome);
   backdrop-filter: blur(18px);
   box-shadow: var(--glass-highlight);
@@ -300,10 +306,13 @@
   align-items: center;
   gap: 0.125rem;
 
+  @variant max-sm {
+    --brand-mark-size: 1.4rem;
+  }
+
   @variant md {
     --theme-menu-offset: 12px;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    padding-inline: clamp(1.2rem, 2.2vw, 1.75rem);
     gap: 0.75rem;
   }
 }
@@ -324,8 +333,8 @@
 .brand-mark {
   color: var(--primary);
   flex: none;
-  width: 1.62rem;
-  height: 1.62rem;
+  width: var(--brand-mark-size);
+  height: var(--brand-mark-size);
 }
 .site-header [data-slot='switch-thumb'] {
   background: #f5f3f4;
@@ -352,6 +361,10 @@
   padding: 0.45rem;
   background: var(--glass-surface);
   box-shadow: var(--glass-highlight);
+
+  @variant max-md {
+    width: var(--anchor-width);
+  }
 }
 [data-theme-menu] [role^='menuitem'] {
   border-radius: 0.8rem;

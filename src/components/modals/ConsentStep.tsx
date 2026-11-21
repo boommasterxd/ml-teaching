@@ -49,9 +49,9 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
               className="min-w-0 leading-normal font-normal [overflow-wrap:anywhere] sm:leading-relaxed"
             >
               <span>
-                Ich willige ein, dass ML Teaching meine ausgewählten Bilder, Kamerabilder und daraus
-                berechneten Merkmale lokal in meinem Browser zum Training und Testen eigener
-                Bildklassen verarbeitet. Weitere Informationen stehen in der{' '}
+                Ich stimme zu, dass ML Teaching mit meinen Bildern lernt, Motive zu unterscheiden.
+                Beim Lernen und Testen bleiben Bilder und daraus gewonnene Daten in meinem Browser.
+                Über die Kamera entscheide ich extra. Mehr in der{' '}
                 <Link href="/datenschutz">Datenschutzerklärung</Link>.
               </span>
             </FieldLabel>
@@ -69,10 +69,10 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
               className="min-w-0 leading-normal font-normal [overflow-wrap:anywhere] sm:leading-relaxed"
             >
               <span>
-                Ich willige ein, dass mein Browser das KI-Modell für die Bilderkennung von Google
-                über Kaggle lädt. Dafür erhalten Google und Kaggle meine IP-Adresse und technische
-                Angaben zum Abruf. Mehr dazu steht in der{' '}
-                <Link href="/datenschutz">Datenschutzerklärung</Link>.
+                Ich stimme zu, dass mein Browser das KI-Modell von Google über Kaggle lädt, damit
+                ich die Bilderkennung ausprobieren kann. Dabei erfahren Google und Kaggle meine
+                IP-Adresse (meine Internetadresse), welchen Browser ich nutze und wann ich das
+                Modell abrufe. Mehr in der <Link href="/datenschutz">Datenschutzerklärung</Link>.
               </span>
             </FieldLabel>
           </Field>
@@ -80,8 +80,10 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
       </FieldSet>
 
       <FieldDescription id="consent-modal-desc" role="note">
-        Du kannst deine Einwilligung jederzeit widerrufen. Wähle dazu „Einwilligung widerrufen“ oder
-        lade die Seite neu.
+        Auch ohne Zustimmung kannst du über Bilderkennung lesen und dir auf der Startseite die
+        Beispiele zum Lernen mit Belohnung ansehen. Du kannst deine Zustimmung jederzeit durch
+        Neuladen zurücknehmen. „Einwilligung widerrufen“ findest du beim Laden des Modells und
+        später unter dem Training.
       </FieldDescription>
 
       <DialogFooter layout="auto-fit">
