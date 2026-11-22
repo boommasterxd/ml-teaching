@@ -98,7 +98,10 @@ function CollectionHeader({
       />
       <Text
         variant="muted"
-        className={cn('col-span-full max-w-prose text-pretty', canContinue && 'invisible')}
+        className={cn(
+          'col-span-full max-w-prose text-pretty',
+          canContinue && 'max-sm:hidden sm:invisible',
+        )}
       >
         Mindestens {ML.MIN_CLASSES} Klassen, eindeutige Namen und je {ML.MIN_IMAGES_PER_CLASS}{' '}
         Bilder.
