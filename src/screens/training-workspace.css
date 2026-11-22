@@ -98,22 +98,28 @@
 .training-feedback {
   --training-feedback-padding: clamp(1.25rem, 4vw, 2.5rem);
   position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 1.25rem;
-  border-width: 1px;
-  border-style: solid;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  background: var(--muted);
   padding-inline: var(--training-feedback-padding);
   padding-block: calc(var(--training-feedback-padding) + 0.875rem);
   text-align: center;
 }
 
-.training-feedback:not([data-complete]) {
-  border-color: var(--border);
-  border-radius: 1rem;
-  background: var(--muted);
+.training-feedback > .training-feedback-surface {
+  --feedback-light-origin: 50% 22%;
+  position: absolute;
+  z-index: -1;
+  inset: -1px;
+  border-width: 1px;
+  border-style: solid;
+  pointer-events: none;
 }
 
 .training-feedback-progress {
@@ -122,10 +128,6 @@
   inset-block-end: calc(var(--training-feedback-padding) / 2);
   width: auto;
   margin-inline: auto;
-}
-
-.training-feedback[data-complete] {
-  --feedback-light-origin: 50% 22%;
 }
 
 /* The build-known bootstrap suppresses the inline fallback before hydration. */

@@ -1,5 +1,5 @@
+import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
-import { cn } from '@/lib/utils';
 import { Brain } from './icons/brain';
 import { ArrowRight } from './icons/arrow-right';
 import type { TrainingProgress } from '../hooks/useModelTraining';
@@ -105,6 +105,7 @@ export default function TrainingControls(props: TrainingControlsProps) {
   const { classes, canTrain, progress, hasTrainedModel, onTrain, onPredict } = props;
   const { reduce } = useMotionPreference();
   const { duration } = useTempoTransition(finishTransition);
+  const surfaceTransition = useTempoTransition(motionTokens.transition.color);
   const completionFeedbackMs = reduce ? 0 : duration * 1000 + ANIMATION.TRAINING_PROGRESS_REST_MS;
   const isTraining = progress !== null;
   const state = progress ? 'training' : hasTrainedModel ? 'complete' : 'idle';
@@ -124,10 +125,15 @@ export default function TrainingControls(props: TrainingControlsProps) {
           </CardHeader>
           <CardContent className="grid gap-4">
             <TrainingSummary classes={classes} />
-            <div
-              className={cn('training-feedback', complete && 'success-surface')}
-              data-complete={complete || undefined}
-            >
+            <div className="training-feedback">
+              <Effect
+                asChild
+                initial={false}
+                animate={{ opacity: complete ? 1 : 0 }}
+                transition={reduce ? { duration: 0 } : surfaceTransition}
+              >
+                <div className="training-feedback-surface success-surface" aria-hidden="true" />
+              </Effect>
               <TrainingFigure
                 state={state}
                 progress={progress ? progress.processed / progress.total : 0}
@@ -135,12 +141,12 @@ export default function TrainingControls(props: TrainingControlsProps) {
               />
               <div role="status" id="training-status" className="grid min-w-0">
                 <strong className="text-xl font-semibold">
-                  <MessageSlot messages={complete ? [] : trainingTitleMessages}>
+                  <MessageSlot messages={trainingTitleMessages}>
                     {trainingTitles[state]}
                   </MessageSlot>
                 </strong>
                 <Text variant="muted" className="leading-relaxed">
-                  <MessageSlot messages={complete ? [] : trainingStatusMessages}>
+                  <MessageSlot messages={trainingStatusMessages}>
                     {complete ? statusMessages.trained : trainingStatus(props)}
                   </MessageSlot>
                 </Text>
