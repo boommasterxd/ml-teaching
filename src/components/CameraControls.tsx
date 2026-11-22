@@ -26,7 +26,7 @@ export default function CameraControls({
 }) {
   const { active, stream, pending, failed, onToggle, onSwitch } = camera;
   const label = active
-    ? 'Kamera ausschalten'
+    ? 'Kamera pausieren'
     : failed
       ? 'Kamera erneut verbinden'
       : 'Kamera aktivieren';

@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import TrainingPage from '@/screens/TrainingPage';
 import TrainingEntryProvider from '@/components/training/TrainingEntryProvider';
 import { learningPaths } from '@/lib/learning-paths';
+import { readRememberedTrainingConsent } from '@/lib/training-consent-storage';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
 const boundary = vi.hoisted(() => {
@@ -140,12 +141,14 @@ afterEach(() => {
   }
 });
 
-function confirmGeneralConsent() {
+function confirmGeneralConsent(remember = false) {
   const dialog = screen.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   within(dialog)
     .getAllByRole('checkbox')
     .slice(0, 2)
     .forEach((choice) => fireEvent.click(choice));
+  if (remember)
+    fireEvent.click(within(dialog).getByRole('checkbox', { name: /in diesem Tab merken/ }));
   fireEvent.click(within(dialog).getByRole('button', { name: 'Zustimmen' }));
 }
 
@@ -212,7 +215,7 @@ async function expectPredictionCameraLifecycle(steps: ReturnType<typeof within>)
   await screen.findAllByLabelText('Kameravorschau für Trainingsaufnahme');
   expect(boundary.getUserMedia).toHaveBeenCalledTimes(2);
   expect(boundary.stopTrack).toHaveBeenCalledOnce();
-  const [off] = screen.getAllByRole('button', { name: 'Kamera ausschalten' });
+  const [off] = screen.getAllByRole('button', { name: 'Kamera pausieren' });
   act(() => off.focus());
   fireEvent.click(off);
   expect(boundary.stopTrack).toHaveBeenCalledTimes(2);
@@ -221,6 +224,12 @@ async function expectPredictionCameraLifecycle(steps: ReturnType<typeof within>)
   expect(screen.getAllByRole('button', { name: 'Kamera aktivieren' })[0]).toBe(off);
   expect(document.activeElement).toBe(off);
   expect(screen.getAllByText('10 Bilder')).toHaveLength(2);
+
+  fireEvent.click(steps.getByRole('button', { name: 'Vorhersage' }));
+  expect(screen.getByRole('button', { name: 'Kamera aktivieren' })).toBeTruthy();
+  expect(screen.queryByRole('progressbar', confidence)).toBeNull();
+  expect(boundary.getUserMedia).toHaveBeenCalledTimes(2);
+  fireEvent.click(steps.getByRole('button', { name: 'Bilder sammeln' }));
 }
 
 function TrainingFixture() {
@@ -372,9 +381,38 @@ describe('training page integration', () => {
     fireEvent.click(retry);
     await screen.findAllByLabelText('Kameravorschau für Trainingsaufnahme');
     expect(boundary.getUserMedia).toHaveBeenCalledTimes(2);
-    expect(screen.getAllByRole('button', { name: 'Kamera ausschalten' })[0]).toBe(retry);
+    expect(screen.getAllByRole('button', { name: 'Kamera pausieren' })[0]).toBe(retry);
     expect(document.activeElement).toBe(retry);
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('preserves remembered camera consent on pause and asks again after settings withdrawal', async () => {
+    render(<TrainingFixture />);
+    confirmGeneralConsent(true);
+    const cameraDialog = { name: 'Berechtigung zur Kameranutzung' };
+    const setup = within(await screen.findByRole('dialog', cameraDialog));
+    fireEvent.click(setup.getByRole('button', { name: 'Erlauben' }));
+    await screen.findAllByLabelText('Kameravorschau für Trainingsaufnahme');
+    const remembered = readRememberedTrainingConsent();
+    expect(remembered?.camera).toBe('allowed');
+
+    const [pause] = screen.getAllByRole('button', { name: 'Kamera pausieren' });
+    fireEvent.click(pause);
+    expect(readRememberedTrainingConsent()).toEqual(remembered);
+    expect(boundary.stopTrack).toHaveBeenCalledOnce();
+
+    const settingsName = 'Einstellungen zum Bildtraining';
+    fireEvent.click(screen.getByRole('button', { name: settingsName }));
+    const settings = await screen.findByRole('alertdialog', { name: settingsName });
+    fireEvent.click(within(settings).getByRole('button', { name: 'Kamera ausschalten' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('alertdialog', { name: settingsName })).toBeNull(),
+    );
+    expect(readRememberedTrainingConsent()?.camera).toBe('declined');
+
+    fireEvent.click(pause);
+    await screen.findByRole('dialog', cameraDialog);
+    expect(boundary.getUserMedia).toHaveBeenCalledOnce();
   });
 
   it('returns to the image explanation when the general processing choice is declined', () => {

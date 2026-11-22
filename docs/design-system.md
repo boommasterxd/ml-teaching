@@ -355,6 +355,8 @@ two surfaces. The stacked gallery keeps room for two full rows of thumbnails at 
 widths. The capture toggle spans the width below the video. A click, tap or keyboard
 activation toggles capture. Holding the touch button records until release or gesture
 cancellation. Capture ends when the document is hidden.
+The collection requirements keep their space when training becomes available so
+the camera controls stay in place during capture.
 Adding or removing images leaves the surrounding controls in place. Container queries set
 thumbnail columns from the gallery's own width. TanStack Virtual reads the same CSS column count.
 It retains the focused row and mounts only the current window with overscan.
@@ -421,8 +423,13 @@ Narrow cards retain more space for the upload label and show reset and removal
 as icons with accessible names. The gallery's fixed-height area includes its
 selection controls so collecting the first image keeps the card height stable.
 A persistent live status announces the selected image count during selection mode.
-The class marker, gallery illustration and selected thumbnail badge use the same
-theme-aware class accent. Class names identify each group. Class counters show
+Holding a thumbnail enters selection mode and toggles that image. A short press
+opens its preview outside selection mode and toggles it inside selection mode.
+The toolbar also opens selection mode for keyboard and pointer users. The selected
+thumbnail uses the same primary red for its border and plain Animate UI checkmark.
+A neutral backing keeps the checkmark readable on arbitrary photos. The class
+marker and empty gallery illustration use the theme-aware class accent.
+Class names identify each group. Class counters show
 progress toward the training minimum, then the collected total.
 Each class card has a camera preview, including before camera permission is granted.
 Capture and prediction previews share the same controls. Play and pause
@@ -433,13 +440,13 @@ A connecting preview centers the shared spinner with a screen-reader status.
 Failed connection attempts keep the pending state for at least two seconds.
 Successful connections display the live preview as soon as the stream is ready.
 An unavailable camera centers its status text below a white Animate UI alert icon.
-Both buttons stay mounted in place during stream changes. Pause releases
-the stream and withdraws camera consent. Play opens the camera choice when consent
-is missing and retries a failed connection while consent is active. Recording
-requires a live stream. During training or when no preview can turn
-off the camera, the same action is available in the training settings.
+Both buttons stay mounted in place during stream changes. Pause releases the
+stream and preserves camera consent. Play reconnects when consent is active and
+opens the camera choice when consent is missing. The training settings provide
+the separate action to withdraw camera consent. Recording requires a live stream.
 Local image uploads remain available.
-With camera consent, live prediction starts when the trained prediction step opens.
+With active camera consent and no pause, live prediction starts when the trained
+prediction step opens.
 The prediction card keeps its camera frame and result areas in place, and confidence
 bars are empty until results arrive.
 The camera and confidence readout share a row when the card is wide enough.
@@ -478,7 +485,8 @@ The gallery, dialog bodies, and menus share Animate UI's Scroll Fade. The fade
 appears at the edges with more content. The scroll containers keep their CSS
 overflow, scrollbars, and keyboard behavior. Only the content viewport fades,
 so surrounding surfaces and dialog scrims stay separate. The gallery also applies
-a slight blur to mounted thumbnails near the scroll edge.
+a slight blur to mounted thumbnails near the scroll edge. Its scroll viewport
+reaches the bottom edge, where the gallery's rounded corners clip the thumbnails.
 Buttons share disabled, keyboard and touch behavior. Error messages, empty data,
 loading state and deletion confirmations stay explicit.
 
@@ -719,7 +727,8 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
 - Training step activation uses the native Flow keyframes from route changes
   with a shorter glide and a crossfade for the workspace. Explicit step changes
   from the step bar or panel actions capture the outgoing and incoming panels
-  separately. The outgoing panel's snapshot fades out while only the new panel
+  separately. The snapshots glide across the workspace gutters to the viewport
+  edges. The outgoing panel's snapshot fades out while only the new panel
   is interactive and its heading takes focus. The heading scrolls into view when
   needed. Prepared panels stay hidden until activation, and any remaining module
   update commits with the selection. Reduced motion and unsupported browsers
