@@ -35,8 +35,10 @@ links to image training and its explanation. Both screens read the reward
 practice availability from `src/content/learning-areas.ts`.
 `/lernen/bilderkennung` contains the image-learning explanation, demonstrations and
 quizzes; `/lernen/bilderkennung/ausprobieren` owns the existing browser training
-workspace and its consent flow. The header menu links to the image explanation.
-Declining consent also returns there. Consent withdrawal reloads the practice URL as a new document.
+workspace. Training links start setup on the current page. Declining direct-entry
+consent returns to the image explanation; cancelling source-page setup stays on
+the source page. Full withdrawal clears the saved choice and reloads an active
+training document to discard its in-memory workspace.
 `src/lib/learning-paths.ts` centralizes these destinations for navigation.
 `/lernen/q-learning` shows a static availability notice for the upcoming lesson.
 `/lernen/q-learning/ausprobieren` shows the availability notice and a link
@@ -71,13 +73,14 @@ do not prepare another route.
 
 The current complete static routes have no loading-only prefetch boundary. Native
 preparation includes the route tree, leaf page and build-time initial content.
-The training setup's cancel action and the model-error return action warm the same
+Direct-entry setup's cancel action and the model-error return action warm the same
 image explanation route through native router prefetch. Their activation uses the
 existing backward transition type. Next.js can restore cached history entries synchronously,
 outside React's view transition. Where the Navigation API supports precommit interception,
 eligible same-document Back and Forward traversals use a browser-owned Flow capture;
-Next.js still restores the original entry. The training consent route is excluded
-from capture. The legal sidebar's Back link also supports browser-owned capture and exposes the previous
+Next.js still restores the original entry. A training dialog needed after history
+navigation opens after route capture settles. The legal sidebar's Back link also
+supports browser-owned capture and exposes the previous
 same-origin address, including query and fragment, when available. Intent-based
 route preparation runs for the fallback homepage link. Actual history traversal
 reuses the browser's entry and the router's stored state.
@@ -88,10 +91,15 @@ It and the image explanation photos use the same responsive asset selection
 during intent and destination rendering.
 React Flow creates the destination's browser tree
 on actual navigation within the current document. Browser speculation prerenders
-a separate document, which cannot supply that same-document transition. Dialog
-autofocus starts on arrival, and model and camera work follow explicit consent.
-Direct entry serves the initial consent as part of the static HTML. Consent
-withdrawal uses a full document reload to discard the private workspace.
+a separate document, which cannot supply that same-document transition. Training
+intent prepares the static route and setup code. Activation opens setup outside
+the page capture; Flow starts after the dialog exits. Direct entry serves the
+complete inline consent in static HTML.
+Full training withdrawal clears the remembered choice, resets the workspace and
+releases the training resources. The confirmation opens after the preceding
+dialog closes. Restart opens fresh consent in the current document. Return
+uses the training entry's source, with the image-recognition lesson as the
+fallback for direct visits.
 The Pages Router's static 500 recovery action starts an App Router document
 navigation through the browser.
 App Router recovery renders its text, actions and responsive poster immediately.
@@ -178,8 +186,11 @@ does not affect inclusion or ranking in Google Search.
 
 ## Browser ML flow
 
-1. The learning route starts with an explicit consent dialog. No TensorFlow runtime,
-   model weights or camera stream is needed to render the page.
+1. Training starts with explicit consent, either in source-page setup or directly
+   on the static training route. A versioned, opt-in session storage record holds
+   the choices and a fixed 30-minute deadline in the tab. The deadline governs
+   reload and reentry. The current workspace stays active until withdrawal or exit.
+   No TensorFlow runtime, model weights or camera stream is needed for initial HTML.
 2. After model consent, the same dialog shows loading progress while the browser
    initializes TensorFlow.js and loads the KNN module. It downloads the MobileNet v2
    graph, warms it and extracts features in the browser. Loading can be aborted and
@@ -187,7 +198,10 @@ does not affect inclusion or ranking in Google Search.
    kernels are reusable within the document.
 3. When the models are ready, the dialog presents the optional camera choice.
    Camera access starts only after separate camera consent and browser permission.
-   The visible collection step requests the stream while consent is active. The
+   Source-page setup hands off the initialized model and live stream to the training
+   route without another request. Reload restores camera use only after the browser
+   reports that permission is still granted. The visible collection step requests the
+   stream while consent is active. The
    prediction step starts it automatically after activation with a trained classifier
    and camera consent.
    Selected local files and captures are resized for local feature extraction.
@@ -250,7 +264,10 @@ small local field without a separate form submission or validation schema.
 
 All nine public routes use SSG and fixed hash CSP, including the initially rendered
 learning workspace and complete initial consent. The initial HTML dialog stays
-inline through hydration and becomes modal on the same element. Base UI powers
+inline through hydration and becomes modal on the same element when consent is
+needed. A build-known, hashed script in the shared document head checks tab storage
+before paint on the training URL and suppresses the inline dialog for valid remembered
+consent. Base UI powers
 dialogs opened later. Runtime ML remains in the browser. The native production
 server and Vercel adapter own production delivery; no custom server, production
 Proxy or separate static export replaces native Next.js output. Development alone

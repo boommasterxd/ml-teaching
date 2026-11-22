@@ -1,5 +1,4 @@
 import { expect, type Locator, type Page, type Route } from '@playwright/test';
-import { learningPaths } from '../../src/lib/learning-paths';
 import { expectAccessible } from './browser-checks';
 
 export async function expectAlignedTrainingCards(page: Page) {
@@ -111,62 +110,97 @@ export async function captureSetupDialog(page: Page) {
   return { expectSameDialog, expectStableWorkspace };
 }
 
-export async function grantModelConsent(page: Page) {
+export async function grantModelConsent(page: Page, remember = false) {
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   await expect(dialog).toBeVisible();
-  for (const checkbox of await dialog.getByRole('checkbox').all()) {
+  const required = dialog.getByRole('checkbox', { name: /^Ich stimme zu/ });
+  await expect(required).toHaveCount(2);
+  for (const checkbox of await required.all()) {
     await checkbox.focus();
     await page.keyboard.press('Space');
   }
+  if (remember)
+    await dialog
+      .getByRole('checkbox', { name: 'Für 30 Minuten in diesem Tab merken' })
+      .press('Space');
   await dialog.getByRole('button', { name: 'Zustimmen', exact: true }).click();
 }
 
-export async function withdrawTrainingConsent(page: Page) {
-  await page.evaluate(() => {
-    document.documentElement.dataset.withdrawalProbe = 'old-workspace';
+export function trainingSettingsTrigger(page: Page) {
+  return page.getByRole('contentinfo').getByRole('button', {
+    name: 'Einstellungen zum Bildtraining',
+    exact: true,
   });
-  const withdrawal = page.getByRole('link', {
-    name: 'Einwilligung widerrufen und lokale Trainingsdaten verwerfen',
+}
+
+export async function confirmTrainingWithdrawal(page: Page) {
+  const loading = page.getByRole('dialog', { name: /Lade KI-Modelle/ });
+  const settings = page.getByRole('alertdialog', { name: 'Einstellungen zum Bildtraining' });
+  const settingUp = await loading.isVisible();
+  if (!settingUp) {
+    await trainingSettingsTrigger(page).press('Enter');
+    await expect(settings).toBeVisible();
+    await expectAccessible(page);
+  }
+  const withdrawal = (settingUp ? loading : settings).getByRole('button', {
+    name: 'Einwilligung widerrufen',
     exact: true,
   });
   await withdrawal.focus();
   await page.keyboard.press('Enter');
-  await expect(
-    page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' }),
-  ).toBeVisible();
-  await expect(page).toHaveURL(new RegExp(`${learningPaths.imagePractice}$`));
-  expect(await page.locator('html').getAttribute('data-withdrawal-probe')).toBeNull();
+  const confirmation = page.getByRole('dialog', { name: 'Einwilligung widerrufen', exact: true });
+  await expect(confirmation).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+  await expect(page.locator('[data-slot="alert-dialog-content"]')).toHaveCount(0);
+  await expect
+    .poll(() => confirmation.evaluate((dialog) => dialog.contains(document.activeElement)))
+    .toBe(true);
+  await expectAccessible(page);
+  return confirmation;
+}
+
+export async function withdrawTrainingConsent(page: Page, afterWithdrawal?: () => Promise<void>) {
+  const url = page.url();
+  await page.evaluate(() => {
+    document.documentElement.dataset.withdrawalProbe = 'current-document';
+  });
+  const confirmation = await confirmTrainingWithdrawal(page);
+  await afterWithdrawal?.();
+  await confirmation
+    .getByRole('button', { name: 'Training erneut öffnen', exact: true })
+    .press('Enter');
+
+  const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  await expect(confirmation).toBeHidden();
+  await expect(consent).toBeVisible();
+  await expect(page).toHaveURL(url);
+  await expect(page.locator('html')).toHaveAttribute('data-withdrawal-probe', 'current-document');
+  const choices = consent.getByRole('checkbox');
+  await expect(choices).toHaveCount(3);
+  for (const choice of await choices.all()) await expect(choice).not.toBeChecked();
+  await expect(consent.getByRole('button', { name: 'Zustimmen', exact: true })).toBeDisabled();
 }
 
 export async function withdrawWithActiveCamera(page: Page) {
-  // Keep the actual tracks in a same-origin window that survives the workspace reload.
-  const [observer] = await Promise.all([
-    page.waitForEvent('popup'),
-    page.evaluate(() => {
-      const tracks = new Set(
-        [...document.querySelectorAll('video')].flatMap(({ srcObject }) =>
-          srcObject instanceof MediaStream ? srcObject.getTracks() : [],
-        ),
-      );
-      if (!tracks.size || [...tracks].some((track) => track.readyState !== 'live'))
-        throw new Error('The training workspace has no live camera tracks.');
-      const observer = window.open();
-      if (!observer) throw new Error('The camera observer could not be opened.');
-      Object.assign(observer, { cameraTracks: [...tracks] });
-    }),
-  ]);
+  const tracks = await page.evaluateHandle(() => {
+    const cameraTracks = new Set(
+      [...document.querySelectorAll('video')].flatMap(({ srcObject }) =>
+        srcObject instanceof MediaStream ? srcObject.getTracks() : [],
+      ),
+    );
+    if (!cameraTracks.size || [...cameraTracks].some((track) => track.readyState !== 'live'))
+      throw new Error('The training workspace has no live camera tracks.');
+    return [...cameraTracks];
+  });
   try {
-    await withdrawTrainingConsent(page);
-    await expect
-      .poll(() =>
-        observer.evaluate(() => {
-          const { cameraTracks } = window as unknown as { cameraTracks: MediaStreamTrack[] };
-          return cameraTracks.every((track) => track.readyState === 'ended');
-        }),
-      )
-      .toBe(true);
+    await withdrawTrainingConsent(page, async () => {
+      expect(
+        await tracks.evaluate((all) => all.every((track) => track.readyState === 'ended')),
+      ).toBe(true);
+      await expect(page.locator('video')).toHaveCount(0);
+    });
   } finally {
-    await observer.close();
+    await tracks.dispose();
   }
 }
 
@@ -356,6 +390,8 @@ export async function expectCancelledResetKeepsImages(page: Page) {
   await expect(
     page.getByRole('alertdialog', { name: 'Bilder dieser Klasse löschen?' }),
   ).toBeVisible();
+  // Keep the pointer away from links and buttons that scroll into view during keyboard use.
+  await page.mouse.move(1, 1);
   await page.keyboard.press('Escape');
   await expect(reset).toBeFocused();
   await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
@@ -370,7 +406,8 @@ export async function expectCancelledResetKeepsImages(page: Page) {
   await expect(name).toBeInViewport();
   await page.getByRole('button', { name: 'Klasse 3: Klasse 3 löschen', exact: true }).click();
   const remove = page.getByRole('alertdialog', { name: 'Klasse löschen?' });
-  await remove.getByRole('button', { name: 'Löschen', exact: true }).click();
+  await page.mouse.move(1, 1);
+  await remove.getByRole('button', { name: 'Löschen', exact: true }).press('Enter');
   await expect(page.getByRole('textbox')).toHaveCount(2);
   await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
 }

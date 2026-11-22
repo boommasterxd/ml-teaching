@@ -1,23 +1,12 @@
 /** Composes browser resources and local training data for the static training route. */
-import {
-  useState,
-  useRef,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useSyncExternalStore,
-} from 'react';
+import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 import { toast } from '@/lib/toast';
 import type { TrainingStep } from '@/components/training-panel-loading';
 import { ML } from '../constants';
 import type { ErrorCategory } from '../types/errors';
-import { useAppError } from './useAppError';
-import { useConsentFlow } from './useConsentFlow';
 import { useModalState } from './useModalState';
 import { useImageFeatureExtraction } from './useImageFeatureExtraction';
-import { useModelLoader } from './useModelLoader';
-import { useCameraStream } from './useCameraStream';
+import { subscribeToVisibility, type TrainingEngine } from './useTrainingEngine';
 import { usePredictionLoop } from './usePredictionLoop';
 import { useModelTraining } from './useModelTraining';
 import { useClassManagement } from './useClassManagement';
@@ -32,11 +21,6 @@ function reportOperationError(category: Exclude<ErrorCategory, 'model'>, message
   if (category !== 'validation') notifyError(message);
 }
 
-function subscribeToVisibility(notify: () => void) {
-  document.addEventListener('visibilitychange', notify);
-  return () => document.removeEventListener('visibilitychange', notify);
-}
-
 function useStopPredictionOnHide(stopPredicting: () => void) {
   useEffect(
     () =>
@@ -47,44 +31,21 @@ function useStopPredictionOnHide(stopPredicting: () => void) {
   );
 }
 
-function useCameraPromptFocus(showCameraPrompt: boolean, canUseModels: boolean) {
-  const mainHeadingRef = useRef<HTMLHeadingElement>(null);
-  const initialPrompt = useRef<'waiting' | 'open' | 'closed'>('waiting');
-  useEffect(() => {
-    if (initialPrompt.current === 'waiting' && showCameraPrompt) initialPrompt.current = 'open';
-    if (initialPrompt.current === 'open' && !showCameraPrompt && canUseModels) {
-      initialPrompt.current = 'closed';
-      mainHeadingRef.current?.focus({ preventScroll: true });
-    }
-  }, [showCameraPrompt, canUseModels]);
-  return mainHeadingRef;
-}
-
-function useTrainingResources(step: TrainingStep) {
-  const { error, setError, clearError } = useAppError();
-  const consent = useConsentFlow();
+function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
+  const { error, clearError, consent, models, camera, canUseModels, visible, setCameraNeeded } =
+    engine;
   const [hasTrainedModel, setHasTrainedModel] = useState(false);
   const predictVideoRef = useRef<HTMLVideoElement>(null);
-  const models = useModelLoader(consent.hasConsented, setError);
   const { setClassifier } = models;
-  const canUseModels = !models.isModelLoading && models.mobilenetModel !== null;
   const showCameraPrompt = consent.showCameraModal && canUseModels;
-  const mainHeadingRef = useCameraPromptFocus(showCameraPrompt, canUseModels);
+  const mainHeadingRef = useRef<HTMLHeadingElement>(null);
   const [predictionFailed, setPredictionFailed] = useState(false);
-  const visible = useSyncExternalStore(
-    subscribeToVisibility,
-    () => !document.hidden,
-    () => true,
-  );
   const predictionWanted = step === 'prediction' && hasTrainedModel && !predictionFailed;
-  const cameraNeeded = visible && (step === 'images' || predictionWanted);
-  const camera = useCameraStream(
-    consent.cameraConsent && canUseModels,
-    models.isModelLoading,
-    reportCameraError,
-    cameraNeeded,
-    handleCameraReady,
-  );
+  const cameraNeeded = step === 'images' || predictionWanted;
+  useLayoutEffect(() => {
+    setCameraNeeded(cameraNeeded);
+    return () => setCameraNeeded(true);
+  }, [cameraNeeded, setCameraNeeded]);
   const prediction = usePredictionLoop(
     models.classifier,
     models.mobilenetModel,
@@ -99,17 +60,10 @@ function useTrainingResources(step: TrainingStep) {
     return stopPredicting;
   }, [predictionWanted, visible, camera.stream, activatePrediction, stopPredicting]);
   useStopPredictionOnHide(stopPredicting);
-  function handleCameraReady() {
-    if (error?.category === 'camera') clearError();
-  }
   function reportPredictionError(category: 'prediction', message: string) {
     stopPredicting();
     setPredictionFailed(true);
     reportOperationError(category, message);
-  }
-  function reportCameraError(category: 'camera', message: string) {
-    stopPredicting();
-    setError(category, message);
   }
   const { retryCamera, toggleCamera } = camera;
   const { cameraConsent, requestCameraConsent, revokeCameraConsent } = consent;
@@ -249,8 +203,8 @@ function useTrainingData(resources: ReturnType<typeof useTrainingResources>) {
   };
 }
 
-export function useTrainingWorkspace(step: TrainingStep = 'images') {
-  const resources = useTrainingResources(step);
+export function useTrainingWorkspace(step: TrainingStep, engine: TrainingEngine) {
+  const resources = useTrainingResources(step, engine);
   const data = useTrainingData(resources);
   const dialogs = useModalState();
   const { removeImages, updateClassName } = data.classes;

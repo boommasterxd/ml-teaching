@@ -25,7 +25,9 @@ export default function KnnQuiz({ titleRef }: { titleRef?: Ref<HTMLHeadingElemen
       <CardContent className="knn-quiz-layout">
         <KnnQuizInput state={state} />
         <KnnQuizPlot state={state} />
-        <KnnQuizAnswer state={state} onKeyboardSuccess={() => restartButton.current?.focus()} />
+        <div className="@container/knn-answer min-w-0">
+          <KnnQuizAnswer state={state} onKeyboardSuccess={() => restartButton.current?.focus()} />
+        </div>
       </CardContent>
     </Card>
   );

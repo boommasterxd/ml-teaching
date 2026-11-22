@@ -2,6 +2,8 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { diagnostics, expectAccessible, observeViewTransitions } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
 import { headerLegalLinks } from '../../src/content/site-navigation';
+import { routeSyntheticModel } from './synthetic-model';
+import { grantModelConsent } from './training-keyboard';
 
 async function holdApplicationScripts(page: Page) {
   let held = 0;
@@ -346,11 +348,13 @@ for (const [width, colorScheme] of [
       await expect(dialog.getByRole('note')).toContainText(
         'Auch ohne Zustimmung kannst du über Bilderkennung lesen',
       );
-      await expect(dialog.getByRole('note')).toContainText(
-        'beim Laden des Modells und später unter dem Training',
-      );
       const choices = dialog.getByRole('checkbox');
-      await expect(choices).toHaveCount(2);
+      await expect(choices).toHaveCount(3);
+      const remember = dialog.getByRole('checkbox', {
+        name: 'Für 30 Minuten in diesem Tab merken',
+        exact: true,
+      });
+      await expect(remember).toBeVisible();
       for (const choice of await choices.all()) {
         await expectReadable(choice);
         await expect(choice).not.toBeChecked();
@@ -376,12 +380,16 @@ for (const [width, colorScheme] of [
         expect(
           await choice.evaluate((node, original) => node === original, initialChoices[index]),
         ).toBe(true);
+      }
+      const required = dialog.getByRole('checkbox', { name: /^Ich stimme zu/ });
+      for (const [index, choice] of (await required.all()).entries()) {
         await choice.focus();
         await page.keyboard.press('Space');
         await expect(choice).toBeChecked();
         if (index === 0) await expect(confirm).toBeDisabled();
         else await expect(confirm).toBeEnabled();
       }
+      await expect(remember).not.toBeChecked();
       await expectAccessible(page);
       expect(await transitions()).toEqual([]);
       await cancel.focus();
@@ -394,3 +402,98 @@ for (const [width, colorScheme] of [
     }
   });
 }
+
+test('remembered consent skips the first paint dialog and expires only for the next visit', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const initialTime = new Date();
+  await page.clock.setFixedTime(initialTime);
+  await context.grantPermissions(['camera']);
+  const failures = diagnostics(page);
+  const network = await routeSyntheticModel(page, baseURL!);
+  const transitions = await observeViewTransitions(page);
+  await page.goto(learningPaths.imagePractice);
+  await grantModelConsent(page, true);
+  const cameraChoice = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
+  await cameraChoice.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
+  const preview = page.getByLabel('Kameravorschau für Trainingsaufnahme').first();
+  await expect(preview).toBeVisible();
+  const browserStorage = () => page.evaluate(() => Object.entries(sessionStorage));
+  const remembered = await browserStorage();
+  expect(remembered).toHaveLength(1);
+  expect(await context.cookies()).toEqual([]);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+
+  await page.clock.setFixedTime(new Date(initialTime.getTime() + 29 * 60_000));
+  const scripts = await holdApplicationScripts(page);
+  const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  try {
+    const response = await page.reload({ waitUntil: 'commit' });
+    expect(response?.status()).toBe(200);
+    expect(response?.headers()['cache-control']).toBe('public, max-age=300, must-revalidate');
+    expect(await response?.text()).toContain('Einwilligung zur Datenverarbeitung');
+    await scripts.expectHeld();
+    await expect(consent).toBeHidden();
+  } finally {
+    scripts.release();
+  }
+
+  await expect(preview).toBeVisible();
+  await expect(cameraChoice).toBeHidden();
+  await expect(consent).toBeHidden();
+  const className = page.getByRole('textbox', { name: /^Name für Klasse / }).first();
+  await className.fill('Meine Klasse');
+  expect(await browserStorage()).toEqual(remembered);
+  expect(await transitions()).toEqual([]);
+
+  await page.clock.setFixedTime(new Date(initialTime.getTime() + 31 * 60_000));
+  await expect(className).toHaveValue('Meine Klasse');
+  await expect(preview).toBeVisible();
+  expect(
+    await preview.evaluate((video) => {
+      const stream = (video as HTMLVideoElement).srcObject;
+      return (
+        stream instanceof MediaStream &&
+        stream.getVideoTracks().some(({ readyState }) => readyState === 'live')
+      );
+    }),
+  ).toBe(true);
+  await expect(consent).toBeHidden();
+  expect(network.modelRequests).toEqual(['graph', 'weights', 'graph', 'weights']);
+
+  await page.reload();
+  await expect(consent).toBeVisible();
+  expect(await browserStorage()).toEqual([]);
+  expect(await transitions()).toEqual([]);
+  expect(network.modelRequests).toEqual(['graph', 'weights', 'graph', 'weights']);
+  expect(network.unexpectedRequests()).toBe(0);
+  expect(failures).toEqual([]);
+});
+
+test('a remembered choice expiring during hydration focuses the inline consent', async ({
+  page,
+  baseURL,
+}) => {
+  const started = Date.now();
+  await page.clock.setFixedTime(started);
+  await routeSyntheticModel(page, baseURL!);
+  await page.goto(learningPaths.imagePractice);
+  await grantModelConsent(page, true);
+  await page.clock.setFixedTime(started + 30 * 60_000 - 1_000);
+  const scripts = await holdApplicationScripts(page);
+  const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  try {
+    await page.reload({ waitUntil: 'commit' });
+    await scripts.expectHeld();
+    await expect(consent).toBeHidden();
+    await page.clock.setFixedTime(started + 30 * 60_000 + 1_000);
+  } finally {
+    scripts.release();
+  }
+
+  await expect(consent).toBeVisible();
+  await expect.poll(() => consent.evaluate((dialog) => dialog.matches(':modal'))).toBe(true);
+  await expect(consent.getByRole('checkbox').first()).toBeFocused();
+});

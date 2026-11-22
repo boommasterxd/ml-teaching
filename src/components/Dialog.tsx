@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactElement } from 'react';
+import { AnimatePresence } from 'motion/react';
 import {
   Dialog as DialogRoot,
   DialogContent,
@@ -10,7 +11,7 @@ import {
   InitialDialog,
   InitialDialogContent,
 } from './ui/dialog';
-import { useDialogReturnFocus } from './dialog-state';
+import { DialogExitObserver, useDialogExitCallback, useDialogReturnFocus } from './dialog-state';
 
 interface DialogProps {
   isOpen: boolean;
@@ -18,6 +19,9 @@ interface DialogProps {
   labelledBy: string;
   describedBy?: string;
   initialContent?: boolean;
+  initialSuppressedByRememberedConsent?: boolean;
+  restoreFocus?: boolean;
+  onExited?: () => void;
   children: ReactElement<{ className?: string }>;
 }
 
@@ -28,9 +32,13 @@ export default function Dialog({
   labelledBy,
   describedBy,
   initialContent = false,
+  initialSuppressedByRememberedConsent = false,
+  restoreFocus = true,
+  onExited,
   children,
 }: DialogProps) {
-  const rememberOpener = useDialogReturnFocus(isOpen);
+  const rememberOpener = useDialogReturnFocus(isOpen && restoreFocus);
+  const exitCallback = useDialogExitCallback(onExited);
 
   const labels = {
     'aria-modal': true,
@@ -41,19 +49,21 @@ export default function Dialog({
   if (initialContent) {
     return (
       <DialogRoot open={false}>
-        {isOpen && (
-          <InitialDialog
-            {...labels}
-            role="dialog"
-            data-open=""
-            onCancel={(event) => {
-              event.preventDefault();
-              onClose?.();
-            }}
-          >
-            <InitialDialogContent render={children} />
-          </InitialDialog>
-        )}
+        <AnimatePresence initial={false} onExitComplete={onExited}>
+          {isOpen && (
+            <InitialDialog
+              {...labels}
+              suppressForRememberedTrainingConsent={initialSuppressedByRememberedConsent}
+              role="dialog"
+              onCancel={(event) => {
+                event.preventDefault();
+                onClose?.();
+              }}
+            >
+              <InitialDialogContent render={children} />
+            </InitialDialog>
+          )}
+        </AnimatePresence>
       </DialogRoot>
     );
   }
@@ -70,6 +80,7 @@ export default function Dialog({
       }}
     >
       <DialogPortal>
+        {onExited && <DialogExitObserver callback={exitCallback} />}
         <DialogBackdrop />
         <DialogViewport lockScroll>
           <DialogContent

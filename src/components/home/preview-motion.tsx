@@ -8,7 +8,7 @@ import {
   useMotionTokens,
   useTempoTransition,
 } from '@animate-ui/react/utils/motion';
-import { Check } from '../icons/check';
+import { CheckCircle2 } from '../icons/check-circle2';
 import { RewardGoalMarker, routes, cells, cellSize, cellRadius, type Goal } from './RewardBoard';
 import RewardPath from './RewardPath';
 import { PreviewHighlight } from './PreviewHighlight';
@@ -80,7 +80,7 @@ export function RewardPreviewTurn({ goal }: { goal: Goal }) {
                 rx={cellRadius}
                 fill="var(--media-overlay)"
               />
-              <Check x={10} y={10} size={36} strokeWidth={2.5} animate persistOnAnimateEnd />
+              <CheckCircle2 x={10} y={10} size={36} strokeWidth={2.5} animate persistOnAnimateEnd />
             </g>
           </Effect>
         </g>

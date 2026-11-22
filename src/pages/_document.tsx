@@ -1,11 +1,12 @@
 import { Html, Head, Main, NextScript } from 'next/document';
 import { ErrorRecoveryStyle } from '@/components/ErrorRecoveryTransitionStyles';
-import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
+import { supportedColorSchemes, THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 
 export default function ErrorDocument() {
   return (
     <Html lang="de" suppressHydrationWarning>
       <Head>
+        <meta name="color-scheme" content={supportedColorSchemes} />
         <ErrorRecoveryStyle enabled />
         <link
           id="site-favicon"

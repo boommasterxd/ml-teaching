@@ -30,6 +30,7 @@ import {
   openDeferredTrainingStep,
   openThemeMenu,
   settleLandingReveals,
+  trainingSettingsTrigger,
   withdrawTrainingConsent,
   withdrawWithActiveCamera,
 } from './training-keyboard';
@@ -226,9 +227,10 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
   await navigation.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${learningPaths.hub}$`));
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  await menu.press('Enter');
+  await navigation.getByRole('link', { name: 'Bildmodell trainieren', exact: true }).click();
   const practice = page.getByRole('link', { name: 'Eigenes Bildmodell trainieren', exact: true });
-  await practice.click();
-  await expect(page).toHaveURL(learningPaths.imagePractice);
+  await expect(page).toHaveURL(learningPaths.hub);
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Zustimmen', exact: true })).toBeDisabled();
@@ -237,8 +239,10 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
   expect(await dialog.evaluate((node) => node.contains(document.activeElement))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.keyboard.press('Escape');
-  await expect(page).toHaveURL(learningPaths.images);
-  await page.getByRole('link', { name: 'Jetzt ausprobieren', exact: true }).first().click();
+  await expect(dialog).toBeHidden();
+  await expect(menu).toBeFocused();
+  await expect(page).toHaveURL(learningPaths.hub);
+  await practice.press('Enter');
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('checkbox').first()).not.toBeChecked();
   expect(external).toEqual([]);
@@ -443,9 +447,13 @@ test('local images train a real browser classifier, predict and reset without up
   );
   await expect(page.getByRole('textbox')).toHaveCount(0);
   await expectCamera(2, 0);
-  await expect(
-    page.getByRole('contentinfo').getByRole('button', { name: 'Kamera ausschalten', exact: true }),
-  ).toBeVisible();
+  const settingsTrigger = trainingSettingsTrigger(page);
+  await settingsTrigger.press('Enter');
+  const settings = page.getByRole('alertdialog', { name: 'Einstellungen zum Bildtraining' });
+  await expect(settings.getByRole('button', { name: 'Kamera ausschalten' })).toBeVisible();
+  await expectAccessible(page);
+  await page.keyboard.press('Escape');
+  await expect(settingsTrigger).toBeFocused();
   const train = page.getByRole('button', {
     name: /^(Modell trainieren|Trainiere …|Modell neu trainieren)$/,
   });
@@ -480,9 +488,7 @@ test('local images train a real browser classifier, predict and reset without up
   await expect(next.first()).toBeDisabled();
   await expectKeyboardCapture(page);
   expect(failures).toEqual([]);
-  await expect(
-    page.getByRole('contentinfo').getByRole('link', { name: /^Einwilligung widerrufen/ }),
-  ).toBeVisible();
+  await expect(settingsTrigger).toBeVisible();
   await expectNoStoredTrainingData(page);
   await withdrawWithActiveCamera(page);
   await expectNoStoredTrainingData(page);

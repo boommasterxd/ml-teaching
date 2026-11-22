@@ -1,4 +1,21 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
+
+export function useDialogExitCallback(onExited?: () => void) {
+  const callback = useRef(onExited);
+  useLayoutEffect(() => {
+    callback.current = onExited;
+  }, [onExited]);
+  return callback;
+}
+
+export function DialogExitObserver({
+  callback,
+}: {
+  callback: RefObject<(() => void) | undefined>;
+}) {
+  useEffect(() => () => queueMicrotask(() => callback.current?.()), [callback]);
+  return null;
+}
 
 function canReturnFocus(target: HTMLElement | null): target is HTMLElement {
   return Boolean(

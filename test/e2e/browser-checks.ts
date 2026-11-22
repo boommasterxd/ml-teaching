@@ -132,19 +132,25 @@ type TransitionSnapshot = {
   incomingPages: number;
   back: boolean;
   setupDialog?: 'enter' | 'exit';
+  dialogPresentAtStart?: true;
 };
 type TransitionObserver = typeof window & {
   observedTransitions: Promise<TransitionSnapshot | 'skipped'>[];
 };
 
-export async function observeViewTransitions(page: Page) {
-  await page.addInitScript(() => {
+export async function observeViewTransitions(page: Page, { checkDialogExit = false } = {}) {
+  await page.addInitScript((checkDialogExit) => {
     const observedTransitions: TransitionObserver['observedTransitions'] = [];
     Object.assign(window, { observedTransitions });
     const start = document.startViewTransition;
     if (!start) return;
     document.startViewTransition = new Proxy(start, {
       apply(target, thisArg, args) {
+        const dialogPresentAtStart =
+          checkDialogExit &&
+          [...document.querySelectorAll('[data-slot="dialog-viewport"], dialog[open]')].some(
+            (surface) => surface.getClientRects().length > 0,
+          );
         const transition = Reflect.apply(target, thisArg, args) as ViewTransition;
         observedTransitions.push(
           transition.ready.then(
@@ -185,6 +191,7 @@ export async function observeViewTransitions(page: Page) {
                 incomingPages: new Set(incoming.map(({ pseudoElement }) => pseudoElement)).size,
                 back: transition.types.has('nav-back'),
                 ...(setupDialog && { setupDialog }),
+                ...(dialogPresentAtStart && { dialogPresentAtStart: true }),
               };
             },
             () => 'skipped',
@@ -193,6 +200,6 @@ export async function observeViewTransitions(page: Page) {
         return transition;
       },
     });
-  });
+  }, checkDialogExit);
   return () => page.evaluate(() => Promise.all((window as TransitionObserver).observedTransitions));
 }

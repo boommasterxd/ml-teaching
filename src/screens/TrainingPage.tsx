@@ -1,6 +1,13 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import { useTrainingWorkspace } from '../hooks/useTrainingWorkspace';
 import PageHeader from '../components/PageHeader';
@@ -13,10 +20,13 @@ import { useTrainingPanelLoading, type TrainingStep } from '../components/traini
 import DeferredTrainingDialogs from '../components/DeferredTrainingDialogs';
 import TrainingError from '../components/TrainingError';
 import TrainingSetupDialog from '../components/modals/TrainingSetupDialog';
-import { TrainingFooterWithdrawal } from '../components/TrainingWithdrawal';
-import { prepareToastViewport } from '@/components/toast-loader';
+import type { SetupStep } from '../components/modals/SetupStepTransition';
+import { useTrainingSession } from '@/components/training/TrainingEntryContext';
+import { useEntryViewportReady, useInitialEntry } from '@/components/ui/entry-policy';
 import { prepareRoute } from '@/components/prepare-route';
 import { learningPaths } from '@/lib/learning-paths';
+import { toast } from '@/lib/toast';
+import type { AppError } from '@/types/errors';
 import './training-workspace.css';
 
 const steps = [
@@ -44,14 +54,14 @@ function TrainingPipeline({
 }) {
   return (
     <nav ref={navigation} aria-label="Trainingsablauf" inert={!ready} className="scroll-mt-24">
-      <ol className="grid grid-cols-3 gap-1 lg:flex">
+      <ol className="flex flex-wrap gap-1">
         {steps.map(({ step, label }, index) => (
-          <li key={step}>
+          <li key={step} className="grow lg:grow-0">
             <Button
               id={`training-step-${step}`}
               variant="ghost"
               size="sm"
-              className="training-step"
+              className="training-step hover:bg-transparent dark:hover:bg-transparent"
               aria-current={step === currentStep ? 'step' : undefined}
               disabled={step === 'training' ? !canTrain : step === 'prediction' && !canPredict}
               onClick={() => onSelect(step)}
@@ -59,23 +69,25 @@ function TrainingPipeline({
               onFocus={() => onPrepare(step)}
               onPointerDown={() => onPrepare(step)}
             >
-              <Badge
-                variant={step === currentStep ? 'default' : 'secondary'}
-                className="size-[1.0625rem] p-0 text-[0.65rem] tabular-nums sm:size-[1.375rem] sm:text-[0.7rem]"
-                aria-hidden="true"
-              >
-                {index + 1}
-              </Badge>
-              {index === 0 ? (
-                <>
-                  <span aria-hidden="true" className="sm:hidden">
-                    Bilder
-                  </span>
-                  <span className="sr-only sm:not-sr-only">{label}</span>
-                </>
-              ) : (
-                label
-              )}
+              <span className="training-step-content transition-colors">
+                <Badge
+                  variant={step === currentStep ? 'default' : 'secondary'}
+                  className="training-step-number p-0 tabular-nums max-sm:pt-px max-sm:leading-none"
+                  aria-hidden="true"
+                >
+                  {index + 1}
+                </Badge>
+                {index === 0 ? (
+                  <>
+                    <span aria-hidden="true" className="sm:hidden">
+                      Bilder
+                    </span>
+                    <span className="sr-only sm:not-sr-only">{label}</span>
+                  </>
+                ) : (
+                  label
+                )}
+              </span>
             </Button>
           </li>
         ))}
@@ -164,31 +176,98 @@ function getSetupStep({
   showCameraPrompt,
 }: ReturnType<typeof useTrainingWorkspace>['resources']) {
   if (consent.showConsentModal) return 'consent';
-  if (models.isModelLoading) return 'loading';
+  if (!consent.wasRestored && models.isModelLoading) return 'loading';
   return showCameraPrompt ? 'camera' : null;
 }
 
 /** Browser-only ML workspace inside a build-rendered App Router page. */
 export default function TrainingPage() {
+  const { workspaceVersion } = useTrainingSession();
+  return <TrainingWorkspace key={workspaceVersion} initialWorkspace={workspaceVersion === 0} />;
+}
+
+function useTrainingArrival(ready: boolean, heading: React.RefObject<HTMLHeadingElement | null>) {
+  const focused = useRef(false);
+  useLayoutEffect(() => {
+    if (!ready || focused.current) return;
+    focused.current = true;
+    heading.current?.focus({ preventScroll: true });
+  }, [ready, heading]);
+}
+
+function useSetupPresentation(
+  step: SetupStep | null,
+  canShow: boolean,
+  wasRestored: boolean,
+  heading: React.RefObject<HTMLHeadingElement | null>,
+) {
+  const requested = canShow ? step : null;
+  const [lastStep, setLastStep] = useState(requested);
+  const [initialSetup, setInitialSetup] = useState(step === 'consent');
+  const [focusHeading, setFocusHeading] = useState(false);
+  const skipped = !canShow || (wasRestored && lastStep === 'consent' && requested === null);
+  if (requested && requested !== lastStep) setLastStep(requested);
+  if (skipped && lastStep !== null) {
+    setLastStep(null);
+    setInitialSetup(false);
+  }
+
+  useLayoutEffect(() => {
+    if (focusHeading) heading.current?.focus({ preventScroll: true });
+  }, [focusHeading, heading]);
+
+  function onExited() {
+    if (requested !== null || lastStep === null) return;
+    setLastStep(null);
+    setInitialSetup(false);
+    if (lastStep === 'camera') setFocusHeading(true);
+  }
+
+  return {
+    step: skipped ? requested : (requested ?? lastStep),
+    open: requested !== null,
+    initialSetup,
+    onExited,
+    restoreFocus: true,
+  };
+}
+
+function useCameraErrorNotice(error: AppError | null, canNotify: boolean) {
+  useEffect(() => {
+    if (canNotify && error?.category === 'camera') {
+      toast.error(`${error.message} Du kannst Bilder hochladen.`, { id: 'training-camera' });
+    }
+  }, [canNotify, error]);
+}
+
+function TrainingWorkspace({ initialWorkspace }: { initialWorkspace: boolean }) {
   const router = useRouter();
+  const {
+    engine,
+    pendingArrival,
+    revokeConsent,
+    grantConsent,
+    setupSuppressed,
+    prepareWithdrawal,
+  } = useTrainingSession();
+  const initialDocument = useInitialEntry();
+  const entryViewportReady = useEntryViewportReady();
   const [selection, setSelection] = useState<TrainingStep>('images');
-  const workspace = useTrainingWorkspace(selection);
+  const workspace = useTrainingWorkspace(selection, engine);
   const { resources, data, dialogs } = workspace;
   const { error, consent, models } = resources;
-  const modelFailed = error?.category === 'model';
-  const { classes } = data;
   const setupStep = getSetupStep(resources);
-  // The inline setup and the workspace handoff share the same first-close boundary.
-  const [initialSetup, setInitialSetup] = useState(setupStep === 'consent');
-  if (initialSetup && setupStep === null) setInitialSetup(false);
+  const { initialSetup, ...setup } = useSetupPresentation(
+    setupStep,
+    !setupSuppressed && (initialDocument || entryViewportReady),
+    consent.wasRestored,
+    resources.mainHeadingRef,
+  );
   const ready = !initialSetup && Boolean(models.mobilenetModel) && !models.isModelLoading;
   const canPredict = data.canTrain && resources.hasTrainedModel && !data.training.isTraining;
   const flow = useTrainingNavigation(data.canTrain, canPredict, selection, setSelection);
-  const canWithdrawCameraInPreview =
-    resources.camera.active && (flow.current !== 'images' || classes.classes.length > 0);
-  const revokeCameraInFooter =
-    consent.cameraConsent && !canWithdrawCameraInPreview ? resources.revokeCamera : undefined;
-  const showFooterWithdrawal = consent.hasConsented && !initialSetup && setupStep === null;
+  useTrainingArrival(pendingArrival && entryViewportReady, resources.mainHeadingRef);
+  useCameraErrorNotice(error, entryViewportReady && setup.step === null);
   const prepareReturn = () => prepareRoute(router, learningPaths.images);
   const declineConsent = () => router.push(learningPaths.images, { transitionTypes: ['nav-back'] });
   return (
@@ -209,15 +288,16 @@ export default function TrainingPage() {
             />
           }
         />
-        {error && (
+        {consent.wasRestored && models.isModelLoading && (
+          <p role="status" className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+            <Spinner aria-hidden="true" /> Bildtraining wird geladen …
+          </p>
+        )}
+        {error?.category === 'model' && setup.step === null && (
           <TrainingError
-            message={
-              modelFailed
-                ? error.message
-                : `${error.message} Du kannst Bilder hochladen. Beim Neuladen gehen deine Trainingsdaten verloren.`
-            }
-            onReturn={modelFailed ? declineConsent : undefined}
-            onReturnIntent={modelFailed ? prepareReturn : undefined}
+            message={error.message}
+            onReturn={declineConsent}
+            onReturnIntent={prepareReturn}
           />
         )}
         <TrainingPanelFeedback
@@ -237,25 +317,23 @@ export default function TrainingPage() {
           onPrepare={flow.onPrepare}
         />
       </div>
-      {showFooterWithdrawal && <TrainingFooterWithdrawal onRevokeCamera={revokeCameraInFooter} />}
       <DeferredTrainingDialogs
         modal={dialogs.modal}
-        classes={classes.classes}
+        classes={data.classes.classes}
         closeModal={dialogs.closeModal}
-        removeImage={classes.removeImage}
-        clearClass={classes.clearClass}
-        removeClass={classes.removeClass}
+        removeImage={data.classes.removeImage}
+        clearClass={data.classes.clearClass}
+        removeClass={data.classes.removeClass}
       />
       <TrainingSetupDialog
-        initialContent={initialSetup}
-        step={setupStep}
+        initialContent={initialDocument && initialWorkspace && initialSetup}
+        {...setup}
         loadingText={models.loadingText}
         onDeclineConsent={declineConsent}
         onDeclineConsentIntent={prepareReturn}
-        onConfirmConsent={() => {
-          prepareToastViewport();
-          consent.grantConsent();
-        }}
+        onConfirmConsent={grantConsent}
+        onWithdrawLoading={revokeConsent}
+        onWithdrawIntent={prepareWithdrawal}
         onDeclineCamera={consent.declineCameraConsent}
         onConfirmCamera={consent.grantCameraConsent}
       />

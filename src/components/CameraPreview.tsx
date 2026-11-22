@@ -11,7 +11,7 @@ import { IMAGE_INPUT_ACCEPT } from '../lib/image-input-policy';
 
 export interface CameraPreviewProps {
   disabled: boolean;
-  camera?: CameraView;
+  camera: CameraView;
   isRecording: boolean;
   onStartRecording: () => void;
   onStopRecording: () => void;
@@ -127,10 +127,17 @@ function usePreviewVisibility(previewRef: React.RefObject<HTMLDivElement | null>
   return visible;
 }
 
-function LiveCameraPreview(props: CameraPreviewProps & { camera: CameraView }) {
-  const { disabled, camera, videoRef, isRecording } = props;
-  const { stream, facingMode } = camera;
-  const previewRef = useRef<HTMLDivElement>(null);
+function CameraVideo({
+  stream,
+  facingMode,
+  previewRef,
+  videoRef,
+  isRecording,
+}: Pick<CameraPreviewProps, 'videoRef' | 'isRecording'> & {
+  stream: MediaStream;
+  facingMode: CameraView['facingMode'];
+  previewRef: React.RefObject<HTMLDivElement | null>;
+}) {
   const visible = usePreviewVisibility(previewRef);
   const attachedStream = visible || isRecording ? stream : null;
 
@@ -144,6 +151,26 @@ function LiveCameraPreview(props: CameraPreviewProps & { camera: CameraView }) {
   }, [attachedStream, videoRef]);
 
   return (
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      muted
+      aria-label="Kameravorschau für Trainingsaufnahme"
+      className={cn(
+        'absolute inset-0 size-full object-cover',
+        facingMode === 'user' && 'transform scale-x-[-1]',
+      )}
+    />
+  );
+}
+
+function LiveCameraPreview(props: CameraPreviewProps) {
+  const { disabled, camera, videoRef, isRecording } = props;
+  const { stream, facingMode } = camera;
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  return (
     <div className="grid w-full min-w-0 max-w-80 gap-2 justify-self-center">
       <div
         ref={previewRef}
@@ -151,16 +178,12 @@ function LiveCameraPreview(props: CameraPreviewProps & { camera: CameraView }) {
         className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-media-surface"
       >
         {stream && (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            aria-label="Kameravorschau für Trainingsaufnahme"
-            className={cn(
-              'absolute inset-0 size-full object-cover',
-              facingMode === 'user' && 'transform scale-x-[-1]',
-            )}
+          <CameraVideo
+            stream={stream}
+            facingMode={facingMode}
+            previewRef={previewRef}
+            videoRef={videoRef}
+            isRecording={isRecording}
           />
         )}
         <CameraControls camera={camera} />
@@ -181,7 +204,7 @@ export default function CameraPreview(props: CameraPreviewProps) {
     fileActions,
     onCaptureIntent,
   } = props;
-  const stream = camera?.stream;
+  const { stream } = camera;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endCapture = useEffectEvent(onStopRecording);
   useEffect(() => {
@@ -234,7 +257,7 @@ export default function CameraPreview(props: CameraPreviewProps) {
         />
         {fileActions}
       </div>
-      {camera && <LiveCameraPreview {...props} camera={camera} />}
+      <LiveCameraPreview {...props} />
     </>
   );
 }

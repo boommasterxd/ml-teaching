@@ -1,0 +1,352 @@
+'use client';
+
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { learningPaths } from '@/lib/learning-paths';
+import { toast } from '@/lib/toast';
+import {
+  clearRememberedTrainingConsent,
+  readRememberedTrainingConsent,
+  writeRememberedTrainingConsent,
+  type RememberedTrainingConsent,
+} from '@/lib/training-consent-storage';
+import { useTrainingEngine, type TrainingEngine } from '@/hooks/useTrainingEngine';
+import { Button } from '../ui/button';
+import { Alert, AlertDescription } from '../ui/alert';
+import { prepareToastViewport } from '../toast-loader';
+import { useMenuModule } from '../use-menu-module';
+import type { SetupStep } from '../modals/SetupStepTransition';
+import TrainingConsentControls from './TrainingConsentControls';
+import { TrainingEntryContext, TrainingSessionContext } from './TrainingEntryContext';
+import { useTrainingWithdrawal } from './use-training-withdrawal';
+import TrainingWithdrawalFeedback from './TrainingWithdrawalFeedback';
+
+type Entry = {
+  source: string;
+  opener: HTMLElement | null;
+  phase: 'setup' | 'cancelled' | 'moving';
+};
+
+function loadSetup() {
+  return import('../modals/TrainingSetupDialog');
+}
+
+function getStep(engine: TrainingEngine): SetupStep {
+  if (!engine.consent.hasConsented) return 'consent';
+  if (engine.error?.category === 'model') return 'error';
+  if (!engine.canUseModels || engine.consent.restored) return 'loading';
+  return 'camera';
+}
+
+function finishAllowed(engine: TrainingEngine) {
+  return (
+    engine.canUseModels &&
+    !engine.consent.showCameraModal &&
+    (!engine.consent.cameraConsent || engine.camera.stream !== null)
+  );
+}
+
+function acceptTrainingConsent(
+  remember: boolean,
+  grant: TrainingEngine['consent']['grantConsent'],
+  setRemembered: (record: RememberedTrainingConsent | null) => void,
+) {
+  prepareToastViewport();
+  const saved = grant(remember);
+  if (!saved)
+    toast.error('Deine Auswahl gilt für dieses Training. Der Browser konnte sie nicht merken.');
+  if (remember && saved) setRemembered(readRememberedTrainingConsent());
+}
+
+function useRememberedConsent(
+  pathname: string | null,
+  restore: ((record: RememberedTrainingConsent) => void) | undefined,
+) {
+  const [remembered, setRemembered] = useState<RememberedTrainingConsent | null>(null);
+  const rememberedUntil = remembered?.expiresAt ?? null;
+
+  useLayoutEffect(() => {
+    const saved = readRememberedTrainingConsent();
+    if (saved) restore?.(saved);
+    // The training dialog must adopt consent before paint; the settings button can follow.
+    let current = true;
+    queueMicrotask(() => {
+      if (current) setRemembered(saved);
+    });
+    delete document.documentElement.dataset.trainingConsent;
+    return () => {
+      current = false;
+    };
+  }, [pathname, restore]);
+
+  useEffect(() => {
+    if (rememberedUntil === null) return;
+    const expiry = window.setTimeout(
+      () => {
+        setRemembered(readRememberedTrainingConsent());
+      },
+      Math.max(0, rememberedUntil - Date.now()),
+    );
+    return () => window.clearTimeout(expiry);
+  }, [rememberedUntil]);
+
+  return { remembered, setRemembered };
+}
+
+function useTrainingEntryState() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const inTraining = pathname === learningPaths.imagePractice;
+  const setup = useMenuModule(loadSetup);
+  const { module, prepare } = setup;
+  const [entry, setEntry] = useState<Entry | null>(null);
+  const [visit, setVisit] = useState<{
+    pathname: string | null;
+    handoff: boolean;
+    returnTo: string;
+  }>({
+    pathname,
+    handoff: false,
+    returnTo: learningPaths.images,
+  });
+  const activeEntry = entry?.source === pathname ? entry : null;
+  const engine = useTrainingEngine(
+    inTraining || Boolean(activeEntry && activeEntry.phase !== 'cancelled' && module),
+    inTraining,
+  );
+  const { consent, clearError } = engine;
+  const { reset, restore } = consent;
+
+  if (visit.pathname !== pathname) {
+    const handoff = inTraining && entry?.phase === 'moving';
+    const returnTo = inTraining
+      ? (entry?.source ?? visit.pathname ?? learningPaths.images)
+      : learningPaths.images;
+    setVisit({ pathname, handoff, returnTo });
+    setEntry(null);
+    if (!handoff) {
+      reset();
+      clearError();
+    }
+  }
+
+  const { remembered, setRemembered } = useRememberedConsent(
+    pathname,
+    inTraining && !visit.handoff ? restore : undefined,
+  );
+
+  const openEntry = useCallback(
+    (opener: HTMLElement | null) => {
+      if (!pathname || inTraining || activeEntry) return;
+      const saved = readRememberedTrainingConsent();
+      if (saved) restore(saved);
+      setEntry({ source: pathname, opener, phase: 'setup' });
+      prepare();
+    },
+    [pathname, inTraining, activeEntry, prepare, restore],
+  );
+  const actions = useMemo(() => ({ openEntry, prepareEntry: prepare }), [openEntry, prepare]);
+  const withdrawal = useTrainingWithdrawal(pathname, inTraining ? visit.returnTo : null, openEntry);
+
+  function closeEntry() {
+    if (!activeEntry) return;
+    if (module) setEntry({ ...activeEntry, phase: 'cancelled' });
+    else {
+      setEntry(null);
+      activeEntry.opener?.focus({ preventScroll: true });
+    }
+    reset();
+    clearError();
+  }
+
+  return {
+    router,
+    inTraining,
+    setup,
+    engine,
+    visit,
+    clearHandoff: () => setVisit((current) => ({ ...current, handoff: false })),
+    activeEntry,
+    setEntry,
+    actions,
+    withdrawal,
+    remembered,
+    setRemembered,
+    closeEntry,
+  };
+}
+
+function useTrainingEntryFlow() {
+  const {
+    router,
+    inTraining,
+    setup,
+    engine,
+    visit,
+    clearHandoff,
+    activeEntry,
+    setEntry,
+    actions,
+    withdrawal,
+    remembered,
+    setRemembered,
+    closeEntry,
+  } = useTrainingEntryState();
+  const { module, failed, prepare } = setup;
+  const { consent, clearError } = engine;
+  const [workspaceVersion, setWorkspaceVersion] = useState(0);
+  const complete = activeEntry?.phase === 'setup' && Boolean(module) && finishAllowed(engine);
+
+  function revokeConsent(waitForSettings = false) {
+    const cleared = clearRememberedTrainingConsent();
+    setRemembered(null);
+    if (activeEntry) closeEntry();
+    else {
+      consent.reset();
+      clearError();
+      if (inTraining) {
+        clearHandoff();
+        setWorkspaceVersion((version) => version + 1);
+      }
+    }
+    if (cleared) {
+      withdrawal.begin(
+        waitForSettings || Boolean(activeEntry && module),
+        activeEntry?.opener ?? null,
+      );
+    } else {
+      toast.error(
+        'Die gespeicherte Auswahl konnte nicht gelöscht werden. Lösche sie in den Website-Einstellungen deines Browsers.',
+      );
+    }
+  }
+
+  function finishClose() {
+    if (!activeEntry || window.location.pathname !== activeEntry.source) return;
+    if (activeEntry.phase === 'cancelled') {
+      setEntry(null);
+      if (withdrawal.active) withdrawal.showAfterExit();
+      else activeEntry.opener?.focus({ preventScroll: true });
+    } else if (complete) {
+      setEntry({ ...activeEntry, phase: 'moving' });
+      router.push(learningPaths.imagePractice, { transitionTypes: ['nav-forward'] });
+    }
+  }
+
+  return {
+    actions,
+    engine,
+    pendingArrival: visit.handoff,
+    workspaceVersion,
+    revokeConsent,
+    withdrawal,
+    grantConsent: (remember: boolean) =>
+      acceptTrainingConsent(remember, consent.grantConsent, setRemembered),
+    inTraining,
+    activeEntry,
+    complete,
+    Setup: module?.default,
+    failed,
+    prepare,
+    remembered,
+    setRemembered,
+    closeEntry,
+    finishClose,
+  };
+}
+
+export default function TrainingEntryProvider({ children }: { children: ReactNode }) {
+  const flow = useTrainingEntryFlow();
+  const { actions, engine, pendingArrival, workspaceVersion, revokeConsent, grantConsent } = flow;
+  const { inTraining, activeEntry, remembered, setRemembered, withdrawal } = flow;
+  const { consent } = engine;
+  function revokeCamera() {
+    if (inTraining) engine.revokeCamera();
+    else if (remembered?.camera === 'allowed')
+      writeRememberedTrainingConsent(remembered.expiresAt, 'declined', true);
+    setRemembered(readRememberedTrainingConsent());
+  }
+  return (
+    <TrainingEntryContext value={actions}>
+      <TrainingSessionContext
+        value={{
+          engine,
+          pendingArrival,
+          workspaceVersion,
+          revokeConsent: () => revokeConsent(),
+          prepareWithdrawal: withdrawal.prepare,
+          setupSuppressed: Boolean(withdrawal.active),
+          grantConsent,
+        }}
+      >
+        {children}
+      </TrainingSessionContext>
+      <TrainingEntryOverlay flow={flow} />
+      <TrainingConsentControls
+        visible={Boolean(remembered || (inTraining && consent.hasConsented))}
+        blocked={
+          Boolean(activeEntry || withdrawal.active) || (inTraining && consent.showConsentModal)
+        }
+        canRevokeCamera={
+          inTraining
+            ? consent.cameraConsent || consent.restored?.camera === 'allowed'
+            : remembered?.camera === 'allowed'
+        }
+        onRevokeCamera={revokeCamera}
+        onRevokeConsent={() => revokeConsent(true)}
+        onRevokeIntent={withdrawal.prepare}
+        onExited={withdrawal.showAfterExit}
+      />
+      <TrainingWithdrawalFeedback
+        withdrawal={withdrawal}
+        resourcesReleased={!engine.models.mobilenetModel && !engine.models.classifier}
+        onRestartIntent={flow.prepare}
+      />
+    </TrainingEntryContext>
+  );
+}
+
+function TrainingEntryOverlay({ flow }: { flow: ReturnType<typeof useTrainingEntryFlow> }) {
+  const { activeEntry, Setup, complete, failed, prepare, engine } = flow;
+  const { consent } = engine;
+  if (!activeEntry) return null;
+  if (Setup) {
+    return (
+      <Setup
+        initialContent={false}
+        step={getStep(engine)}
+        open={activeEntry.phase === 'setup' && !complete}
+        onExited={flow.finishClose}
+        loadingText={engine.models.loadingText}
+        onWithdrawLoading={() => flow.revokeConsent()}
+        onWithdrawIntent={flow.withdrawal.prepare}
+        onDeclineConsent={flow.closeEntry}
+        onConfirmConsent={flow.grantConsent}
+        onDeclineCamera={consent.declineCameraConsent}
+        onConfirmCamera={consent.grantCameraConsent}
+        cameraPending={engine.camera.isPending}
+        cameraError={engine.error?.category === 'camera' ? engine.error.message : undefined}
+        onRetryCamera={engine.camera.retryCamera}
+        onRetryModel={engine.retryModels}
+      />
+    );
+  }
+  if (failed) {
+    return (
+      <Alert role="alert" className="fixed inset-x-4 bottom-4 z-40 mx-auto max-w-md">
+        <AlertDescription>Die Einrichtung konnte nicht geöffnet werden.</AlertDescription>
+        <Button variant="secondary" onClick={prepare}>
+          Erneut versuchen
+        </Button>
+        <Button variant="ghost" onClick={flow.closeEntry}>
+          Abbrechen
+        </Button>
+      </Alert>
+    );
+  }
+  return (
+    <p role="status" className="sr-only">
+      Einrichtung wird geladen …
+    </p>
+  );
+}

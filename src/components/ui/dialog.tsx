@@ -10,16 +10,22 @@ import {
   type ReactNode,
 } from 'react';
 import { Dialog as DialogPrimitive } from '@animate-ui/react/primitives/base-ui/dialog';
+import { Effect } from '@animate-ui/react/primitives/effects/effect';
+import {
+  motionTokens,
+  useShouldReduceMotion,
+  useTempoTransition,
+} from '@animate-ui/react/utils/motion';
 import { useRender } from '@base-ui/react/use-render';
 import { useIsPresent } from 'motion/react';
 import { RemoveScroll } from 'react-remove-scroll';
 import { cn } from '@/lib/utils';
+import { ScrollFadeViewport } from './scroll-fade-viewport';
 
 // Adapted from shadcn/ui's Base UI Dialog; the viewport supports tall mobile content.
 export const dialogSurface =
   'relative my-auto grid max-h-fit w-full gap-4 rounded-(--glass-radius) border border-(--glass-line) [background:var(--glass-surface)] p-6 text-foreground shadow-(--glass-highlight) outline-none';
-const dialogViewport =
-  'pointer-events-auto fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain p-4';
+const dialogScrollLayout = 'flex items-start justify-center overflow-y-auto overscroll-contain p-4';
 export const dialogScrim = 'pointer-events-none fixed inset-0 z-50 bg-media-overlay';
 
 function getDialogTabStops(dialog: HTMLDialogElement) {
@@ -49,7 +55,15 @@ export const Dialog = DialogPrimitive.Root;
 export const DialogPortal = DialogPrimitive.Portal;
 
 export function DialogBackdrop() {
-  return <DialogPrimitive.Backdrop className={dialogScrim} aria-hidden="true" />;
+  return (
+    <DialogPrimitive.Backdrop
+      data-slot="dialog-backdrop"
+      className={dialogScrim}
+      transition={{ duration: 0 }}
+      exitTransition={motionTokens.transition.overlay}
+      aria-hidden="true"
+    />
+  );
 }
 
 export function renderDialogSurface(element: ReactElement<ComponentProps<'div'>>) {
@@ -80,38 +94,74 @@ export function DialogContent({
 }
 
 // Base UI Popup requires a portal, which cannot render the already-visible SSG dialog.
-export function InitialDialog({ children, ...props }: ComponentProps<'dialog'>) {
+export function InitialDialog({
+  children,
+  suppressForRememberedTrainingConsent = false,
+  ...props
+}: ComponentProps<'dialog'> & { suppressForRememberedTrainingConsent?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const present = useIsPresent();
+  const reduceMotion = useShouldReduceMotion();
+  const exitTransition = useTempoTransition(motionTokens.transition.overlay);
   useLayoutEffect(() => {
     const dialog = ref.current;
     if (!dialog?.showModal) return;
-    const focused = document.activeElement;
-    const initialFocus =
-      focused instanceof HTMLElement && dialog.contains(focused)
-        ? focused
-        : getDialogTabStops(dialog)[0];
-    // Upgrade the server-rendered open dialog to modal on the same element, before paint.
-    dialog.removeAttribute('open');
-    dialog.showModal();
-    initialFocus?.focus({ preventScroll: true });
-    return () => dialog.close();
-  }, []);
+    let attached = true;
+    function promote() {
+      if (!attached || !dialog?.isConnected) return;
+      const focused = document.activeElement;
+      const initialFocus =
+        focused instanceof HTMLElement && dialog.contains(focused)
+          ? focused
+          : getDialogTabStops(dialog)[0];
+      // Upgrade the server-rendered open dialog without replacing its controls.
+      dialog.removeAttribute('open');
+      dialog.showModal();
+      initialFocus?.focus({ preventScroll: true });
+    }
+    if (
+      suppressForRememberedTrainingConsent &&
+      document.documentElement.dataset.trainingConsent === 'remembered'
+    ) {
+      // If restore drops an expired record, the inline dialog still needs modality.
+      queueMicrotask(promote);
+    } else promote();
+    return () => {
+      attached = false;
+      dialog.close();
+    };
+  }, [suppressForRememberedTrainingConsent]);
 
   return (
     <RemoveScroll ref={ref} forwardProps removeScrollBar={false} inert={false} allowPinchZoom>
-      <dialog
-        {...props}
-        open
-        onKeyDown={wrapDialogTab}
-        data-slot="dialog-overlay"
-        className={cn(
-          dialogViewport,
-          'm-0 h-full max-h-none w-full max-w-none bg-transparent backdrop:bg-transparent',
-        )}
+      <Effect
+        asChild
+        fade
+        initial={false}
+        animate={undefined}
+        transition={reduceMotion ? { duration: 0 } : exitTransition}
       >
-        <div className={cn(dialogScrim, 'z-auto')} aria-hidden="true" />
-        {children}
-      </dialog>
+        <dialog
+          {...props}
+          open
+          inert={!present || undefined}
+          aria-hidden={!present || undefined}
+          onKeyDown={wrapDialogTab}
+          data-open={present ? '' : undefined}
+          data-closed={present ? undefined : ''}
+          data-slot="dialog-overlay"
+          data-initial-training-consent={suppressForRememberedTrainingConsent || undefined}
+          className="pointer-events-auto fixed inset-0 z-50 m-0 h-full max-h-none w-full max-w-none overflow-hidden bg-transparent backdrop:bg-transparent"
+        >
+          <div className={cn(dialogScrim, 'z-auto')} aria-hidden="true" />
+          <ScrollFadeViewport
+            enabled={present}
+            className={cn('relative size-full', dialogScrollLayout)}
+          >
+            {children}
+          </ScrollFadeViewport>
+        </dialog>
+      </Effect>
     </RemoveScroll>
   );
 }
@@ -203,13 +253,19 @@ export function DialogViewport({
       inert={false}
       allowPinchZoom
     >
-      <div
+      <ScrollFadeViewport
+        enabled={present}
         data-slot="dialog-viewport"
-        className={cn(dialogViewport, !present && 'pointer-events-none', className)}
+        className={cn(
+          'pointer-events-auto fixed inset-0 z-50',
+          dialogScrollLayout,
+          !present && 'pointer-events-none',
+          className,
+        )}
         {...props}
       >
         {children}
-      </div>
+      </ScrollFadeViewport>
     </RemoveScroll>
   );
 }

@@ -164,10 +164,12 @@ so they remain distinguishable without relying on color.
 Global notifications use the shared shadcn Toast composition through Animate UI.
 Its single viewport appears at the top center on mobile and at the bottom right
 from the desktop breakpoint. Toast code is prepared on training consent and
-mounted on the first notification. The provider owns announcements, timers and
+mounted on the first notification. Camera failures in the training workspace
+use this viewport. Image upload and camera retry remain in the workspace, and
+the toast does not move focus. The provider owns announcements, timers and
 dismissal. If the viewport chunk fails, pending notices use a lightweight alert
-and another notification retries the same module. Field errors, exercise results and recovery for a blocked step stay
-with their controls.
+and another notification retries the same module. Field errors, exercise results
+and recovery for a blocked step stay with their controls.
 
 The standalone appearance switch and consent checkboxes use Base UI Toggle
 with their respective switch and checkbox semantics. The Base UI 1.9 form
@@ -203,10 +205,11 @@ The everyday quiz presents six choices in one column, two at
 or submitted questionnaire. The official Questionnaire/ToggleGroup catalogs own
 multi-step forms and switchable selections; ordinary Buttons fit this reveal flow.
 Each Card's initial surface has one overlaid native Button using the central
-`quiz-card` variant and size, with a matching animated
-icon and a stable accessible answer name. There is no separate visible answer button.
-The shared minimum surface height aligns the choices. Answers never expand the card;
-title and icon positions remain anchored at its top.
+`quiz-card` variant and size and a stable accessible answer name. The animated
+icon sits beside the heading and responds to card hover, press, and answer focus.
+Each choice takes the height of its content and uses equal top and bottom
+padding. The animated result overlays the card. Inline feedback can reserve
+extra space when a retry is needed.
 The lightweight local answer state remains with the required triggers; closed
 explanations and their motion mount only on activation. No separate import or
 preparation controller is warranted for six visible choices and a bounded state set.
@@ -253,7 +256,9 @@ Animate UI Effect owns path drawing and its reduced-motion alternative; placemen
 and Button press feedback remain separate properties/surfaces. The shared shadcn
 Slider uses Animate UI Base UI primitives for K=1 through 10 in steps of one,
 defaulting to 3. The thumb owns the accessible label and value. The answer
-controls include a tie for equal vote counts. Input/settings, plot and class actions stack
+controls include a tie for equal vote counts. Feedback sits beside the answer
+controls when their shared container can fit both columns, and below them in
+narrow containers. Input/settings, plot and class actions stack
 in that order below `lg`, with a plot that fills the Card's content width and caps
 only its height at 24rem, a 64px input image and compact spacing. The Card always
 fills its section's content width; standard side padding is retained.
@@ -266,11 +271,13 @@ synthetic exercise in a hidden React Activity, which keeps effects inactive.
 On activation the visible exercise takes focus from its placeholder action when
 that action still owns focus.
 The compact Footer contains the brand, copyright and information links. Below `md`,
-the groups stack and center, including wrapped information-link rows. After setup,
-the training route contributes a consent withdrawal link between copyright and the
-information links. Withdrawal is also available in the model-loading dialog. Both
-links reload the document, discarding the in-memory workspace and presenting consent
-again. The consent step and privacy policy explain local processing.
+the groups stack and center, including wrapped information-link rows. While training
+consent is active or remembered, the footer offers the labeled training settings.
+From `2xl`, the same settings are also available from the shield in the lower-left
+gutter. The footer provides an unobstructed action at smaller widths. The settings
+dialog separates camera shutdown from full withdrawal. Model loading also provides
+withdrawal, which cancels setup on the source page or clears and reloads the training
+document. The consent step and privacy policy explain local processing.
 Badge icons inherit the surrounding Card or control's AnimateIcon context instead
 of introducing a nested provider that would restrict their hover trigger to the badge.
 Destructive Buttons and Badges use the theme's foreground/background pair without
@@ -397,13 +404,14 @@ ViewTransition. Theme changes update the root appearance without remounting the
 learning workspace. Three buttons mark the current training step and focus the
 new section heading on activation. The two collection continue buttons require
 enough images in distinctly named classes. Prediction unlocks after successful
-training. On narrow screens the step buttons share the full width. The add-class
-action is below the last card, beside the bottom continue button. On small screens
-the add action fills the remaining width and the continue button uses a compact text
-style. Animate UI Auto Height follows the class grid as rows appear or disappear,
-moving the actions and footer with the list. Reduced motion applies the new
-height immediately. Adding a class brings its name into view. Keyboard activation
-also focuses the new field.
+training. On narrow screens the step buttons share the full width. Each step's
+visible surface, label, and number scale together inside a 44 px minimum touch
+target. The add-class action is below the last card, beside the bottom continue
+button. On small screens the add action fills the remaining width and the continue
+button uses a compact text style. Animate UI Auto Height follows the class grid as
+rows appear or disappear, moving the actions and footer with the list. Reduced
+motion applies the new height immediately. Adding a class brings its name into
+view. Keyboard activation also focuses the new field.
 The class name fills the card header beside
 the compact, vertically centered image count. An invalid name uses the field's error border and
 an anchored Animate UI tooltip on focus or hover. The field retains a live error
@@ -416,14 +424,20 @@ A persistent live status announces the selected image count during selection mod
 The class marker, gallery illustration and selected thumbnail badge use the same
 theme-aware class accent. Class names identify each group. Class counters show
 progress toward the training minimum, then the collected total.
-The first class card offers camera activation when the initial camera choice is
-declined. Capture and prediction previews share the same controls. Play and pause
+Each class card has a camera preview, including before camera permission is granted.
+Capture and prediction previews share the same controls. Play and pause
 share the lower-left button, and the camera switch sits in the lower-right corner.
+An inactive preview centers the animated VideoOff glyph and retains a screen-reader
+status. The icon plays once when the inactive preview comes into view.
+A connecting preview centers the shared spinner with a screen-reader status.
+Failed connection attempts keep the pending state for at least two seconds.
+Successful connections display the live preview as soon as the stream is ready.
+An unavailable camera centers its status text below a white Animate UI alert icon.
 Both buttons stay mounted in place during stream changes. Pause releases
-the stream and withdraws camera consent. Play reopens the camera choice after
-withdrawal and retries a failed connection while consent is active. Capture frames
-stay available after the first grant. During training or when no preview can turn
-off the camera, its withdrawal action sits beside the general withdrawal in the footer.
+the stream and withdraws camera consent. Play opens the camera choice when consent
+is missing and retries a failed connection while consent is active. Recording
+requires a live stream. During training or when no preview can turn
+off the camera, the same action is available in the training settings.
 Local image uploads remain available.
 With camera consent, live prediction starts when the trained prediction step opens.
 The prediction card keeps its camera frame and result areas in place, and confidence
@@ -458,6 +472,11 @@ The training setup focuses each new step's title and announces loading progress
 in place. On narrow screens the consent text uses the available width inside the
 dialog, which retains vertical scrolling for short viewports and zoom.
 Controlled dialogs restore focus when they close.
+The gallery, dialog viewports, and menus share Animate UI's Scroll Fade. The fade
+and slight blur follow the edges with more content. The scroll containers keep
+their CSS overflow, scrollbars, and keyboard behavior. Only the content viewport
+fades, so surrounding surfaces and dialog scrims stay separate. Gallery blur
+works on the virtualizer's mounted thumbnails without scaling or shifting them.
 Buttons share disabled, keyboard and touch behavior. Error messages, empty data,
 loading state and deletion confirmations stay explicit.
 
@@ -465,11 +484,13 @@ loading state and deletion confirmations stay explicit.
 
 The default follows the operating system. Light, dark and system selections remain
 temporary unless the user explicitly enables remembering for future visits. Only
-the enum selection is stored under `ml-teaching-theme`; ML consent and training
-data are independent. System changes, storage events and invalid values never
+the enum selection is stored under `ml-teaching-theme`. Training consent has
+its own optional tab-local record. Training data remains in memory. System changes, storage events and invalid values never
 write defaults. Blocked reads fall back to the system; failed writes or deletion
 produce an honest status message. The trusted build-known bootstrap and the
 upstream ThemeToggler wipe style are rendered in static HTML for exact CSP hashing.
+Both document owners declare light and dark color schemes so the browser can
+match the system canvas while the stylesheets load.
 The public theme-wipe callbacks are serialized so the latest selection wins.
 The favicon link precedes the trusted bootstrap in both document owners. Before
 hydration, the bootstrap creates the browser theme-color meta tag and sets its
@@ -495,8 +516,9 @@ The toolbar centers the brand mark and appearance trigger in the rounded ends.
 Their inline insets derive from the toolbar radius and each element's size.
 The mobile and desktop menu offsets align the appearance menu with the navigation
 flyouts.
-Initial learning consent remains eager. The loading and camera steps mount on
-activation in the same dialog. Intent on a confirmation or image-preview trigger
+Direct-entry consent remains part of the static document. Training links prepare
+the shared setup dialog on pointer, focus and touch intent. On activation, source-page
+setup uses one dialog for consent, model loading and the camera decision. Intent on a confirmation or image-preview trigger
 prepares one shared module. The workspace mounts one active dialog at a time and
 supports cancelling a pending first opening with Escape. Upload and capture
 intent warm the thumbnail module. Its virtualizer mounts when there are images
@@ -544,15 +566,20 @@ Legal text is grouped at existing
 h2/h3 boundaries without changing controlled copy, while its H1 stays visible.
 The training workspace keeps its geometry through setup and becomes interactive
 when the model is ready and the first dialog closes. Panels below the viewport
-admit scroll reveals once the workspace is ready. The footer withdrawal link becomes
-available when setup closes. Later camera prompts retain the workspace layout. Virtual
+admit scroll reveals once the workspace is ready. Training settings remain
+available while consent is active or remembered. Their Alert Dialog pairs the
+footer shield with the title and puts the actions side by side from `sm` and in
+one column on smaller viewports. The initial focus goes to Close. Later camera prompts retain the
+workspace layout. Virtual
 thumbnails and live prediction updates never replay decorative entries. Dialogs,
 success feedback, icons and the educational sequence retain their existing owners.
 During classifier training, the progress bar and the converging paths in the
 illustration follow the number of training images registered with the classifier.
-Successful training changes the end node to a drawn check and announces completion
-in the persistent status region. The success state stays visible until the next
-action. Reduced motion applies progress updates without interpolation.
+Successful training changes the end node to the shared Animate UI CircleCheckBig
+glyph and announces completion in the persistent status region. The same glyph
+marks completed image counts, correct answers, quiz completion, reward arrival
+and consent withdrawal. The success state stays visible until the next action.
+Reduced motion applies progress updates without interpolation.
 
 Quiz completion and KNN answer feedback share `AnimatedFeedback`. Animate UI's
 `AutoHeight` owns expansion and collapse, including the space above the Alert;
@@ -581,16 +608,15 @@ Reduced motion uses the library's instant height change and opacity feedback.
   follows the matching history entry and rendered route commit. Interruption,
   failed navigation or browser cancellation releases the pending capture.
   Reduced motion opts out of page capture. Unsupported browsers retain
-  normal navigation. The consent-withdrawal
-  link deliberately reloads the document to discard the in-memory workspace. It
-  does not opt into cross-document snapshots of training images or predictions.
+  normal navigation. Full withdrawal on the training page clears the remembered
+  consent and reloads the document to discard the in-memory workspace.
   Concurrent theme, menu and route updates can supersede a pending native snapshot.
   React may skip that visual transition to preserve synchronous interaction; do not
   delay navigation or focus to serialize decorative work.
-  Entering the image-training route opens its native consent dialog immediately.
-  The browser captures the top-layer dialog separately from the page content
-  during navigation and animates both with the same Flow direction. The dialog
-  stays modal throughout. Its setup steps retain their own component transitions.
+  Source-page training setup uses its own dialog exit. Flow starts only after the
+  portal has left the DOM, so the page snapshot contains the workspace alone.
+  Direct entry opens the inline dialog immediately when consent is required.
+  History navigation waits for route capture to settle before opening a fresh dialog.
   The native 500 document and the homepage opt in to the browser's document
   transition for recovery. The shared fade captures the main content, with the
   shell outside the capture. Every App Router document includes the same hashed
@@ -755,7 +781,7 @@ through the shared img element; its exact ESLint exception permits that native e
 Initial-markup tests retain both style prohibition and optimizer-source checks.
 
 The official animated Lucide catalog lacks the existing Brain, Calculator, Car, Cat, Dog,
-ImagePlus, Square, Stethoscope and SwitchCamera producers. Their original Lucide
+ImagePlus, Square, Stethoscope, SwitchCamera and VideoOff producers. Their original Lucide
 geometry lives in `src/components/animated-icon-glyphs.ts`;
 `src/components/animated-icon-fallbacks.tsx` composes the public Animate UI
 IconWrapper, context, variants and Motion SVG APIs. They receive the same
@@ -808,11 +834,16 @@ preference disables the press transform.
 The shared dialog uses Animate UI for the popup and scrim and React Remove Scroll
 with `removeScrollBar={false}`, `inert={false}` and pinch zoom enabled.
 The translucent scrim uses a flat color and keeps the native scrollbar visible.
+The regular dialog applies the scrim on opening before the popup becomes
+visible. Animate UI owns the popup entrance and the scrim's exit.
 
 Base UI's Popup requires a portal, which is mounted in the browser. The shared
 Dialog's `initialContent` variant renders an open native HTML dialog inline at build
 time. Hydration promotes the existing element to modal with `showModal()` before
-paint. The original node remains mounted across the setup steps.
+paint. The original node remains mounted across the setup steps. The inline
+dialog and its scrim fade together on close through the Animate UI Effect.
+The final setup content remains visible until exit completes, then the workspace
+can show the camera-error toast.
 Consent, model loading and the optional camera choice share one surface and scrim.
 Each step change focuses the incoming heading. The outgoing panel becomes inert
 as it slides out of the layout. The incoming Animate UI Effect uses a short

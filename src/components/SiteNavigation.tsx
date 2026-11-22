@@ -150,6 +150,16 @@ function HeaderMenu({ mobile, pathname, runtime, focusRef }: MenuProps) {
                 <Groups
                   groups={groups}
                   current={containsCurrentPage(groups, pathname) ? pathname : null}
+                  onTrainingEntry={(link) => {
+                    const opener = link
+                      .closest(`.${menuClass}`)
+                      ?.querySelector<HTMLButtonElement>(
+                        `[data-header-control="${CSS.escape(label)}"]`,
+                      );
+                    pendingFocus.current = null;
+                    setOpen({ pathname, value: null });
+                    return opener ?? null;
+                  }}
                 />
               ) : (
                 <HeaderMenuLoading failed={failed} prepare={prepare} />

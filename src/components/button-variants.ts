@@ -8,7 +8,7 @@ const buttonVariants = cva(
         'quiz-result':
           "pointer-events-auto relative z-10 text-success-on-scrim data-[result=incorrect]:text-destructive-on-scrim [&_svg:not([class*='size-'])]:size-14",
         'quiz-card':
-          "control-focus-inset rounded-(--quiz-inner-radius) text-primary hover:bg-primary/5 aria-disabled:hover:bg-transparent dark:hover:bg-primary/5 dark:aria-disabled:hover:bg-transparent data-[result]:text-primary/10 [&_svg:not([class*='size-'])]:size-8",
+          'control-focus-inset rounded-(--quiz-inner-radius) hover:bg-primary/5 aria-disabled:hover:bg-transparent dark:hover:bg-primary/5 dark:aria-disabled:hover:bg-transparent',
         thumbnail:
           'control-focus-media relative block aspect-square overflow-hidden rounded-md border border-input bg-background p-0 data-[selection-mode]:opacity-60 data-[selection-mode]:focus-visible:opacity-100 data-[selection-mode]:aria-pressed:opacity-100 aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-ring',
         default:
@@ -22,7 +22,7 @@ const buttonVariants = cva(
       },
       size: {
         'quiz-result': 'size-20 p-2',
-        'quiz-card': 'absolute inset-0 z-20 size-full items-start justify-start p-6',
+        'quiz-card': 'absolute inset-0 z-20 size-full p-0',
         thumbnail: 'size-full min-h-11 p-0',
         default: 'h-9 px-4 py-2 has-[>svg]:px-3',
         xs: "h-6 gap-1 rounded-full px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",

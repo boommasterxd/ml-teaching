@@ -72,12 +72,13 @@ export function KnnQuizAnswer({
     if (keyboard && signal === state.winner) onKeyboardSuccess();
   }
   return (
-    <div className="min-w-0">
-      <FieldSet className="gap-3 lg:gap-6">
+    <div className="knn-quiz-answer min-w-0">
+      <FieldSet className="min-w-0 gap-3 lg:gap-6">
         <FieldLegend>2. Welche Klasse gewinnt?</FieldLegend>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
+            size="sm"
             className="min-h-11"
             disabled={disabled}
             onClick={(event) => chooseAnswer('dog', event.detail === 0)}
@@ -87,6 +88,7 @@ export function KnnQuizAnswer({
           </Button>
           <Button
             variant="outline"
+            size="sm"
             className="min-h-11"
             disabled={disabled}
             onClick={(event) => chooseAnswer('cat', event.detail === 0)}
@@ -96,6 +98,7 @@ export function KnnQuizAnswer({
           </Button>
           <Button
             variant="outline"
+            size="sm"
             className="min-h-11"
             disabled={disabled}
             onClick={(event) => chooseAnswer(null, event.detail === 0)}
@@ -111,7 +114,11 @@ export function KnnQuizAnswer({
       </FieldSet>
       <AnimatePresence initial={false}>
         {state.result && (
-          <AnimatedFeedback key="result" contentKey={state.result}>
+          <AnimatedFeedback
+            key="result"
+            contentKey={state.result}
+            contentClassName="knn-quiz-feedback"
+          >
             <Alert
               variant={state.result === 'correct' ? 'achievement' : 'destructive'}
               aria-live={state.result === 'correct' ? 'off' : undefined}

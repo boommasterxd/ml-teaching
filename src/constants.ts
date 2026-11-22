@@ -44,6 +44,8 @@ export const ML = {
  * Camera capture and stream configuration for the WebRTC pipeline.
  */
 export const CAMERA = {
+  /** Minimum pending feedback for an unsuccessful connection attempt. */
+  MIN_FAILURE_PENDING_MS: 2000,
   /** Interval in milliseconds between consecutive frame captures during recording. */
   CAPTURE_INTERVAL_MS: 100,
   /** Preferred camera stream width in pixels (may be lower on constrained devices). */

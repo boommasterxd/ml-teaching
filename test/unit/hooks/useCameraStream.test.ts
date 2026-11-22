@@ -38,6 +38,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -125,7 +126,8 @@ describe('useCameraStream', () => {
   });
 
   describe('Fehlerbehandlung', () => {
-    it('reports an access failure and allows a single explicit retry', async () => {
+    it('keeps a fast failure pending for two seconds and shows a successful retry immediately', async () => {
+      vi.useFakeTimers();
       const replacement = makeMockStream();
       const getUserMedia = vi
         .fn()
@@ -137,6 +139,11 @@ describe('useCameraStream', () => {
       const onError = vi.fn();
       const { result } = renderHook(() => useCameraStream(true, false, onError));
       await act(async () => {});
+      await act(async () => vi.advanceTimersByTimeAsync(1999));
+      expect(result.current.isPending).toBe(true);
+      expect(result.current.hasFailed).toBe(false);
+      expect(onError).not.toHaveBeenCalled();
+      await act(async () => vi.advanceTimersByTimeAsync(1));
       expect(onError).toHaveBeenCalledWith('camera', expect.any(String));
       expect(result.current.hasFailed).toBe(true);
       await act(async () => {
@@ -146,6 +153,27 @@ describe('useCameraStream', () => {
       expect(getUserMedia).toHaveBeenCalledTimes(2);
       expect(result.current.stream).toBe(replacement);
       expect(result.current.hasFailed).toBe(false);
+    });
+
+    it('discards a pending failure when camera consent is withdrawn', async () => {
+      vi.useFakeTimers();
+      const getUserMedia = vi.fn().mockRejectedValue(new Error('Permission denied'));
+      vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+      const onError = vi.fn();
+      const { result, rerender } = renderHook(
+        (consent) => useCameraStream(consent, false, onError),
+        {
+          initialProps: true,
+        },
+      );
+
+      await act(async () => vi.advanceTimersByTimeAsync(500));
+      expect(result.current.isPending).toBe(true);
+      rerender(false);
+      await act(async () => vi.advanceTimersByTimeAsync(2000));
+      expect(result.current.isPending).toBe(false);
+      expect(result.current.hasFailed).toBe(false);
+      expect(onError).not.toHaveBeenCalled();
     });
 
     it('retires an interrupted stream, waits for retry and ignores later events from the old track', async () => {
@@ -184,14 +212,16 @@ describe('useCameraStream', () => {
 
   describe('toggleCamera', () => {
     it('waits for a fresh stream when retrying the previous camera after a failed switch', async () => {
+      vi.useFakeTimers();
       const previousTrack = makeMockTrack();
       const previousStream = makeMockStream([previousTrack]);
       const replacementStream = makeMockStream();
+      const switchAttempt = Promise.withResolvers<MediaStream>();
       let resolveReplacement!: (stream: MediaStream) => void;
       const getUserMedia = vi
         .fn()
         .mockResolvedValueOnce(previousStream)
-        .mockRejectedValueOnce(new Error('Camera unavailable'))
+        .mockReturnValueOnce(switchAttempt.promise)
         .mockImplementationOnce(
           () =>
             new Promise<MediaStream>((resolve) => {
@@ -208,7 +238,8 @@ describe('useCameraStream', () => {
       expect(result.current.stream).toBeNull();
       expect(result.current.isSwitching).toBe(true);
       expect(previousTrack.stop).toHaveBeenCalledOnce();
-      await act(async () => {});
+      act(() => vi.advanceTimersByTime(2100));
+      await act(async () => switchAttempt.reject(new Error('Camera unavailable')));
       expect(result.current.isPending).toBe(false);
       expect(onError).toHaveBeenCalledOnce();
 

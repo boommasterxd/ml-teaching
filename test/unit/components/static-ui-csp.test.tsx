@@ -52,7 +52,7 @@ describe('strict-CSP static UI', () => {
     const title = document.getElementById(dialog?.getAttribute('aria-labelledby') ?? '');
     expect(dialog?.contains(title)).toBe(true);
     expect(title?.textContent).toBe('Einwilligung zur Datenverarbeitung');
-    expect(dialog?.querySelectorAll('[role="checkbox"][aria-checked="false"]')).toHaveLength(2);
+    expect(dialog?.querySelectorAll('[role="checkbox"][aria-checked="false"]')).toHaveLength(3);
     const modelConsent = dialog?.querySelector('label[for="model-consent"]');
     expect(modelConsent?.textContent).toContain('Google und Kaggle meine IP-Adresse');
     expect(modelConsent?.querySelector('a[href="/datenschutz"]')).not.toBeNull();

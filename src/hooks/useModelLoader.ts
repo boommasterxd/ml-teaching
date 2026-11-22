@@ -176,6 +176,7 @@ export function useModelLoader(
   hasConsented: boolean,
   onError: (category: Extract<ErrorCategory, 'model'>, msg: string) => void,
   loaderFns?: Partial<ModelLoaderFunctions>,
+  attempt = 0,
 ) {
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [loadingText, setLoadingText] = useState('Initialisiere TensorFlow.js...');
@@ -247,7 +248,7 @@ export function useModelLoader(
       setMobilenetModel(null);
       setIsModelLoading(true);
     };
-  }, [hasConsented, setClassifier]);
+  }, [hasConsented, setClassifier, attempt]);
 
   return { classifier, setClassifier, mobilenetModel, isModelLoading, loadingText };
 }

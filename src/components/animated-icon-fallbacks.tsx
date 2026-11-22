@@ -83,3 +83,4 @@ export const ImagePlus = /* @__PURE__ */ projectIcon(glyphs.ImagePlus, pulse);
 export const Square = /* @__PURE__ */ projectIcon(glyphs.Square, pulse);
 export const Stethoscope = /* @__PURE__ */ projectIcon(glyphs.Stethoscope, pulse);
 export const SwitchCamera = /* @__PURE__ */ projectIcon(glyphs.SwitchCamera, acknowledge);
+export const VideoOff = /* @__PURE__ */ projectIcon(glyphs.VideoOff, pulse);

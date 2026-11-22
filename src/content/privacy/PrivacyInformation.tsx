@@ -91,8 +91,9 @@ export const PrivacyInformation = (
     <h3 id="widerruf-der-einwilligung">Widerruf Ihrer Einwilligung zur Datenverarbeitung</h3>
     <p>
       Ihre Einwilligung zur Lernfunktion können Sie jederzeit mit Wirkung für die Zukunft
-      widerrufen. Wählen Sie dazu in der Lernfunktion „Einwilligung widerrufen“, laden Sie die Seite
-      neu oder schließen Sie sie. Die Rechtmäßigkeit der bis zum Widerruf erfolgten Verarbeitung
+      widerrufen. Öffnen Sie „Einstellungen zum Bildtraining“ und wählen Sie „Einwilligung
+      widerrufen“. Die Lernfunktion wird beendet, und die gemerkte Auswahl sowie der lokale
+      Trainingsstand werden gelöscht. Die Rechtmäßigkeit der bis zum Widerruf erfolgten Verarbeitung
       bleibt unberührt.
     </p>
     <p>

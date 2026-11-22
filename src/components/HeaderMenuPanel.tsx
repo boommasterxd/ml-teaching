@@ -10,7 +10,15 @@ import { Badge } from './ui/badge';
 import { NavigationMenuLink } from './ui/navigation-menu';
 import { MenuHighlight, MenuHighlightItem } from './ui/menu-highlight';
 
-function Destination({ link, current }: { link: HeaderNavLink; current: string | null }) {
+interface TrainingEntryAction {
+  onTrainingEntry?: (link: HTMLAnchorElement) => HTMLElement | null;
+}
+
+function Destination({
+  link,
+  current,
+  onTrainingEntry,
+}: { link: HeaderNavLink; current: string | null } & TrainingEntryAction) {
   const [focused, setFocused] = useState(false);
   const Icon = headerMenuIcons[link.id];
   const contents = (
@@ -41,7 +49,13 @@ function Destination({ link, current }: { link: HeaderNavLink; current: string |
       <NavigationMenuLink
         active={current === link.href}
         className="header-menu-row"
-        render={<IntentLink href={link.href} data-overview={link.id === 'hub' ? '' : undefined} />}
+        render={
+          <IntentLink
+            href={link.href}
+            data-overview={link.id === 'hub' ? '' : undefined}
+            onTrainingEntry={link.id === 'training' ? onTrainingEntry : undefined}
+          />
+        }
       >
         {contents}
         {link.id === 'hub' && <ArrowRight size={14} aria-hidden="true" />}
@@ -53,10 +67,11 @@ function Destination({ link, current }: { link: HeaderNavLink; current: string |
 export function HeaderMenuGroups({
   groups,
   current,
+  onTrainingEntry,
 }: {
   groups: readonly HeaderNavGroup[];
   current: string | null;
-}) {
+} & TrainingEntryAction) {
   return (
     <MenuHighlight current={current} insideAnimatedPopup>
       <div className="header-menu-groups">
@@ -65,7 +80,9 @@ export function HeaderMenuGroups({
             {label && groups.length > 1 && <p className="header-menu-label">{label}</p>}
             <ul aria-label={label || undefined}>
               {links.map((link) => {
-                const destination = <Destination link={link} current={current} />;
+                const destination = (
+                  <Destination link={link} current={current} onTrainingEntry={onTrainingEntry} />
+                );
                 return (
                   <li key={link.href}>
                     {link.comingSoon ? (

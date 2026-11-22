@@ -8,13 +8,6 @@
 :root:active-view-transition-type(nav-back) {
   --page-direction: -1;
 }
-/* The native setup dialog paints in the top layer, outside the page snapshot. */
-:root:active-view-transition-type(nav-forward, nav-back)
-  [data-route-capture]
-  dialog[data-slot='dialog-overlay'][open] {
-  view-transition-name: training-setup;
-  view-transition-class: page-flow;
-}
 :root:active-view-transition-type(history-back, history-forward) [data-route-capture] {
   view-transition-class: page-flow;
 }

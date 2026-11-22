@@ -7,7 +7,7 @@ import { useShouldReduceMotion } from '@animate-ui/react/utils/motion';
 import { flowMotion } from '../animate-ui/components/flow-motion';
 import { cn } from '@/lib/utils';
 
-export type SetupStep = 'consent' | 'loading' | 'camera';
+export type SetupStep = 'consent' | 'loading' | 'camera' | 'error';
 
 // AutoHeight starts at zero with inline overflow. The initial static consent needs natural height.
 function useStepHeight(step: SetupStep, reduce: boolean) {

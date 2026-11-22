@@ -6,6 +6,7 @@ import { Menu as BaseMenu } from '@base-ui/react/menu';
 import { cn } from '@/lib/utils';
 import { ActionFeedback } from './action-feedback';
 import { MenuHighlight, MenuHighlightItem } from './menu-highlight';
+import { ScrollFadeViewport } from './scroll-fade-viewport';
 
 type MenuPosition = Pick<Primitive.Positioner.Props, 'anchor' | 'sideOffset' | 'align'>;
 const menuItemClass =
@@ -41,16 +42,18 @@ export function DropdownMenuContent({
           {...props}
           data-slot="dropdown-menu-content"
           className={cn(
-            'max-h-(--available-height) min-w-[8rem] max-w-[calc(100vw-2rem)] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-none [&_[role^=menuitem]:not([data-disabled])]:opacity-100!',
+            'flex max-h-(--available-height) min-w-[8rem] max-w-[calc(100vw-2rem)] origin-(--transform-origin) flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-none [&_[role^=menuitem]:not([data-disabled])]:opacity-100!',
             className,
           )}
           render={(surfaceProps, { open }) => (
             <div {...surfaceProps} inert={!open || undefined} aria-hidden={!open || undefined} />
           )}
         >
-          <MenuHighlight current={selectedValue} insideAnimatedPopup>
-            {children}
-          </MenuHighlight>
+          <ScrollFadeViewport className="min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain p-1">
+            <MenuHighlight current={selectedValue} insideAnimatedPopup>
+              {children}
+            </MenuHighlight>
+          </ScrollFadeViewport>
         </Primitive.Popup>
       </Primitive.Positioner>
     </Primitive.Portal>

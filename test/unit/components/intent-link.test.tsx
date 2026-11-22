@@ -1,10 +1,14 @@
-import { createElement, createRef, type ComponentProps } from 'react';
+import { createElement, createRef, type ComponentProps, type ReactNode } from 'react';
 import type Link from 'next/link';
+import type { NextRouter } from 'next/router';
+import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import IntentLink from '@/components/IntentLink';
 import AnimatedLink from '@/components/AnimatedLink';
+import { TrainingEntryContext } from '@/components/training/TrainingEntryContext';
+import { learningPaths } from '@/lib/learning-paths';
 import ServerError, { getStaticProps } from '@/pages/500';
 import { AppRouterHost, testRouter } from '../helpers/app-router-host';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
@@ -21,6 +25,30 @@ vi.mock('next/link', async (importOriginal) => {
     },
   };
 });
+
+const linkRouter = {
+  ...testRouter,
+  route: '/',
+  pathname: '/',
+  query: {},
+  asPath: '/',
+  basePath: '',
+  isFallback: false,
+  isReady: true,
+  isPreview: false,
+  isLocaleDomain: false,
+  beforePopState: vi.fn(),
+  reload: vi.fn(),
+  events: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
+} satisfies NextRouter;
+
+function LinkActivationHost({ children }: { children: ReactNode }) {
+  return (
+    <AppRouterHost>
+      <RouterContext value={linkRouter}>{children}</RouterContext>
+    </AppRouterHost>
+  );
+}
 
 beforeEach(() => {
   installBrowserHost();
@@ -150,6 +178,55 @@ describe('intent-only native navigation', () => {
     expect(fireEvent.click(link, { ctrlKey: true })).toBe(true);
     expect(clicked).toHaveBeenCalledOnce();
     expect(testRouter.prefetch).not.toHaveBeenCalled();
+  });
+
+  it('prepares the training setup on intent and leaves modified activation to the browser', () => {
+    const entry = { prepareEntry: vi.fn(), openEntry: vi.fn() };
+    render(
+      <TrainingEntryContext value={entry}>
+        <IntentLink href={learningPaths.imagePractice}>Bildmodell trainieren</IntentLink>
+      </TrainingEntryContext>,
+      { wrapper: LinkActivationHost },
+    );
+    const link = screen.getByRole('link');
+    fireEvent.focus(link);
+    expect(testRouter.prefetch).toHaveBeenCalledExactlyOnceWith(learningPaths.imagePractice);
+    expect(entry.prepareEntry).toHaveBeenCalledOnce();
+    expect(entry.openEntry).not.toHaveBeenCalled();
+
+    // Observe the default reaching the document without asking jsdom to open a tab.
+    const browserDefault = vi.fn((event: MouseEvent) => {
+      const available = !event.defaultPrevented;
+      event.preventDefault();
+      return available;
+    });
+    document.addEventListener('click', browserDefault, { once: true });
+    fireEvent.click(link, { ctrlKey: true });
+    expect(browserDefault).toHaveReturnedWith(true);
+    expect(entry.openEntry).not.toHaveBeenCalled();
+
+    expect(fireEvent.click(link)).toBe(false);
+    expect(entry.openEntry).toHaveBeenCalledExactlyOnceWith(link);
+    expect(testRouter.push).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe('/');
+  });
+
+  it('honors a caller that cancels training navigation', () => {
+    const entry = { prepareEntry: vi.fn(), openEntry: vi.fn() };
+    render(
+      <TrainingEntryContext value={entry}>
+        <IntentLink
+          href={learningPaths.imagePractice}
+          onNavigate={(event) => event.preventDefault()}
+        >
+          Bildmodell trainieren
+        </IntentLink>
+      </TrainingEntryContext>,
+      { wrapper: LinkActivationHost },
+    );
+    fireEvent.click(screen.getByRole('link'));
+    expect(entry.openEntry).not.toHaveBeenCalled();
+    expect(testRouter.push).not.toHaveBeenCalled();
   });
 
   it('retains the Pages Router error recovery link in static output with its supplied adapter', () => {

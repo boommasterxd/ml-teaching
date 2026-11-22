@@ -4,11 +4,10 @@
  * Card component representing a single ML class.
  * Orchestrates camera recording, image upload, and thumbnail gallery via subcomponents.
  */
-import type React from 'react';
 import { memo, useCallback, useState } from 'react';
 import { Trash2 } from './icons/trash2';
 import { RotateCcw } from './icons/rotate-ccw';
-import { Check } from './icons/check';
+import { CheckCircle2 } from './icons/check-circle2';
 import { cn } from '../lib/utils';
 import { classColorClasses } from '../lib/class-colors';
 import { useClassCapture } from '../hooks/useClassCapture';
@@ -56,7 +55,6 @@ export interface ClassCardActions extends CaptureActions {
  */
 interface ClassCardProps extends Pick<CameraPreviewProps, 'camera'> {
   position: number;
-  cameraFallback?: React.ReactNode;
   /** The ML class data to display and manage. */
   cls: MLClass;
   /** Whether the class name conflicts with another class name. */
@@ -176,7 +174,7 @@ function ClassHeader({
             className="min-h-7 max-w-[50%] px-2.5 whitespace-normal tabular-nums"
             title={`Mindestens ${ML.MIN_IMAGES_PER_CLASS}, maximal ${ML.MAX_IMAGES_PER_CLASS} Bilder pro Klasse`}
           >
-            {enoughImages && <Check aria-hidden="true" />}
+            {enoughImages && <CheckCircle2 className="text-success" aria-hidden="true" />}
             <span>
               {enoughImages ? `${count} Bilder` : `${count} / ${ML.MIN_IMAGES_PER_CLASS} Bilder`}
               {atLimit && ' · Limit erreicht'}
@@ -233,7 +231,6 @@ const ClassCard = memo(function ClassCard({
   position,
   isDuplicate,
   actions,
-  cameraFallback,
   camera,
 }: ClassCardProps) {
   const { onRemoveImages, onImageClick } = actions;
@@ -259,14 +256,7 @@ const ClassCard = memo(function ClassCard({
   return (
     <Card className="@container/training-class gap-4 py-4 lg:h-full">
       <ClassHeader cls={cls} position={position} isDuplicate={isDuplicate} actions={actions} />
-      <CardContent
-        className={cn(
-          'grid min-w-0 gap-3 px-4 @md/training-class:px-5',
-          camera
-            ? '@xl/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]'
-            : 'lg:flex-1 lg:content-between',
-        )}
-      >
+      <CardContent className="grid min-w-0 gap-3 px-4 @md/training-class:px-5 @xl/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]">
         <CameraPreview
           camera={camera}
           disabled={actions.captureDisabled || cls.images.length >= ML.MAX_IMAGES_PER_CLASS}
@@ -278,11 +268,8 @@ const ClassCard = memo(function ClassCard({
           onCaptureIntent={prepareImageGallery}
           fileActions={<ClassManagementActions cls={cls} position={position} actions={actions} />}
         />
-        {cameraFallback && <div className="col-span-full">{cameraFallback}</div>}
         <ImageGallery
-          className={
-            camera ? '@xl/training-class:h-auto @xl/training-class:[contain:size]' : undefined
-          }
+          className="@xl/training-class:h-auto @xl/training-class:[contain:size]"
           label={`Trainingsbilder von Klasse ${position}: ${cls.name.trim() || 'ohne Namen'}, scrollbar`}
           images={cls.images}
           color={cls.color}

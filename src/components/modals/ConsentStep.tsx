@@ -15,12 +15,13 @@ import {
 interface ConsentStepProps {
   onDecline: () => void;
   onDeclineIntent?: () => void;
-  onConfirm: () => void;
+  onConfirm: (remember: boolean) => void;
 }
 
 export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: ConsentStepProps) {
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [modelChecked, setModelChecked] = useState(false);
+  const [remember, setRemember] = useState(false);
 
   const canConfirm = privacyChecked && modelChecked;
 
@@ -76,14 +77,26 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
               </span>
             </FieldLabel>
           </Field>
+          <Field orientation="horizontal" className="gap-2.5 py-2 sm:gap-3 sm:py-4">
+            <Checkbox
+              id="remember-training-consent"
+              checked={remember}
+              onCheckedChange={(checked) => setRemember(checked === true)}
+              className="size-5"
+            />
+            <FieldLabel
+              htmlFor="remember-training-consent"
+              className="relative top-[0.75px] min-w-0 font-normal"
+            >
+              Für 30 Minuten in diesem Tab merken
+            </FieldLabel>
+          </Field>
         </FieldGroup>
       </FieldSet>
 
       <FieldDescription id="consent-modal-desc" role="note">
-        Auch ohne Zustimmung kannst du über Bilderkennung lesen und dir auf der Startseite die
-        Beispiele zum Lernen mit Belohnung ansehen. Du kannst deine Zustimmung jederzeit durch
-        Neuladen zurücknehmen. „Einwilligung widerrufen“ findest du beim Laden des Modells und
-        später unter dem Training.
+        Auch ohne Zustimmung kannst du über Bilderkennung lesen. Du kannst sie beim Laden des
+        Modells und in den Einstellungen zum Bildtraining widerrufen.
       </FieldDescription>
 
       <DialogFooter layout="auto-fit">
@@ -96,7 +109,7 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
         >
           Abbrechen
         </Button>
-        <Button variant="default" onClick={onConfirm} disabled={!canConfirm}>
+        <Button variant="default" onClick={() => onConfirm(remember)} disabled={!canConfirm}>
           Zustimmen
         </Button>
       </DialogFooter>

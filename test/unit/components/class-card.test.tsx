@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import ClassCard from '@/components/ClassCard';
+import type { CameraView } from '@/components/CameraControls';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 import { makeClasses } from '../helpers/training-data';
 
@@ -10,6 +11,15 @@ afterEach(restoreBrowserHost);
 describe('class card', () => {
   it('reports editable names, exposes validation relationships and routes class actions', () => {
     const cls = makeClasses()[0];
+    const camera: CameraView = {
+      stream: null,
+      facingMode: 'user',
+      active: false,
+      pending: false,
+      failed: false,
+      onToggle: vi.fn(),
+      onSwitch: vi.fn(),
+    };
     const actions = {
       onAddExample: vi.fn(),
       onAddImageExample: vi.fn(),
@@ -27,6 +37,7 @@ describe('class card', () => {
       cls,
       position: 1,
       isDuplicate: false,
+      camera,
       actions,
     };
     const { rerender } = render(<ClassCard {...props} />);

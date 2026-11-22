@@ -7,6 +7,7 @@ import { cn } from '../lib/utils';
 import { classColorClasses } from '../lib/class-colors';
 import { Alert, AlertDescription } from './ui/alert';
 import { Empty, EmptyDescription, EmptyMedia } from './ui/empty';
+import { ScrollFadeViewport } from './ui/scroll-fade-viewport';
 import { ML } from '../constants';
 import type { MLImage } from '../types/ml';
 import type { ImageGalleryRowsProps } from './ImageGalleryRows';
@@ -243,7 +244,8 @@ const ImageGallery = memo(function ImageGallery({
           }}
         />
       )}
-      <div
+      <ScrollFadeViewport
+        enabled={hasImages}
         ref={scrollContainerRef}
         tabIndex={hasImages ? 0 : -1}
         role="region"
@@ -262,7 +264,7 @@ const ImageGallery = memo(function ImageGallery({
         ) : (
           <GalleryEmpty />
         )}
-      </div>
+      </ScrollFadeViewport>
     </div>
   );
 });
