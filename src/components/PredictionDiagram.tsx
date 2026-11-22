@@ -107,7 +107,7 @@ export const PredictionLegend = memo(function PredictionLegend({
       <ul
         role="list"
         aria-label="Legende"
-        className="flex min-w-0 flex-wrap items-start gap-x-2 gap-y-1 text-xs leading-4 text-muted-foreground"
+        className="flex min-w-0 flex-wrap items-start justify-center gap-x-2 gap-y-1 text-xs leading-4 text-muted-foreground"
       >
         <li className="inline-flex items-center gap-1">
           <svg viewBox="-9 -9 18 18" className="size-4 shrink-0" aria-hidden="true">
