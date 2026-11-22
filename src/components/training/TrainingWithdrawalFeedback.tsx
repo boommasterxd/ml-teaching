@@ -1,8 +1,61 @@
 'use client';
 
-import { Alert, AlertDescription } from '../ui/alert';
+import { useLayoutEffect, useRef } from 'react';
+import { CheckCircle2 } from '../icons/check-circle2';
+import { Alert, AlertTitle } from '../ui/alert';
 import { Button } from '../ui/button';
 import type { useTrainingWithdrawal } from './use-training-withdrawal';
+
+function TrainingWithdrawalNotice({
+  actionLabel,
+  finish,
+  prepareHome,
+}: Pick<ReturnType<typeof useTrainingWithdrawal>, 'finish' | 'prepareHome'> & {
+  actionLabel: string;
+}) {
+  const action = useRef<HTMLButtonElement>(null);
+  useLayoutEffect(() => {
+    const active = document.activeElement;
+    if (active?.matches('body, #main-content, #main-content h1[tabindex="-1"]')) {
+      action.current?.focus({ preventScroll: true });
+    }
+  }, []);
+
+  return (
+    <Alert
+      role="presentation"
+      className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-40 mx-auto flex max-h-[80dvh] w-auto max-w-lg flex-col items-stretch gap-3 overflow-y-auto rounded-2xl border-(--glass-line) [background:var(--glass-surface)] p-4 shadow-(--glass-highlight) sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <CheckCircle2
+          className="size-6 shrink-0 text-success"
+          animate
+          persistOnAnimateEnd
+          aria-hidden="true"
+        />
+        <AlertTitle
+          id="training-withdrawal-notice"
+          role="status"
+          className="line-clamp-none leading-snug"
+        >
+          Deine Einwilligung wurde widerrufen.
+        </AlertTitle>
+      </div>
+      <Button
+        ref={action}
+        variant="outline"
+        className="h-auto min-h-11 whitespace-normal"
+        aria-describedby="training-withdrawal-notice"
+        onPointerEnter={prepareHome}
+        onPointerDown={prepareHome}
+        onFocus={prepareHome}
+        onClick={finish}
+      >
+        {actionLabel}
+      </Button>
+    </Alert>
+  );
+}
 
 export default function TrainingWithdrawalFeedback({
   withdrawal,
@@ -33,22 +86,6 @@ export default function TrainingWithdrawalFeedback({
   }
   if (phase !== 'open' || !withdrawal.failed) return null;
   return (
-    <Alert
-      variant="success"
-      role="status"
-      className="fixed inset-x-4 bottom-4 z-40 mx-auto w-auto max-w-md"
-    >
-      <AlertDescription>Deine Einwilligung wurde widerrufen.</AlertDescription>
-      <Button
-        variant={actionVariant}
-        className="col-start-2 justify-self-start"
-        onPointerEnter={prepareHome}
-        onPointerDown={prepareHome}
-        onFocus={prepareHome}
-        onClick={finish}
-      >
-        {actionLabel}
-      </Button>
-    </Alert>
+    <TrainingWithdrawalNotice actionLabel={actionLabel} finish={finish} prepareHome={prepareHome} />
   );
 }

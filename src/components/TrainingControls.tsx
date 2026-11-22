@@ -1,15 +1,17 @@
+import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
+import { cn } from '@/lib/utils';
 import { Brain } from './icons/brain';
 import { ArrowRight } from './icons/arrow-right';
 import type { TrainingProgress } from '../hooks/useModelTraining';
 import type { MLClass } from '../types/ml';
-import { ML } from '../constants';
+import { ANIMATION, ML } from '../constants';
 import Button from './Button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { EntryReveal } from './ui/entry-reveal';
-import { Spinner } from './ui/spinner';
 import { MessageSlot } from './ui/message-slot';
 import { Progress } from './ui/progress';
 import { Text } from './ui/typography';
+import { useMotionPreference } from './ui/use-motion-preference';
 import TrainingFigure from './TrainingFigure';
 
 interface TrainingControlsProps {
@@ -21,7 +23,7 @@ interface TrainingControlsProps {
   hasTrainedModel: boolean;
   hasInvalidNames: boolean;
   hasDuplicateNames: boolean;
-  onTrain: () => void;
+  onTrain: (completionFeedbackMs: number) => void;
   onPredict?: () => void;
   onPredictIntent?: () => void;
 }
@@ -37,6 +39,17 @@ const statusMessages = {
   ready: 'Bereit zum Trainieren.',
 };
 const trainingStatusMessages = Object.values(statusMessages);
+const finishTransition = {
+  ...motionTokens.transition.fill,
+  duration: ANIMATION.TRAINING_PROGRESS_FILL_MS / 1000,
+};
+
+const trainingTitles = {
+  idle: 'Trainingsdaten',
+  training: 'Training läuft',
+  complete: 'Training abgeschlossen',
+};
+const trainingTitleMessages = Object.values(trainingTitles);
 
 function trainingStatus(props: TrainingControlsProps) {
   if (props.progress) {
@@ -71,37 +84,35 @@ function TrainingSummary({ classes }: Pick<TrainingControlsProps, 'classes'>) {
   );
 }
 
-function TrainingProgressIndicator({ progress }: Pick<TrainingControlsProps, 'progress'>) {
-  const count = progress ? `${progress.processed} von ${progress.total} Bildern verarbeitet` : '';
+function TrainingProgressIndicator({
+  progress,
+  transition,
+}: Pick<TrainingControlsProps, 'progress'> & { transition: typeof finishTransition }) {
+  if (!progress) return null;
   return (
-    <div className="grid min-h-8 w-full max-w-xs gap-1">
-      {progress && (
-        <>
-          <Progress
-            value={progress.processed}
-            max={progress.total}
-            aria-label="Trainingsfortschritt"
-            aria-valuetext={count}
-          />
-          <Text variant="muted" className="text-xs tabular-nums" aria-hidden="true">
-            {count}
-          </Text>
-        </>
-      )}
-    </div>
+    <Progress
+      className="training-feedback-progress max-w-xs"
+      value={progress.processed}
+      max={progress.total}
+      indicatorTransition={transition}
+      aria-label="Trainingsfortschritt"
+      aria-valuetext={`${progress.processed} von ${progress.total} Bildern verarbeitet`}
+    />
   );
 }
 
 export default function TrainingControls(props: TrainingControlsProps) {
   const { classes, canTrain, progress, hasTrainedModel, onTrain, onPredict } = props;
+  const { reduce } = useMotionPreference();
+  const { duration } = useTempoTransition(finishTransition);
+  const completionFeedbackMs = reduce ? 0 : duration * 1000 + ANIMATION.TRAINING_PROGRESS_REST_MS;
   const isTraining = progress !== null;
   const state = progress ? 'training' : hasTrainedModel ? 'complete' : 'idle';
   const complete = state === 'complete';
-  const title = {
-    idle: 'Trainingsdaten',
-    training: 'Training läuft',
-    complete: 'Training abgeschlossen',
-  }[state];
+  const transition =
+    progress && progress.processed === progress.total
+      ? finishTransition
+      : motionTokens.transition.fill;
   return (
     <EntryReveal asChild kind="reading" active={props.entryReady} scrollOnly>
       <section aria-labelledby="training-model">
@@ -113,26 +124,34 @@ export default function TrainingControls(props: TrainingControlsProps) {
           </CardHeader>
           <CardContent className="grid gap-4">
             <TrainingSummary classes={classes} />
-            <div className="training-feedback" data-complete={complete || undefined}>
+            <div
+              className={cn('training-feedback', complete && 'success-surface')}
+              data-complete={complete || undefined}
+            >
               <TrainingFigure
                 state={state}
                 progress={progress ? progress.processed / progress.total : 0}
+                transition={transition}
               />
               <div role="status" id="training-status" className="grid min-w-0">
-                <strong className="text-xl font-semibold">{title}</strong>
+                <strong className="text-xl font-semibold">
+                  <MessageSlot messages={complete ? [] : trainingTitleMessages}>
+                    {trainingTitles[state]}
+                  </MessageSlot>
+                </strong>
                 <Text variant="muted" className="leading-relaxed">
-                  <MessageSlot messages={trainingStatusMessages}>
+                  <MessageSlot messages={complete ? [] : trainingStatusMessages}>
                     {complete ? statusMessages.trained : trainingStatus(props)}
                   </MessageSlot>
                 </Text>
               </div>
-              <TrainingProgressIndicator progress={progress} />
+              <TrainingProgressIndicator progress={progress} transition={transition} />
             </div>
           </CardContent>
           <CardFooter className="flex-wrap gap-2">
             <Button
               onClick={() => {
-                if (canTrain && !isTraining) onTrain();
+                if (canTrain && !isTraining) onTrain(completionFeedbackMs);
               }}
               variant={complete ? 'outline' : 'default'}
               size="lg"
@@ -141,16 +160,12 @@ export default function TrainingControls(props: TrainingControlsProps) {
               className="w-full aria-disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:focus-visible:opacity-100 sm:w-auto"
               aria-describedby={complete ? undefined : 'training-status'}
             >
-              {progress ? (
-                <>
-                  <Spinner data-icon="inline-start" aria-hidden="true" /> Trainiere …
-                </>
-              ) : (
-                <>
-                  <Brain data-icon="inline-start" aria-hidden="true" />
-                  {hasTrainedModel ? 'Modell neu trainieren' : 'Modell trainieren'}
-                </>
-              )}
+              <Brain data-icon="inline-start" aria-hidden="true" />
+              {progress
+                ? 'Trainiere …'
+                : hasTrainedModel
+                  ? 'Modell neu trainieren'
+                  : 'Modell trainieren'}
             </Button>
             {complete && onPredict && (
               <Button

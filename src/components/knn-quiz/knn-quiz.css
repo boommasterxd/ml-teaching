@@ -107,14 +107,3 @@
     justify-self: end;
   }
 }
-.knn-success-medal {
-  position: relative;
-  display: grid;
-  place-items: center;
-  align-self: center;
-  grid-row: span 2;
-  width: 3.5rem;
-  aspect-ratio: 1;
-  color: var(--success);
-  background: radial-gradient(circle, var(--success-border), transparent 68%);
-}

@@ -36,8 +36,8 @@ export const ML = {
    * KNN training loop. Allows React to render the isTraining spinner first.
    */
   TRAINING_UI_YIELD_MS: 100,
-  /** Number of feature vectors collected between browser yields during training. */
-  TRAINING_BATCH_SIZE: 8,
+  /** Time budget between opportunities to yield while preparing training matrices. */
+  TRAINING_SLICE_MS: 6,
 } as const;
 
 /**
@@ -60,6 +60,8 @@ export const CAMERA = {
 export const ANIMATION = {
   /** Duration in milliseconds for each animated step transition. */
   STEP_DURATION_MS: 400,
+  TRAINING_PROGRESS_FILL_MS: 850,
+  TRAINING_PROGRESS_REST_MS: 120,
 } as const;
 
 /**

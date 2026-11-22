@@ -96,21 +96,36 @@
 }
 
 .training-feedback {
+  --training-feedback-padding: clamp(1.25rem, 4vw, 2.5rem);
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 1.25rem;
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  background: var(--muted);
-  padding: clamp(1.25rem, 4vw, 2.5rem);
+  border-width: 1px;
+  border-style: solid;
+  padding-inline: var(--training-feedback-padding);
+  padding-block: calc(var(--training-feedback-padding) + 0.875rem);
   text-align: center;
 }
 
+.training-feedback:not([data-complete]) {
+  border-color: var(--border);
+  border-radius: 1rem;
+  background: var(--muted);
+}
+
+.training-feedback-progress {
+  position: absolute;
+  inset-inline: var(--training-feedback-padding);
+  inset-block-end: calc(var(--training-feedback-padding) / 2);
+  width: auto;
+  margin-inline: auto;
+}
+
 .training-feedback[data-complete] {
-  border-color: var(--success-border);
-  background: var(--success-soft);
+  --feedback-light-origin: 50% 22%;
 }
 
 /* The build-known bootstrap suppresses the inline fallback before hydration. */

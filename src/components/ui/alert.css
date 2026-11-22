@@ -1,20 +1,22 @@
 [data-slot='alert'][data-variant='result'] {
-  --result-accent: var(--primary);
-  --result-light-origin: 94% 80%;
+  --feedback-accent: var(--primary);
+  --feedback-light-origin: 94% 80%;
 }
 
-[data-slot='alert'][data-variant='achievement'] {
-  --result-accent: var(--success);
-  --result-light-origin: 12% 50%;
+.success-surface {
+  --feedback-accent: var(--success);
+  --feedback-light-origin: 12% 50%;
+  border-color: color-mix(in oklab, var(--success) 30%, transparent);
+  border-radius: var(--radius-2xl);
 }
 
-[data-slot='alert']:is([data-variant='result'], [data-variant='achievement']) {
+:is([data-slot='alert'][data-variant='result'], .success-surface) {
   background:
     radial-gradient(
-      ellipse at var(--result-light-origin),
-      color-mix(in srgb, var(--result-accent) 13%, transparent),
+      ellipse at var(--feedback-light-origin),
+      color-mix(in srgb, var(--feedback-accent) 13%, transparent),
       transparent 72%
     ),
     var(--glass-surface);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--result-accent) 13%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--feedback-accent) 13%, transparent);
 }

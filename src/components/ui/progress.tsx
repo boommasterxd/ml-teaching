@@ -3,7 +3,11 @@
 import { cn } from '@/lib/utils';
 import { Progress as ProgressPrimitive } from '@animate-ui/react/primitives/base-ui/progress';
 
-function Progress({ className, value, ...props }: ProgressPrimitive.Root.Props) {
+type ProgressProps = ProgressPrimitive.Root.Props & {
+  indicatorTransition?: ProgressPrimitive.Indicator.Props['transition'];
+};
+
+function Progress({ className, value, indicatorTransition, ...props }: ProgressProps) {
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
@@ -11,7 +15,11 @@ function Progress({ className, value, ...props }: ProgressPrimitive.Root.Props) 
       className={cn('relative h-2 w-full overflow-hidden rounded-full bg-primary/20', className)}
       {...props}
     >
-      <ProgressPrimitive.Indicator data-slot="progress-indicator" className="h-full bg-primary" />
+      <ProgressPrimitive.Indicator
+        data-slot="progress-indicator"
+        className="h-full bg-primary"
+        transition={indicatorTransition}
+      />
     </ProgressPrimitive.Root>
   );
 }

@@ -38,13 +38,12 @@ export default function TrainingWithdrawalDialog({
         maxWidth="lg"
         className="text-center [--dialog-gap:1.25rem] [--dialog-padding:1rem] sm:[--dialog-padding:1.5rem]"
       >
-        <div className="mx-auto grid size-[min(4rem,16dvh)] shrink-0 place-items-center rounded-full bg-success-soft text-success">
-          <CheckCircle2
-            className="size-[min(2.25rem,10dvh)]"
-            animate={open && !reduceMotion}
-            aria-hidden="true"
-          />
-        </div>
+        <CheckCircle2
+          className="mx-auto size-[min(4rem,16dvh)] shrink-0 text-success"
+          animate={open && !reduceMotion}
+          persistOnAnimateEnd
+          aria-hidden="true"
+        />
         <div className="flex min-h-0 flex-col gap-2">
           <DialogTitle id="training-withdrawal-title" className="text-xl">
             Einwilligung widerrufen

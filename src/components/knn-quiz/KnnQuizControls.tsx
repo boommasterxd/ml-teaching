@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { AnimatePresence } from 'motion/react';
 import Button from '@/components/Button';
 import { Cat } from '@/components/icons/cat';
+import { CheckCircle2 } from '@/components/icons/check-circle2';
 import { Dog } from '@/components/icons/dog';
 import { X } from '@/components/icons/x';
 import { NETWORK_EXAMPLES } from '@/components/network/examples';
@@ -14,7 +15,6 @@ import { Slider } from '@/components/ui/slider';
 import { Text } from '@/components/ui/typography';
 import { KNN_MAX_NEIGHBORS, KNN_MIN_NEIGHBORS } from '@/lib/knn-quiz';
 import type { KnnQuizState } from './useKnnQuiz';
-import { KnnSuccessMedal } from './KnnSuccessMedal';
 
 export function KnnQuizInput({ state }: { state: KnnQuizState }) {
   const example = NETWORK_EXAMPLES[state.round.input];
@@ -123,7 +123,16 @@ export function KnnQuizAnswer({
               variant={state.result === 'correct' ? 'achievement' : 'destructive'}
               aria-live={state.result === 'correct' ? 'off' : undefined}
             >
-              {state.result === 'correct' ? <KnnSuccessMedal /> : <X animate aria-hidden="true" />}
+              {state.result === 'correct' ? (
+                <CheckCircle2
+                  className="row-span-2 size-12 text-success"
+                  animate
+                  persistOnAnimateEnd
+                  aria-hidden="true"
+                />
+              ) : (
+                <X animate aria-hidden="true" />
+              )}
               <AlertTitle
                 className={state.result === 'correct' ? 'self-end font-semibold' : undefined}
               >
