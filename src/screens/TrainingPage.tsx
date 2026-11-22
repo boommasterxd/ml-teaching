@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  addTransitionType,
+  startTransition,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -23,6 +25,7 @@ import TrainingSetupDialog from '../components/modals/TrainingSetupDialog';
 import type { SetupStep } from '../components/modals/SetupStepTransition';
 import { useTrainingSession } from '@/components/training/TrainingEntryContext';
 import { useEntryViewportReady, useInitialEntry } from '@/components/ui/entry-policy';
+import { useMotionPreference } from '@/components/ui/use-motion-preference';
 import { prepareRoute } from '@/components/prepare-route';
 import { learningPaths } from '@/lib/learning-paths';
 import { toast } from '@/lib/toast';
@@ -42,7 +45,6 @@ function TrainingPipeline({
   canPredict,
   onSelect,
   onPrepare,
-  navigation,
 }: {
   currentStep: TrainingStep;
   ready: boolean;
@@ -50,10 +52,9 @@ function TrainingPipeline({
   canPredict: boolean;
   onSelect: (step: TrainingStep) => void;
   onPrepare: (step: TrainingStep) => void;
-  navigation: React.Ref<HTMLElement>;
 }) {
   return (
-    <nav ref={navigation} aria-label="Trainingsablauf" inert={!ready} className="scroll-mt-24">
+    <nav aria-label="Trainingsablauf" inert={!ready}>
       <ol className="flex flex-wrap gap-1">
         {steps.map(({ step, label }, index) => (
           <li key={step} className="grow lg:grow-0">
@@ -102,11 +103,11 @@ function useTrainingNavigation(
   selection: TrainingStep,
   setSelection: Dispatch<SetStateAction<TrainingStep>>,
 ) {
+  const { reduce } = useMotionPreference();
   const { modules, prepared, status, prepare, open } = useTrainingPanelLoading(
     canTrain,
     canPredict,
   );
-  const navigation = useRef<HTMLElement>(null);
   const previous = useRef(selection);
   const moveFocus = useRef(true);
   const current = !canTrain
@@ -121,20 +122,35 @@ function useTrainingNavigation(
     const shouldMoveFocus = moveFocus.current;
     moveFocus.current = true;
     if (!shouldMoveFocus) return;
-    const heading = steps.find(({ step }) => step === current);
-    if (heading) document.getElementById(heading.id)?.focus({ preventScroll: true });
-    navigation.current?.scrollIntoView?.({ block: 'start', behavior: 'instant' });
+    const headingId = steps.find(({ step }) => step === current)?.id;
+    const heading = headingId && document.getElementById(headingId);
+    if (!heading) return;
+    heading.focus({ preventScroll: true });
+    heading.scrollIntoView?.({ block: 'nearest', behavior: 'instant' });
   }, [current]);
   const select = (step: TrainingStep) => {
-    open(step, (focusOnCommit) => {
-      if (step !== current) moveFocus.current = focusOnCommit;
-      setSelection(step);
-    });
+    const from = steps.findIndex((item) => item.step === current);
+    const to = steps.findIndex((item) => item.step === step);
+    const type = to < from ? 'training-back' : 'training-forward';
+    open(
+      step,
+      (focusOnCommit) => {
+        if (step !== current) moveFocus.current = focusOnCommit;
+        setSelection(step);
+      },
+      reduce || from === to
+        ? undefined
+        : (commit) =>
+            startTransition(() => {
+              addTransitionType(type);
+              commit();
+            }),
+    );
   };
   const onPrepare = (step: TrainingStep) => {
     if (step !== 'images' && step !== current) prepare(step);
   };
-  return { current, navigation, select, onPrepare, modules, prepared, status };
+  return { current, select, onPrepare, modules, prepared, status };
 }
 
 function TrainingPanelFeedback({
@@ -284,7 +300,6 @@ function TrainingWorkspace({ initialWorkspace }: { initialWorkspace: boolean }) 
               canPredict={canPredict}
               onSelect={flow.select}
               onPrepare={flow.onPrepare}
-              navigation={flow.navigation}
             />
           }
         />
