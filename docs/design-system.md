@@ -309,8 +309,9 @@ The static 404 and 500 documents and the App Router recovery screen share
 `PublicErrorScene`. Status text and recovery actions remain visible in the initial
 render. The 404 uses three separately modeled glass digits in the shared
 Topography renderer. The 500 and recovery screen use its ring. Like the homepage,
-both static error pages reserve the artwork area, display the shared Spinner until
-the first frame and start playback automatically when the artwork is visible.
+both static error pages reserve the artwork area and start playback automatically
+when the artwork is visible. The shared Spinner appears only after 500 ms of active
+waiting and clears when the first frame is ready or loading stops.
 Pointer and keyboard intent prepare the shared renderer. An optimized responsive
 poster covers reduced motion, disabled scripting and unavailable WebGL.
 The App Router recovery screen renders the poster immediately and loads the
@@ -504,8 +505,9 @@ remains opaque and readable and only shifts briefly. Primary page headings stay 
 The homepage headline, supporting text and actions remain sharp and in place
 from the first paint through hydration and highlight startup.
 On first arrival from below, cards and navigation surfaces fade in with a short
-14–16 px slide. Standalone text, reading groups and the header and footer stay
-opaque during scroll reveals. Legal documents reveal by heading-led group, and
+14–16 px slide. Standalone text, reading groups and the footer stay opaque during
+scroll reveals. The shared header stays in place from the first paint through
+hydration. Legal documents reveal by heading-led group, and
 the training and prediction sections enter independently after workspace setup.
 Virtualized thumbnails keep their existing list lifecycle.
 Reduced motion and keyboard focus reveal immediately without spatial movement.
@@ -522,8 +524,8 @@ entries do not replay over its snapshots. Offscreen groups still reveal on first
 scroll admission. Initial viewport classification follows the native transition's
 completion and Next.js scroll restoration; content stays visible and usable during
 that preparation. No animation adds a navigation delay or mounts destination pages
-speculatively. Header/footer have one independent shell admission; theme changes
-do not remount them or replay entries.
+speculatively. The footer has one independent shell admission. Theme changes
+preserve the shared header and footer instances and completed entries.
 
 Landing supporting hero copy, step cards, demonstrations, quiz cards, guidance
 rows and the closing action use the shared roles. The learning hub groups each question

@@ -104,11 +104,12 @@ its utilities from application sources under `src/`. Next.js uses the default
 Turbopack chunking rules in local and Vercel builds. Optional menus, experiments
 and WebGL remain dynamically loaded.
 
-The homepage and static error pages deliver their headings, actions and artwork
-loading indicator in static HTML. When the artwork and document are visible and
-motion is allowed, the client starts loading the shared WebGL renderer after the
-initial paint. Visibility and intent share the module import. The first draw
-replaces the indicator. The resolved component mounts directly on the client
+The homepage and static error pages deliver their headings, actions and reserved
+artwork area in static HTML. When the artwork and document are visible and motion
+is allowed, the client starts loading the shared WebGL renderer after the initial
+paint. Visibility and intent share the module import. The loading indicator appears
+after 500 ms of active waiting and disappears on the first draw. The resolved
+component mounts directly on the client
 without a second Lazy/Suspense reveal that could trigger a page update transition.
 Reduced motion, disabled scripting and renderer failure use a responsive still.
 Static asset imports give the native optimizer versioned poster URLs that the

@@ -34,10 +34,6 @@
   color: var(--primary);
 }
 
-noscript:has(> .hero-field-poster) + .hero-field-loading {
-  display: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .hero-field-loading {
     display: none;
