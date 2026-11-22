@@ -405,8 +405,10 @@ ThemeProvider and the shared header/footer sit outside the route
 ViewTransition. Theme changes update the root appearance without remounting the
 learning workspace. Three buttons mark the current training step and focus the
 new section heading on activation. The two collection continue buttons require
-enough images in distinctly named classes. Prediction unlocks after successful
-training. On narrow screens the step buttons share the full width. Each step's
+enough images in distinctly named classes. After successful training, the same
+primary button keeps its focus and changes from training to continuing to
+prediction. Changing the training images restores the training action. On narrow
+screens the step buttons share the full width. Each step's
 visible surface, label, and number scale together inside a 44 px minimum touch
 target. The add-class action is below the last card, beside the bottom continue
 button. On small screens the add action fills the remaining width and the continue
