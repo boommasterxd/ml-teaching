@@ -35,6 +35,15 @@
 
 .header-menu-viewport {
   position: relative;
+}
+
+.header-menu-desktop .header-menu-viewport {
+  overflow: clip;
+}
+
+.header-menu-panel-mobile .header-menu-viewport,
+.header-menu-desktop .header-menu-content {
+  /* Keep outgoing desktop animation layers out of the active panel's scroll area. */
   max-height: calc(100dvh - var(--header-height) - 1rem - 2px);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -172,6 +181,7 @@
     width: max-content;
     min-width: calc(var(--header-menu-compact-width) - 2px);
     max-width: calc(100vw - 3rem - 2px);
+    overflow-x: hidden;
   }
   .header-menu-desktop .header-menu-content:has([data-overview]) {
     width: calc(16.5rem - 2px);
