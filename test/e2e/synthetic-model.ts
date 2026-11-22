@@ -72,8 +72,11 @@ function blockedDestination(url: URL, origin: string) {
 function isExpectedLocalRead(url: URL, request: Request) {
   const resourceType = request.resourceType();
   const query = url.searchParams;
-  if (flowDocuments.has(url.pathname)) {
-    if (request.isNavigationRequest()) return query.size === 0;
+  const isFlowDocument = flowDocuments.has(url.pathname);
+  if (request.isNavigationRequest()) return isFlowDocument && query.size === 0;
+  const isHubPrefetch =
+    url.pathname === learningPaths.hub && request.headers()['next-router-prefetch'] === '1';
+  if (isFlowDocument || isHubPrefetch) {
     if (request.headers().rsc !== '1') return false;
     return query.size === 0 || (query.size === 1 && /^[\w-]{1,16}$/.test(query.get('_rsc') ?? ''));
   }
