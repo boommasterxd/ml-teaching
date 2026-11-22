@@ -30,6 +30,7 @@ import {
   grantModelConsent,
   openDeferredTrainingStep,
   openThemeMenu,
+  revealBottomTrainingButton,
   settleLandingReveals,
   trainingSettingsTrigger,
   withdrawTrainingConsent,
@@ -437,11 +438,10 @@ test('local images train a real browser classifier, predict and reset without up
   await expectCancelledResetKeepsImages(page);
   await expectCameraToggleKeepsImages(page, expectCamera);
   const steps = page.getByRole('navigation', { name: 'Trainingsablauf' });
-  const next = page.getByRole('button', { name: 'Weiter zum Training' });
-  await expect(next).toHaveCount(2);
+  const next = await revealBottomTrainingButton(page);
   await openDeferredTrainingStep(
     page,
-    next.last(),
+    next,
     page.getByRole('heading', { name: 'Training', exact: true }),
   );
   await expect(page.getByRole('textbox')).toHaveCount(0);

@@ -94,27 +94,6 @@ export function ImageTechniqueSection() {
               Abweichungen vom Gewohnten, etwa einen Riss in einem Bauteil.
             </Text>
           </EntryReveal>
-          <EntryReveal kind="reading" index={3} asChild>
-            <Text variant="muted">
-              TensorFlow.js dokumentiert{' '}
-              <a
-                className="underline underline-offset-4"
-                href="https://www.tensorflow.org/js/tutorials/transfer/image_classification"
-                referrerPolicy="no-referrer"
-              >
-                Transfer Learning mit MobileNet
-              </a>{' '}
-              und den{' '}
-              <a
-                className="underline underline-offset-4"
-                href="https://www.tensorflow.org/js/models#general"
-                referrerPolicy="no-referrer"
-              >
-                KNN-Klassifikator
-              </a>
-              .
-            </Text>
-          </EntryReveal>
         </div>
       </div>
       <Card className="py-0">

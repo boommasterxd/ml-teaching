@@ -66,7 +66,7 @@ function TrainingSummary({ classes }: Pick<TrainingControlsProps, 'classes'>) {
   const ready = classes.filter((item) => item.images.length >= ML.MIN_IMAGES_PER_CLASS).length;
   const images = classes.reduce((count, item) => count + item.images.length, 0);
   return (
-    <dl className="flex flex-wrap gap-x-9 gap-y-3 py-1">
+    <dl className="flex flex-wrap justify-center gap-x-5 gap-y-3 text-center sm:justify-start sm:gap-x-8 sm:text-left">
       <div className="grid gap-1">
         <dt className="text-sm text-muted-foreground">Klassen bereit</dt>
         <dd className="text-2xl font-semibold tracking-tight tabular-nums">
@@ -117,15 +117,18 @@ export default function TrainingControls(props: TrainingControlsProps) {
       : motionTokens.transition.fill;
   return (
     <EntryReveal asChild kind="reading" active={props.entryReady} scrollOnly>
-      <section aria-labelledby="training-model">
+      <section aria-labelledby="training-model" className="mx-auto w-full lg:max-w-3xl">
         <Card className="gap-4">
           <CardHeader>
-            <CardTitle id="training-model" tabIndex={-1} className="workspace-heading scroll-mt-28">
+            <CardTitle
+              id="training-model"
+              tabIndex={-1}
+              className="workspace-heading scroll-mt-28 text-center"
+            >
               Training
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4">
-            <TrainingSummary classes={classes} />
+          <CardContent>
             <div className="training-feedback">
               <Effect
                 asChild
@@ -155,7 +158,8 @@ export default function TrainingControls(props: TrainingControlsProps) {
               <TrainingProgressIndicator progress={progress} transition={transition} />
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex-col flex-wrap gap-x-6 gap-y-3 sm:flex-row sm:justify-between">
+            <TrainingSummary classes={classes} />
             <Button
               onClick={() => {
                 if (!canTrain || isTraining) return;
@@ -168,7 +172,7 @@ export default function TrainingControls(props: TrainingControlsProps) {
               size="lg"
               disabled={!isTraining && !canTrain}
               aria-disabled={isTraining || !canTrain}
-              className="w-full aria-disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:focus-visible:opacity-100 sm:w-auto"
+              className="h-auto min-h-11 w-full max-w-full py-2.5 text-center whitespace-normal aria-disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:focus-visible:opacity-100 sm:ml-auto sm:w-auto"
               aria-describedby={complete ? undefined : 'training-status'}
             >
               {!complete && <Brain data-icon="inline-start" aria-hidden="true" />}
