@@ -2,16 +2,31 @@
 
 import { useCallback, useState } from 'react';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
-import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
+import {
+  motionTokens,
+  scaleTransition,
+  useMotionTokens,
+  useTempoTransition,
+} from '@animate-ui/react/utils/motion';
 import { Check } from '../icons/check';
 import { RewardGoalMarker, routes, cells, cellSize, cellRadius, type Goal } from './RewardBoard';
 import RewardPath from './RewardPath';
 import { PreviewHighlight } from './PreviewHighlight';
 
+export const signalPreviewFade = { duration: 0.45, ease: motionTokens.ease.color };
+export const rewardPreviewFade = { ...motionTokens.transition.fade, duration: 0.65 };
+
 export function SignalHighlight({ connectors }: { connectors: readonly string[] }) {
-  const timing = useTempoTransition({ duration: 0.32, ease: motionTokens.ease.fill });
+  const { tempo } = useMotionTokens();
+  const ease = motionTokens.ease.fill;
+  const stageSpacing = 0.52;
   return (
-    <PreviewHighlight className="home-signal-active" fill="none" strokeWidth="2">
+    <PreviewHighlight
+      fadeTransition={signalPreviewFade}
+      className="home-signal-active"
+      fill="none"
+      strokeWidth="2"
+    >
       {[
         { x: 14, width: 150 },
         { x: 234, width: 132 },
@@ -22,7 +37,7 @@ export function SignalHighlight({ connectors }: { connectors: readonly string[] 
           asChild
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
-          transition={{ ...timing, delay: index * 0.44 }}
+          transition={scaleTransition({ duration: 0.52, ease, delay: index * stageSpacing }, tempo)}
         >
           <rect x={x} y="63" width={width} height="142" rx="20" />
         </Effect>
@@ -33,7 +48,10 @@ export function SignalHighlight({ connectors }: { connectors: readonly string[] 
           asChild
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
-          transition={{ ...timing, delay: 0.22 + index * 0.44 }}
+          transition={scaleTransition(
+            { duration: 0.32, ease, delay: index * stageSpacing + 0.28 },
+            tempo,
+          )}
         >
           <path d={d} />
         </Effect>
@@ -49,7 +67,7 @@ export function RewardPreviewTurn({ goal }: { goal: Goal }) {
   const { x, y } = cells[routes[goal].cell];
 
   return (
-    <PreviewHighlight fadeDuration={0.65} aria-hidden="true">
+    <PreviewHighlight fadeTransition={rewardPreviewFade} aria-hidden="true">
       <RewardGoalMarker goal={goal} highlighted />
       <RewardPath goal={goal} onArrival={onArrival} />
       {arrived && (

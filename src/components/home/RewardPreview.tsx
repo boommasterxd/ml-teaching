@@ -10,7 +10,7 @@ export default function RewardPreview({
   animateReward,
   showRewardMotion,
 }: PreviewPlayback) {
-  const [interruptedSequence, setInterruptedSequence] = useState<number | null>(null);
+  const [interruptedSequence, setInterruptedSequence] = useState<string | null>(null);
 
   // Do not replay the same turn after the preview has become inactive.
   if (rewardGoal && !animateReward && interruptedSequence !== rewardSequence) {

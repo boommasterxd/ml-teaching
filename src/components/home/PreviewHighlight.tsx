@@ -1,19 +1,16 @@
 'use client';
 
 import type { ComponentProps } from 'react';
-import { useIsPresent } from 'motion/react';
+import { useIsPresent, type Transition } from 'motion/react';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
-import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
+import { useTempoTransition } from '@animate-ui/react/utils/motion';
 
 export function PreviewHighlight({
-  fadeDuration = motionTokens.transition.fade.duration,
+  fadeTransition,
   ...props
-}: ComponentProps<'g'> & { fadeDuration?: number }) {
+}: ComponentProps<'g'> & { fadeTransition: Transition }) {
   const present = useIsPresent();
-  const transition = useTempoTransition({
-    ...motionTokens.transition.fade,
-    duration: fadeDuration,
-  });
+  const transition = useTempoTransition(fadeTransition);
 
   return (
     <Effect asChild fade initial={false} transition={transition}>

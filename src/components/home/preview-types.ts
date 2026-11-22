@@ -6,11 +6,11 @@ export type PreviewSlots = Record<PreviewKind, RefObject<HTMLDivElement | null>>
 
 export interface PreviewPlayback {
   signal: 'cat' | 'dog';
-  imageSequence: number;
+  imageSequence: string;
   animateImage: boolean;
   showImageMotion: boolean;
   rewardGoal: Goal | null;
-  rewardSequence: number;
+  rewardSequence: string;
   animateReward: boolean;
   showRewardMotion: boolean;
 }

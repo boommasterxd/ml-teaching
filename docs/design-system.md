@@ -56,14 +56,17 @@ the solid trail and samples that same rounded SVG path for the red agent's posit
 When the point reaches the destination, that tile darkens and the shared Animate UI
 Check draws in green. The tile and check fade out with the route as the turn ends.
 The learning hub shows the route to the star as a static scene.
-One cycle plays the dog classification, the star path, the cat classification,
-then the treasure path. It runs in four-second turns while either
-preview and the tab are visible. When only one preview is visible, it uses each
-turn and skips its offscreen partner. The previous highlight fades to its neutral state.
+At `lg` and above, the previews alternate in four-second turns: dog classification,
+star path, cat classification, then treasure path. After each highlight fades, the
+other preview waits one second before starting. A lone visible preview uses each
+turn. Below `lg`, the stacked previews loop independently whenever visible. Each
+starts a fresh turn on entry and restarts 150 ms after its highlight fades.
 System reduced motion and the shared homepage pause control stop the cycle.
-The dog turn waits for its image to decode while the image preview is visible.
-Photo, feature pattern and result crossfade together. The signal stroke starts
-with the Animate UI fill curve so its first segment accelerates gradually.
+Both cycles stop in hidden tabs. The desktop dog turn waits for its image to decode.
+On mobile, the next available cat or dog example is selected at the start of each turn.
+Photo, feature pattern and result crossfade together. Signal outlines and connectors
+draw with overlapping starts using the Animate UI fill curve. The completed highlight
+fades as a group before the next draw starts.
 If loading fails, the cat classification remains available and the cycle continues.
 The previews use small, fixed SVGs and require no ML model or simulation.
 The homepage and learning hub share their topics and destinations through
