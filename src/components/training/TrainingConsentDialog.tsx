@@ -73,7 +73,6 @@ export default function TrainingConsentDialog({
               </AlertDialogDescription>
             </DialogBody>
             <DialogFooter
-              layout="auto-fit"
               className={cn(canRevokeCamera && 'sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)]')}
             >
               <AlertDialogCancel ref={closeButton} className={actionLayout}>
