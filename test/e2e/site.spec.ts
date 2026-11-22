@@ -23,7 +23,7 @@ import {
   expectEmptyTrainingAfterConsent,
   expectPreviewDeletion,
   expectThemeControlAlignment,
-  expectThemeKeepsTraining,
+  expectTrainingCompletion,
   expectTrainingGlide,
   expectThemeMenuTriggers,
   expectImmediateThemeFeedback,
@@ -453,13 +453,7 @@ test('local images train a real browser classifier, predict and reset without up
   await expectAccessible(page);
   await page.keyboard.press('Escape');
   await expect(settingsTrigger).toBeFocused();
-  const train = page.getByRole('button', {
-    name: /^(Modell trainieren|Trainiere …|Modell neu trainieren)$/,
-  });
-  await train.press('Enter');
-  await expect(page.getByRole('status').filter({ hasText: 'Training läuft' })).toBeVisible();
-  await expect(train).toBeFocused();
-  await expectThemeKeepsTraining(page);
+  await expectTrainingCompletion(page);
   await openDeferredTrainingStep(
     page,
     page.getByRole('button', { name: 'Weiter zur Vorhersage' }),

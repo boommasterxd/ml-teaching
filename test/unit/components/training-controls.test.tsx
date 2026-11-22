@@ -10,7 +10,7 @@ beforeEach(installBrowserHost);
 afterEach(restoreBrowserHost);
 
 describe('training and prediction controls', () => {
-  it('keeps training blocked until uploads and label validation are complete, then exposes retraining', () => {
+  it('waits for valid training data and keeps the focused action available for prediction after training', () => {
     const onTrain = vi.fn();
     const onPredict = vi.fn();
     const base = {
@@ -65,11 +65,12 @@ describe('training and prediction controls', () => {
     expect(screen.getByRole('status').textContent).toContain('Training läuft');
     rerender(<TrainingControls {...base} hasPendingUploads={false} hasTrainedModel canTrain />);
     expect(screen.getByRole('status').textContent).toContain('Training abgeschlossen');
+    expect(screen.getAllByRole('button')).toEqual([train]);
+    expect(screen.getByRole('button', { name: 'Weiter zur Vorhersage' })).toBe(train);
     expect(document.activeElement).toBe(train);
-    fireEvent.click(screen.getByRole('button', { name: 'Weiter zur Vorhersage' }));
+    fireEvent.click(train);
     expect(onPredict).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole('button', { name: 'Modell neu trainieren' }));
-    expect(onTrain).toHaveBeenCalledTimes(2);
+    expect(onTrain).toHaveBeenCalledOnce();
   });
 
   it('requires a camera for live prediction and exposes class confidence and stop controls', () => {

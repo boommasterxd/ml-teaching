@@ -288,12 +288,23 @@ describe('training page integration', () => {
     expect((steps.getByRole('button', { name: 'Vorhersage' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: selectedImages('tasse-replacement', 1) },
+    });
+    await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Weiter zum Training' })[0]);
+    const trainAgain = await screen.findByRole<HTMLButtonElement>('button', {
+      name: 'Modell trainieren',
+    });
+    expect(trainAgain.disabled).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Weiter zur Vorhersage' })).toBeNull();
+    fireEvent.click(steps.getByRole('button', { name: 'Bilder sammeln' }));
     fireEvent.click(
       screen.getByRole('button', { name: 'Bilder der Klasse 1: Tasse zurücksetzen' }),
     );
     fireEvent.click(await screen.findByRole('button', { name: 'Abbrechen' }));
     await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
-    expect(screen.getByText('9 / 10 Bilder')).toBeTruthy();
+    expect(screen.getAllByText('10 Bilder')).toHaveLength(2);
     fireEvent.click(
       screen.getByRole('button', { name: 'Bilder der Klasse 1: Tasse zurücksetzen' }),
     );

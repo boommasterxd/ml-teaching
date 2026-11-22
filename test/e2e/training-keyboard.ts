@@ -319,7 +319,18 @@ export async function expectThemeMenuTriggers(page: Page) {
   }
 }
 
-export async function expectThemeKeepsTraining(page: Page) {
+export async function expectTrainingCompletion(page: Page) {
+  const panel = page.getByRole('region', { name: 'Training', exact: true });
+  const action = panel.getByRole('button');
+  const height = await panel.evaluate((element) => element.clientHeight);
+  await expect(action).toHaveAccessibleName('Modell trainieren');
+  await action.press('Enter');
+  await expect(page.getByRole('status').filter({ hasText: 'Training läuft' })).toBeVisible();
+  await expect(action).toBeFocused();
+  await expect(action).toHaveAccessibleName('Weiter zur Vorhersage');
+  await expect(action).toBeFocused();
+  expect(await panel.evaluate((element) => element.clientHeight)).toBe(height);
+
   const theme = page.getByRole('switch', { name: 'Dunkle Darstellung' });
   await theme.focus();
   await page.keyboard.press('Space');
@@ -327,9 +338,8 @@ export async function expectThemeKeepsTraining(page: Page) {
   await expect(
     page.getByRole('status').filter({ hasText: 'Training abgeschlossen' }),
   ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Modell neu trainieren', exact: true }),
-  ).toBeEnabled();
+  await expect(action).toBeEnabled();
+  await expectAccessible(page);
 }
 
 export async function expectTrainingGlide(trigger: Locator, direction: 'left' | 'right') {

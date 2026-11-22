@@ -24,7 +24,7 @@ interface TrainingControlsProps {
   hasInvalidNames: boolean;
   hasDuplicateNames: boolean;
   onTrain: (completionFeedbackMs: number) => void;
-  onPredict?: () => void;
+  onPredict: () => void;
   onPredictIntent?: () => void;
 }
 
@@ -110,6 +110,7 @@ export default function TrainingControls(props: TrainingControlsProps) {
   const isTraining = progress !== null;
   const state = progress ? 'training' : hasTrainedModel ? 'complete' : 'idle';
   const complete = state === 'complete';
+  const preparePrediction = complete ? props.onPredictIntent : undefined;
   const transition =
     progress && progress.processed === progress.total
       ? finishTransition
@@ -154,38 +155,30 @@ export default function TrainingControls(props: TrainingControlsProps) {
               <TrainingProgressIndicator progress={progress} transition={transition} />
             </div>
           </CardContent>
-          <CardFooter className="flex-wrap gap-2">
+          <CardFooter>
             <Button
               onClick={() => {
-                if (canTrain && !isTraining) onTrain(completionFeedbackMs);
+                if (!canTrain || isTraining) return;
+                if (complete) onPredict();
+                else onTrain(completionFeedbackMs);
               }}
-              variant={complete ? 'outline' : 'default'}
+              onPointerEnter={preparePrediction}
+              onFocus={preparePrediction}
+              onPointerDown={preparePrediction}
               size="lg"
               disabled={!isTraining && !canTrain}
               aria-disabled={isTraining || !canTrain}
               className="w-full aria-disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:focus-visible:opacity-100 sm:w-auto"
               aria-describedby={complete ? undefined : 'training-status'}
             >
-              <Brain data-icon="inline-start" aria-hidden="true" />
-              {progress
-                ? 'Trainiere …'
-                : hasTrainedModel
-                  ? 'Modell neu trainieren'
+              {!complete && <Brain data-icon="inline-start" aria-hidden="true" />}
+              {complete
+                ? 'Weiter zur Vorhersage'
+                : isTraining
+                  ? 'Trainiere …'
                   : 'Modell trainieren'}
+              {complete && <ArrowRight data-icon="inline-end" aria-hidden="true" />}
             </Button>
-            {complete && onPredict && (
-              <Button
-                onClick={onPredict}
-                onPointerEnter={props.onPredictIntent}
-                onFocus={props.onPredictIntent}
-                onPointerDown={props.onPredictIntent}
-                size="lg"
-                className="w-full sm:w-auto"
-              >
-                Weiter zur Vorhersage
-                <ArrowRight data-icon="inline-end" aria-hidden="true" />
-              </Button>
-            )}
           </CardFooter>
         </Card>
       </section>
