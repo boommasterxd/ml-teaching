@@ -31,8 +31,7 @@
 ::view-transition-group(.training-flow) {
   animation: none;
 }
-::view-transition-image-pair(.page-flow),
-::view-transition-image-pair(.training-flow) {
+::view-transition-image-pair(.page-flow) {
   overflow: clip;
 }
 
@@ -58,10 +57,10 @@
   --page-filter: blur(12px);
 }
 ::view-transition-new(.training-flow) {
-  --page-offset: calc(clamp(36px, 8vw, 72px) * var(--training-direction, 1));
+  --page-offset: calc(var(--training-travel) * var(--training-direction, 1));
 }
 ::view-transition-old(.training-flow) {
-  --page-offset: calc(clamp(36px, 8vw, 72px) * var(--training-direction, 1) * -1);
+  --page-offset: calc(var(--training-travel) * var(--training-direction, 1) * -1);
 }
 ::view-transition-new(.page-fade) {
   animation-duration: 120ms;
