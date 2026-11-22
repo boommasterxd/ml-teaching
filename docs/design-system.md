@@ -433,13 +433,13 @@ A connecting preview centers the shared spinner with a screen-reader status.
 Failed connection attempts keep the pending state for at least two seconds.
 Successful connections display the live preview as soon as the stream is ready.
 An unavailable camera centers its status text below a white Animate UI alert icon.
-Both buttons stay mounted in place during stream changes. Pause releases
-the stream and withdraws camera consent. Play opens the camera choice when consent
-is missing and retries a failed connection while consent is active. Recording
-requires a live stream. During training or when no preview can turn
-off the camera, the same action is available in the training settings.
+Both buttons stay mounted in place during stream changes. Pause releases the
+stream and preserves camera consent. Play reconnects when consent is active and
+opens the camera choice when consent is missing. The training settings provide
+the separate action to withdraw camera consent. Recording requires a live stream.
 Local image uploads remain available.
-With camera consent, live prediction starts when the trained prediction step opens.
+With active camera consent and no pause, live prediction starts when the trained
+prediction step opens.
 The prediction card keeps its camera frame and result areas in place, and confidence
 bars are empty until results arrive.
 The camera and confidence readout share a row when the card is wide enough.

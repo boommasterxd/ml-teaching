@@ -39,9 +39,10 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
   const { setClassifier } = models;
   const showCameraPrompt = consent.showCameraModal && canUseModels;
   const mainHeadingRef = useRef<HTMLHeadingElement>(null);
+  const [cameraPaused, setCameraPaused] = useState(false);
   const [predictionFailed, setPredictionFailed] = useState(false);
   const predictionWanted = step === 'prediction' && hasTrainedModel && !predictionFailed;
-  const cameraNeeded = step === 'images' || predictionWanted;
+  const cameraNeeded = !cameraPaused && (step === 'images' || predictionWanted);
   useLayoutEffect(() => {
     setCameraNeeded(cameraNeeded);
     return () => setCameraNeeded(true);
@@ -66,8 +67,9 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
     reportOperationError(category, message);
   }
   const { retryCamera, toggleCamera } = camera;
-  const { cameraConsent, requestCameraConsent, revokeCameraConsent } = consent;
+  const { cameraConsent, requestCameraConsent } = consent;
   const startCamera = useCallback(() => {
+    setCameraPaused(false);
     if (!cameraConsent) {
       requestCameraConsent();
       return;
@@ -80,12 +82,10 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
     stopPredicting();
     toggleCamera();
   }, [stopPredicting, toggleCamera]);
-  const revokeCamera = useCallback(() => {
+  const pauseCamera = useCallback(() => {
     stopPredicting();
-    setPredictionFailed(false);
-    revokeCameraConsent();
-    if (error?.category === 'camera') clearError();
-  }, [stopPredicting, revokeCameraConsent, error?.category, clearError]);
+    setCameraPaused(true);
+  }, [stopPredicting]);
   const invalidateModel = useCallback(() => {
     stopPredicting();
     setPredictionFailed(false);
@@ -98,13 +98,13 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
     models,
     camera: {
       ...camera,
-      active: cameraConsent && !camera.hasFailed && (step === 'images' || predictionWanted),
+      active: cameraConsent && cameraNeeded && !camera.hasFailed,
       start: startCamera,
+      pause: pauseCamera,
       toggleCamera: switchCamera,
     },
     prediction,
     invalidateModel,
-    revokeCamera,
     hasTrainedModel,
     setHasTrainedModel,
     predictVideoRef,
