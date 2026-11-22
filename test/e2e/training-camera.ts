@@ -120,6 +120,7 @@ export async function expectLivePredictionControls(page: Page, expectCamera: Exp
   const frame = page.locator('[data-slot="prediction-camera"]');
   const { pause, play, switchCamera } = cameraControls(frame);
   const viewport = page.viewportSize()!;
+  await page.setViewportSize({ width: 1280, height: viewport.height });
   await expectCamera(3, 1);
   await expect(preview).toBeVisible();
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
@@ -128,6 +129,7 @@ export async function expectLivePredictionControls(page: Page, expectCamera: Exp
   await expect(space.getByRole('listitem').filter({ hasText: /Klasse 2.*10/ })).toBeVisible();
   await space.scrollIntoViewIfNeeded();
   await expect(marker).toBeVisible();
+  await expect(space.getByRole('button', { name: 'Diagramm beschreiben' })).toHaveCount(0);
   await expectControlsInCorners(frame);
   await switchCamera.press('Enter');
   await expectCamera(4, 1, 'environment');
@@ -136,6 +138,9 @@ export async function expectLivePredictionControls(page: Page, expectCamera: Exp
   await expectAccessible(page);
 
   await page.setViewportSize({ width: 390, height: viewport.height });
+  const theme = page.getByRole('switch', { name: 'Dunkle Darstellung' });
+  await theme.press('Space');
+  await expect(theme).not.toBeChecked();
   await expectControlsInCorners(frame);
   const recordSizes = await observePredictionSizes(frame);
   await pause.press('Space');
@@ -148,13 +153,8 @@ export async function expectLivePredictionControls(page: Page, expectCamera: Exp
   await space.scrollIntoViewIfNeeded();
   await expect(marker).toBeVisible();
   await recordSizes();
-
-  await page.setViewportSize(viewport);
-  const describe = space.getByRole('button', { name: 'Diagramm beschreiben', exact: true });
-  await describe.press('Enter');
-  await expect(space.getByRole('heading', { name: 'Diagrammbeschreibung' })).toBeFocused();
-  await expect(space.getByText(/^Kamerabild:/)).toBeVisible();
   await expectAccessible(page);
+  await page.setViewportSize(viewport);
 }
 
 async function observePredictionSizes(frame: Locator) {

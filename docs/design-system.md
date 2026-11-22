@@ -443,14 +443,14 @@ With camera consent, live prediction starts when the trained prediction step ope
 The prediction card keeps its camera frame and result areas in place, and confidence
 bars are empty until results arrive.
 The camera and confidence readout share a row when the card is wide enough.
-The PCA diagram reserves its plot, description control and legend below the
+The PCA diagram reserves its plot and legend below the
 confidence bars before prediction starts.
 During live prediction, it shows a scatter plot with one point per training image
 and a diamond for the current camera frame. When the panel uses two columns, the
 camera frame stretches to the bottom of the legend. The title identifies the 2D
-projection, and the figure description explains it for assistive technology.
-An optional text description captures the last displayed projection as a stable
-snapshot, including class regions and examples nearest to the camera point.
+projection, and the figure caption explains the edge marker for assistive technology.
+Point positions are visual only. The predicted class and confidence values are
+available as text above the plot.
 The plot reuses the lesson's diamond, class palette and typography. Training
 classes use circles, squares and triangles in sequence. When shapes repeat, the
 live legend lets users isolate one class via pressed-state buttons and select it

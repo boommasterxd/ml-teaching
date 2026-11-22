@@ -31,13 +31,11 @@ describe('blocking quality gates', () => {
     expect(result.stderr).toContain('exceeds the 500-line limit');
   });
 
-  it('enforces root configuration complexity and propagates lint failure', async () => {
+  it('enforces root configuration complexity and propagates lint failure', () => {
     const source = `export function configuration(value) {
       ${Array.from({ length: 21 }, (_, index) => `if (value === ${index}) return ${index};`).join('\n')}
       return null;
     }`;
-    const [result] = await new ESLint().lintText(source, { filePath: 'next.config.mjs' });
-    expect(result.messages.some((message) => message.ruleId === 'complexity')).toBe(true);
     const cli = spawnSync(
       process.execPath,
       [
@@ -45,13 +43,19 @@ describe('blocking quality gates', () => {
         '--stdin',
         '--stdin-filename',
         'next.config.mjs',
+        '--format',
+        'json',
         '--max-warnings',
         '0',
       ],
       { input: source, encoding: 'utf8', timeout: 10_000 },
     );
-    expect(cli.status).toBe(1);
-    expect(cli.stdout).toContain('complexity');
+    expect(cli.status, cli.stderr).toBe(1);
+    expect(JSON.parse(cli.stdout)).toEqual([
+      expect.objectContaining({
+        messages: expect.arrayContaining([expect.objectContaining({ ruleId: 'complexity' })]),
+      }),
+    ]);
   });
 
   it('blocks oversized and complex CSP runtime through the existing gates', async () => {
