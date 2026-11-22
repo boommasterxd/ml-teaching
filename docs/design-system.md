@@ -570,10 +570,10 @@ The training workspace keeps its geometry through setup and becomes interactive
 when the model is ready and the first dialog closes. Panels below the viewport
 admit scroll reveals once the workspace is ready. Training settings remain
 available while consent is active or remembered. Their Alert Dialog pairs the
-footer shield with the title and puts the actions side by side from `sm` and in
-one column on smaller viewports. The initial focus goes to Close. Later camera prompts retain the
-workspace layout. Virtual
-thumbnails and live prediction updates never replay decorative entries. Dialogs,
+footer shield with the title and gives each action a full-width row on narrow
+screens. The actions sit side by side from `sm`. The initial focus goes to Close.
+Later camera prompts retain the workspace layout. Virtual thumbnails and live
+prediction updates never replay decorative entries. Dialogs,
 success feedback, icons and the educational sequence retain their existing owners.
 During classifier training, the progress bar and the converging paths in the
 illustration follow the number of training images registered with the classifier.
