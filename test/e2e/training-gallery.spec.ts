@@ -33,7 +33,6 @@ async function collectGalleryImages(page: Page, count: number) {
 }
 
 async function beginTouchHold(target: Locator) {
-  await target.tap({ trial: true });
   const bounds = (await target.boundingBox())!;
   const page = target.page();
   const session = await page.context().newCDPSession(page);
@@ -50,25 +49,25 @@ async function beginTouchHold(target: Locator) {
   };
 }
 
-async function observeCapturePosition(record: Locator) {
-  const observation = await record.evaluateHandle((button) => {
+async function observeControlPosition(control: Locator) {
+  const observation = await control.evaluateHandle((element) => {
     const center = () => {
-      const { top, height } = button.getBoundingClientRect();
+      const { top, height } = element.getBoundingClientRect();
       return top + height / 2;
     };
     const initialScroll = window.scrollY;
     const initialCenter = center();
     let scrollMovement = 0;
-    let buttonMovement = 0;
+    let controlMovement = 0;
     let frame = requestAnimationFrame(sample);
     function sample() {
       scrollMovement = Math.max(scrollMovement, Math.abs(window.scrollY - initialScroll));
-      buttonMovement = Math.max(buttonMovement, Math.abs(center() - initialCenter));
+      controlMovement = Math.max(controlMovement, Math.abs(center() - initialCenter));
       frame = requestAnimationFrame(sample);
     }
     return () => {
       cancelAnimationFrame(frame);
-      return { scrollMovement, buttonMovement };
+      return { scrollMovement, controlMovement };
     };
   });
   return async () => {
@@ -76,6 +75,33 @@ async function observeCapturePosition(record: Locator) {
     await observation.dispose();
     return movement;
   };
+}
+
+async function expectStableRequirementsToggle(name: Locator, next: Locator) {
+  const page = name.page();
+  const hint = page.getByText(/^Mindestens \d+ Klassen, eindeutige Namen/);
+  const original = await name.inputValue();
+  await expect(hint).toBeHidden();
+  await name.focus();
+  await settleEntryAnimations(page);
+  const readMovement = await observeControlPosition(name);
+  const scrollHeight = () => page.evaluate(() => document.documentElement.scrollHeight);
+  const initialHeight = await scrollHeight();
+
+  await name.fill('');
+  await expect(next).toBeDisabled();
+  await expect(hint).toBeVisible();
+  await settleEntryAnimations(page);
+  expect(await scrollHeight()).toBe(initialHeight);
+  await name.fill(original);
+  await expect(next).toBeEnabled();
+  await expect(hint).toBeHidden();
+  await expect(name).toBeFocused();
+  await settleEntryAnimations(page);
+
+  const { scrollMovement, controlMovement } = await readMovement();
+  expect(scrollMovement).toBeLessThanOrEqual(1);
+  expect(controlMovement).toBeLessThanOrEqual(2);
 }
 
 test('a full training gallery keeps keyboard focus and selection across virtual windows', async ({
@@ -166,6 +192,7 @@ test.describe('touch gallery', () => {
     const gallery = page.getByRole('region', { name: /Trainingsbilder von Klasse 1:/ });
     const thumbnail = gallery.getByRole('button', { name: 'Bild 1 vergrößern', exact: true });
     await thumbnail.scrollIntoViewIfNeeded();
+    await thumbnail.tap({ trial: true });
     const release = await beginTouchHold(thumbnail);
     const first = gallery.getByRole('button', { name: 'Bild 1 auswählen', exact: true });
     try {
@@ -204,7 +231,7 @@ test.describe('touch gallery', () => {
     ).toBeVisible();
 
     const second = page.locator('[data-slot="card"]').filter({
-      has: page.getByRole('textbox', { name: 'Name für Klasse 2: Klasse 2', exact: true }),
+      has: page.getByRole('textbox', { name: /^Name für Klasse 2:/ }),
     });
     const next = page.getByRole('button', { name: 'Weiter zum Training' }).last();
     const record = second.getByRole('button', { name: 'Aufnehmen', exact: true });
@@ -223,7 +250,8 @@ test.describe('touch gallery', () => {
         ),
       )
       .toBe(true);
-    const readMovement = await observeCapturePosition(record);
+    await record.tap({ trial: true });
+    const readMovement = await observeControlPosition(record);
     const release = await beginTouchHold(record);
     try {
       await expect(second.getByRole('button', { name: 'Aufnahme stoppen' })).toBeVisible();
@@ -233,10 +261,11 @@ test.describe('touch gallery', () => {
       await release();
     }
     await expect(record).toBeEnabled();
-    const { scrollMovement, buttonMovement } = await readMovement();
+    const { scrollMovement, controlMovement } = await readMovement();
     expect(scrollMovement).toBeLessThanOrEqual(1);
-    expect(buttonMovement).toBeLessThanOrEqual(2);
+    expect(controlMovement).toBeLessThanOrEqual(2);
     await expectAccessible(page);
+    await expectStableRequirementsToggle(second.getByRole('textbox'), next);
     expect(failures).toEqual([]);
   });
 });

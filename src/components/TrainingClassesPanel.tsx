@@ -96,13 +96,6 @@ function CollectionHeader({
         onContinueIntent={onContinueIntent}
         placement="top"
       />
-      <Text
-        variant="muted"
-        className={cn('col-span-full max-w-prose text-pretty', canContinue && 'invisible')}
-      >
-        Mindestens {ML.MIN_CLASSES} Klassen, eindeutige Namen und je {ML.MIN_IMAGES_PER_CLASS}{' '}
-        Bilder.
-      </Text>
     </div>
   );
 }
@@ -129,7 +122,7 @@ function CollectionActions({
   }, [classes]);
 
   return (
-    <div className="flex items-center justify-between gap-2 sm:gap-3">
+    <div className="mt-5 flex items-center justify-between gap-2 sm:gap-3">
       <Button
         variant="secondary"
         size="lg"
@@ -168,14 +161,25 @@ export default function TrainingClassesPanel({
   canContinue,
 }: TrainingClassesPanelProps) {
   return (
-    <section aria-labelledby="training-images" className="flex min-w-0 flex-col gap-5">
+    <section aria-labelledby="training-images" className="flex min-w-0 flex-col">
       <CollectionHeader
         mainHeadingRef={mainHeadingRef}
         onContinue={onContinue}
         onContinueIntent={onContinueIntent}
         canContinue={canContinue}
       />
-      <EntryReveal kind="text" active={entryReady} scrollOnly>
+      {/* Keep the mobile hint below the classes and out of scroll anchoring. */}
+      <Text
+        variant="muted"
+        className={cn(
+          'mt-3 max-w-prose text-pretty max-sm:order-last max-sm:[overflow-anchor:none]',
+          canContinue && 'invisible',
+        )}
+      >
+        Mindestens {ML.MIN_CLASSES} Klassen, eindeutige Namen und je {ML.MIN_IMAGES_PER_CLASS}{' '}
+        Bilder.
+      </Text>
+      <EntryReveal kind="text" className="mt-4 sm:mt-5" active={entryReady} scrollOnly>
         <AnimatedList className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {classes.length === 0 ? (
             <Empty key="empty" className="col-span-full">
