@@ -1,4 +1,5 @@
 import type { Page, Request, Route } from '@playwright/test';
+import siteConfig from '../../csp.config.mjs';
 import { learningPaths } from '../../src/lib/learning-paths';
 
 const modelDirectory = 'https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/classification/2/';
@@ -60,6 +61,13 @@ const flowDocuments = new Set<string>([
 ]);
 const assets =
   /^(?:\/_next\/static\/(?:chunks\/[\w./-]+\.(?:js|css)|media\/[\w.-]+\.(?:webp|woff2))|\/favicon(?:-(?:dark|light))?\.svg|\/apple-icon\.png)$/;
+const publicRoutes = new Set<string>(siteConfig.routes);
+
+function blockedDestination(url: URL, origin: string) {
+  if (url.origin !== origin) return 'external';
+  if (publicRoutes.has(url.pathname) || url.pathname === '/_next/image') return url.pathname;
+  return assets.test(url.pathname) ? 'static asset' : 'unlisted local path';
+}
 
 function isExpectedLocalRead(url: URL, request: Request) {
   const resourceType = request.resourceType();
@@ -90,7 +98,13 @@ export async function routeSyntheticModel(
 ) {
   const expectedOrigin = new URL(baseURL).origin;
   const modelRequests: ModelFile[] = [];
-  let unexpectedRequests = 0;
+  const unexpectedRequests: Array<{
+    destination: string;
+    method: string;
+    resourceType: string;
+    routeData: boolean;
+    readsOnly: boolean;
+  }> = [];
   await page.route(/^https?:\/\//, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -103,11 +117,17 @@ export async function routeSyntheticModel(
       modelRequests.push(file);
       return respond(route, file);
     }
-    // Never include an unexpected URL or body in the test output.
-    unexpectedRequests++;
+    // Report public route names and request metadata without URLs or bodies.
+    unexpectedRequests.push({
+      destination: blockedDestination(url, expectedOrigin),
+      method: request.method(),
+      resourceType: request.resourceType(),
+      routeData: request.headers().rsc === '1',
+      readsOnly,
+    });
     await route.abort();
   });
-  return { modelRequests, unexpectedRequests: () => unexpectedRequests };
+  return { modelRequests, unexpectedRequests };
 }
 
 export async function failSyntheticModel(route: Route) {

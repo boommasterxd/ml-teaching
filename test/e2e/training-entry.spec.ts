@@ -202,7 +202,7 @@ test('keyboard setup hands off a single model and camera stream before Flow navi
     expect(transition).not.toHaveProperty('dialogPresentAtStart');
   }
   expect(network.modelRequests).toEqual(['graph', 'weights']);
-  expect(network.unexpectedRequests()).toBe(0);
+  expect(network.unexpectedRequests).toEqual([]);
   expect(failures).toEqual([]);
 });
 
@@ -301,7 +301,7 @@ test('a denied camera request keeps setup on the source page until the user cont
     { root: false, outgoingPages: 1, incomingPages: 1, back: false },
   ]);
   expect(network.modelRequests).toEqual(['graph', 'weights']);
-  expect(network.unexpectedRequests()).toBe(0);
+  expect(network.unexpectedRequests).toEqual([]);
 });
 
 test('a missing camera leaves the direct-entry dialog visible through its fade before notifying', async ({
@@ -418,5 +418,5 @@ test('withdrawing remembered consent from training returns to the homepage', asy
   await expect(page.getByRole('heading', { level: 1, name: /Du probierst/ })).toBeVisible();
   await expectNoStoredTrainingData(page);
   expect(network.modelRequests).toEqual(['graph', 'weights']);
-  expect(network.unexpectedRequests()).toBe(0);
+  expect(network.unexpectedRequests).toEqual([]);
 });

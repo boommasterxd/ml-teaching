@@ -91,6 +91,6 @@ test('a full training gallery keeps keyboard focus and selection across virtual 
   await page.keyboard.press('Escape');
   await expect(thumbnail).toBeFocused();
   expect(network.modelRequests).toEqual(['graph', 'weights']);
-  expect(network.unexpectedRequests()).toBe(0);
+  expect(network.unexpectedRequests).toEqual([]);
   expect(failures).toEqual([]);
 });

@@ -468,7 +468,7 @@ test('remembered consent skips the first paint dialog and expires only for the n
   expect(await browserStorage()).toEqual([]);
   expect(await transitions()).toEqual([]);
   expect(network.modelRequests).toEqual(['graph', 'weights', 'graph', 'weights']);
-  expect(network.unexpectedRequests()).toBe(0);
+  expect(network.unexpectedRequests).toEqual([]);
   expect(failures).toEqual([]);
 });
 
