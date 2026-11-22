@@ -30,20 +30,38 @@ export interface TrainingProgress {
 
 const progressIntervalMs = 100;
 
+async function waitForTrainingUi(ms: number, signal: AbortSignal) {
+  signal.throwIfAborted();
+  await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      signal.removeEventListener('abort', cancel);
+      resolve();
+    }, ms);
+
+    function cancel() {
+      clearTimeout(timeout);
+      reject(signal.reason);
+    }
+
+    signal.addEventListener('abort', cancel, { once: true });
+  });
+}
+
 /**
  * Installs one normalized matrix per class without rebuilding it for every image.
- * Progress and cancellation still yield to the browser while collecting features.
+ * Yields when matrix preparation needs more than one slice of browser time.
  */
 async function trainClassifier(
   classes: MLClass[],
   newClassifier: Classifier,
   signal: AbortSignal,
-  onBatch: (processed: number) => void,
+  onProgress: (processed: number) => void,
 ): Promise<void> {
   const tf = await loadTensorFlow();
   const featureCount = classes[0].images[0].featureArray.length;
   const dataset: Record<string, Tensor2D> = {};
-  let count = 0;
+  let processed = 0;
+  let yieldAt = performance.now() + ML.TRAINING_SLICE_MS;
   try {
     for (const cls of classes) {
       signal.throwIfAborted();
@@ -52,17 +70,17 @@ async function trainClassifier(
       for (const [row, { featureArray }] of cls.images.entries()) {
         if (featureArray.length !== featureCount) throw new Error('Invalid feature vector size.');
         rows.set(featureArray, row * featureCount);
-        count++;
-        if (count % ML.TRAINING_BATCH_SIZE === 0) {
-          onBatch(count);
-          await new Promise<void>((resolve) => setTimeout(resolve, 0));
-          signal.throwIfAborted();
+        if (performance.now() >= yieldAt) {
+          await waitForTrainingUi(0, signal);
+          yieldAt = performance.now() + ML.TRAINING_SLICE_MS;
         }
       }
       dataset[cls.id] = tf.tidy(() => {
         const examples = tf.tensor2d(rows, [rowCount, featureCount]);
         return tf.div(examples, tf.norm(examples, 'euclidean', 1, true));
       });
+      processed += rowCount;
+      onProgress(processed);
     }
     newClassifier.setClassifierDataset(dataset);
   } catch (error) {
@@ -157,38 +175,45 @@ export function useModelTraining(
    * Reports validation or training errors via `onError` and
    * reports registered images while the async operation is active.
    */
-  const trainModel = useCallback(async () => {
-    if (trainingRef.current && !trainingRef.current.signal.aborted) return;
-    if (!validateClasses(classes, hasInvalidNames, hasDuplicateNames, onError)) return;
-    const controller = new AbortController();
-    trainingRef.current = controller;
-    const total = classes.reduce((count, cls) => count + cls.images.length, 0);
-    setProgress({ processed: 0, total });
-    let nextProgressAt = 0;
-    let newClassifier: Classifier | null = null;
-    try {
-      newClassifier = await createClassifier();
-      await new Promise((resolve) => setTimeout(resolve, ML.TRAINING_UI_YIELD_MS));
-      await trainClassifier(classes, newClassifier, controller.signal, (processed) => {
-        const now = performance.now();
-        if (now < nextProgressAt) return;
-        nextProgressAt = now + progressIntervalMs;
-        setProgress({ processed, total });
-      });
-      controller.signal.throwIfAborted();
-      setClassifier(newClassifier);
-      newClassifier = null;
-      setHasTrainedModel(true);
-    } catch {
-      newClassifier?.dispose();
-      if (!controller.signal.aborted) onError('training', 'Fehler beim Training des Modells.');
-    } finally {
-      if (trainingRef.current === controller) {
-        trainingRef.current = null;
-        setProgress(null);
+  const trainModel = useCallback(
+    async (completionFeedbackMs = 0) => {
+      if (trainingRef.current && !trainingRef.current.signal.aborted) return;
+      if (!validateClasses(classes, hasInvalidNames, hasDuplicateNames, onError)) return;
+      const controller = new AbortController();
+      trainingRef.current = controller;
+      const total = classes.reduce((count, cls) => count + cls.images.length, 0);
+      setProgress({ processed: 0, total });
+      let nextProgressAt = 0;
+      let newClassifier: Classifier | null = null;
+      try {
+        newClassifier = await createClassifier();
+        await waitForTrainingUi(ML.TRAINING_UI_YIELD_MS, controller.signal);
+        await trainClassifier(classes, newClassifier, controller.signal, (processed) => {
+          const now = performance.now();
+          if (processed === total || now < nextProgressAt) return;
+          nextProgressAt = now + progressIntervalMs;
+          setProgress({ processed, total });
+        });
+        if (completionFeedbackMs > 0 && !document.hidden) {
+          setProgress({ processed: total, total });
+          await waitForTrainingUi(completionFeedbackMs, controller.signal);
+        }
+        controller.signal.throwIfAborted();
+        setClassifier(newClassifier);
+        newClassifier = null;
+        setHasTrainedModel(true);
+      } catch {
+        newClassifier?.dispose();
+        if (!controller.signal.aborted) onError('training', 'Fehler beim Training des Modells.');
+      } finally {
+        if (trainingRef.current === controller) {
+          trainingRef.current = null;
+          setProgress(null);
+        }
       }
-    }
-  }, [classes, setClassifier, setHasTrainedModel, onError, hasInvalidNames, hasDuplicateNames]);
+    },
+    [classes, setClassifier, setHasTrainedModel, onError, hasInvalidNames, hasDuplicateNames],
+  );
 
   const isTrainingActive = useCallback(
     () => Boolean(trainingRef.current && !trainingRef.current.signal.aborted),

@@ -575,24 +575,33 @@ screens. The actions sit side by side from `sm`. The initial focus goes to Close
 Later camera prompts retain the workspace layout. Virtual thumbnails and live
 prediction updates never replay decorative entries. Dialogs,
 success feedback, icons and the educational sequence retain their existing owners.
-During classifier training, the progress bar and the converging paths in the
-illustration follow the number of training images registered with the classifier.
-Successful training changes the end node to the shared Animate UI CircleCheckBig
-glyph and announces completion in the persistent status region. The same glyph
-marks completed image counts, correct answers, quiz completion, reward arrival
-and consent withdrawal. The success state stays visible until the next action.
-Reduced motion applies progress updates without interpolation.
+During classifier training, the shared progress bar and the converging paths
+follow the number of images prepared for the classifier. Animate UI gives the
+final fill 850 ms and leaves it visible at full width briefly before the success
+announcement. The bar sits in the lower padding while the figure and status stay
+centered as a group. Pending messages reserve their wrapped height during training.
+Reduced motion applies
+progress updates without interpolation or the final animation wait.
+Successful training replaces the end node with the shared Animate UI
+CircleCheckBig glyph. The same glyph appears without an extra outline or badge
+in the KNN result and the consent withdrawal dialog. It also marks completed
+image counts, other correct answers, quiz completion and reward arrival.
 
 Quiz completion and KNN answer feedback share `AnimatedFeedback`. Animate UI's
 `AutoHeight` owns expansion and collapse, including the space above the Alert;
 `Effect` owns its short fade and upward entrance. Presence retains outgoing content
 until exit finishes, while immediately hiding it from assistive technology. KNN
 answer corrections replay the content entrance without replacing the height owner.
-The correct class earns a mint seal. A single ripple expands around its drawn
-check and two glints fade. Reduced motion shows the finished seal immediately.
-The vote sentence stays visible and the persistent status region announces it
-with the success title.
+The correct class shows the animated check. The vote sentence stays visible and
+the persistent status region announces it with the success title.
 Reduced motion uses the library's instant height change and opacity feedback.
+KNN results, quiz completion and training completion share `success-surface`.
+It combines a thin green border, rounded corners and a light green tint over the
+themed card. The tint follows the alert icon or the centered training
+illustration. When the withdrawal dialog fails to load, a neutral Alert confirms
+completed withdrawal with the shared check and an outline action. Its action
+stacks below the message on narrow screens and receives focus when the previous
+dialog has returned focus to the page. The notice respects viewport safe areas.
 
 - The shared adaptation of Animate UI's `PageTransition` uses React 19.3
   ViewTransition directly so that snapshot eligibility follows the navigation

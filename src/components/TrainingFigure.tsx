@@ -1,6 +1,6 @@
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
-import { spring, useTempoTransition } from '@animate-ui/react/utils/motion';
-import { motion } from 'motion/react';
+import { useTempoTransition } from '@animate-ui/react/utils/motion';
+import type { Transition } from 'motion/react';
 import { memo } from 'react';
 import { Brain } from './icons/brain';
 import { CheckCircle2 } from './icons/check-circle2';
@@ -13,12 +13,14 @@ const featurePaths = ['M21 10 C46 10 39 28 63 28', 'M21 28 H63', 'M21 46 C46 46 
 const TrainingFigure = memo(function TrainingFigure({
   state,
   progress,
+  transition,
 }: {
   state: 'idle' | 'training' | 'complete';
   progress: number;
+  transition: Transition;
 }) {
   const { reduce } = useMotionPreference();
-  const draw = useTempoTransition(spring.progress);
+  const draw = useTempoTransition(transition);
   const complete = state === 'complete';
   return (
     <div className="relative aspect-[104/56] w-44 shrink-0 text-primary sm:w-60" aria-hidden="true">
@@ -38,27 +40,24 @@ const TrainingFigure = memo(function TrainingFigure({
           <g key={path}>
             <path d={path} className="stroke-primary/25" />
             {state !== 'idle' && (
-              <motion.path
-                d={path}
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
+              <Effect
+                asChild
                 initial={false}
                 animate={{ pathLength: complete ? 1 : progress }}
                 transition={reduce ? { duration: 0 } : draw}
-              />
+              >
+                <path d={path} stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+              </Effect>
             )}
           </g>
         ))}
       </svg>
       {complete ? (
-        <Effect
-          fade={!reduce}
-          zoom={reduce ? false : { initialScale: 0.8 }}
-          className="absolute top-1/2 right-0 grid size-[35%] aspect-square h-auto -translate-y-1/2 place-items-center rounded-full border border-success-border bg-success-soft text-success"
-        >
-          <CheckCircle2 className="size-7 sm:size-9" animate={!reduce} />
-        </Effect>
+        <CheckCircle2
+          className="absolute top-1/2 right-0 aspect-square w-[35%] h-auto -translate-y-1/2 text-success"
+          animate={!reduce}
+          persistOnAnimateEnd
+        />
       ) : (
         <span className="absolute top-1/2 right-0 grid size-[35%] aspect-square h-auto -translate-y-1/2 place-items-center rounded-full border border-primary/25 bg-card">
           <Brain className="size-7 sm:size-9" />

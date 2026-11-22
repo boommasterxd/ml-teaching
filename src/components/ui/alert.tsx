@@ -6,25 +6,25 @@ import { AnimateIcon } from '@animate-ui/react/icons';
 const alertVariants = cva('relative grid w-full border text-sm', {
   variants: {
     variant: {
-      default: 'bg-card text-card-foreground [&>svg]:text-current',
+      default: 'rounded-lg bg-card text-card-foreground [&>svg]:text-current',
       success:
-        'border-success-border bg-success-soft text-foreground [&>svg]:text-success *:data-[slot=alert-title]:line-clamp-none',
-      result: 'grid-cols-[minmax(0,1fr)_auto] border-primary/25',
-      achievement: 'grid-cols-[auto_minmax(0,1fr)] border-success/30',
+        'success-surface text-foreground [&>svg]:text-success *:data-[slot=alert-title]:line-clamp-none',
+      result: 'grid-cols-[minmax(0,1fr)_auto] rounded-2xl border-primary/25',
+      achievement: 'success-surface grid-cols-[auto_minmax(0,1fr)]',
       destructive:
-        'bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current',
+        'rounded-lg bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current',
     },
   },
   compoundVariants: [
     {
       variant: ['default', 'success', 'destructive'],
       className:
-        'grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg px-4 py-3 has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5',
+        'grid-cols-[0_1fr] items-start gap-y-0.5 px-4 py-3 has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5',
     },
     {
       variant: ['result', 'achievement'],
       className:
-        'isolate items-center gap-x-3 gap-y-1 overflow-hidden rounded-2xl px-4 py-3 text-left text-foreground *:data-[slot=alert-title]:line-clamp-none *:data-[slot=alert-title]:font-semibold',
+        'isolate items-center gap-x-3 gap-y-1 overflow-hidden px-4 py-3 text-left text-foreground *:data-[slot=alert-title]:line-clamp-none *:data-[slot=alert-title]:font-semibold',
     },
   ],
   defaultVariants: {

@@ -182,13 +182,13 @@ function useTrainingData(resources: ReturnType<typeof useTrainingResources>) {
       endImage,
     ],
   );
-  const trainModel = () => {
+  const trainModel = (completionFeedbackMs?: number) => {
     if (activity.isBusy()) {
       notifyError('Bitte warte, bis alle Bilder vollständig verarbeitet sind.');
       return;
     }
     prediction.stopPredicting();
-    void training.trainModel();
+    void training.trainModel(completionFeedbackMs);
   };
   return {
     classes,

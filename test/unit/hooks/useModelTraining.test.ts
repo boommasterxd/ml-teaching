@@ -9,7 +9,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useModelTraining } from '@/hooks/useModelTraining';
-import { ML } from '@/constants';
+import { ANIMATION, ML } from '@/constants';
 import type { MLClass } from '@/types/ml';
 import type { Classifier } from '@/types/ml-models';
 
@@ -223,6 +223,7 @@ describe('useModelTraining', () => {
     it('reports progress and installs just one normalized matrix per class', async () => {
       const classes = makeClasses(2, 20);
       const tfMock = await import('@tensorflow/tfjs-core');
+      vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
       const { result } = renderHook(() =>
         useModelTraining(classes, { setClassifier, setHasTrainedModel, onError }, false),
       );
@@ -230,7 +231,9 @@ describe('useModelTraining', () => {
       try {
         let training!: Promise<void>;
         await act(async () => {
-          training = result.current.trainModel();
+          training = result.current.trainModel(
+            ANIMATION.TRAINING_PROGRESS_FILL_MS + ANIMATION.TRAINING_PROGRESS_REST_MS,
+          );
           await vi.dynamicImportSettled();
         });
         expect(result.current.progress).toEqual({ processed: 0, total: 40 });
@@ -238,9 +241,15 @@ describe('useModelTraining', () => {
         await act(async () => {
           await vi.advanceTimersByTimeAsync(ML.TRAINING_UI_YIELD_MS);
         });
-        expect(result.current.progress).toEqual({ processed: ML.TRAINING_BATCH_SIZE, total: 40 });
-        expect(mockNewClassifier.setClassifierDataset).not.toHaveBeenCalled();
+        expect(result.current.progress).toEqual({ processed: 40, total: 40 });
+        expect(mockNewClassifier.setClassifierDataset).toHaveBeenCalledOnce();
         expect(setClassifier).not.toHaveBeenCalled();
+
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(ANIMATION.TRAINING_PROGRESS_FILL_MS);
+        });
+        expect(result.current.isTraining).toBe(true);
+        expect(setHasTrainedModel).not.toHaveBeenCalled();
 
         await act(async () => {
           await vi.runAllTimersAsync();
@@ -313,24 +322,33 @@ describe('useModelTraining', () => {
       expect(setClassifier).toHaveBeenCalledOnce();
     });
 
-    it('discards training when its source classes change', async () => {
+    it('discards the finished candidate when its source classes change during feedback', async () => {
       const classes = makeClasses(2);
       const { result, rerender } = renderHook(
         ({ data }) => useModelTraining(data, { setClassifier, setHasTrainedModel, onError }, false),
         { initialProps: { data: classes } },
       );
-      let training!: Promise<void>;
-      act(() => {
-        training = result.current.trainModel();
-      });
-      rerender({ data: makeClasses(2, 0) });
-      await act(async () => {
-        await training;
-      });
-      expect(setClassifier).not.toHaveBeenCalled();
-      expect(setHasTrainedModel).not.toHaveBeenCalled();
-      expect(mockNewClassifier.dispose).toHaveBeenCalledOnce();
-      expect(onError).not.toHaveBeenCalled();
+      vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+      vi.useFakeTimers();
+      try {
+        let training!: Promise<void>;
+        await act(async () => {
+          training = result.current.trainModel(ANIMATION.TRAINING_PROGRESS_FILL_MS);
+          await vi.dynamicImportSettled();
+          await vi.advanceTimersByTimeAsync(ML.TRAINING_UI_YIELD_MS);
+        });
+        expect(result.current.progress).toEqual({ processed: 20, total: 20 });
+        rerender({ data: makeClasses(2, 0) });
+        await act(async () => await training);
+        expect(result.current.progress).toBeNull();
+        expect(setClassifier).not.toHaveBeenCalled();
+        expect(setHasTrainedModel).not.toHaveBeenCalled();
+        expect(mockNewClassifier.dispose).toHaveBeenCalledOnce();
+        expect(onError).not.toHaveBeenCalled();
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });
