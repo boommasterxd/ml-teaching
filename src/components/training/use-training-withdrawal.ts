@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { prepareRoute } from '../prepare-route';
 import { useMenuModule } from '../use-menu-module';
 
-export type WithdrawalAction = 'return' | 'restart';
-
 function loadDialog() {
   return import('./TrainingWithdrawalDialog');
 }
@@ -14,14 +12,10 @@ function loadDialog() {
 interface Withdrawal {
   pathname: string;
   opener: HTMLElement | null;
-  phase: 'waiting' | 'open' | WithdrawalAction;
+  phase: 'waiting' | 'open' | 'closing';
 }
 
-export function useTrainingWithdrawal(
-  pathname: string | null,
-  returnTo: string | null,
-  reopen: (opener: HTMLElement | null) => void,
-) {
+export function useTrainingWithdrawal(pathname: string | null, inTraining: boolean) {
   const router = useRouter();
   const [withdrawal, setWithdrawal] = useState<Withdrawal | null>(null);
   const { module, prepare, failed } = useMenuModule(loadDialog);
@@ -39,29 +33,25 @@ export function useTrainingWithdrawal(
     );
   }
 
-  function close(action: WithdrawalAction) {
+  function close() {
     setWithdrawal((current) =>
-      current?.phase === 'open' ? { ...current, phase: action } : current,
+      current?.phase === 'open' ? { ...current, phase: 'closing' } : current,
     );
   }
 
   const active = withdrawal?.pathname === pathname ? withdrawal : null;
 
-  function finish(action: WithdrawalAction) {
+  function finish() {
     if (!active || window.location.pathname !== pathname) return;
-    if (action === 'return' && returnTo) {
-      router.push(returnTo, { transitionTypes: ['nav-back'] });
+    if (inTraining) {
+      router.push('/', { transitionTypes: ['nav-back'] });
       return;
     }
     setWithdrawal(null);
     const { opener } = active;
-    if (action === 'restart') {
-      if (!returnTo) reopen(opener);
-    } else {
-      (opener?.isConnected ? opener : document.getElementById('main-content'))?.focus({
-        preventScroll: true,
-      });
-    }
+    (opener?.isConnected ? opener : document.getElementById('main-content'))?.focus({
+      preventScroll: true,
+    });
   }
 
   return {
@@ -73,8 +63,9 @@ export function useTrainingWithdrawal(
     showAfterExit,
     close,
     finish,
-    prepareReturn: () => {
-      if (returnTo) prepareRoute(router, returnTo);
+    leavesTraining: inTraining,
+    prepareHome: () => {
+      if (inTraining) prepareRoute(router, '/');
     },
   };
 }

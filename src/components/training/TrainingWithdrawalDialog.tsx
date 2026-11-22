@@ -7,21 +7,21 @@ import { CheckCircle2 } from '../icons/check-circle2';
 import ModalContent from '../ModalContent';
 import { DialogBody, DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
 
-export interface WithdrawalDialogProps {
+interface WithdrawalDialogProps {
   open: boolean;
-  onReturn: () => void;
-  onRestart: () => void;
-  onReturnIntent: () => void;
-  onRestartIntent: () => void;
+  actionLabel: string;
+  actionVariant: 'default' | 'secondary';
+  onClose: () => void;
+  onCloseIntent: () => void;
   onExited: () => void;
 }
 
 export default function TrainingWithdrawalDialog({
   open,
-  onReturn,
-  onRestart,
-  onReturnIntent,
-  onRestartIntent,
+  actionLabel,
+  actionVariant,
+  onClose,
+  onCloseIntent,
   onExited,
 }: WithdrawalDialogProps) {
   const reduceMotion = useShouldReduceMotion();
@@ -30,7 +30,7 @@ export default function TrainingWithdrawalDialog({
       isOpen={open}
       labelledBy="training-withdrawal-title"
       describedBy="training-withdrawal-message"
-      onClose={onReturn}
+      onClose={onClose}
       restoreFocus={false}
       onExited={onExited}
     >
@@ -57,23 +57,14 @@ export default function TrainingWithdrawalDialog({
         </div>
         <DialogFooter layout="auto-fit">
           <Button
-            variant="secondary"
+            variant={actionVariant}
             className="h-auto min-h-11 whitespace-normal"
-            onPointerEnter={onReturnIntent}
-            onPointerDown={onReturnIntent}
-            onFocus={onReturnIntent}
-            onClick={onReturn}
+            onPointerEnter={onCloseIntent}
+            onPointerDown={onCloseIntent}
+            onFocus={onCloseIntent}
+            onClick={onClose}
           >
-            Zurück zur Seite
-          </Button>
-          <Button
-            className="h-auto min-h-11 whitespace-normal"
-            onPointerEnter={onRestartIntent}
-            onPointerDown={onRestartIntent}
-            onFocus={onRestartIntent}
-            onClick={onRestart}
-          >
-            Training erneut öffnen
+            {actionLabel}
           </Button>
         </DialogFooter>
       </ModalContent>

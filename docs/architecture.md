@@ -37,8 +37,8 @@ practice availability from `src/content/learning-areas.ts`.
 quizzes; `/lernen/bilderkennung/ausprobieren` owns the existing browser training
 workspace. Training links start setup on the current page. Declining direct-entry
 consent returns to the image explanation; cancelling source-page setup stays on
-the source page. Full withdrawal clears the saved choice and reloads an active
-training document to discard its in-memory workspace.
+the source page. Full withdrawal clears the saved choice and discards the in-memory
+training workspace.
 `src/lib/learning-paths.ts` centralizes these destinations for navigation.
 `/lernen/q-learning` shows a static availability notice for the upcoming lesson.
 `/lernen/q-learning/ausprobieren` shows the availability notice and a link
@@ -97,9 +97,9 @@ the page capture; Flow starts after the dialog exits. Direct entry serves the
 complete inline consent in static HTML.
 Full training withdrawal clears the remembered choice, resets the workspace and
 releases the training resources. The confirmation opens after the preceding
-dialog closes. Restart opens fresh consent in the current document. Return
-uses the training entry's source, with the image-recognition lesson as the
-fallback for direct visits.
+dialog closes. Its single action returns visitors from the training workspace to the
+homepage. Outside the workspace, the action dismisses the confirmation and keeps the
+current page. A separate training entry starts fresh consent.
 The Pages Router's static 500 recovery action starts an App Router document
 navigation through the browser.
 App Router recovery renders its text, actions and responsive poster immediately.

@@ -52,7 +52,8 @@ const syntheticModel = {
 
 const cors = { 'access-control-allow-origin': '*' };
 
-const learningDocuments = new Set<string>([
+const flowDocuments = new Set<string>([
+  '/',
   learningPaths.images,
   learningPaths.imagePractice,
   '/datenschutz',
@@ -63,7 +64,7 @@ const assets =
 function isExpectedLocalRead(url: URL, request: Request) {
   const resourceType = request.resourceType();
   const query = url.searchParams;
-  if (learningDocuments.has(url.pathname)) {
+  if (flowDocuments.has(url.pathname)) {
     if (request.isNavigationRequest()) return query.size === 0;
     if (request.headers().rsc !== '1') return false;
     return query.size === 0 || (query.size === 1 && /^[\w-]{1,16}$/.test(query.get('_rsc') ?? ''));
