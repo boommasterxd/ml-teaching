@@ -1,4 +1,4 @@
-import { memo, useId, type MouseEventHandler, type ReactNode, type Ref } from 'react';
+import { memo, useId, type ReactNode, type Ref } from 'react';
 import { classColorClasses } from '@/lib/class-colors';
 import type { ProjectedPosition } from '@/lib/feature-projection';
 import { cn } from '@/lib/utils';
@@ -59,27 +59,6 @@ export function PredictionPlot({
   );
 }
 
-export function PredictionDescriptionButton({
-  controls,
-  onClick,
-}: {
-  controls?: string;
-  onClick?: MouseEventHandler<HTMLButtonElement>;
-}) {
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      className="min-h-11 justify-self-start"
-      disabled={!onClick}
-      aria-controls={controls}
-      onClick={onClick}
-    >
-      Diagramm beschreiben
-    </Button>
-  );
-}
-
 export function PredictionPlotPlaceholder({
   classes,
   children,
@@ -90,7 +69,6 @@ export function PredictionPlotPlaceholder({
   return (
     <>
       <PredictionPlot>{children}</PredictionPlot>
-      <PredictionDescriptionButton />
       <PredictionLegend markers={getMarkerStyles(classes)} />
     </>
   );
