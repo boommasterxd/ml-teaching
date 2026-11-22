@@ -170,7 +170,7 @@
   }
   .header-menu-desktop .header-menu-content {
     width: max-content;
-    min-width: calc(13rem - 2px);
+    min-width: calc(var(--header-menu-compact-width) - 2px);
     max-width: calc(100vw - 3rem - 2px);
   }
   .header-menu-desktop .header-menu-content:has([data-overview]) {
