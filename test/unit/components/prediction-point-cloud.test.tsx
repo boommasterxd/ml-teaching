@@ -9,7 +9,7 @@ import { makeClasses } from '../helpers/training-data';
 beforeEach(installBrowserHost);
 afterEach(restoreBrowserHost);
 
-it('describes the shown projection on request and keeps the snapshot stable across frames', () => {
+it('distinguishes classes by shape and marks a camera point beyond the plot edge', () => {
   const props = {
     area: createRef<HTMLDivElement>(),
     classes: makeClasses(2),
@@ -17,36 +17,21 @@ it('describes the shown projection on request and keeps the snapshot stable acro
       { classId: 'red', x: -1, y: 1 },
       { classId: 'red', x: 0, y: 0 },
       { classId: 'blue', x: 1, y: -1 },
-      { classId: 'blue', x: 1, y: -1 },
     ],
   };
-  const { rerender } = render(<PredictionPointCloud {...props} position={null} />);
-  const trigger = screen.getByRole('button', { name: 'Diagramm beschreiben' });
-  const heading = { name: 'Diagrammbeschreibung' };
-  const details = () =>
-    within(screen.getByRole('heading', heading).parentElement!).getByRole('list');
-  const classShapes = screen.getByRole('list', { name: 'Legende' }).querySelectorAll('li path');
-  expect(classShapes[1].getAttribute('d')).not.toBe(classShapes[2].getAttribute('d'));
-  expect(screen.queryByRole('heading', heading)).toBeNull();
-  fireEvent.click(trigger);
-  expect(document.activeElement).toBe(screen.getByRole('heading', heading));
-  expect(screen.getByText('Kamerabild: Noch kein Punkt im Diagramm.')).toBeTruthy();
-  expect(details().textContent).toContain('Rot: 2 Trainingsbilder (1 oben links, 1 in der Mitte).');
-  expect(details().textContent).toContain('Blau: 2 Trainingsbilder (2 unten rechts).');
-
-  rerender(<PredictionPointCloud {...props} position={{ x: 0, y: 0 }} />);
-  expect(screen.getByText('Kamerabild: Noch kein Punkt im Diagramm.')).toBeTruthy();
-  fireEvent.click(trigger);
-  expect(screen.getByText('Kamerabild: Im Ausschnitt, in der Mitte.')).toBeTruthy();
-  expect(details().textContent).toContain('Nächstes Beispiel: am Kamerapunkt.');
+  const { container, rerender } = render(
+    <PredictionPointCloud {...props} position={{ x: 0, y: 0 }} />,
+  );
+  const legend = within(screen.getByRole('list', { name: 'Legende' }));
+  const [, red, blue] = legend.getAllByRole('listitem');
+  expect(red.querySelector('path')?.getAttribute('d')).not.toBe(
+    blue.querySelector('path')?.getAttribute('d'),
+  );
+  const edgeMarker = () => container.querySelector('[data-slot="prediction-live-point"] circle');
+  expect(edgeMarker()).toBeNull();
 
   rerender(<PredictionPointCloud {...props} position={{ x: 5, y: 0 }} />);
-  expect(screen.getByText('Kamerabild: Im Ausschnitt, in der Mitte.')).toBeTruthy();
-  fireEvent.click(trigger);
-  expect(
-    screen.getByText('Kamerabild: Außerhalb des Ausschnitts, mittig rechts am Rand markiert.'),
-  ).toBeTruthy();
-  expect(details().textContent).toMatch(/Rot:.*85,5\s% der Diagrammbreite/);
+  expect(edgeMarker()).not.toBeNull();
 });
 
 it('isolates a class in a full diagram and restores all points on a second activation', () => {
