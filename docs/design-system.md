@@ -410,8 +410,8 @@ target. The add-class action is below the last card, beside the bottom continue
 button. On small screens the add action fills the remaining width and the continue
 button uses a compact text style. Animate UI Auto Height follows the class grid as
 rows appear or disappear, moving the actions and footer with the list. Reduced
-motion applies the new height immediately. Adding a class brings its name into
-view. Keyboard activation also focuses the new field.
+motion applies the new height immediately. Adding a class preserves the page's
+scroll position. Keyboard activation focuses the new name field without scrolling.
 The class name fills the card header beside
 the compact, vertically centered image count. An invalid name uses the field's error border and
 an anchored Animate UI tooltip on focus or hover. The field retains a live error
