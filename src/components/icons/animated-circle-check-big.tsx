@@ -1,6 +1,5 @@
 'use client';
 
-import * as React from 'react';
 import { motion, type Variants } from 'motion/react';
 
 import {
@@ -9,8 +8,12 @@ import {
   IconWrapper,
   type IconProps,
 } from '@animate-ui/react/icons';
+import { useMotionPreference } from '../ui/use-motion-preference';
 
 type CircleCheckBigProps = IconProps<keyof typeof animations>;
+
+const checkPath = 'm9 11 3 3L22 4';
+const drawTransition = { duration: 0.6, ease: 'easeInOut' } as const;
 
 const animations = {
   default: {
@@ -25,17 +28,34 @@ const animations = {
         pathLength: [0, 1],
         opacity: [0, 1],
         scale: [1, 1.1, 1],
-        transition: {
-          duration: 0.6,
-          ease: 'easeInOut',
-        },
+        transition: drawTransition,
       },
+    },
+  } satisfies Record<string, Variants>,
+  'draw-in': {
+    path1: {},
+    path2: {
+      initial: { pathLength: 0, opacity: 0 },
+      animate: { pathLength: 1, opacity: 1, transition: drawTransition },
+      rest: { pathLength: 1, opacity: 1, transition: { duration: 0 } },
     },
   } satisfies Record<string, Variants>,
 } as const;
 
+function DrawInStroke({ variants }: { variants: Variants }) {
+  const { reduce } = useMotionPreference();
+  return (
+    <motion.path
+      d={checkPath}
+      variants={variants}
+      initial={reduce ? false : 'initial'}
+      animate={reduce ? 'rest' : 'animate'}
+    />
+  );
+}
+
 function IconComponent({ size, ...props }: CircleCheckBigProps) {
-  const { controls } = useAnimateIconContext();
+  const { animation, controls } = useAnimateIconContext();
   const variants = getVariants(animations);
 
   return (
@@ -57,12 +77,11 @@ function IconComponent({ size, ...props }: CircleCheckBigProps) {
         initial="initial"
         animate={controls}
       />
-      <motion.path
-        d="m9 11 3 3L22 4"
-        variants={variants.path2}
-        initial="initial"
-        animate={controls}
-      />
+      {animation === 'draw-in' ? (
+        <DrawInStroke variants={variants.path2} />
+      ) : (
+        <motion.path d={checkPath} variants={variants.path2} initial="initial" animate={controls} />
+      )}
     </motion.svg>
   );
 }

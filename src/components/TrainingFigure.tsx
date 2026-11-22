@@ -1,13 +1,38 @@
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
-import { useTempoTransition } from '@animate-ui/react/utils/motion';
-import type { Transition } from 'motion/react';
+import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
+import { AnimatePresence, motion, useIsPresent, type Transition } from 'motion/react';
 import { memo } from 'react';
+import { CircleCheckBig } from './icons/animated-circle-check-big';
 import { Brain } from './icons/brain';
-import { CheckCircle2 } from './icons/check-circle2';
 import { useMotionPreference } from './ui/use-motion-preference';
 
 const examplePositions = [10, 28, 46];
 const featurePaths = ['M21 10 C46 10 39 28 63 28', 'M21 28 H63', 'M21 46 C46 46 39 28 63 28'];
+
+function ClassifierNode({ complete }: { complete: boolean }) {
+  const { reduce } = useMotionPreference();
+  const present = useIsPresent();
+  const fade = useTempoTransition(motionTokens.transition.fade);
+
+  return (
+    <motion.div
+      hidden={reduce && !present}
+      initial={reduce ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={reduce ? { duration: 0 } : fade}
+      className="absolute top-1/2 right-0 grid aspect-square w-[35%] -translate-y-1/2"
+    >
+      {complete ? (
+        <CircleCheckBig animation="draw-in" className="size-full text-success" />
+      ) : (
+        <span className="grid size-full place-items-center rounded-full border border-primary/25 bg-card">
+          <Brain className="size-7 sm:size-9" />
+        </span>
+      )}
+    </motion.div>
+  );
+}
 
 /** The examples converge on the classifier, as in the lesson's KNN illustration. */
 const TrainingFigure = memo(function TrainingFigure({
@@ -52,17 +77,9 @@ const TrainingFigure = memo(function TrainingFigure({
           </g>
         ))}
       </svg>
-      {complete ? (
-        <CheckCircle2
-          className="absolute top-1/2 right-0 aspect-square w-[35%] h-auto -translate-y-1/2 text-success"
-          animate={!reduce}
-          persistOnAnimateEnd
-        />
-      ) : (
-        <span className="absolute top-1/2 right-0 grid size-[35%] aspect-square h-auto -translate-y-1/2 place-items-center rounded-full border border-primary/25 bg-card">
-          <Brain className="size-7 sm:size-9" />
-        </span>
-      )}
+      <AnimatePresence initial={false}>
+        <ClassifierNode key={complete ? 'complete' : 'brain'} complete={complete} />
+      </AnimatePresence>
     </div>
   );
 });

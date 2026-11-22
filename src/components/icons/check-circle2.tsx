@@ -1,6 +1,6 @@
 'use client';
 
-import { CircleCheckBig as AnimatedIcon } from '../animate-ui/icons/circle-check-big';
+import { CircleCheckBig as AnimatedIcon } from './animated-circle-check-big';
 import { CircleCheckBig as StaticIcon } from 'lucide-react';
 import { clientIcon } from './client-icon';
 

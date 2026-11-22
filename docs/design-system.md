@@ -590,8 +590,10 @@ announcement. The bar sits in the lower padding while the figure and status stay
 centered as a group. Pending messages reserve their wrapped height during training.
 Reduced motion applies
 progress updates without interpolation or the final animation wait.
-Successful training replaces the end node with the shared Animate UI
-CircleCheckBig glyph. The same glyph appears without an extra outline or badge
+On training completion the brain fades out as the shared Animate UI CircleCheckBig
+glyph fades in and draws its check stroke from its initial hidden state. Returning
+to an existing training result shows the settled icon. Reduced motion shows the
+finished glyph without a draw or fade. The same glyph appears without an extra outline or badge
 in the KNN result and the consent withdrawal dialog. It also marks completed
 image counts, other correct answers, quiz completion and reward arrival.
 
@@ -733,6 +735,11 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   needed. Prepared panels stay hidden until activation, and any remaining module
   update commits with the selection. Reduced motion and unsupported browsers
   switch without capture.
+- The training status card reserves room for its wrapping messages across
+  states. Animate UI Effect fades the shared success surface over the stable
+  card background at completion and reverses the fade for retraining. Status
+  announcements and controls update independently of the decorative fade.
+  Reduced motion switches the surface without a fade.
 - The shared animated-list recipe owns class insertion, removal and positional
   reflow, using stable class IDs, reduced-motion configuration and hydration-safe
   initial markup. Exiting classes become inert and hidden from assistive technology
@@ -820,8 +827,11 @@ matching glyphs only in the server/hydration snapshot. Both handwritten adapter
 files remain inside all application quality gates. Other matching icons use
 official generated variants from `src/components/animate-ui/icons/`.
 `src/components/animated-sun.tsx` maps a data array of the original eight rays
-instead of copying their markup, preserving geometry and animation. This adapted
-producer remains outside vendor exclusions, with no additional size exception.
+instead of copying their markup, preserving geometry and animation.
+`src/components/icons/animated-circle-check-big.tsx` adds a declarative draw-in
+variant for the client-loaded training illustration and preserves the default
+registry gesture for the shared icon entry. Both adapted producers remain outside
+vendor exclusions, with no additional size exception.
 
 Generated registry scaffolding is vendor code. Duplication scanning excludes only
 that directory; application code retains the five-percent threshold. The unchanged
