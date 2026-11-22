@@ -110,7 +110,7 @@ test('short navigation and options menus fade their scrollable content', async (
   await page.keyboard.press('Escape');
   await expect(themeTrigger).toBeFocused();
   await themeTrigger.press('ArrowUp');
-  const remember = themeMenu.getByRole('menuitemcheckbox', { name: /Auswahl für weitere Besuche/ });
+  const remember = themeMenu.getByRole('menuitemcheckbox', { name: 'Auswahl merken' });
   await expect(remember).toBeFocused();
   await expect(remember).toBeInViewport({ ratio: 1 });
   await page.keyboard.press('Escape');

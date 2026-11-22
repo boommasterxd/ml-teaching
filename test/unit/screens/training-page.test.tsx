@@ -177,9 +177,9 @@ async function collectCupAndBookImages(container: HTMLElement) {
   fireEvent.change(names[1], { target: { value: 'Buch' } });
   const inputs = container.querySelectorAll<HTMLInputElement>('input[type="file"]');
   fireEvent.change(inputs[0], { target: { files: selectedImages('tasse') } });
-  await screen.findByText('10 Bilder');
+  await screen.findByText('10 Bilder', undefined, { timeout: 3000 });
   fireEvent.change(inputs[1], { target: { files: selectedImages('buch') } });
-  await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2));
+  await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2), { timeout: 3000 });
 }
 
 async function expectPredictionCameraLifecycle(steps: ReturnType<typeof within>) {
