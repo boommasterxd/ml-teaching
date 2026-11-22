@@ -3,7 +3,7 @@
 import Button from '../Button';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
-import { DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
+import { DialogBody, DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
 import CameraStep from './CameraStep';
 import ConsentStep from './ConsentStep';
 import LoadingStep from './LoadingStep';
@@ -66,7 +66,7 @@ export default function TrainingSetupDialog({
       restoreFocus={restoreFocus}
       onExited={onExited}
     >
-      <ModalContent className="max-w-xl p-4 sm:p-6">
+      <ModalContent className="max-w-xl [--dialog-padding:1rem] sm:[--dialog-padding:1.5rem]">
         {step && (
           <SetupStepTransition step={step}>
             {step === 'consent' && (
@@ -97,9 +97,11 @@ export default function TrainingSetupDialog({
                 <DialogTitle id="error-modal-title" tabIndex={-1}>
                   KI-Modell konnte nicht geladen werden
                 </DialogTitle>
-                <DialogDescription id="error-modal-desc">
-                  Überprüfe deine Verbindung und versuche es erneut.
-                </DialogDescription>
+                <DialogBody tabIndex={0} role="region" aria-labelledby="error-modal-title">
+                  <DialogDescription id="error-modal-desc">
+                    Überprüfe deine Verbindung und versuche es erneut.
+                  </DialogDescription>
+                </DialogBody>
                 <DialogFooter>
                   <Button variant="secondary" onClick={onDeclineConsent}>
                     Abbrechen

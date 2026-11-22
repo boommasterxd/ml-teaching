@@ -10,7 +10,7 @@ import Image from 'next/image';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import Button from '../Button';
-import { DialogDescription, DialogTitle } from '../ui/dialog';
+import { DialogBody, DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
 import { Separator } from '../ui/separator';
 import type { MLImage } from '../../types/ml';
 
@@ -66,21 +66,25 @@ export default function ImagePreviewModal({
             <X data-icon="inline-start" aria-hidden="true" />
           </Button>
         </div>
-        <Separator />
+        <Separator className="shrink-0" />
         {image && (
-          <div className="flex flex-col items-center">
-            <Image
-              src={image.dataUrl}
-              width={192}
-              height={192}
-              unoptimized
-              alt="Vergrößerte Bildvorschau"
-              className="size-48 object-cover rounded-xl border border-input mb-6"
-            />
-            <Button variant="destructive" onClick={onDelete} className="w-full">
-              <Trash2 data-icon="inline-start" aria-hidden="true" /> Bild löschen
-            </Button>
-          </div>
+          <>
+            <DialogBody tabIndex={0} role="region" aria-labelledby="image-modal-title">
+              <Image
+                src={image.dataUrl}
+                width={192}
+                height={192}
+                unoptimized
+                alt="Vergrößerte Bildvorschau"
+                className="mx-auto size-48 rounded-xl border border-input object-cover"
+              />
+            </DialogBody>
+            <DialogFooter className="sm:grid-cols-1">
+              <Button variant="destructive" onClick={onDelete}>
+                <Trash2 data-icon="inline-start" aria-hidden="true" /> Bild löschen
+              </Button>
+            </DialogFooter>
+          </>
         )}
       </ModalContent>
     </Dialog>

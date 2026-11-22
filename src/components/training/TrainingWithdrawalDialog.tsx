@@ -5,7 +5,7 @@ import Button from '../Button';
 import Dialog from '../Dialog';
 import { CheckCircle2 } from '../icons/check-circle2';
 import ModalContent from '../ModalContent';
-import { DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
+import { DialogBody, DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
 
 export interface WithdrawalDialogProps {
   open: boolean;
@@ -34,22 +34,31 @@ export default function TrainingWithdrawalDialog({
       restoreFocus={false}
       onExited={onExited}
     >
-      <ModalContent maxWidth="lg" className="gap-5 text-center">
-        <div className="mx-auto grid size-16 place-items-center rounded-full bg-success-soft text-success">
-          <CheckCircle2 size={36} animate={open && !reduceMotion} aria-hidden="true" />
+      <ModalContent
+        maxWidth="lg"
+        className="text-center [--dialog-gap:1.25rem] [--dialog-padding:1rem] sm:[--dialog-padding:1.5rem]"
+      >
+        <div className="mx-auto grid size-[min(4rem,16dvh)] shrink-0 place-items-center rounded-full bg-success-soft text-success">
+          <CheckCircle2
+            className="size-[min(2.25rem,10dvh)]"
+            animate={open && !reduceMotion}
+            aria-hidden="true"
+          />
         </div>
-        <div className="grid gap-2">
+        <div className="flex min-h-0 flex-col gap-2">
           <DialogTitle id="training-withdrawal-title" className="text-xl">
             Einwilligung widerrufen
           </DialogTitle>
-          <DialogDescription id="training-withdrawal-message">
-            Das Bildtraining wurde beendet und deine lokalen Trainingsdaten wurden gelöscht.
-          </DialogDescription>
+          <DialogBody tabIndex={0} role="region" aria-labelledby="training-withdrawal-title">
+            <DialogDescription id="training-withdrawal-message">
+              Das Bildtraining wurde beendet und deine lokalen Trainingsdaten wurden gelöscht.
+            </DialogDescription>
+          </DialogBody>
         </div>
-        <DialogFooter>
+        <DialogFooter layout="auto-fit">
           <Button
             variant="secondary"
-            className="min-h-11"
+            className="h-auto min-h-11 whitespace-normal"
             onPointerEnter={onReturnIntent}
             onPointerDown={onReturnIntent}
             onFocus={onReturnIntent}
@@ -58,7 +67,7 @@ export default function TrainingWithdrawalDialog({
             Zurück zur Seite
           </Button>
           <Button
-            className="min-h-11"
+            className="h-auto min-h-11 whitespace-normal"
             onPointerEnter={onRestartIntent}
             onPointerDown={onRestartIntent}
             onFocus={onRestartIntent}

@@ -39,10 +39,28 @@ test('consent and the virtual gallery fade only while more content is available'
   await page.goto(learningPaths.imagePractice);
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   const consent = dialog.locator(fadeViewport);
+  const title = dialog.getByRole('heading');
+  const cancel = dialog.getByRole('button', { name: 'Abbrechen' });
+  const confirm = dialog.getByRole('button', { name: 'Zustimmen' });
+  for (const fixedPart of [title, cancel, confirm]) {
+    await expect(fixedPart).toBeInViewport({ ratio: 1 });
+  }
   await expectEdges(consent, false, true);
-  await scrollViewport(consent, 'end');
+  const dialogBounds = await dialog.boundingBox();
+  const pageScroll = await page.evaluate(() => scrollY);
+  await consent.hover();
+  await page.mouse.wheel(0, 2000);
   await expectEdges(consent, true, false);
-  await expect(dialog.getByRole('button', { name: 'Zustimmen' })).toBeInViewport({ ratio: 1 });
+  expect(await dialog.boundingBox()).toEqual(dialogBounds);
+  expect(await page.evaluate(() => scrollY)).toBe(pageScroll);
+  for (const fixedPart of [title, cancel, confirm]) {
+    await expect(fixedPart).toBeInViewport({ ratio: 1 });
+  }
+  await cancel.focus();
+  await page.keyboard.press('Tab');
+  const firstChoice = dialog.getByRole('checkbox').first();
+  await expect(firstChoice).toBeFocused();
+  await expect(firstChoice).toBeInViewport({ ratio: 1 });
   await expectAccessible(page);
   await grantModelConsent(page);
   await page.getByRole('button', { name: 'Ohne Kamera fortfahren' }).press('Enter');
@@ -76,11 +94,19 @@ test('consent and the virtual gallery fade only while more content is available'
   const preview = page.getByRole('dialog', { name: 'Bild 20 aus Klasse 1' });
   await expect(preview).toBeVisible();
   await page.setViewportSize({ width: 390, height: 245 });
-  const previewViewport = page.locator('[data-slot="dialog-viewport"]');
+  const previewViewport = preview.getByRole('region');
+  const closePreview = preview.getByRole('button', { name: 'Schließen' });
+  const deleteImage = preview.getByRole('button', { name: 'Bild löschen' });
+  await expect(closePreview).toBeInViewport({ ratio: 1 });
+  await expect(deleteImage).toBeInViewport({ ratio: 1 });
   await expectEdges(previewViewport, false, true);
-  await scrollViewport(previewViewport, 'end');
+  await closePreview.focus();
+  await page.keyboard.press('Tab');
+  await expect(previewViewport).toBeFocused();
+  await page.keyboard.press('End');
   await expectEdges(previewViewport, true, false);
-  await expect(preview.getByRole('button', { name: 'Bild löschen' })).toBeInViewport({ ratio: 1 });
+  await expect(closePreview).toBeInViewport({ ratio: 1 });
+  await expect(deleteImage).toBeInViewport({ ratio: 1 });
   await page.keyboard.press('Escape');
   await expect(last).toBeFocused();
   expect(failures).toEqual([]);

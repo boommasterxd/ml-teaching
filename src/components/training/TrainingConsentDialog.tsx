@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog';
 import { Button } from '../ui/button';
-import { DialogFooter, DialogHeading } from '../ui/dialog';
+import { DialogBody, DialogFooter, DialogHeading } from '../ui/dialog';
 
 interface TrainingConsentDialogProps {
   isOpen: boolean;
@@ -37,7 +37,7 @@ export default function TrainingConsentDialog({
 }: TrainingConsentDialogProps) {
   const opener = useDialogReturnFocus(isOpen);
   const closeButton = useRef<HTMLButtonElement>(null);
-  const actionLayout = 'h-auto min-h-11 whitespace-normal';
+  const actionLayout = 'h-auto min-h-11 py-1 leading-tight whitespace-normal';
 
   return (
     <AlertDialog
@@ -53,16 +53,27 @@ export default function TrainingConsentDialog({
         finalFocus={false}
         onExited={onExited}
         render={
-          <ModalContent className={cn('gap-5 p-4 sm:p-6', canRevokeCamera && 'sm:max-w-xl')}>
+          <ModalContent
+            className={cn(
+              '[--dialog-gap:1.25rem] [--dialog-padding:1rem] sm:[--dialog-padding:1.5rem]',
+              canRevokeCamera && 'sm:max-w-xl',
+            )}
+          >
             <DialogHeading icon={<ShieldCheck animate={isOpen} aria-hidden="true" />}>
-              <AlertDialogTitle className="text-lg leading-tight font-semibold">
+              <AlertDialogTitle
+                id="training-settings-title"
+                className="text-lg leading-tight font-semibold"
+              >
                 Einstellungen zum Bildtraining
               </AlertDialogTitle>
             </DialogHeading>
-            <AlertDialogDescription className="text-sm leading-relaxed text-muted-foreground">
-              Ein Widerruf beendet das Bildtraining und löscht vorhandene Trainingsdaten.
-            </AlertDialogDescription>
+            <DialogBody tabIndex={0} role="region" aria-labelledby="training-settings-title">
+              <AlertDialogDescription className="text-sm leading-relaxed text-muted-foreground">
+                Ein Widerruf beendet das Bildtraining und löscht vorhandene Trainingsdaten.
+              </AlertDialogDescription>
+            </DialogBody>
             <DialogFooter
+              layout="auto-fit"
               className={cn(canRevokeCamera && 'sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)]')}
             >
               <AlertDialogCancel ref={closeButton} className={actionLayout}>

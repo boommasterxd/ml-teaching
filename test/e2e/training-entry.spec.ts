@@ -402,7 +402,12 @@ test('withdrawing remembered consent returns to the page that opened training', 
   await expect(page).toHaveURL(learningPaths.imagePractice);
   await expect.poll(() => page.evaluate(() => sessionStorage.length)).toBe(1);
 
+  await page.setViewportSize({ width: 320, height: 256 });
   const confirmation = await confirmTrainingWithdrawal(page);
+  await expect(confirmation.getByRole('heading')).toBeInViewport({ ratio: 1 });
+  for (const action of await confirmation.getByRole('button').all()) {
+    await expect(action).toBeInViewport({ ratio: 1 });
+  }
   await expect(page).toHaveURL(learningPaths.imagePractice);
   await expectNoStoredTrainingData(page);
   await confirmation.getByRole('button', { name: 'Zurück zur Seite', exact: true }).press('Enter');

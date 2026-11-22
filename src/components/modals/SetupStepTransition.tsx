@@ -64,8 +64,9 @@ function StepPanel({
   const present = useIsPresent();
   const props = {
     className: cn(
-      'grid min-w-0 sm:gap-6',
-      step === 'consent' ? 'gap-3' : 'gap-5',
+      // Size the panel independently of the frame that animates to its height.
+      'flex max-h-[calc(var(--dialog-height)-2*var(--dialog-block-padding)-2px)] min-w-0 flex-col gap-[min(var(--dialog-step-gap),4dvh)] sm:[--dialog-step-gap:1.5rem]',
+      step === 'consent' ? '[--dialog-step-gap:0.75rem]' : '[--dialog-step-gap:1.25rem]',
       !present && 'pointer-events-none absolute inset-x-0 top-0',
     ),
     inert: !present,
