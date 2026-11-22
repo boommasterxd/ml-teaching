@@ -246,6 +246,7 @@ const ImageGallery = memo(function ImageGallery({
       )}
       <ScrollFadeViewport
         enabled={hasImages}
+        blurItems
         ref={scrollContainerRef}
         tabIndex={hasImages ? 0 : -1}
         role="region"

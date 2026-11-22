@@ -475,10 +475,10 @@ in place. On narrow screens the consent text uses the available width inside the
 dialog, which retains vertical scrolling for short viewports and zoom.
 Controlled dialogs restore focus when they close.
 The gallery, dialog bodies, and menus share Animate UI's Scroll Fade. The fade
-and slight blur follow the edges with more content. The scroll containers keep
-their CSS overflow, scrollbars, and keyboard behavior. Only the content viewport
-fades, so surrounding surfaces and dialog scrims stay separate. Gallery blur
-works on the virtualizer's mounted thumbnails without scaling or shifting them.
+appears at the edges with more content. The scroll containers keep their CSS
+overflow, scrollbars, and keyboard behavior. Only the content viewport fades,
+so surrounding surfaces and dialog scrims stay separate. The gallery also applies
+a slight blur to mounted thumbnails near the scroll edge.
 Buttons share disabled, keyboard and touch behavior. Error messages, empty data,
 loading state and deletion confirmations stay explicit.
 
