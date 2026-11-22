@@ -269,7 +269,7 @@ test('model download is consent-gated and a failed download leaves an accessible
   await expectAccessible(page);
   await page.getByRole('button', { name: 'Zur Bilderkennung', exact: true }).click();
   await expect(page).toHaveURL(`http://127.0.0.1:3100${learningPaths.images}`);
-  expect(network.unexpectedRequests()).toBe(0);
+  expect(network.unexpectedRequests).toEqual([]);
 });
 
 test('consent can be withdrawn while a model download is pending', async ({ page, baseURL }) => {
@@ -296,7 +296,7 @@ test('consent can be withdrawn while a model download is pending', async ({ page
     expect(aborted.failure()?.errorText).toBe('net::ERR_ABORTED');
     expect(pending).toHaveLength(requestsBeforeWithdrawal);
     await expectAccessible(page);
-    expect(network.unexpectedRequests()).toBe(0);
+    expect(network.unexpectedRequests).toEqual([]);
   } finally {
     await Promise.all(pending.map((route) => route.abort().catch(() => {})));
   }
@@ -493,5 +493,5 @@ test('local images train a real browser classifier, predict and reset without up
   expect(network.modelRequests).toEqual(['graph', 'weights']);
   await expectEmptyTrainingAfterConsent(page);
   await expectNoStoredTrainingData(page);
-  expect(network.unexpectedRequests()).toBe(0);
+  expect(network.unexpectedRequests).toEqual([]);
 });

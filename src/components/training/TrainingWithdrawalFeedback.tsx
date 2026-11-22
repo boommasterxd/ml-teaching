@@ -7,26 +7,26 @@ import type { useTrainingWithdrawal } from './use-training-withdrawal';
 export default function TrainingWithdrawalFeedback({
   withdrawal,
   resourcesReleased,
-  onRestartIntent,
 }: {
   withdrawal: ReturnType<typeof useTrainingWithdrawal>;
   resourcesReleased: boolean;
-  onRestartIntent: () => void;
 }) {
-  const { finish, prepareReturn } = withdrawal;
+  const { close, finish, prepareHome, leavesTraining } = withdrawal;
   const phase = withdrawal.active?.phase;
   if (!phase || phase === 'waiting' || !resourcesReleased) return null;
+  const actionLabel = leavesTraining ? 'Training verlassen' : 'Schließen';
+  const actionVariant = leavesTraining ? 'default' : 'secondary';
   const SuccessDialog = withdrawal.Dialog;
   if (SuccessDialog) {
     return (
       <SuccessDialog
         open={phase === 'open'}
-        onReturn={() => withdrawal.close('return')}
-        onRestart={() => withdrawal.close('restart')}
-        onReturnIntent={prepareReturn}
-        onRestartIntent={onRestartIntent}
+        actionLabel={actionLabel}
+        actionVariant={actionVariant}
+        onClose={close}
+        onCloseIntent={prepareHome}
         onExited={() => {
-          if (phase === 'return' || phase === 'restart') finish(phase);
+          if (phase === 'closing') finish();
         }}
       />
     );
@@ -39,25 +39,16 @@ export default function TrainingWithdrawalFeedback({
       className="fixed inset-x-4 bottom-4 z-40 mx-auto w-auto max-w-md"
     >
       <AlertDescription>Deine Einwilligung wurde widerrufen.</AlertDescription>
-      <div className="col-start-2 flex flex-wrap gap-2">
-        <Button
-          variant="secondary"
-          onPointerEnter={prepareReturn}
-          onPointerDown={prepareReturn}
-          onFocus={prepareReturn}
-          onClick={() => finish('return')}
-        >
-          Zurück zur Seite
-        </Button>
-        <Button
-          onPointerEnter={onRestartIntent}
-          onPointerDown={onRestartIntent}
-          onFocus={onRestartIntent}
-          onClick={() => finish('restart')}
-        >
-          Training erneut öffnen
-        </Button>
-      </div>
+      <Button
+        variant={actionVariant}
+        className="col-start-2 justify-self-start"
+        onPointerEnter={prepareHome}
+        onPointerDown={prepareHome}
+        onFocus={prepareHome}
+        onClick={finish}
+      >
+        {actionLabel}
+      </Button>
     </Alert>
   );
 }

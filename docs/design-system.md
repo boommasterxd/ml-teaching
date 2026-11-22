@@ -276,8 +276,8 @@ consent is active or remembered, the footer offers the labeled training settings
 From `2xl`, the same settings are also available from the shield in the lower-left
 gutter. The footer provides an unobstructed action at smaller widths. The settings
 dialog separates camera shutdown from full withdrawal. Model loading also provides
-withdrawal, which cancels setup on the source page or clears and reloads the training
-document. The consent step and privacy policy explain local processing.
+withdrawal, which cancels setup on the source page or clears the training workspace.
+The consent step and privacy policy explain local processing.
 Badge icons inherit the surrounding Card or control's AnimateIcon context instead
 of introducing a nested provider that would restrict their hover trigger to the badge.
 Destructive Buttons and Badges use the theme's foreground/background pair without
@@ -610,8 +610,10 @@ Reduced motion uses the library's instant height change and opacity feedback.
   follows the matching history entry and rendered route commit. Interruption,
   failed navigation or browser cancellation releases the pending capture.
   Reduced motion opts out of page capture. Unsupported browsers retain
-  normal navigation. Full withdrawal on the training page clears the remembered
-  consent and reloads the document to discard the in-memory workspace.
+  normal navigation. Full withdrawal clears the remembered consent and discards
+  the in-memory workspace. The confirmation uses the red primary action to return
+  from training to the homepage with `nav-back`. On other pages, the gray secondary
+  action dismisses the confirmation in place.
   Concurrent theme, menu and route updates can supersede a pending native snapshot.
   React may skip that visual transition to preserve synchronous interaction; do not
   delay navigation or focus to serialize decorative work.

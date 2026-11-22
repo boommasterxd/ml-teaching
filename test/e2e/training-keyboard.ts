@@ -150,6 +150,7 @@ export async function confirmTrainingWithdrawal(page: Page) {
   await page.keyboard.press('Enter');
   const confirmation = page.getByRole('dialog', { name: 'Einwilligung widerrufen', exact: true });
   await expect(confirmation).toBeVisible();
+  await expect(confirmation.getByRole('button')).toHaveCount(1);
   await expect(page.getByRole('dialog')).toHaveCount(1);
   await expect(page.locator('[data-slot="alert-dialog-content"]')).toHaveCount(0);
   await expect
@@ -160,21 +161,24 @@ export async function confirmTrainingWithdrawal(page: Page) {
 }
 
 export async function withdrawTrainingConsent(page: Page, afterWithdrawal?: () => Promise<void>) {
-  const url = page.url();
   await page.evaluate(() => {
     document.documentElement.dataset.withdrawalProbe = 'current-document';
   });
   const confirmation = await confirmTrainingWithdrawal(page);
   await afterWithdrawal?.();
   await confirmation
-    .getByRole('button', { name: 'Training erneut öffnen', exact: true })
+    .getByRole('button', { name: 'Training verlassen', exact: true })
     .press('Enter');
-
-  const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   await expect(confirmation).toBeHidden();
-  await expect(consent).toBeVisible();
-  await expect(page).toHaveURL(url);
+  await expect(page).toHaveURL('/');
   await expect(page.locator('html')).toHaveAttribute('data-withdrawal-probe', 'current-document');
+
+  await page
+    .getByRole('link', { name: 'Eigenes Bildmodell trainieren', exact: true })
+    .press('Enter');
+  const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  await expect(consent).toBeVisible();
+  await expect(page).toHaveURL('/');
   const choices = consent.getByRole('checkbox');
   await expect(choices).toHaveCount(3);
   for (const choice of await choices.all()) await expect(choice).not.toBeChecked();

@@ -191,7 +191,7 @@ describe('training entry across routes', () => {
     const confirmation = within(
       await screen.findByRole('dialog', { name: 'Einwilligung widerrufen' }),
     );
-    fireEvent.click(confirmation.getByRole('button', { name: 'Zurück zur Seite' }));
+    fireEvent.click(confirmation.getByRole('button', { name: 'Schließen' }));
     await waitFor(() => expect(document.activeElement).toBe(opener));
     expect((browser.model.mock.calls[1][0] as AbortSignal).aborted).toBe(true);
     expect(readRememberedTrainingConsent()).toBeNull();
@@ -256,11 +256,16 @@ describe('training entry across routes', () => {
     const confirmation = within(
       await screen.findByRole('dialog', { name: 'Einwilligung widerrufen' }),
     );
-    fireEvent.click(confirmation.getByRole('button', { name: 'Training erneut öffnen' }));
+    expect(confirmation.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Schließen',
+    ]);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(screen.queryByRole('button', { name: settingsName })).toBeNull();
+    startTraining();
     const consent = within(await screen.findByRole('dialog', { name: consentName }));
     expect(consent.getByRole('button', { name: 'Zustimmen' })).toHaveProperty('disabled', true);
     expect(readRememberedTrainingConsent()).toBeNull();
-    expect(screen.queryByRole('button', { name: settingsName })).toBeNull();
     expect(browser.model).not.toHaveBeenCalled();
     expect(browser.getUserMedia).not.toHaveBeenCalled();
     expect(testRouter.push).not.toHaveBeenCalled();

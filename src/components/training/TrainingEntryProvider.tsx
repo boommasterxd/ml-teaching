@@ -103,11 +103,9 @@ function useTrainingEntryState() {
   const [visit, setVisit] = useState<{
     pathname: string | null;
     handoff: boolean;
-    returnTo: string;
   }>({
     pathname,
     handoff: false,
-    returnTo: learningPaths.images,
   });
   const activeEntry = entry?.source === pathname ? entry : null;
   const engine = useTrainingEngine(
@@ -119,10 +117,7 @@ function useTrainingEntryState() {
 
   if (visit.pathname !== pathname) {
     const handoff = inTraining && entry?.phase === 'moving';
-    const returnTo = inTraining
-      ? (entry?.source ?? visit.pathname ?? learningPaths.images)
-      : learningPaths.images;
-    setVisit({ pathname, handoff, returnTo });
+    setVisit({ pathname, handoff });
     setEntry(null);
     if (!handoff) {
       reset();
@@ -146,7 +141,7 @@ function useTrainingEntryState() {
     [pathname, inTraining, activeEntry, prepare, restore],
   );
   const actions = useMemo(() => ({ openEntry, prepareEntry: prepare }), [openEntry, prepare]);
-  const withdrawal = useTrainingWithdrawal(pathname, inTraining ? visit.returnTo : null, openEntry);
+  const withdrawal = useTrainingWithdrawal(pathname, inTraining);
 
   function closeEntry() {
     if (!activeEntry) return;
@@ -300,7 +295,6 @@ export default function TrainingEntryProvider({ children }: { children: ReactNod
       <TrainingWithdrawalFeedback
         withdrawal={withdrawal}
         resourcesReleased={!engine.models.mobilenetModel && !engine.models.classifier}
-        onRestartIntent={flow.prepare}
       />
     </TrainingEntryContext>
   );

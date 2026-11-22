@@ -202,7 +202,7 @@ test('keyboard setup hands off a single model and camera stream before Flow navi
     expect(transition).not.toHaveProperty('dialogPresentAtStart');
   }
   expect(network.modelRequests).toEqual(['graph', 'weights']);
-  expect(network.unexpectedRequests()).toBe(0);
+  expect(network.unexpectedRequests).toEqual([]);
   expect(failures).toEqual([]);
 });
 
@@ -301,7 +301,7 @@ test('a denied camera request keeps setup on the source page until the user cont
     { root: false, outgoingPages: 1, incomingPages: 1, back: false },
   ]);
   expect(network.modelRequests).toEqual(['graph', 'weights']);
-  expect(network.unexpectedRequests()).toBe(0);
+  expect(network.unexpectedRequests).toEqual([]);
 });
 
 test('a missing camera leaves the direct-entry dialog visible through its fade before notifying', async ({
@@ -384,7 +384,7 @@ test('a missing camera leaves the direct-entry dialog visible through its fade b
   }
 });
 
-test('withdrawing remembered consent returns to the page that opened training', async ({
+test('withdrawing remembered consent from training returns to the homepage', async ({
   page,
   baseURL,
 }) => {
@@ -405,18 +405,18 @@ test('withdrawing remembered consent returns to the page that opened training', 
   await page.setViewportSize({ width: 320, height: 256 });
   const confirmation = await confirmTrainingWithdrawal(page);
   await expect(confirmation.getByRole('heading')).toBeInViewport({ ratio: 1 });
-  for (const action of await confirmation.getByRole('button').all()) {
-    await expect(action).toBeInViewport({ ratio: 1 });
-  }
+  const leaveTraining = confirmation.getByRole('button', {
+    name: 'Training verlassen',
+    exact: true,
+  });
+  await expect(leaveTraining).toBeInViewport({ ratio: 1 });
   await expect(page).toHaveURL(learningPaths.imagePractice);
   await expectNoStoredTrainingData(page);
-  await confirmation.getByRole('button', { name: 'Zurück zur Seite', exact: true }).press('Enter');
-  await expect(page).toHaveURL(source);
+  await leaveTraining.press('Enter');
+  await expect(page).toHaveURL('/');
   await expect(confirmation).toBeHidden();
-  await expect(
-    page.getByRole('heading', { name: 'Datenschutzerklärung', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: /Du probierst/ })).toBeVisible();
   await expectNoStoredTrainingData(page);
   expect(network.modelRequests).toEqual(['graph', 'weights']);
-  expect(network.unexpectedRequests()).toBe(0);
+  expect(network.unexpectedRequests).toEqual([]);
 });

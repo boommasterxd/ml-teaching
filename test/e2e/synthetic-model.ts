@@ -1,4 +1,5 @@
 import type { Page, Request, Route } from '@playwright/test';
+import siteConfig from '../../csp.config.mjs';
 import { learningPaths } from '../../src/lib/learning-paths';
 
 const modelDirectory = 'https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/classification/2/';
@@ -52,19 +53,30 @@ const syntheticModel = {
 
 const cors = { 'access-control-allow-origin': '*' };
 
-const learningDocuments = new Set<string>([
+const flowDocuments = new Set<string>([
+  '/',
   learningPaths.images,
   learningPaths.imagePractice,
   '/datenschutz',
 ]);
 const assets =
   /^(?:\/_next\/static\/(?:chunks\/[\w./-]+\.(?:js|css)|media\/[\w.-]+\.(?:webp|woff2))|\/favicon(?:-(?:dark|light))?\.svg|\/apple-icon\.png)$/;
+const publicRoutes = new Set<string>(siteConfig.routes);
+
+function blockedDestination(url: URL, origin: string) {
+  if (url.origin !== origin) return 'external';
+  if (publicRoutes.has(url.pathname) || url.pathname === '/_next/image') return url.pathname;
+  return assets.test(url.pathname) ? 'static asset' : 'unlisted local path';
+}
 
 function isExpectedLocalRead(url: URL, request: Request) {
   const resourceType = request.resourceType();
   const query = url.searchParams;
-  if (learningDocuments.has(url.pathname)) {
-    if (request.isNavigationRequest()) return query.size === 0;
+  const isFlowDocument = flowDocuments.has(url.pathname);
+  if (request.isNavigationRequest()) return isFlowDocument && query.size === 0;
+  const isHubPrefetch =
+    url.pathname === learningPaths.hub && request.headers()['next-router-prefetch'] === '1';
+  if (isFlowDocument || isHubPrefetch) {
     if (request.headers().rsc !== '1') return false;
     return query.size === 0 || (query.size === 1 && /^[\w-]{1,16}$/.test(query.get('_rsc') ?? ''));
   }
@@ -89,7 +101,13 @@ export async function routeSyntheticModel(
 ) {
   const expectedOrigin = new URL(baseURL).origin;
   const modelRequests: ModelFile[] = [];
-  let unexpectedRequests = 0;
+  const unexpectedRequests: Array<{
+    destination: string;
+    method: string;
+    resourceType: string;
+    routeData: boolean;
+    readsOnly: boolean;
+  }> = [];
   await page.route(/^https?:\/\//, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -102,11 +120,17 @@ export async function routeSyntheticModel(
       modelRequests.push(file);
       return respond(route, file);
     }
-    // Never include an unexpected URL or body in the test output.
-    unexpectedRequests++;
+    // Report public route names and request metadata without URLs or bodies.
+    unexpectedRequests.push({
+      destination: blockedDestination(url, expectedOrigin),
+      method: request.method(),
+      resourceType: request.resourceType(),
+      routeData: request.headers().rsc === '1',
+      readsOnly,
+    });
     await route.abort();
   });
-  return { modelRequests, unexpectedRequests: () => unexpectedRequests };
+  return { modelRequests, unexpectedRequests };
 }
 
 export async function failSyntheticModel(route: Route) {
