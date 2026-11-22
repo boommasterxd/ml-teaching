@@ -84,6 +84,7 @@ export function useGlassField(
     failed,
     reduce,
     rendered,
+    pending: active && !rendered,
     onRendered,
     onUnavailable,
     prepare,

@@ -27,6 +27,7 @@ function ErrorGlassScene({ digits, sources, keepInitialPoster }: ErrorGlassArtwo
     failed,
     reduce,
     rendered,
+    pending,
     onRendered,
     onUnavailable,
     prepare,
@@ -40,7 +41,7 @@ function ErrorGlassScene({ digits, sources, keepInitialPoster }: ErrorGlassArtwo
         sources={sources}
         keepInitialPoster={keepInitialPoster}
         fallback={failed || (paused && !rendered)}
-        pending={!rendered && !stopped}
+        pending={pending}
         ref={artwork}
         data-enhanced={(available && rendered) || undefined}
         data-paused={stopped || undefined}

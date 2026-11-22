@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { reducedMotionMedia } from '@/lib/media-queries';
 import { Spinner } from '../ui/spinner';
 import { contourMedia, type ContourSources } from './contour-poster';
@@ -7,8 +8,23 @@ import StaticContourPoster from './StaticContourPoster';
 
 // A picture needs an img fallback even when none of its media sources match.
 const emptyImage = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+const loadingDelayMs = 500;
 
-/** Reserve the shader area with an initial indicator and a browser-selected still. */
+function DelayedLoadingIndicator() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setVisible(true), loadingDelayMs);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  return visible ? (
+    <div className="hero-field-loading">
+      <Spinner aria-label="Grafik wird geladen" />
+    </div>
+  ) : null;
+}
+
 export default function GlassArtworkPlaceholder({
   sources,
   fallback,
@@ -41,11 +57,7 @@ export default function GlassArtworkPlaceholder({
       <noscript>
         <StaticContourPoster sources={sources} preload={false} />
       </noscript>
-      {pending && (
-        <div className="hero-field-loading">
-          <Spinner aria-label="Grafik wird geladen" />
-        </div>
-      )}
+      {pending && <DelayedLoadingIndicator />}
     </>
   );
 }
