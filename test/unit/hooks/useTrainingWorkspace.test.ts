@@ -319,7 +319,7 @@ describe('local training workspace', () => {
     expect(result.current.resources.prediction.isPredicting).toBe(true);
   });
 
-  it('retains existing images and ignores an unfinished frame after camera withdrawal', async () => {
+  it('retains existing images and ignores an unfinished frame after pausing the camera', async () => {
     const { result } = renderHook(() => useTrainingWorkspace());
     act(() => {
       result.current.resources.consent.grantConsent();
@@ -334,13 +334,13 @@ describe('local training workspace', () => {
     act(() => {
       capture = actions.onAddExample('class-1', document.createElement('video'));
     });
-    act(() => result.current.resources.revokeCamera());
+    act(() => result.current.resources.camera.pause());
     await act(async () => {
       pending.resolve(image('discarded'));
       await capture;
     });
     expect(result.current.resources.consent.hasConsented).toBe(true);
-    expect(result.current.resources.consent.cameraConsent).toBe(false);
+    expect(result.current.resources.consent.cameraConsent).toBe(true);
     expect(result.current.resources.consent.showCameraModal).toBe(false);
     expect(result.current.data.classes.classes[0].images.map(({ id }) => id)).toEqual(['image-0']);
   });

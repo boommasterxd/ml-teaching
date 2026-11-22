@@ -33,9 +33,9 @@ export default function TrainingPanels({
 }) {
   const { reduce } = useMotionPreference();
   const { resources, data, cardActions } = workspace;
-  const { camera, prediction, revokeCamera } = resources;
+  const { camera, prediction } = resources;
   const { classes } = data;
-  const { stream, facingMode, active, isPending, hasFailed, start, toggleCamera } = camera;
+  const { stream, facingMode, active, isPending, hasFailed, start, pause, toggleCamera } = camera;
   const cameraView = useMemo<CameraView>(
     () => ({
       stream,
@@ -43,10 +43,10 @@ export default function TrainingPanels({
       active,
       pending: isPending,
       failed: hasFailed,
-      onToggle: active ? revokeCamera : start,
+      onToggle: active ? pause : start,
       onSwitch: toggleCamera,
     }),
-    [stream, facingMode, active, isPending, hasFailed, revokeCamera, start, toggleCamera],
+    [stream, facingMode, active, isPending, hasFailed, pause, start, toggleCamera],
   );
   const { training: TrainingControls, prediction: PredictionPanel } = modules;
 

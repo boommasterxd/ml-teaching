@@ -111,14 +111,14 @@ describe('training and prediction controls', () => {
     rerender(<PredictionPanel {...base} camera={{ ...camera, active: true, pending: true }} />);
     expect(screen.getByText('Kamera wird verbunden …')).toBeTruthy();
     expect(base.predictVideoRef.current).toBeNull();
-    expect(screen.getByRole('button', { name: 'Kamera ausschalten' })).toBe(start);
+    expect(screen.getByRole('button', { name: 'Kamera pausieren' })).toBe(start);
     rerender(<PredictionPanel {...base} camera={liveCamera} isPredicting />);
     const preview = screen.getByLabelText<HTMLVideoElement>('Kameravorschau für Vorhersage');
     expect(base.predictVideoRef.current).toBe(preview);
     expect(preview.srcObject).toBe(stream);
     expect(screen.getByText('Die Vorhersage wird vorbereitet.')).toBeTruthy();
     expect(screen.queryByRole('progressbar')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Kamera ausschalten' })).toBe(start);
+    expect(screen.getByRole('button', { name: 'Kamera pausieren' })).toBe(start);
     rerender(
       <PredictionPanel
         {...base}
@@ -135,7 +135,7 @@ describe('training and prediction controls', () => {
     expect(
       screen.getByRole('progressbar', { name: 'Konfidenz für Blau' }).getAttribute('aria-valuenow'),
     ).toBe('15');
-    fireEvent.click(screen.getByRole('button', { name: 'Kamera ausschalten' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Kamera pausieren' }));
     expect(onToggle).toHaveBeenCalledTimes(2);
     rerender(<PredictionPanel {...base} />);
     expect(preview.isConnected).toBe(false);

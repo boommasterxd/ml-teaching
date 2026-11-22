@@ -200,21 +200,19 @@ does not affect inclusion or ranking in Google Search.
    Camera access starts only after separate camera consent and browser permission.
    Source-page setup hands off the initialized model and live stream to the training
    route without another request. Reload restores camera use only after the browser
-   reports that permission is still granted. The visible collection step requests the
-   stream while consent is active. The
-   prediction step starts it automatically after activation with a trained classifier
-   and camera consent.
+   reports that permission is still granted. The visible collection step and the
+   trained prediction step request the stream while camera consent is active and
+   the workspace is unpaused.
    Selected local files and captures are resized for local feature extraction.
 4. Training requires complete selected upload batches and no active image work.
    New capture and file selection are disabled during training. It creates a
    replacement KNN classifier from one normalized feature matrix per class. A stale
    or abandoned training run cannot publish its result. Retired classifiers and
    models are disposed after their active users release them.
-5. Prediction processes one frame at a time. Turning the camera off or hiding the
+5. Prediction processes one frame at a time. Pausing the camera or hiding the
    document stops inference and releases the stream. Switching directly between
    collection and prediction reuses the stream, while entering training releases
-   it. Returning to a visible prediction step reconnects while consent is active.
-   Route cleanup stops camera tracks and disposes classifiers and models.
+   it. Route cleanup stops camera tracks and disposes classifiers and models.
 
 Activating the live view or expressing intent through its Play control can prepare
 a local PCA projection of the normalized training features in interruptible batches.
@@ -246,10 +244,11 @@ state without changing identity on each gallery update.
 
 Prediction attaches its video once the stream and active prediction are ready.
 Collection previews attach video while visible or while a capture is active.
-Hiding the document stops capture and releases the camera tracks. Returning to the
-collection step in a visible document can reconnect the camera while consent remains
-active. Turning the camera off clears the app's camera consent. Enabling it again
-opens the camera choice while retaining the local training workspace. A superseded
+Hiding the document stops capture and releases the camera tracks. Pause releases the
+tracks and keeps camera consent. The pause persists across training steps until Play
+restarts the stream. The settings action to turn off the camera withdraws consent.
+Play then opens the camera choice while retaining the local training workspace.
+The browser enforces its own camera permission when a stream opens. A superseded
 camera request stops any tracks it receives late. A capture finishing after its
 stream becomes inactive or its class is reset is discarded.
 

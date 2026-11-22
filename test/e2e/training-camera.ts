@@ -49,7 +49,7 @@ export async function observeWorkspaceCamera(page: Page): Promise<ExpectCameraAc
 
 function cameraControls(frame: Locator) {
   return {
-    pause: frame.getByRole('button', { name: 'Kamera ausschalten', exact: true }),
+    pause: frame.getByRole('button', { name: 'Kamera pausieren', exact: true }),
     play: frame.getByRole('button', { name: 'Kamera aktivieren', exact: true }),
     switchCamera: frame.getByRole('button', { name: 'Kamera wechseln', exact: true }),
   };
@@ -79,20 +79,6 @@ async function expectControlsInCorners(frame: Locator) {
   }
 }
 
-async function enableCamera(
-  page: Page,
-  play: Locator,
-  expectCamera: ExpectCameraActivity,
-  requests: number,
-) {
-  const consent = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
-  await play.press('Enter');
-  await expect(consent).toBeVisible();
-  await expectCamera(requests, 0);
-  await consent.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
-  await expectCamera(requests + 1, 1);
-}
-
 export async function expectCameraToggleKeepsImages(
   page: Page,
   expectCamera: ExpectCameraActivity,
@@ -102,7 +88,12 @@ export async function expectCameraToggleKeepsImages(
   await expect(frames.locator('video')).toHaveCount(0);
   const frame = frames.first();
   const { pause, play } = cameraControls(frame);
-  await enableCamera(page, play, expectCamera, 0);
+  const consent = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
+  await play.press('Enter');
+  await expect(consent).toBeVisible();
+  await expectCamera(0, 0);
+  await consent.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
+  await expectCamera(1, 1);
   await expectControlsInCorners(frame);
   await expectAccessible(page);
   await pause.press('Enter');
@@ -110,7 +101,11 @@ export async function expectCameraToggleKeepsImages(
   await expect(play).toBeFocused();
   await expect(page.getByRole('textbox', { name: /^Name für Klasse / })).toHaveCount(2);
   await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
-  await enableCamera(page, play, expectCamera, 1);
+  const otherClass = cameraControls(frames.last());
+  await otherClass.play.press('Enter');
+  await expectCamera(2, 1);
+  await expect(otherClass.pause).toBeFocused();
+  await expect(consent).toHaveCount(0);
 }
 
 export async function expectLivePredictionControls(page: Page, expectCamera: ExpectCameraActivity) {
@@ -157,7 +152,10 @@ export async function expectLivePredictionControls(page: Page, expectCamera: Exp
   await expect(space).toBeVisible();
   await expect(marker).toHaveCount(0);
   await expectCamera(4, 0);
-  await enableCamera(page, play, expectCamera, 4);
+  await play.press('Space');
+  await expectCamera(5, 1, 'environment');
+  await expect(pause).toBeFocused();
+  await expect(page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' })).toHaveCount(0);
   await space.scrollIntoViewIfNeeded();
   await expect(marker).toBeVisible();
   await recordSizes();
