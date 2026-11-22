@@ -10,7 +10,7 @@ const buttonVariants = cva(
         'quiz-card':
           'control-focus-inset rounded-(--quiz-inner-radius) hover:bg-primary/5 aria-disabled:hover:bg-transparent dark:hover:bg-primary/5 dark:aria-disabled:hover:bg-transparent',
         thumbnail:
-          'control-focus-media relative block aspect-square overflow-hidden rounded-md border border-input bg-background p-0 data-[selection-mode]:opacity-60 data-[selection-mode]:focus-visible:opacity-100 data-[selection-mode]:aria-pressed:opacity-100 aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-ring',
+          'control-focus-media relative block aspect-square overflow-hidden rounded-md border border-input bg-background p-0 select-none [-webkit-touch-callout:none] data-[selection-mode]:opacity-60 data-[selection-mode]:focus-visible:opacity-100 data-[selection-mode]:aria-pressed:opacity-100 aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-ring',
         default:
           'bg-primary text-primary-foreground shadow-[inset_0_1px_0_#ffffff38] hover:bg-primary-hover',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',

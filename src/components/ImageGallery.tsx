@@ -201,8 +201,9 @@ const ImageGallery = memo(function ImageGallery({
   const modeButtonRef = useRef<HTMLButtonElement>(null);
   const hasImages = images.length > 0;
 
-  /** Adds or removes an image ID from the current selection set. */
+  /** Enters selection mode and adds or removes the image ID. */
   const toggleImageSelection = useCallback((id: string) => {
+    setIsSelectionMode(true);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -227,7 +228,7 @@ const ImageGallery = memo(function ImageGallery({
   return (
     <div
       className={cn(
-        '@container/gallery flex h-58 min-w-0 flex-col gap-1 rounded-2xl bg-muted/60 p-1.5 dark:bg-background/40',
+        '@container/gallery flex h-58 min-w-0 flex-col gap-1 overflow-clip rounded-2xl bg-muted/60 px-1.5 pt-1.5 dark:bg-background/40',
         classColorClasses(color),
         className,
       )}
