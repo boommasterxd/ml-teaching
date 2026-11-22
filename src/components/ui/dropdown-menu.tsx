@@ -9,7 +9,7 @@ import { MenuHighlight, MenuHighlightItem } from './menu-highlight';
 
 type MenuPosition = Pick<Primitive.Positioner.Props, 'anchor' | 'sideOffset' | 'align'>;
 const menuItemClass =
-  'relative flex cursor-default items-center gap-2 rounded-xl text-sm outline-hidden select-none focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring forced-colors:focus-visible:[outline:auto] data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4';
+  'relative flex cursor-default items-center gap-2 rounded-xl text-sm outline-hidden select-none focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring forced-colors:focus-visible:[outline:auto] data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4';
 const choiceSpacing = 'px-2 py-1.5 aria-checked:font-semibold aria-checked:text-primary';
 
 /** Retained exit content immediately loses keyboard and accessibility-tree participation. */
@@ -23,7 +23,7 @@ export function DropdownMenuContent({
   ...props
 }: Omit<Primitive.Popup.Props, 'render'> &
   MenuPosition & {
-    selectedValue: string;
+    selectedValue?: string;
     // Base UI 1.9 accepts false at runtime but omits initialFocus from Menu.Popup's types.
     initialFocus?: false;
   }) {

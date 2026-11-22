@@ -42,6 +42,7 @@
   --class-pink-on-surface: #8f466e;
   --header-height: 4.5rem;
   --header-border-width: 1px;
+  --header-menu-compact-width: 13rem;
   --brand-mark-size: 1.62rem;
   --radius: 0.95rem;
   --glass-radius: clamp(1.5rem, 3vw, 2rem);
@@ -357,6 +358,7 @@
   color: #fff2f2;
 }
 [data-theme-menu] {
+  --menu-highlight-radius: 0.8rem;
   border-radius: 1.2rem;
   padding: 0.45rem;
   background: var(--glass-surface);
@@ -365,9 +367,22 @@
   @variant max-md {
     width: var(--anchor-width);
   }
+
+  @variant md {
+    min-width: var(--header-menu-compact-width);
+  }
 }
 [data-theme-menu] [role^='menuitem'] {
-  border-radius: 0.8rem;
+  border-radius: var(--menu-highlight-radius);
+}
+/* Keep checked backgrounds beneath the highlight as it crosses between rows. */
+[data-theme-menu] [data-slot='motion-highlight-item-container']:has([aria-checked='true'])::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: var(--menu-highlight-radius);
+  background-color: color-mix(in srgb, var(--primary-soft) 60%, var(--card));
 }
 /* Animate UI has no row-stagger option. Match the header navigation's single popup entrance. */
 [data-theme-menu] :is([role^='menuitem'], [data-slot='dropdown-menu-label'], [role='separator']) {

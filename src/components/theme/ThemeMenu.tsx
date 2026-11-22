@@ -4,6 +4,8 @@ import { useEffect, useRef, useSyncExternalStore, type RefObject } from 'react';
 import { Sun } from '../icons/sun';
 import { Moon } from '../icons/moon';
 import { Smartphone } from '../icons/smartphone';
+import { Check } from '../icons/check';
+import { X } from '../icons/x';
 import {
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -25,6 +27,7 @@ export function ThemeMenu({
   opening: 'hover' | 'first' | 'last' | null;
 }) {
   const { preference, select, setRemember } = useTheme();
+  const RememberIcon = preference.remember ? Check : X;
   const desktop = useSyncExternalStore(subscribeToMediumViewport, isMediumViewport, () => false);
   const lastItem = useRef<HTMLElement>(null);
 
@@ -58,7 +61,6 @@ export function ThemeMenu({
       anchor={desktop ? trigger : headerAnchor}
       align={desktop ? 'end' : 'center'}
       sideOffset={sideOffset}
-      selectedValue={preference.selection}
       data-theme-menu=""
       aria-label="Darstellung einstellen"
     >
@@ -93,12 +95,10 @@ export function ThemeMenu({
           checked={preference.remember}
           onCheckedChange={setRemember}
         >
-          Auswahl für weitere Besuche auf diesem Gerät merken
+          <RememberIcon aria-hidden="true" />
+          Auswahl merken
         </DropdownMenuCheckboxItem>
       </DropdownMenuGroup>
-      <p className="px-2 py-1.5 text-xs leading-relaxed text-muted-foreground">
-        Ohne Merken gilt die Auswahl nur für diesen Aufruf.
-      </p>
     </DropdownMenuContent>
   );
 }

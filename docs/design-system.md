@@ -183,8 +183,11 @@ exit and pointer feedback. A closing popup immediately becomes inert during exit
 The appearance menu uses the same popup fade and scale as the header navigation
 at both breakpoints. The installed Animate UI primitive exposes no row-stagger
 option, so scoped styles keep the rows sharp and stationary inside the popup
-and show its label and separator with it. All rows share the same inset. The moving
-highlight follows hover and keyboard focus, and checked choices use red, semibold text.
+and show its label and separator with it. All rows share the same inset and leading
+icon alignment. The remember option shows an X when off and a check when on. The
+selected appearance and the checked remember option each keep semibold red text and a
+background that blends the shared highlight color into the popup surface. One
+red highlight glides over the rows with hover or keyboard focus.
 `LearningCard` composes CardHeader, CardTitle and CardDescription for each of
 the three training steps. A red icon and step number share a row above the title.
 The image explanation presents the technique before its interactive animation
@@ -483,9 +486,9 @@ intent prepares one deduplicated, retryable menu content module. The Base UI
 trigger opens on mouse hover with the same short delay as the desktop navigation.
 Hover leaves keyboard focus in place and allows the pointer to cross into the
 popup. Click, touch and keyboard activation also open it. The portal mounts the
-content on opening. Below `md` the menu matches the
-glass header's width and aligns with its outer edges. From `md` it anchors to the
-shared button.
+content on opening. Below `md` the menu matches the glass header's width and aligns
+with its outer edges. From `md` it anchors to the shared button and uses the same
+`13rem` minimum width as the legal dropdown.
 The menu trigger sets the shared Button's Animate UI tap scale to 1 so Base UI
 positions the panel against a stable rectangle during pointer and keyboard press.
 The toolbar centers the brand mark and appearance trigger in the rounded ends.
