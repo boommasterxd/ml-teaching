@@ -11,6 +11,71 @@ import { routeSyntheticModel } from './synthetic-model';
 import { observeWorkspaceCamera } from './training-camera';
 import { confirmTrainingWithdrawal, grantModelConsent } from './training-keyboard';
 
+const classAddCases = [
+  { input: 'mouse', width: 1280, colorScheme: 'light', reducedMotion: 'no-preference' },
+  { input: 'touch', width: 390, colorScheme: 'dark', reducedMotion: 'reduce' },
+  { input: 'keyboard', width: 390, colorScheme: 'light', reducedMotion: 'no-preference' },
+] as const;
+
+for (const { input, width, colorScheme, reducedMotion } of classAddCases) {
+  test.describe(`adding a class with ${input}`, () => {
+    test.use({ viewport: { width, height: 844 }, hasTouch: input === 'touch' });
+
+    test('preserves the document scroll position', async ({ page, baseURL }) => {
+      await page.emulateMedia({ colorScheme, reducedMotion });
+      await routeSyntheticModel(page, baseURL!);
+      await page.goto(learningPaths.imagePractice);
+      await grantModelConsent(page);
+      await page.getByRole('button', { name: 'Ohne Kamera fortfahren' }).click();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await expect(page.getByRole('heading', { name: 'Bilder sammeln' })).toBeFocused();
+
+      const add = page.getByRole('button', { name: 'Neue Klasse hinzufügen' });
+      await add.evaluate((button) => {
+        const { bottom } = button.getBoundingClientRect();
+        window.scrollBy({ top: bottom - innerHeight + 120, behavior: 'instant' });
+      });
+      await settleEntryAnimations(page);
+      await expect(add).toBeInViewport({ ratio: 1 });
+      if (input === 'keyboard') await add.focus();
+      const scrollPositions = await page.evaluateHandle(() => {
+        const positions = [window.scrollY];
+        window.addEventListener('scroll', () => positions.push(window.scrollY));
+        return positions;
+      });
+
+      if (input === 'keyboard') {
+        await expect(add).toBeFocused();
+        await page.keyboard.press('Enter');
+      } else if (input === 'touch') await add.tap();
+      else await add.click();
+
+      const name = page.getByRole('textbox', { name: 'Name für Klasse 3: Klasse 3' });
+      const card = page.locator('[data-slot="card"]').filter({ has: name });
+      await expect(name).toHaveValue('Klasse 3');
+      await expect
+        .poll(async () => {
+          const [cardBounds, addBounds] = await Promise.all([
+            card.boundingBox(),
+            add.boundingBox(),
+          ]);
+          return Boolean(
+            cardBounds && addBounds && addBounds.y >= cardBounds.y + cardBounds.height,
+          );
+        })
+        .toBe(true);
+      if (input === 'keyboard') await expect(name).toBeFocused();
+      await expect(name).toBeInViewport({ ratio: 1 });
+      await expectAccessible(page);
+      const positions = await scrollPositions.evaluate((samples) => [
+        ...new Set([...samples, window.scrollY]),
+      ]);
+      expect(positions[0]).toBeGreaterThan(0);
+      expect(positions).toHaveLength(1);
+    });
+  });
+}
+
 async function followPreparedRoute(
   page: Page,
   link: Locator,

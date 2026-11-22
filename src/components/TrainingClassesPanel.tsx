@@ -113,20 +113,18 @@ function CollectionActions({
   onContinue,
   onContinueIntent,
 }: Pick<TrainingClassesPanelProps, 'classes' | 'onAddClass'> & CollectionContinueProps) {
-  const pending = useRef<{ position: number; focusName: boolean } | null>(null);
+  const pendingNamePosition = useRef<number | null>(null);
   const atLimit = classes.length >= ML.MAX_CLASSES;
   const addLabel = atLimit
     ? `Klasse hinzufügen deaktiviert, maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht`
     : 'Neue Klasse hinzufügen';
 
   useLayoutEffect(() => {
-    const request = pending.current;
-    const added = request && classes[request.position];
+    const position = pendingNamePosition.current;
+    const added = position === null ? undefined : classes[position];
     if (!added) return;
-    pending.current = null;
-    const name = document.getElementById(`class-name-${added.id}`);
-    name?.scrollIntoView?.({ block: 'center', behavior: 'instant' });
-    if (request.focusName) name?.focus({ preventScroll: true });
+    pendingNamePosition.current = null;
+    document.getElementById(`class-name-${added.id}`)?.focus({ preventScroll: true });
   }, [classes]);
 
   return (
@@ -139,7 +137,7 @@ function CollectionActions({
         title={addLabel}
         aria-label={addLabel}
         onClick={(event) => {
-          pending.current = { position: classes.length, focusName: event.detail === 0 };
+          if (event.detail === 0) pendingNamePosition.current = classes.length;
           onAddClass();
         }}
       >
