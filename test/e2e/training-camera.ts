@@ -116,6 +116,7 @@ export async function expectCameraToggleKeepsImages(
 export async function expectLivePredictionControls(page: Page, expectCamera: ExpectCameraActivity) {
   const preview = page.getByLabel('Kameravorschau für Vorhersage');
   const space = page.getByRole('figure', { name: 'Merkmalsraum' });
+  const legendItems = space.getByRole('list', { name: 'Legende' }).getByRole('listitem');
   const marker = space.locator('[data-slot="prediction-live-point"]');
   const frame = page.locator('[data-slot="prediction-camera"]');
   const { pause, play, switchCamera } = cameraControls(frame);
@@ -125,8 +126,7 @@ export async function expectLivePredictionControls(page: Page, expectCamera: Exp
   await expect(preview).toBeVisible();
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 2' })).toBeVisible();
-  await expect(space.getByRole('listitem').filter({ hasText: /Klasse 1.*10/ })).toBeVisible();
-  await expect(space.getByRole('listitem').filter({ hasText: /Klasse 2.*10/ })).toBeVisible();
+  await expect(legendItems).toHaveText(['Kamerabild', 'Klasse 1', 'Klasse 2']);
   await space.scrollIntoViewIfNeeded();
   await expect(marker).toBeVisible();
   await expect(space.getByRole('button', { name: 'Diagramm beschreiben' })).toHaveCount(0);
@@ -137,6 +137,14 @@ export async function expectLivePredictionControls(page: Page, expectCamera: Exp
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
   await expectAccessible(page);
 
+  await page.setViewportSize({ width: 320, height: viewport.height });
+  await expect
+    .poll(() =>
+      legendItems.evaluateAll(
+        (items) => new Set(items.map((item) => item.getBoundingClientRect().top)).size,
+      ),
+    )
+    .toBe(1);
   await page.setViewportSize({ width: 390, height: viewport.height });
   const theme = page.getByRole('switch', { name: 'Dunkle Darstellung' });
   await theme.press('Space');

@@ -26,11 +26,10 @@ export function markerPath({ x, y }: ProjectedPosition, shape: MarkerShape, radi
 }
 
 export function getMarkerStyles(classes: readonly MLClass[]) {
-  return classes.map(({ id, name, color, images }, index) => ({
+  return classes.map(({ id, name, color }, index) => ({
     id,
     name,
     color,
-    count: images.length,
     shape: shapes[index % shapes.length],
   }));
 }
@@ -74,7 +73,7 @@ export function PredictionPlotPlaceholder({
   );
 }
 
-function LegendMarker({ name, color, shape, count }: ClassMarker) {
+function LegendMarker({ name, color, shape }: ClassMarker) {
   return (
     <>
       <svg viewBox="-9 -9 18 18" className="size-4 shrink-0" aria-hidden="true">
@@ -83,13 +82,7 @@ function LegendMarker({ name, color, shape, count }: ClassMarker) {
           className={cn('fill-(--class-on-surface)', classColorClasses(color))}
         />
       </svg>
-      <span className="min-w-0 wrap-anywhere">
-        {name}{' '}
-        <span className="whitespace-nowrap tabular-nums">
-          {count}
-          <span className="sr-only"> Trainingsbilder</span>
-        </span>
-      </span>
+      <span className="min-w-0 wrap-anywhere">{name}</span>
     </>
   );
 }
@@ -114,16 +107,16 @@ export const PredictionLegend = memo(function PredictionLegend({
       <ul
         role="list"
         aria-label="Legende"
-        className="flex min-w-0 flex-wrap items-start gap-x-4 gap-y-1 text-xs leading-4 text-muted-foreground"
+        className="flex min-w-0 flex-wrap items-start gap-x-2 gap-y-1 text-xs leading-4 text-muted-foreground"
       >
-        <li className="inline-flex items-center gap-1.5">
+        <li className="inline-flex items-center gap-1">
           <svg viewBox="-9 -9 18 18" className="size-4 shrink-0" aria-hidden="true">
             <KnnQuery x={0} y={0} />
           </svg>
           Kamerabild
         </li>
         {markers.map((marker) => (
-          <li key={marker.id} className="inline-flex min-w-0 items-start gap-1.5">
+          <li key={marker.id} className="inline-flex min-w-0 items-start gap-1">
             {filter ? (
               <Button
                 variant="outline"
