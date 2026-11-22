@@ -47,14 +47,26 @@ async function expectAgentJourney(board: Locator, destination: 'star' | 'treasur
 function trackPreviewSteps(previews: Locator) {
   return previews.evaluateHandle((section) => {
     const steps: (string | number)[][] = [];
-    const exits: { panel: string; faded: boolean; removed: boolean }[] = [];
+    const exits: {
+      panel: string;
+      faded: boolean;
+      removed: boolean;
+      removedAt: number | null;
+      pauseMs: number | null;
+    }[] = [];
     let previous: Element | undefined;
     let observing = true;
     const panelFor = (overlay: Element) =>
       overlay.classList.contains('home-signal-active') ? 'image' : 'reward';
 
     function trackExit(overlay: Element) {
-      const exit = { panel: panelFor(overlay), faded: false, removed: false };
+      const exit: (typeof exits)[number] = {
+        panel: panelFor(overlay),
+        faded: false,
+        removed: false,
+        removedAt: null,
+        pauseMs: null,
+      };
       const highlights =
         exit.panel === 'image'
           ? '.home-signal-active'
@@ -64,6 +76,7 @@ function trackPreviewSteps(previews: Locator) {
         if (!observing) return;
         if (!overlay.isConnected) {
           exit.removed = !section.querySelector(highlights);
+          exit.removedAt = performance.now();
           return;
         }
         const opacity = Number(getComputedStyle(overlay).opacity);
@@ -80,6 +93,10 @@ function trackPreviewSteps(previews: Locator) {
       if (started && previous) trackExit(previous);
       previous = overlay;
       if (!overlay) return;
+      const exit = exits.at(-1);
+      if (started && exit && exit.removedAt !== null) {
+        exit.pauseMs = performance.now() - exit.removedAt;
+      }
 
       const example = section.querySelector('[data-current-example="true"]');
       const output = example?.querySelector('.home-signal-output')?.textContent ?? '';
@@ -109,7 +126,7 @@ function trackPreviewSteps(previews: Locator) {
   });
 }
 
-test('visible home previews alternate automatically without model requests', async ({
+test('desktop home previews alternate with a pause after each fade and without model requests', async ({
   page,
   baseURL,
 }) => {
@@ -165,19 +182,58 @@ test('visible home previews alternate automatically without model requests', asy
       ['reward', 'Katze', 'cat', 'treasure', 1],
       ['image', 'Hund', 'dog', '', 1],
     ]);
-  await expect
-    .poll(() => playback.evaluate(({ exits }) => exits.slice(0, 4)))
-    .toEqual([
-      { panel: 'image', faded: true, removed: true },
-      { panel: 'reward', faded: true, removed: true },
-      { panel: 'image', faded: true, removed: true },
-      { panel: 'reward', faded: true, removed: true },
-    ]);
+  const exits = await playback.evaluate(({ exits }) => exits.slice(0, 4));
+  expect(exits.map(({ panel, faded, removed }) => [panel, faded, removed])).toEqual([
+    ['image', true, true],
+    ['reward', true, true],
+    ['image', true, true],
+    ['reward', true, true],
+  ]);
+  for (const { pauseMs } of exits) {
+    expect(pauseMs ?? 0).toBeGreaterThanOrEqual(850);
+  }
   await playback.evaluate(({ disconnect }) => disconnect());
   await playback.dispose();
   await expect(previews).toBeFocused();
   await expectAccessible(page);
   expect(unexpectedRequests).toEqual([]);
+  expect(failures).toEqual([]);
+});
+
+test('stacked home previews loop together and continue independently when scrolled', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+  const failures = diagnostics(page);
+  await page.goto('/');
+  const previews = page.getByRole('region', { name: 'Zwei Arten, wie KI lernt', exact: true });
+  const image = previews.getByRole('region', { name: 'Bilderkennung', exact: true });
+  const reward = previews.getByRole('region', { name: 'Lernen durch Belohnung', exact: true });
+  const active = '[data-preview-active="true"]';
+  const photo = image.getByRole('img');
+  const board = reward.getByRole('img');
+  await photo.evaluate((element) =>
+    element.scrollIntoView({ block: 'start', behavior: 'instant' }),
+  );
+  await expect(photo).toBeInViewport();
+  await expect(board).toBeInViewport({ ratio: 0.2 });
+  await expect(previews.locator(active)).toHaveCount(2);
+  await expect(photo.locator('[data-current-example="true"]')).toContainText('Katze');
+  await expect(photo.locator('[data-current-example="true"]')).toContainText('Hund');
+  await expect(photo.locator(active)).toHaveCount(1);
+  await expectAgentJourney(board, 'treasure');
+
+  await board.evaluate((element) =>
+    element.scrollIntoView({ block: 'start', behavior: 'instant' }),
+  );
+  await expect(photo).not.toBeInViewport();
+  await expect(image.locator(active)).toHaveCount(0);
+  await expectAgentJourney(board, 'star');
+  await expectAccessible(page);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(previews.locator(active)).toHaveCount(0);
   expect(failures).toEqual([]);
 });
 

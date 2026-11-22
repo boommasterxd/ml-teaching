@@ -58,6 +58,11 @@ function expectPhoto(label: 'Katze' | 'Hund', filename: 'cat' | 'dog') {
 beforeEach(() => {
   vi.mocked(prepareExample).mockClear();
   installBrowserHost();
+  const matchMedia = vi.mocked(window.matchMedia).getMockImplementation()!;
+  vi.mocked(window.matchMedia).mockImplementation((query) => ({
+    ...matchMedia(query),
+    matches: query === '(width >= 64rem)',
+  }));
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -85,7 +90,7 @@ describe('homepage input preview', () => {
     expect(document.querySelector('.reward-experiment-traveler')).toBeNull();
   });
 
-  it('waits for the delayed dog photo before starting the first four-second turn', async () => {
+  it('waits for the dog photo, plays the first turn, then leaves a pause before switching', async () => {
     vi.useFakeTimers();
     const photo = Promise.withResolvers<void>();
     vi.mocked(prepareExample).mockReturnValueOnce(photo.promise);
@@ -112,6 +117,9 @@ describe('homepage input preview', () => {
     expect(container.querySelector('.reward-experiment-route')).toBeNull();
     advancePreview(1);
     expect(container.querySelector(`${activePreview}.home-signal-active`)).toBeNull();
+    advancePreview(1_449);
+    expect(container.querySelector(activePreview)).toBeNull();
+    advancePreview(1);
     expect(container.querySelector(`${activePreview} .reward-experiment-traveler`)).not.toBeNull();
     expectPhoto('Hund', 'dog');
   });
@@ -209,6 +217,32 @@ describe('homepage input preview', () => {
       container.querySelector(`${activePreview} [data-goal="treasure"][data-rewarded="true"]`),
     ).not.toBeNull();
     expect(prepareExample).not.toHaveBeenCalled();
+  });
+
+  it('starts both stacked previews and advances the reward while the dog photo is loading', async () => {
+    vi.useFakeTimers();
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    vi.mocked(window.matchMedia).mockReturnValue(media);
+    const dogPhoto = Promise.withResolvers<void>();
+    vi.mocked(prepareExample).mockReturnValueOnce(dogPhoto.promise);
+    const { container } = render(
+      <>
+        <ImagePreview />
+        <RewardPreview />
+      </>,
+      { wrapper: PreviewHost },
+    );
+    await act(async () => vi.dynamicImportSettled());
+    expectPhoto('Katze', 'cat');
+    expect(container.querySelectorAll(activePreview)).toHaveLength(2);
+
+    advancePreview(2_800);
+    expect(container.querySelectorAll(activePreview)).toHaveLength(0);
+    advancePreview(800);
+    expect(container.querySelector(`${activePreview} [data-goal="treasure"]`)).not.toBeNull();
+
+    await act(async () => dogPhoto.resolve());
+    expectPhoto('Katze', 'cat');
   });
 
   it('keeps the initial example when the user prefers reduced motion', () => {
