@@ -21,7 +21,12 @@ export function DropdownMenuContent({
   selectedValue,
   children,
   ...props
-}: Omit<Primitive.Popup.Props, 'render'> & MenuPosition & { selectedValue: string }) {
+}: Omit<Primitive.Popup.Props, 'render'> &
+  MenuPosition & {
+    selectedValue: string;
+    // Base UI 1.9 accepts false at runtime but omits initialFocus from Menu.Popup's types.
+    initialFocus?: false;
+  }) {
   return (
     <Primitive.Portal>
       <Primitive.Positioner

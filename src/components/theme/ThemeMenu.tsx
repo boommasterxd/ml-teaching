@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useSyncExternalStore, type RefObject } from 'react';
+import { useEffect, useRef, useSyncExternalStore, type RefObject } from 'react';
 import { Sun } from '../icons/sun';
 import { Moon } from '../icons/moon';
 import { Smartphone } from '../icons/smartphone';
@@ -13,60 +13,37 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
 } from '../ui/dropdown-menu';
-import { DropdownMenu } from '../ui/dropdown-menu-trigger';
 import { isMediumViewport, subscribeToMediumViewport } from '@/lib/media-queries';
 import { parseTheme } from '@/lib/theme';
 import { useTheme } from './ThemeProvider';
 
-interface ThemeMenuProps {
-  id: string;
+export function ThemeMenu({
+  trigger,
+  opening,
+}: {
   trigger: RefObject<HTMLButtonElement | null>;
-  opening: 'first' | 'last' | null;
-  close: () => void;
-}
-
-/** Warmed after intent; Base UI and Animate UI own the portal's opening and exit. */
-export function ThemeMenu({ id, trigger, opening, close }: ThemeMenuProps) {
-  return (
-    <DropdownMenu
-      modal={false}
-      open={opening !== null}
-      onOpenChange={(open, details) => {
-        if (open) return;
-        if (
-          details.reason === 'outside-press' &&
-          details.event.target instanceof Node &&
-          trigger.current?.contains(details.event.target)
-        ) {
-          details.cancel();
-          return;
-        }
-        if (details.reason === 'escape-key' || details.reason === 'item-press') {
-          trigger.current?.focus({ preventScroll: true });
-        }
-        close();
-      }}
-    >
-      <ThemeChoices id={id} trigger={trigger} opening={opening} />
-    </DropdownMenu>
-  );
-}
-
-function ThemeChoices({ id, trigger, opening }: Omit<ThemeMenuProps, 'close'>) {
+  opening: 'hover' | 'first' | 'last' | null;
+}) {
   const { preference, select, setRemember } = useTheme();
   const desktop = useSyncExternalStore(subscribeToMediumViewport, isMediumViewport, () => false);
+  const lastItem = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!opening) return;
+    if (opening !== 'last') return;
+    // The popup may mount after Base UI has processed the opening ArrowUp.
     const frame = requestAnimationFrame(() => {
-      const popup = document.getElementById(id);
-      const active = document.activeElement;
-      if (!popup || (active !== trigger.current && !popup.contains(active))) return;
-      const items = popup.querySelectorAll<HTMLElement>('[role^="menuitem"]');
-      items[opening === 'last' ? items.length - 1 : 0]?.focus({ preventScroll: true });
+      const button = trigger.current;
+      const popupId = button?.getAttribute('aria-controls');
+      const active = button?.ownerDocument.activeElement;
+      if (
+        active === button ||
+        (popupId && button?.ownerDocument.getElementById(popupId)?.contains(active ?? null))
+      ) {
+        lastItem.current?.focus({ preventScroll: true });
+      }
     });
     return () => cancelAnimationFrame(frame);
-  }, [id, opening, trigger]);
+  }, [opening, trigger]);
 
   const sideOffset = () => {
     const button = trigger.current;
@@ -77,7 +54,7 @@ function ThemeChoices({ id, trigger, opening }: Omit<ThemeMenuProps, 'close'>) {
 
   return (
     <DropdownMenuContent
-      id={id}
+      initialFocus={opening === 'hover' ? false : undefined}
       anchor={desktop ? trigger : headerAnchor}
       align={desktop ? 'end' : 'center'}
       sideOffset={sideOffset}
@@ -111,6 +88,7 @@ function ThemeChoices({ id, trigger, opening }: Omit<ThemeMenuProps, 'close'>) {
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <DropdownMenuCheckboxItem
+          ref={lastItem}
           highlightValue="remember"
           checked={preference.remember}
           onCheckedChange={setRemember}

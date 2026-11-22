@@ -475,8 +475,11 @@ bootstrapped root theme. React adopts that position as it reads the preference.
 The shared switch thumb and icons prepare Motion on pointer, touch or focus
 intent in the appearance controls. Press feedback and the switch node stay stable.
 The lightweight switch and menu trigger remain available initially. Pointer/focus
-intent prepares one deduplicated, retryable ThemeMenu module including its Base UI
-root. The portal mounts the content on opening. Below `md` the menu matches the
+intent prepares one deduplicated, retryable menu content module. The Base UI
+trigger opens on mouse hover with the same short delay as the desktop navigation.
+Hover leaves keyboard focus in place and allows the pointer to cross into the
+popup. Click, touch and keyboard activation also open it. The portal mounts the
+content on opening. Below `md` the menu matches the
 glass header's width and aligns with its outer edges. From `md` it anchors to the
 shared button.
 The menu trigger sets the shared Button's Animate UI tap scale to 1 so Base UI

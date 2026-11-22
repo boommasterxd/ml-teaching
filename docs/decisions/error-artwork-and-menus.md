@@ -19,5 +19,6 @@ shader startup. The in-app recovery screen shows its poster while playback loads
 
 The mobile legal menu and appearance menu share module loading, retry feedback
 and dismissal while the popup loads. Each trigger keeps its focus and press
-feedback during preparation. Intent prepares the module and explicit activation
-opens the popup. Once mounted, the Animate UI menus own focus and exit behavior.
+feedback during preparation. Intent prepares the content module. The mobile legal
+menu opens on explicit activation. The appearance menu also supports mouse hover
+through its Base UI trigger. Animate UI owns the popup's entry and exit.
