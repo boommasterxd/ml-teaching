@@ -35,6 +35,9 @@ type PanelLoadStatus =
   | { state: 'loading'; step: DeferredStep }
   | { state: 'failed'; step: DeferredStep; needsReload: boolean };
 
+type ScheduleActivation = (commit: () => void) => void;
+const commitImmediately: ScheduleActivation = (commit) => commit();
+
 function isAvailable(step: TrainingStep, canTrain: boolean, canPredict: boolean) {
   if (step === 'training') return canTrain;
   if (step === 'prediction') return canPredict;
@@ -68,13 +71,23 @@ export function useTrainingPanelLoading(canTrain: boolean, canPredict: boolean) 
     );
   }
 
-  function open(step: TrainingStep, activate: (moveFocus: boolean) => void) {
+  function open(
+    step: TrainingStep,
+    activate: (moveFocus: boolean) => void,
+    schedule: ScheduleActivation = commitImmediately,
+  ) {
     if (!available(step)) return;
-    if (step === 'images' || modules[step]) {
+    function complete(moveFocus: boolean, loaded?: TrainingPanelModules) {
       request.current = null;
-      setPrepared(null);
-      setStatus(null);
-      activate(true);
+      schedule(() => {
+        if (loaded && step !== 'images') rememberModule(step, loaded);
+        setPrepared(null);
+        setStatus(null);
+        activate(moveFocus);
+      });
+    }
+    if (step === 'images' || modules[step]) {
+      complete(true);
       return;
     }
     if (request.current?.step === step) return;
@@ -83,12 +96,9 @@ export function useTrainingPanelLoading(canTrain: boolean, canPredict: boolean) 
     setStatus({ state: 'loading', step });
     void loadPanel[step]().then(
       (loaded) => {
-        rememberModule(step, loaded);
-        if (request.current !== pending) return;
-        request.current = null;
-        setPrepared(null);
-        setStatus(null);
-        activate(pending.opener === document.activeElement);
+        if (request.current === pending)
+          complete(pending.opener === document.activeElement, loaded);
+        else rememberModule(step, loaded);
       },
       (error: unknown) => {
         if (request.current !== pending) return;
