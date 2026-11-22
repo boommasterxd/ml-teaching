@@ -132,7 +132,7 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
   });
 }
 
-test('the homepage renders its glass loading indicator before scripts and skips the poster during playback', async ({
+test('the homepage starts without a glass spinner and skips the poster during playback', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -153,7 +153,7 @@ test('the homepage renders its glass loading indicator before scripts and skips 
   try {
     await page.goto('/', { waitUntil: 'commit' });
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(spinner).toBeVisible();
+    await expect(spinner).toHaveCount(0);
     await expect(page.locator('.hero-field canvas')).toHaveCount(0);
   } finally {
     scripts.resolve();

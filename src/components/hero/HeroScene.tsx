@@ -63,6 +63,7 @@ function Scene({ children, sources }: HeroSceneProps) {
     failed,
     reduce,
     rendered,
+    pending,
     onRendered,
     onUnavailable,
     prepare,
@@ -101,7 +102,7 @@ function Scene({ children, sources }: HeroSceneProps) {
             <GlassArtworkPlaceholder
               sources={sources}
               fallback={failed || (paused && !rendered)}
-              pending={!rendered && !reduce && !paused}
+              pending={pending}
             />
             {viewportReady && available && Field && (
               <Field

@@ -82,7 +82,7 @@ for (const [entry, width, height, colorScheme] of [
   ['direct entry', 1280, 800, 'dark'],
   ['reload', 430, 600, 'light'],
 ] as const) {
-  test(`hero stays sharp and in place on ${entry} without a page transition`, async ({ page }) => {
+  test(`header and hero stay in place on ${entry} without a page transition`, async ({ page }) => {
     const failures = diagnostics(page);
     await page.setViewportSize({ width, height });
     await page.emulateMedia({ colorScheme });
@@ -106,7 +106,7 @@ for (const [entry, width, height, colorScheme] of [
           page.evaluate(() => performance.getEntriesByName('first-contentful-paint').length),
         )
         .toBe(1);
-      const selectors = ['.hero-title', '.hero-description', '.hero-actions'];
+      const selectors = ['.site-header-inner', '.hero-title', '.hero-description', '.hero-actions'];
       for (const selector of selectors) {
         await expect(page.locator(selector)).toHaveCSS('filter', 'none');
       }
