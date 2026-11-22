@@ -352,7 +352,7 @@ test('theme changes preserve navigation and require explicit remembering across 
   const menu = await openThemeMenu(page);
   await expectAccessible(page);
   const remember = menu.getByRole('menuitemcheckbox', {
-    name: 'Auswahl für weitere Besuche auf diesem Gerät merken',
+    name: 'Auswahl merken',
   });
   await expect(remember).not.toBeChecked();
   await remember.focus();
@@ -377,7 +377,7 @@ test('theme changes preserve navigation and require explicit remembering across 
     await expectAccessible(other);
     const otherMenu = await openThemeMenu(other);
     const otherRemember = otherMenu.getByRole('menuitemcheckbox', {
-      name: 'Auswahl für weitere Besuche auf diesem Gerät merken',
+      name: 'Auswahl merken',
     });
     await otherRemember.focus();
     await other.keyboard.press('Space');

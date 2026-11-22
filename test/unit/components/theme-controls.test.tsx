@@ -29,6 +29,7 @@ function App() {
 }
 const darkSwitch = () => screen.getByRole('switch', { name: 'Dunkle Darstellung' });
 const trigger = () => screen.getByRole('button', { name: 'Darstellung einstellen' });
+const rememberChoice = () => screen.getByRole('menuitemcheckbox', { name: 'Auswahl merken' });
 const activate = (button: HTMLElement) => fireEvent.click(button, { detail: 0 });
 async function openMenu() {
   const button = trigger();
@@ -73,7 +74,7 @@ describe('theme controls', () => {
     await waitFor(() => expect(document.documentElement.classList.contains('dark')).toBe(true));
     expect(window.localStorage.length).toBe(0);
     await openMenu();
-    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /für weitere Besuche/ }));
+    fireEvent.click(rememberChoice());
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
     expect(window.localStorage.length).toBe(1);
     first.unmount();
@@ -82,7 +83,7 @@ describe('theme controls', () => {
     fireEvent.click(darkSwitch());
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
     await openMenu();
-    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /für weitere Besuche/ }));
+    fireEvent.click(rememberChoice());
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
     fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(darkSwitch());
@@ -123,18 +124,14 @@ describe('theme controls', () => {
     expect(window.localStorage.length).toBe(0);
     expect(write).not.toHaveBeenCalled();
     await openMenu();
-    expect(
-      screen
-        .getByRole('menuitemcheckbox', { name: /für weitere Besuche/ })
-        .getAttribute('aria-checked'),
-    ).toBe('false');
+    expect(rememberChoice().getAttribute('aria-checked')).toBe('false');
   });
 
   it('can remember system mode while OS changes never rewrite it as a fixed color', async () => {
     const write = vi.spyOn(Storage.prototype, 'setItem');
     render(<App />);
     await openMenu();
-    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /für weitere Besuche/ }));
+    fireEvent.click(rememberChoice());
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('system');
     act(() => host.setSystemDark(true));
     expect(darkSwitch().getAttribute('aria-checked')).toBe('true');
@@ -162,7 +159,7 @@ describe('theme controls', () => {
     vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
       throw new DOMException('Blocked', 'SecurityError');
     });
-    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /für weitere Besuche/ }));
+    fireEvent.click(rememberChoice());
     expect(toast.error).toHaveBeenLastCalledWith(expect.stringContaining('nicht gelöscht'), {
       id: 'theme-storage',
     });
@@ -170,7 +167,7 @@ describe('theme controls', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('Full', 'QuotaExceededError');
     });
-    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /für weitere Besuche/ }));
+    fireEvent.click(rememberChoice());
     expect(toast.error).toHaveBeenLastCalledWith(expect.stringContaining('für diesen Aufruf'), {
       id: 'theme-storage',
     });
