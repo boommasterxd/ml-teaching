@@ -24,6 +24,7 @@ import {
   expectPreviewDeletion,
   expectThemeControlAlignment,
   expectThemeKeepsTraining,
+  expectTrainingGlide,
   expectThemeMenuTriggers,
   expectImmediateThemeFeedback,
   grantModelConsent,
@@ -467,14 +468,16 @@ test('local images train a real browser classifier, predict and reset without up
   );
   await expect(page.getByRole('heading', { name: 'Training', exact: true })).toHaveCount(0);
   await expectLivePredictionControls(page, expectCamera);
-  await steps.getByRole('button', { name: 'Training', exact: true }).click();
+  await page.setViewportSize({ width: 1440, height: 844 });
+  await expectTrainingGlide(steps.getByRole('button', { name: 'Training', exact: true }), 'right');
+  await page.setViewportSize({ width: 320, height: 844 });
   await expect(page.getByText('Training abgeschlossen', { exact: true })).toBeVisible();
   await expectCamera(5, 0);
   await steps.getByRole('button', { name: 'Bilder sammeln', exact: true }).click();
   await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(2);
   await expectCamera(6, 1);
   const predictionStep = steps.getByRole('button', { name: 'Vorhersage', exact: true });
-  await predictionStep.click();
+  await expectTrainingGlide(predictionStep, 'left');
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
   await expectCamera(6, 1);
   await steps.getByRole('button', { name: 'Bilder sammeln', exact: true }).click();

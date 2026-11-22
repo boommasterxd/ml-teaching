@@ -710,7 +710,8 @@ Reduced motion uses the library's instant height change and opacity feedback.
 - Training step activation uses the native Flow keyframes from route changes
   with a shorter glide and a crossfade for the workspace. Explicit step changes
   from the step bar or panel actions capture the outgoing and incoming panels
-  separately. The outgoing panel's snapshot fades out while only the new panel
+  separately. The snapshots glide across the workspace gutters to the viewport
+  edges. The outgoing panel's snapshot fades out while only the new panel
   is interactive and its heading takes focus. The heading scrolls into view when
   needed. Prepared panels stay hidden until activation, and any remaining module
   update commits with the selection. Reduced motion and unsupported browsers
