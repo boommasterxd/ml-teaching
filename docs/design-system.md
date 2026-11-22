@@ -705,6 +705,14 @@ Reduced motion uses the library's instant height change and opacity feedback.
   down warm the native route cache without changing the Link's prefetch mode,
   key or motion owner. The target is not mounted during preparation; modal focus,
   entry playback and consent-dependent effects remain tied to navigation.
+- Training step activation uses the native Flow keyframes from route changes
+  with a shorter glide and a crossfade for the workspace. Explicit step changes
+  from the step bar or panel actions capture the outgoing and incoming panels
+  separately. The outgoing panel's snapshot fades out while only the new panel
+  is interactive and its heading takes focus. The heading scrolls into view when
+  needed. Prepared panels stay hidden until activation, and any remaining module
+  update commits with the selection. Reduced motion and unsupported browsers
+  switch without capture.
 - The shared animated-list recipe owns class insertion, removal and positional
   reflow, using stable class IDs, reduced-motion configuration and hydration-safe
   initial markup. Exiting classes become inert and hidden from assistive technology

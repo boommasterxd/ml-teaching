@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import DeferredNetworkDemo from '@/components/hero/DeferredNetworkDemo';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
@@ -11,13 +11,16 @@ vi.mock('@/components/NeuralNetViz', () => {
   throw new Error('Demo chunk unavailable');
 });
 beforeEach(installBrowserHost);
-afterEach(restoreBrowserHost);
+afterEach(() => {
+  cleanup();
+  restoreBrowserHost();
+});
 
 describe('optional network module failure', () => {
   it('keeps the selected control focused and offers a bounded explicit retry', async () => {
     render(<DeferredNetworkDemo />);
     const cat = screen.getByRole('button', { name: 'Katzenbild zeigen' });
-    cat.focus();
+    await act(async () => cat.focus());
     fireEvent.click(cat);
     expect(await screen.findByRole('alert')).toHaveProperty(
       'textContent',
