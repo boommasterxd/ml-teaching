@@ -118,9 +118,14 @@ export default function EverydayQuiz() {
         </div>
       </EntryReveal>
       <div>
-        <div ref={choices} className="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div ref={choices} className="grid auto-rows-fr gap-4 md:grid-cols-2 lg:grid-cols-3">
           {round.map((example, index) => (
-            <EntryReveal key={example.id} index={index % 3} activation={Boolean(state.round)}>
+            <EntryReveal
+              key={example.id}
+              index={index % 3}
+              activation={Boolean(state.round)}
+              className="grid"
+            >
               <QuizChoice
                 example={example}
                 answered={state.answers.includes(example.id)}

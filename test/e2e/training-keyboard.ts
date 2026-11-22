@@ -373,6 +373,28 @@ export async function expectTrainingGlide(trigger: Locator, direction: 'left' | 
   await settleEntryAnimations(page);
 }
 
+export async function revealBottomTrainingButton(page: Page) {
+  const next = page.getByRole('button', { name: 'Weiter zum Training' });
+  const addClass = page.getByRole('button', { name: 'Neue Klasse hinzufügen' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await next
+    .first()
+    .evaluate((button) => button.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await expect(next.first()).toBeInViewport();
+  await expect(addClass).toBeInViewport();
+  await expect(next).toHaveCount(1);
+  await addClass.focus();
+  await page.keyboard.press('Tab');
+  await expect(next.and(page.locator(':focus'))).toHaveCount(0);
+
+  await page.setViewportSize({ width: 320, height: 844 });
+  await addClass.scrollIntoViewIfNeeded();
+  await expect(next).toHaveCount(2);
+  await expect(next.first()).not.toBeInViewport();
+  await expect(next.last()).toBeInViewport();
+  return next.last();
+}
+
 export async function openDeferredTrainingStep(
   page: Page,
   trigger: Locator,

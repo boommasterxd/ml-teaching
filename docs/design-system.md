@@ -196,7 +196,9 @@ The image explanation presents the technique before its interactive animation
 and training steps. The technique section groups MobileNet and KNN in a single
 glass panel with a divider. From `lg`, it places the introduction beside the
 panel and the training-tip introduction beside its numbered list. Smaller screens
-stack these sections. Each tip groups its number, icon and title above the description.
+stack these sections. Between `md` and `lg`, the technique introduction and body
+copy share a wider reading column above the panel. Each tip groups its number, icon
+and title above the description.
 The chapter's six numbered section labels use the shared Text component with red
 type. Everyday examples form a quiz grid, followed by a KNN exercise. The final
 training link sits in a rounded glass panel with a red glow.
@@ -207,9 +209,10 @@ multi-step forms and switchable selections; ordinary Buttons fit this reveal flo
 Each Card's initial surface has one overlaid native Button using the central
 `quiz-card` variant and size and a stable accessible answer name. The animated
 icon sits beside the heading and responds to card hover, press, and answer focus.
-Each choice takes the height of its content and uses equal top and bottom
-padding. The animated result overlays the card. Inline feedback can reserve
-extra space when a retry is needed.
+All choices in a round share the height of the tallest choice through flexible
+grid rows. The height follows text wrapping and uses equal top and bottom
+padding around the choice content. The animated result overlays the card.
+Inline feedback can reserve extra space when a retry is needed.
 The lightweight local answer state remains with the required triggers; closed
 explanations and their motion mount only on activation. No separate import or
 preparation controller is warranted for six visible choices and a bounded state set.
@@ -345,9 +348,13 @@ do not install a second UI foundation.
 
 The image-training workspace mounts one step at a time on the same route. It starts
 with the class collection, whose Cards share equal-height rows in two columns from
-Tailwind's `lg` breakpoint and stack on narrower screens. Training and prediction each use the
-full workspace width when selected. Switching steps preserves class data and the
-current model and stops any running prediction when leaving its step.
+Tailwind's `lg` breakpoint and stack on narrower screens. From `lg`, the Training
+Card is centered and capped at 48 rem. Below `lg`, it fills the workspace width.
+The training heading aligns with the centered feedback panel. The class and image
+counts share a footer with the training action from `sm`. On narrower screens,
+the centered counts sit above the full-width action.
+Prediction fills the workspace width at every breakpoint. Switching steps preserves
+class data and the current model and stops any running prediction when leaving its step.
 Each class reserves space for its gallery toolbar and scrollable
 thumbnails from the empty state onward. With the camera enabled, the gallery and the capture
 surface share one row and height from 36 rem of class-card width. Narrower cards stack the

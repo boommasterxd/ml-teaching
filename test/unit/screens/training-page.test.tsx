@@ -255,14 +255,12 @@ describe('training page integration', () => {
     const steps = within(screen.getByRole('navigation', { name: 'Trainingsablauf' }));
     const currentStep = () => steps.getByRole('button', { current: 'step' });
     expect(currentStep()).toBe(steps.getByRole('button', { name: 'Bilder sammeln' }));
-    expect(
-      screen
-        .getAllByRole<HTMLButtonElement>('button', { name: 'Weiter zum Training' })
-        .every(({ disabled }) => disabled),
-    ).toBe(true);
+    const continueButton = () =>
+      screen.getByRole<HTMLButtonElement>('button', { name: 'Weiter zum Training' });
+    expect(continueButton().disabled).toBe(true);
     await collectCupAndBookImages(container);
     expect(currentStep()).toBe(steps.getByRole('button', { name: 'Bilder sammeln' }));
-    fireEvent.click(screen.getAllByRole('button', { name: 'Weiter zum Training' })[0]);
+    fireEvent.click(continueButton());
     expect(screen.getByText('Ansicht wird geladen …')).toBeTruthy();
     const train = await screen.findByRole('button', { name: 'Modell trainieren' });
     await waitFor(() => expect((train as HTMLButtonElement).disabled).toBe(false));
@@ -292,7 +290,7 @@ describe('training page integration', () => {
       target: { files: selectedImages('tasse-replacement', 1) },
     });
     await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2));
-    fireEvent.click(screen.getAllByRole('button', { name: 'Weiter zum Training' })[0]);
+    fireEvent.click(continueButton());
     const trainAgain = await screen.findByRole<HTMLButtonElement>('button', {
       name: 'Modell trainieren',
     });

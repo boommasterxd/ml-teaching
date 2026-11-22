@@ -47,6 +47,16 @@
 .image-chapter .landing-technique-copy {
   gap: 1.25rem;
   max-width: 55ch;
+
+  @variant md {
+    @variant max-lg {
+      max-width: 75ch;
+
+      .image-technique-intro {
+        max-width: none;
+      }
+    }
+  }
 }
 
 .image-chapter .landing-technique-copy > p,
