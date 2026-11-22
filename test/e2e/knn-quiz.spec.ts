@@ -121,14 +121,14 @@ async function expectConnections(exercise: Locator, expectedCount = 3) {
   }
 }
 
-async function expectResizeContinuity(exercise: Locator, page: Page) {
+async function expectResizeContinuity(exercise: Locator, page: Page, originalWidth: number) {
   const selected = exercise.locator('.knn-point-control[aria-pressed="true"]');
   const labels = await selected.evaluateAll((points) =>
     points.map((point) => point.getAttribute('aria-label')),
   );
   const focused = selected.first();
   await focused.focus();
-  for (const width of [1023, 1024, 712]) {
+  for (const width of [1023, 1024, originalWidth]) {
     await page.setViewportSize({ width, height: 1000 });
     await expectResponsivePlot(exercise, width);
     await expect(focused).toBeFocused();
@@ -153,6 +153,40 @@ async function expectOddNeighborVote(exercise: Locator, count: number) {
   await expect(exercise.getByRole('alert')).toContainText('Richtig zugeordnet!');
 }
 
+async function expectAnswerRows(exercise: Locator, rows: number) {
+  const answers = exercise.getByRole('button', { name: /^(Hund|Katze|Gleichstand)$/ });
+  await expect(answers).toHaveCount(3);
+  const bounds = await answers.evaluateAll((buttons) =>
+    buttons.map((button) => {
+      const { top, height } = button.getBoundingClientRect();
+      return { top, height };
+    }),
+  );
+  expect(new Set(bounds.map(({ top }) => Math.round(top))).size).toBe(rows);
+  expect(Math.min(...bounds.map(({ height }) => height))).toBeGreaterThanOrEqual(44);
+}
+
+async function expectResponsiveFeedback(page: Page, exercise: Locator, originalWidth: number) {
+  const answers = exercise.getByRole('group', { name: '2. Welche Klasse gewinnt?' });
+  const feedback = exercise.getByRole('alert');
+  for (const width of [originalWidth, 390, 1280, originalWidth]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await expect
+      .poll(async () => {
+        const [choices, result] = await Promise.all([
+          answers.boundingBox(),
+          feedback.boundingBox(),
+        ]);
+        if (!choices || !result) return false;
+        if (width === originalWidth) {
+          return result.x >= choices.x + choices.width && result.y < choices.y + choices.height;
+        }
+        return result.y >= choices.y + choices.height;
+      })
+      .toBe(true);
+  }
+}
+
 for (const [width, colorScheme] of [
   [320, 'dark'],
   [1280, 'light'],
@@ -169,6 +203,12 @@ for (const [width, colorScheme] of [
     await exercise.scrollIntoViewIfNeeded();
     const slider = exercise.getByRole('slider');
     await expect(slider).toHaveAttribute('aria-valuenow', '3');
+    await expectAnswerRows(exercise, width === 320 ? 2 : 1);
+    if (width === 320) {
+      await page.setViewportSize({ width: 375, height: 1000 });
+      await expectAnswerRows(exercise, 1);
+      await page.setViewportSize({ width, height: 1000 });
+    }
     const points = await rankedTargets(exercise);
     const plot = await expectResponsivePlot(exercise, width);
     expect(points[3].distance - points[2].distance).toBeGreaterThan(
@@ -191,7 +231,7 @@ for (const [width, colorScheme] of [
 
 test('KNN exercise supports retries, voting limits, and new rounds', async ({ page }) => {
   const failures = diagnostics(page);
-  const width = 712;
+  const width = 800;
   await page.setViewportSize({ width, height: 1000 });
   await page.goto(learningPaths.images);
   const exercise = page.getByRole('region', { name: 'Welche Nachbarn zählen?' });
@@ -218,7 +258,7 @@ test('KNN exercise supports retries, voting limits, and new rounds', async ({ pa
     await expect(point.control).toHaveAttribute('aria-pressed', 'true');
   }
   await expectConnections(exercise);
-  await expectResizeContinuity(exercise, page);
+  await expectResizeContinuity(exercise, page, width);
   const dogs = accessiblePoints
     .slice(0, 3)
     .filter((point) => point.label.startsWith('Hund')).length;
@@ -241,6 +281,8 @@ test('KNN exercise supports retries, voting limits, and new rounds', async ({ pa
   await expect(exercise.getByRole('status')).toContainText(
     `2 von 3 Nachbarn stimmen für ${winner}`,
   );
+  await expectResponsiveFeedback(page, exercise, width);
+  await expect(restart).toBeFocused();
   await expectAccessible(page);
   const before = await plottedData(exercise);
   await page.keyboard.press('Enter');

@@ -1,13 +1,24 @@
+import { AlertCircle } from '../icons/alert-circle';
 import { Camera } from '../icons/camera';
 import Button from '../Button';
 import { DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
+import { Spinner } from '../ui/spinner';
 
 interface CameraStepProps {
   onDecline: () => void;
   onConfirm: () => void;
+  pending?: boolean;
+  error?: string;
+  onRetry?: () => void;
 }
 
-export default function CameraStep({ onDecline, onConfirm }: CameraStepProps) {
+export default function CameraStep({
+  onDecline,
+  onConfirm,
+  pending,
+  error,
+  onRetry,
+}: CameraStepProps) {
   return (
     <>
       <DialogTitle
@@ -26,12 +37,26 @@ export default function CameraStep({ onDecline, onConfirm }: CameraStepProps) {
           Zeitpunkt an externe Server übermittelt oder dort gespeichert.
         </strong>
       </DialogDescription>
+      <p role="status" className="sr-only">
+        {pending ? 'Warte auf die Kamerafreigabe im Browser …' : null}
+      </p>
+      {error && !pending && (
+        <p role="alert" className="flex items-start gap-2">
+          <AlertCircle aria-hidden="true" className="mt-1 size-4 shrink-0 text-destructive" />
+          {error}
+        </p>
+      )}
       <DialogFooter>
         <Button variant="secondary" onClick={onDecline}>
           Ohne Kamera fortfahren
         </Button>
-        <Button variant="default" onClick={onConfirm}>
-          <Camera data-icon="inline-start" aria-hidden="true" /> Erlauben
+        <Button variant="default" onClick={error ? onRetry : onConfirm} disabled={pending}>
+          {pending ? (
+            <Spinner data-icon="inline-start" aria-hidden="true" />
+          ) : (
+            <Camera data-icon="inline-start" aria-hidden="true" />
+          )}
+          {error ? 'Erneut versuchen' : 'Erlauben'}
         </Button>
       </DialogFooter>
     </>

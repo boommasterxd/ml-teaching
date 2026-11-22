@@ -1,10 +1,19 @@
 import { DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
 import { Spinner } from '../ui/spinner';
-import TrainingWithdrawal from '../TrainingWithdrawal';
+import Button from '../Button';
+import { RotateCcw } from '../icons/rotate-ccw';
 
-export default function LoadingStep({ loadingText }: { loadingText: string }) {
+export default function LoadingStep({
+  loadingText,
+  onWithdraw,
+  onWithdrawIntent,
+}: {
+  loadingText: string;
+  onWithdraw: () => void;
+  onWithdrawIntent?: () => void;
+}) {
   return (
-    <>
+    <div className="grid min-w-0 gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6">
       <div className="grid min-w-0 gap-2">
         <DialogTitle
           id="loading-modal-title"
@@ -17,9 +26,18 @@ export default function LoadingStep({ loadingText }: { loadingText: string }) {
           {loadingText}
         </DialogDescription>
       </div>
-      <DialogFooter className="grid-cols-1 sm:justify-items-end">
-        <TrainingWithdrawal />
+      <DialogFooter layout="auto-fit">
+        <Button
+          variant="outline"
+          onClick={onWithdraw}
+          onPointerEnter={onWithdrawIntent}
+          onPointerDown={onWithdrawIntent}
+          onFocus={onWithdrawIntent}
+        >
+          <RotateCcw data-icon="inline-start" aria-hidden="true" />
+          Einwilligung widerrufen
+        </Button>
       </DialogFooter>
-    </>
+    </div>
   );
 }

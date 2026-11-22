@@ -2,7 +2,6 @@ import type React from 'react';
 import { useLayoutEffect, useRef } from 'react';
 import { ArrowRight } from './icons/arrow-right';
 import { Plus } from './icons/plus';
-import { Camera } from './icons/camera';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import ClassCard from './ClassCard';
@@ -24,8 +23,7 @@ interface TrainingClassesPanelProps {
   classes: MLClass[];
   /** Set of class names that appear more than once (used to show duplicate warnings). */
   duplicateClassNames: Set<string>;
-  camera?: CameraView;
-  onEnableCamera: () => void;
+  camera: CameraView;
   /** Ref to the main heading element for programmatic focus management. */
   mainHeadingRef: React.RefObject<HTMLHeadingElement | null>;
   /** Callbacks for all actions a ClassCard can trigger (rename, delete, add image, etc.). */
@@ -162,7 +160,6 @@ export default function TrainingClassesPanel({
   classes,
   duplicateClassNames,
   camera,
-  onEnableCamera,
   mainHeadingRef,
   cardActions,
   entryReady = true,
@@ -171,13 +168,6 @@ export default function TrainingClassesPanel({
   onContinueIntent,
   canContinue,
 }: TrainingClassesPanelProps) {
-  const cameraControl = !camera && (
-    <Button variant="outline" className="min-h-11" onClick={onEnableCamera}>
-      <Camera data-icon="inline-start" aria-hidden="true" />
-      Kamera aktivieren
-    </Button>
-  );
-
   return (
     <section aria-labelledby="training-images" className="flex min-w-0 flex-col gap-5">
       <CollectionHeader
@@ -204,7 +194,6 @@ export default function TrainingClassesPanel({
                   position={index + 1}
                   isDuplicate={duplicateClassNames.has(cls.name.trim())}
                   camera={camera}
-                  cameraFallback={index === 0 ? cameraControl : undefined}
                   actions={cardActions}
                 />
               </AnimatedListItem>

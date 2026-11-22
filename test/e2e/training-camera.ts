@@ -5,6 +5,7 @@ type ExpectCameraActivity = (
   requests: number,
   live: number,
   facingMode?: 'user' | 'environment',
+  requestPath?: string,
 ) => Promise<void>;
 
 export async function observeWorkspaceCamera(page: Page): Promise<ExpectCameraActivity> {
@@ -13,11 +14,13 @@ export async function observeWorkspaceCamera(page: Page): Promise<ExpectCameraAc
       requests: 0,
       tracks: [] as MediaStreamTrack[],
       facingMode: undefined as MediaTrackConstraints['facingMode'],
+      requestPath: '',
     };
     const devices = navigator.mediaDevices;
     const getUserMedia = devices.getUserMedia.bind(devices);
     devices.getUserMedia = async (constraints) => {
       state.requests++;
+      state.requestPath = location.pathname;
       if (typeof constraints?.video === 'object') state.facingMode = constraints.video.facingMode;
       const stream = await getUserMedia(constraints);
       state.tracks.push(...stream.getVideoTracks());
@@ -25,19 +28,21 @@ export async function observeWorkspaceCamera(page: Page): Promise<ExpectCameraAc
     };
     return state;
   });
-  return async (requests, live, facingMode) => {
+  return async (requests, live, facingMode, requestPath) => {
     const snapshot = () =>
-      activity.evaluate(({ requests, tracks, facingMode }) => ({
+      activity.evaluate(({ requests, tracks, facingMode, requestPath }) => ({
         requests,
         live: tracks.filter((track) => track.readyState === 'live').length,
         ended: tracks.filter((track) => track.readyState === 'ended').length,
         facingMode,
+        requestPath,
       }));
     await expect.poll(snapshot).toMatchObject({
       requests,
       live,
       ended: requests - live,
       ...(facingMode && { facingMode }),
+      ...(requestPath && { requestPath }),
     });
   };
 }
@@ -92,14 +97,12 @@ export async function expectCameraToggleKeepsImages(
   page: Page,
   expectCamera: ExpectCameraActivity,
 ) {
-  await enableCamera(
-    page,
-    page.getByRole('button', { name: 'Kamera aktivieren', exact: true }),
-    expectCamera,
-    0,
-  );
-  const frame = page.locator('[data-slot="camera-preview"]').first();
+  const frames = page.locator('[data-slot="camera-preview"]');
+  await expect(frames.getByRole('status')).toHaveText(['Kamera aus', 'Kamera aus']);
+  await expect(frames.locator('video')).toHaveCount(0);
+  const frame = frames.first();
   const { pause, play } = cameraControls(frame);
+  await enableCamera(page, play, expectCamera, 0);
   await expectControlsInCorners(frame);
   await expectAccessible(page);
   await pause.press('Enter');

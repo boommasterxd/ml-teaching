@@ -3,6 +3,7 @@
 import type { ComponentProps, ReactElement } from 'react';
 import { AlertDialog as Primitive } from '@animate-ui/react/primitives/base-ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { DialogExitObserver, useDialogExitCallback } from '../dialog-state';
 import { Button } from './button';
 import { dialogScrim, dialogSurface, DialogViewport, renderDialogSurface } from './dialog';
 
@@ -12,13 +13,17 @@ export const AlertDialog = Primitive.Root;
 export function AlertDialogContent({
   className,
   render,
+  onExited,
   ...props
 }: Omit<Primitive.Popup.Props, 'className' | 'render'> & {
   className?: string;
   render: ReactElement<ComponentProps<'div'>>;
+  onExited?: () => void;
 }) {
+  const exitCallback = useDialogExitCallback(onExited);
   return (
     <Primitive.Portal>
+      {onExited && <DialogExitObserver callback={exitCallback} />}
       <Primitive.Backdrop
         data-slot="alert-dialog-overlay"
         className={dialogScrim}

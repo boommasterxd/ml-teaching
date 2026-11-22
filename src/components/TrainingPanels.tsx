@@ -23,7 +23,7 @@ export default function TrainingPanels({
   onPrepare: (step: TrainingStep) => void;
 }) {
   const { resources, data, cardActions } = workspace;
-  const { consent, camera, prediction, revokeCamera } = resources;
+  const { camera, prediction, revokeCamera } = resources;
   const { classes } = data;
   const { stream, facingMode, active, isPending, hasFailed, start, toggleCamera } = camera;
   const cameraView = useMemo<CameraView>(
@@ -47,8 +47,7 @@ export default function TrainingPanels({
           entryReady={ready}
           classes={classes.classes}
           duplicateClassNames={data.duplicateClassNames}
-          camera={consent.hasGrantedCamera ? cameraView : undefined}
-          onEnableCamera={start}
+          camera={cameraView}
           mainHeadingRef={resources.mainHeadingRef}
           cardActions={cardActions}
           onAddClass={classes.addClass}

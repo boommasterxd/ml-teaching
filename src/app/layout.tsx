@@ -4,8 +4,10 @@ import ErrorRecoveryTransitionStyles from '@/components/ErrorRecoveryTransitionS
 import Footer from '@/components/Footer';
 import SiteHeader from '@/components/SiteHeader';
 import ToastHost from '@/components/ToastHost';
+import TrainingEntryProvider from '@/components/training/TrainingEntryProvider';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
-import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
+import { supportedColorSchemes, THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
+import { TRAINING_CONSENT_BOOTSTRAP_SCRIPT } from '@/lib/training-consent-storage';
 import { geist } from '@/lib/fonts';
 import { siteConfig } from '@/lib/site';
 import '../index.css';
@@ -23,6 +25,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  colorScheme: supportedColorSchemes,
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -38,17 +41,20 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           suppressHydrationWarning
         />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: TRAINING_CONSENT_BOOTSTRAP_SCRIPT }} />
       </head>
       <body className={[geist.variable, 'app-body'].join(' ')}>
         <ThemeProvider>
           <a href="#main-content" className="skip-link">
             Zum Inhalt springen
           </a>
-          <SiteHeader />
-          <main id="main-content" tabIndex={-1} className="app-main">
-            <PageTransition effect="flow">{children}</PageTransition>
-          </main>
-          <Footer />
+          <TrainingEntryProvider>
+            <SiteHeader />
+            <main id="main-content" tabIndex={-1} className="app-main">
+              <PageTransition effect="flow">{children}</PageTransition>
+            </main>
+            <Footer />
+          </TrainingEntryProvider>
           <ToastHost />
         </ThemeProvider>
       </body>

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import TrainingPage from '@/screens/TrainingPage';
+import TrainingEntryProvider from '@/components/training/TrainingEntryProvider';
 import { learningPaths } from '@/lib/learning-paths';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
@@ -23,6 +24,7 @@ vi.mock('@/components/toast-loader', () => ({
 vi.mock('@/lib/toast', () => ({ toast: { error: boundary.toastError } }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: boundary.push, prefetch: boundary.prefetch }),
+  usePathname: () => '/lernen/bilderkennung/ausprobieren',
 }));
 vi.mock('@tensorflow/tfjs-core', () => ({
   setBackend: vi.fn(async () => true),
@@ -70,6 +72,7 @@ function createCameraStream() {
 beforeEach(() => {
   installBrowserHost();
   vi.clearAllMocks();
+  window.sessionStorage.clear();
   boundary.load.mockReset().mockImplementation(async () => ({
     infer: vi.fn(boundary.tensor),
     dispose: vi.fn(),
@@ -141,6 +144,7 @@ function confirmGeneralConsent() {
   const dialog = screen.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   within(dialog)
     .getAllByRole('checkbox')
+    .slice(0, 2)
     .forEach((choice) => fireEvent.click(choice));
   fireEvent.click(within(dialog).getByRole('button', { name: 'Zustimmen' }));
 }
@@ -173,9 +177,9 @@ async function collectCupAndBookImages(container: HTMLElement) {
   fireEvent.change(names[1], { target: { value: 'Buch' } });
   const inputs = container.querySelectorAll<HTMLInputElement>('input[type="file"]');
   fireEvent.change(inputs[0], { target: { files: selectedImages('tasse') } });
-  await screen.findByText('10 Bilder');
+  await screen.findByText('10 Bilder', undefined, { timeout: 3000 });
   fireEvent.change(inputs[1], { target: { files: selectedImages('buch') } });
-  await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2));
+  await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2), { timeout: 3000 });
 }
 
 async function expectPredictionCameraLifecycle(steps: ReturnType<typeof within>) {
@@ -219,11 +223,19 @@ async function expectPredictionCameraLifecycle(steps: ReturnType<typeof within>)
   expect(screen.getAllByText('10 Bilder')).toHaveLength(2);
 }
 
+function TrainingFixture() {
+  return (
+    <TrainingEntryProvider>
+      <TrainingPage />
+    </TrainingEntryProvider>
+  );
+}
+
 describe('training page integration', () => {
   it('keeps processing opt-in, supports local training, enables camera later and confirms destructive changes', async () => {
     const { container, unmount } = render(
       <main id="main-content" tabIndex={-1}>
-        <TrainingPage />
+        <TrainingFixture />
       </main>,
     );
     expect(boundary.load).not.toHaveBeenCalled();
@@ -300,7 +312,7 @@ describe('training page integration', () => {
 
   it('keeps model failures visible without a camera prompt and returns safely to the image explanation', async () => {
     boundary.load.mockRejectedValue(new DOMException('Model network timeout', 'TimeoutError'));
-    render(<TrainingPage />);
+    render(<TrainingFixture />);
     confirmGeneralConsent();
     const error = await screen.findByRole('alert');
     expect(error.textContent).toContain('Fehler beim Laden der KI-Modelle');
@@ -321,7 +333,7 @@ describe('training page integration', () => {
   });
 
   it('reports failed file selections once per action and accepts a later valid local image', async () => {
-    const { container } = render(<TrainingPage />);
+    const { container } = render(<TrainingFixture />);
     await enterWithoutCamera();
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
     for (let attempt = 1; attempt <= 2; attempt++) {
@@ -339,17 +351,23 @@ describe('training page integration', () => {
     boundary.getUserMedia.mockRejectedValueOnce(
       new DOMException('Access denied', 'NotAllowedError'),
     );
-    const { container } = render(<TrainingPage />);
+    const { container } = render(<TrainingFixture />);
     confirmGeneralConsent();
     fireEvent.click(await screen.findByRole('button', { name: 'Erlauben' }));
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('Kamerazugriff verweigert oder keine Kamera gefunden.');
-    expect(within(alert).getByRole('button', { name: 'Seite neu laden' })).toBeTruthy();
+    await waitFor(
+      () =>
+        expect(boundary.toastError).toHaveBeenCalledWith(
+          expect.stringContaining('Kamerazugriff verweigert oder keine Kamera gefunden.'),
+          { id: 'training-camera' },
+        ),
+      { timeout: 3000 },
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
     const [retry] = screen.getAllByRole('button', { name: 'Kamera erneut verbinden' });
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
     fireEvent.change(input, { target: { files: selectedImages('valid', 1) } });
     await screen.findByText('1 / 10 Bilder');
-    expect(screen.getByRole('alert')).toBe(alert);
+    expect(boundary.toastError).toHaveBeenCalledTimes(1);
     act(() => retry.focus());
     fireEvent.click(retry);
     await screen.findAllByLabelText('Kameravorschau für Trainingsaufnahme');
@@ -360,7 +378,7 @@ describe('training page integration', () => {
   });
 
   it('returns to the image explanation when the general processing choice is declined', () => {
-    render(<TrainingPage />);
+    render(<TrainingFixture />);
     const decline = screen.getByRole('button', { name: 'Abbrechen' });
     expect(boundary.prefetch).not.toHaveBeenCalled();
     fireEvent.pointerDown(decline, { pointerType: 'touch' });

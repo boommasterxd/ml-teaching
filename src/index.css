@@ -67,3 +67,7 @@
     --gallery-columns: 6;
   }
 }
+
+[data-scroll-fade] {
+  scroll-padding-block: 1.5rem;
+}

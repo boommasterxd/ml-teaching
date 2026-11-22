@@ -1,4 +1,5 @@
 export const THEME_STORAGE_KEY = 'ml-teaching-theme';
+export const supportedColorSchemes = 'light dark';
 const THEME_SELECTIONS = ['light', 'dark', 'system'] as const;
 export type ThemeSelection = (typeof THEME_SELECTIONS)[number];
 export type ResolvedTheme = Exclude<ThemeSelection, 'system'>;

@@ -7,6 +7,7 @@ import { NavigationMenu as BaseNavigationMenu } from '@base-ui/react/navigation-
 import { cn } from '@/lib/utils';
 import { ChevronDown } from '../icons/chevron-down';
 import { MenuHighlight } from './menu-highlight';
+import { ScrollFadeViewport } from './scroll-fade-viewport';
 
 export const navigationMenuTriggerStyle =
   'control-focus header-menu-trigger group relative inline-flex min-h-8 w-max items-center justify-center rounded-full px-2.5 py-1 text-sm font-medium';
@@ -70,7 +71,7 @@ function HeaderMenuPopup({
           render={<div />}
           className={cn('header-menu-panel', mobile && 'header-menu-panel-mobile')}
         >
-          <Primitive.Viewport className="header-menu-viewport" />
+          <ScrollFadeViewport render={<Primitive.Viewport />} className="header-menu-viewport" />
         </Primitive.Popup>
       </Primitive.Positioner>
     </Primitive.Portal>

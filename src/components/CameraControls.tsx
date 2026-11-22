@@ -1,7 +1,10 @@
+import { cn } from '@/lib/utils';
 import Button from './Button';
+import { AlertCircle } from './icons/alert-circle';
 import { Pause } from './icons/pause';
 import { Play } from './icons/play';
 import { SwitchCamera } from './icons/switch-camera';
+import { VideoOff } from './icons/video-off';
 import { Spinner } from './ui/spinner';
 
 export interface CameraView {
@@ -29,15 +32,24 @@ export default function CameraControls({
       : 'Kamera aktivieren';
   const Icon = active ? Pause : Play;
   const prepare = active ? undefined : onStartIntent;
+  const cameraOff = !pending && !failed;
+  const showError = !pending && failed;
   return (
     <>
       {!stream && (
         <p
           role="status"
-          className="absolute inset-0 flex items-center justify-center gap-2 px-3 pb-12 text-center text-sm text-media-foreground"
+          className={cn(
+            'absolute inset-0 flex items-center justify-center gap-2 px-3 text-center text-sm text-media-foreground',
+            showError && 'flex-col',
+          )}
         >
           {pending && <Spinner aria-hidden="true" />}
-          {pending ? 'Kamera wird verbunden …' : failed ? 'Keine Kameraverbindung' : 'Kamera aus'}
+          {showError && <AlertCircle aria-hidden="true" size={24} animateOnView />}
+          {cameraOff && <VideoOff aria-hidden="true" size={24} animateOnView />}
+          <span className={showError ? undefined : 'sr-only'}>
+            {pending ? 'Kamera wird verbunden …' : failed ? 'Keine Kameraverbindung' : 'Kamera aus'}
+          </span>
         </p>
       )}
       <Button

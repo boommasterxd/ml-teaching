@@ -91,7 +91,7 @@ describe('consent dialogs', () => {
     expect(screen.getByRole('dialog', { name: 'Lade KI-Modelle...' })).toBeTruthy();
     const progress = screen.getByText('Modell wird geladen');
     expect(progress.closest('[aria-live="polite"]')).not.toBeNull();
-    const withdrawal = screen.getByRole('link', { name: /Einwilligung widerrufen/ });
+    const withdrawal = screen.getByRole('button', { name: /Einwilligung widerrufen/ });
     withdrawal.focus();
     rerender(<SetupDialogFixture step="loading" loadingText="GPU wird vorbereitet" />);
     expect(screen.getByText('GPU wird vorbereitet')).toBe(progress);

@@ -6,6 +6,7 @@ test('the desktop menu loads on intent and Escape cancels a cold opening', async
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/lernen');
   await page.reload();
+  await expect(page.locator('.header-menu-mobile')).toHaveCount(0);
   const lateScripts = Promise.withResolvers<void>();
   let requested = false;
   await page.route('**/_next/static/chunks/*.js', async (route) => {
@@ -51,6 +52,8 @@ test('the desktop menu loads on intent and Escape cancels a cold opening', async
 
 test('a failed navigation chunk can be retried from the open menu', async ({ page }) => {
   await page.goto('/lernen');
+  // The initial static layout includes both breakpoint variants until hydration.
+  await expect(page.locator('.header-menu-mobile')).toHaveCount(0);
   const assets = '**/_next/static/chunks/*.js';
   await page.route(assets, (route) => route.abort('failed'));
 

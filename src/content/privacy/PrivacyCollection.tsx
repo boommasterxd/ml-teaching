@@ -113,7 +113,8 @@ export const PrivacyCollection = (
       Ihrer separaten Zustimmung und der Freigabe im Browser aktiviert. Zum Widerruf verwenden Sie
       die unter „
       <a href="#widerruf-der-einwilligung">Widerruf Ihrer Einwilligung zur Datenverarbeitung</a>“
-      beschriebenen Möglichkeiten. Ein erneuter Start erfordert eine neue Zustimmung.
+      beschriebenen Möglichkeiten. Ein erneuter Start erfordert eine neue Zustimmung, wenn keine
+      gültige gemerkte Auswahl vorliegt.
     </p>
     <h4>Speicherdauer</h4>
     <p>
@@ -166,11 +167,20 @@ export const PrivacyCollection = (
       Die Lernfunktion greift erst nach Ihrer Zustimmung auf die von Ihnen ausgewählten Bilddateien
       beziehungsweise die freigegebene Kamera zu. Modellparameter und Trainingsdaten werden auf
       Ihrem Gerät verarbeitet. Grundlage für den Zugriff auf diese Informationen ist Ihre
-      Einwilligung nach § 25 Abs. 1 TDDDG. Die Zustimmungen werden nur im Arbeitsspeicher gehalten
-      und bei einem neuen Seitenaufruf erneut abgefragt. Heruntergeladene Programm- und
-      Modelldateien können im üblichen Browsercache verbleiben. Dieser Cache enthält keine von der
-      Anwendung dorthin geschriebenen Trainingsbilder; seine Löschung können Sie über die
-      Browsereinstellungen steuern.
+      Einwilligung nach § 25 Abs. 1 TDDDG.
+    </p>
+    <p>
+      Mit „Für 30 Minuten in diesem Tab merken“ können Sie ausdrücklich einwilligen, dass die
+      Zustimmungen, die Kamerawahl und der Ablaufzeitpunkt im Sitzungsspeicher Ihres Browsers
+      (Session Storage) abgelegt werden. Die Anwendung liest diese Auswahl beim Aufruf erneut aus,
+      um Ihre Entscheidung für weitere Aufrufe im selben Tab zu übernehmen. Grundlage dafür ist Ihre
+      Einwilligung nach § 25 Abs. 1 TDDDG und, soweit dabei personenbezogene Daten verarbeitet
+      werden, nach Art. 6 Abs. 1 lit. a DSGVO. Die Anwendung übermittelt die Auswahl nicht an
+      Server. Nach 30 Minuten wird sie für weitere Aufrufe nicht mehr verwendet. Eine bereits
+      laufende Nutzung kann fortgesetzt werden. Sie können die Auswahl jederzeit über „Einwilligung
+      widerrufen“ löschen. Heruntergeladene Programm- und Modelldateien können im üblichen
+      Browsercache verbleiben. Dieser Cache enthält keine von der Anwendung dorthin geschriebenen
+      Trainingsbilder; seine Löschung können Sie über die Browsereinstellungen steuern.
     </p>
     <h3>Anfrage per E-Mail oder Telefon</h3>
     <h4>Bearbeitung Ihrer Anfrage</h4>

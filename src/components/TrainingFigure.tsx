@@ -3,7 +3,7 @@ import { spring, useTempoTransition } from '@animate-ui/react/utils/motion';
 import { motion } from 'motion/react';
 import { memo } from 'react';
 import { Brain } from './icons/brain';
-import { Check } from './icons/check';
+import { CheckCircle2 } from './icons/check-circle2';
 import { useMotionPreference } from './ui/use-motion-preference';
 
 const examplePositions = [10, 28, 46];
@@ -57,7 +57,7 @@ const TrainingFigure = memo(function TrainingFigure({
           zoom={reduce ? false : { initialScale: 0.8 }}
           className="absolute top-1/2 right-0 grid size-[35%] aspect-square h-auto -translate-y-1/2 place-items-center rounded-full border border-success-border bg-success-soft text-success"
         >
-          <Check className="size-7 sm:size-9" animate={!reduce} />
+          <CheckCircle2 className="size-7 sm:size-9" animate={!reduce} />
         </Effect>
       ) : (
         <span className="absolute top-1/2 right-0 grid size-[35%] aspect-square h-auto -translate-y-1/2 place-items-center rounded-full border border-primary/25 bg-card">

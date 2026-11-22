@@ -2,7 +2,7 @@
 
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { useShouldReduceMotion } from '@animate-ui/react/utils/motion';
-import { Check } from '@/components/icons/check';
+import { CheckCircle2 } from '@/components/icons/check-circle2';
 
 export function KnnSuccessMedal() {
   const reduce = useShouldReduceMotion();
@@ -44,7 +44,7 @@ export function KnnSuccessMedal() {
           </>
         )}
       </svg>
-      <Check animate={!reduce} className="relative size-5" />
+      <CheckCircle2 animate={!reduce} className="relative size-5" />
     </span>
   );
 }

@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useTrainingWorkspace } from '@/hooks/useTrainingWorkspace';
+import { useTrainingWorkspace as useWorkspace } from '@/hooks/useTrainingWorkspace';
+import { useTrainingEngine } from '@/hooks/useTrainingEngine';
 import type { TrainingStep } from '@/components/training-panel-loading';
 import { ML } from '@/constants';
 import type { MLImage } from '@/types/ml';
@@ -77,6 +78,11 @@ const image = (id: string): MLImage => ({
   featureArray: [1, 0],
   dataUrl: 'data:image/jpeg;base64,a',
 });
+
+function useTrainingWorkspace(step: TrainingStep = 'images') {
+  const engine = useTrainingEngine(true);
+  return useWorkspace(step, engine);
+}
 
 async function collectMinimumImages(result: { current: ReturnType<typeof useTrainingWorkspace> }) {
   await act(async () => {

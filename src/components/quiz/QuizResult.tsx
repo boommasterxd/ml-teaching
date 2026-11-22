@@ -6,7 +6,7 @@ import { useAnimateIconContext } from '@animate-ui/react/icons';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { ReducedMotionConfig, useShouldReduceMotion } from '@animate-ui/react/utils/motion';
 import type { QuizExample } from '@/lib/recognition-quiz';
-import { Check } from '@/components/icons/check';
+import { CheckCircle2 } from '@/components/icons/check-circle2';
 import { X } from '@/components/icons/x';
 import Button from '@/components/Button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -86,7 +86,7 @@ function QuizResultContent({ example }: { example: QuizExample }) {
 
 function ResultGlyph({ correct, cardActive }: { correct: boolean; cardActive: boolean }) {
   const { active: controlActive } = useAnimateIconContext();
-  const Icon = correct ? Check : X;
+  const Icon = correct ? CheckCircle2 : X;
   return <Icon animate={cardActive || Boolean(controlActive)} aria-hidden="true" />;
 }
 

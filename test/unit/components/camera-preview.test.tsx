@@ -97,6 +97,7 @@ describe('camera preview controls', () => {
       class {
         constructor(private callback: IntersectionObserverCallback) {}
         observe(target: Element) {
+          if (target.getAttribute('data-slot') !== 'camera-preview') return;
           updateVisibility = (isIntersecting) =>
             this.callback(
               [{ target, isIntersecting } as IntersectionObserverEntry],

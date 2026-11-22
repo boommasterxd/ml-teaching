@@ -1,7 +1,8 @@
 'use client';
 
 import { AnimatePresence } from 'motion/react';
-import { useId, useRef, type ComponentType } from 'react';
+import { useId, useRef, useState, type ComponentType } from 'react';
+import { useAnimateIconContext } from '@animate-ui/react/icons';
 import type { QuizExample } from '@/lib/recognition-quiz';
 import { Calculator } from '@/components/icons/calculator';
 import { Camera } from '@/components/icons/camera';
@@ -28,6 +29,27 @@ const exampleIcons = {
   phone: Smartphone,
 };
 
+function QuizChoiceIcon({
+  icon,
+  answered,
+  focused,
+}: {
+  icon: QuizExample['icon'];
+  answered: boolean;
+  focused: boolean;
+}) {
+  const { active } = useAnimateIconContext();
+  const Icon = exampleIcons[icon];
+  return (
+    <Icon
+      size={20}
+      className="mt-px shrink-0 text-primary"
+      animate={!answered && (focused || Boolean(active))}
+      aria-hidden="true"
+    />
+  );
+}
+
 export default function QuizChoice({
   example,
   answered,
@@ -43,14 +65,17 @@ export default function QuizChoice({
   onIntent: () => void;
   onAnswer: (example: QuizExample) => void;
 }) {
-  const Icon = exampleIcons[example.icon];
   const descriptionId = useId();
   const choice = useRef<HTMLButtonElement>(null);
+  const [focused, setFocused] = useState(false);
   return (
-    <Card className="isolate h-full gap-0 py-0">
-      <div className="relative flex-1 overflow-clip rounded-(--quiz-inner-radius) [--quiz-inner-radius:calc(var(--glass-radius)-1px)]">
-        <CardHeader className="min-h-48 pt-20 pb-6" aria-hidden={answered || undefined}>
-          <CardTitle as="h3">{example.title}</CardTitle>
+    <Card className="isolate grid grid-cols-1 gap-0 py-0">
+      <div className="relative col-start-1 row-start-1 min-w-0 overflow-clip rounded-(--quiz-inner-radius) [--quiz-inner-radius:calc(var(--glass-radius)-1px)]">
+        <CardHeader className="content-start py-5" aria-hidden={answered || undefined}>
+          <CardTitle as="h3" className="flex items-start gap-2 leading-snug">
+            <QuizChoiceIcon icon={example.icon} answered={answered} focused={focused} />
+            <span className="min-w-0">{example.title}</span>
+          </CardTitle>
           <CardDescription id={descriptionId}>{example.description}</CardDescription>
         </CardHeader>
         <Button
@@ -58,26 +83,23 @@ export default function QuizChoice({
           data-quiz-choice=""
           variant="quiz-card"
           size="quiz-card"
-          data-result={answered ? (example.correct ? 'correct' : 'incorrect') : undefined}
           aria-label={'Auswählen: ' + example.title}
           aria-describedby={answered ? undefined : descriptionId}
           aria-disabled={answered || undefined}
           onPointerEnter={onIntent}
-          onFocus={onIntent}
+          onFocus={() => {
+            setFocused(true);
+            onIntent();
+          }}
+          onBlur={() => setFocused(false)}
           onPointerDown={onIntent}
           onClick={() => {
             if (!answered) onAnswer(example);
           }}
-        >
-          <Icon
-            data-icon="inline-start"
-            animate={answered ? false : undefined}
-            aria-hidden="true"
-          />
-        </Button>
+        />
       </div>
       {answered && !QuizResult && (
-        <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center px-3 sm:px-6">
+        <div className="pointer-events-none z-30 col-start-1 row-start-1 grid min-w-0 place-items-center p-3 sm:px-6">
           <Alert role="group" aria-label="Rückmeldung" className="min-w-0">
             <AlertTitle>{example.correct ? 'Richtig!' : 'Hier nicht.'}</AlertTitle>
             <AlertDescription>
