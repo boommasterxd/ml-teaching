@@ -111,6 +111,7 @@ const publicRoutes = [
 
 for (const path of publicRoutes) {
   test(`initial public content is readable before hydration at ${path}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
     const failures = diagnostics(page);
     const scripts = await holdApplicationScripts(page);
     try {
@@ -145,13 +146,12 @@ for (const path of publicRoutes) {
       }
       await scripts.expectHeld();
       scripts.release();
-      await page.waitForLoadState('load');
       await expect(main.getByRole('heading', { level: 1 })).toBeVisible();
       const appearance = page.getByRole('switch', { name: 'Dunkle Darstellung' });
-      const checked = await appearance.isChecked();
-      await appearance.focus();
-      await page.keyboard.press('Space');
-      await expect(appearance).toBeChecked({ checked: !checked });
+      // The switch reflects the system theme in its ARIA state once React is ready.
+      await expect(appearance).toBeChecked();
+      await appearance.press('Space');
+      await expect(appearance).not.toBeChecked();
       expect(failures).toEqual([]);
     } finally {
       scripts.release();
