@@ -96,12 +96,13 @@ function CollectionHeader({
         onContinueIntent={onContinueIntent}
         placement="top"
       />
-      {!canContinue && (
-        <Text variant="muted" className="col-span-full max-w-prose text-pretty">
-          Mindestens {ML.MIN_CLASSES} Klassen, eindeutige Namen und je {ML.MIN_IMAGES_PER_CLASS}{' '}
-          Bilder.
-        </Text>
-      )}
+      <Text
+        variant="muted"
+        className={cn('col-span-full max-w-prose text-pretty', canContinue && 'invisible')}
+      >
+        Mindestens {ML.MIN_CLASSES} Klassen, eindeutige Namen und je {ML.MIN_IMAGES_PER_CLASS}{' '}
+        Bilder.
+      </Text>
     </div>
   );
 }

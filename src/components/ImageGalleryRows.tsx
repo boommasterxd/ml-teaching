@@ -5,6 +5,8 @@ import {
   useLayoutEffect,
   useRef,
   useCallback,
+  type MouseEvent,
+  type PointerEvent,
   type RefObject,
 } from 'react';
 import NextImage from 'next/image';
@@ -12,10 +14,69 @@ import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
 import type { Range, VirtualItem, Virtualizer } from '@tanstack/react-virtual';
 import Button from './Button';
 import { prepareTrainingDialogs } from './DeferredTrainingDialogs';
-import { CheckCircle2 } from './icons/check-circle2';
+import { Check } from './icons/check';
 import { cn } from '../lib/utils';
 import { Badge } from './ui/badge';
 import type { MLImage } from '../types/ml';
+
+const thumbnailHoldDelayMs = 450;
+const thumbnailHoldSlopPx = 10;
+
+type ThumbnailPointerEvent = PointerEvent<HTMLButtonElement>;
+
+function useThumbnailPress(onHold: () => void, onClick: () => void) {
+  const hold = useRef<{ pointerId: number; x: number; y: number; timer: number } | null>(null);
+  const suppressPointerClick = useRef(false);
+  useEffect(() => () => window.clearTimeout(hold.current?.timer), []);
+
+  const cancelHold = (event: ThumbnailPointerEvent) => {
+    const press = hold.current;
+    if (!press || press.pointerId !== event.pointerId) return;
+    window.clearTimeout(press.timer);
+    hold.current = null;
+  };
+
+  return {
+    onPointerDown: (event: ThumbnailPointerEvent) => {
+      if (!event.isPrimary || hold.current) return;
+      suppressPointerClick.current = false;
+      if (event.button !== 0) return;
+      const { pointerId, clientX, clientY } = event;
+      hold.current = {
+        pointerId,
+        x: clientX,
+        y: clientY,
+        timer: window.setTimeout(() => {
+          if (document.hidden) return;
+          suppressPointerClick.current = true;
+          onHold();
+        }, thumbnailHoldDelayMs),
+      };
+    },
+    onPointerMove: (event: ThumbnailPointerEvent) => {
+      const press = hold.current;
+      if (!press || press.pointerId !== event.pointerId) return;
+      if (Math.hypot(event.clientX - press.x, event.clientY - press.y) <= thumbnailHoldSlopPx)
+        return;
+      suppressPointerClick.current = true;
+      cancelHold(event);
+    },
+    onPointerUp: cancelHold,
+    onPointerCancel: cancelHold,
+    onPointerLeave: cancelHold,
+    onLostPointerCapture: cancelHold,
+    onContextMenu: (event: MouseEvent<HTMLButtonElement>) => {
+      if (hold.current || suppressPointerClick.current) event.preventDefault();
+    },
+    onClick: (event: MouseEvent<HTMLButtonElement>) => {
+      if (event.detail > 0 && suppressPointerClick.current) {
+        suppressPointerClick.current = false;
+        return;
+      }
+      onClick();
+    },
+  };
+}
 
 /** Internal props for the ImageThumbnail component. */
 interface ImageThumbnailProps {
@@ -27,7 +88,7 @@ interface ImageThumbnailProps {
   isSelectionMode: boolean;
   /** Whether this specific thumbnail is currently selected. */
   isSelected: boolean;
-  /** Called with the image ID when the user toggles its selection state. */
+  /** Enters selection mode and toggles the given image. */
   onToggleSelect: (id: string) => void;
   /** Called with the full image object when clicked outside of selection mode. */
   onImageClick: (img: MLImage) => void;
@@ -36,8 +97,8 @@ interface ImageThumbnailProps {
 /**
  * Renders a single training image thumbnail with an optional selection overlay.
  *
- * In selection mode the thumbnail shows a colored checkbox indicator and calls
- * `onToggleSelect` on click. Outside selection mode it calls `onImageClick`.
+ * Holding the thumbnail toggles its selection. A short click previews it
+ * outside selection mode and toggles it inside selection mode.
  *
  * @param props - See {@link ImageThumbnailProps}.
  */
@@ -50,6 +111,10 @@ const ImageThumbnail = memo(function ImageThumbnail({
   onImageClick,
 }: ImageThumbnailProps) {
   const imageNumber = imgIndex + 1;
+  const press = useThumbnailPress(
+    () => onToggleSelect(img.id),
+    () => (isSelectionMode ? onToggleSelect(img.id) : onImageClick(img)),
+  );
   return (
     <Button
       variant="thumbnail"
@@ -61,8 +126,11 @@ const ImageThumbnail = memo(function ImageThumbnail({
       aria-label={`Bild ${imageNumber} ${isSelectionMode ? 'auswählen' : 'vergrößern'}`}
       onPointerEnter={isSelectionMode ? undefined : prepareTrainingDialogs}
       onFocus={isSelectionMode ? undefined : prepareTrainingDialogs}
-      onPointerDown={isSelectionMode ? undefined : prepareTrainingDialogs}
-      onClick={() => (isSelectionMode ? onToggleSelect(img.id) : onImageClick(img))}
+      {...press}
+      onPointerDown={(event) => {
+        if (!isSelectionMode) prepareTrainingDialogs();
+        press.onPointerDown(event);
+      }}
     >
       <NextImage
         src={img.dataUrl}
@@ -70,6 +138,7 @@ const ImageThumbnail = memo(function ImageThumbnail({
         width={224}
         height={224}
         unoptimized
+        draggable={false}
         className="w-full h-full object-cover"
       />
       {isSelectionMode && (
@@ -77,13 +146,13 @@ const ImageThumbnail = memo(function ImageThumbnail({
           variant="outline"
           aria-hidden="true"
           className={cn(
-            'absolute top-1 right-1 size-4 p-0 transition-shadow',
+            'pointer-events-none absolute top-1 right-1 size-5 rounded-sm p-0',
             isSelected
-              ? 'bg-[var(--class-on-surface)] text-card border-[var(--class-on-surface)]'
+              ? 'border-transparent bg-background text-primary'
               : 'bg-background/80 border-input',
           )}
         >
-          {isSelected && <CheckCircle2 data-icon aria-hidden="true" />}
+          {isSelected && <Check data-icon aria-hidden="true" />}
         </Badge>
       )}
     </Button>

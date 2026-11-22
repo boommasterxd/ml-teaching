@@ -209,6 +209,39 @@ describe('training image gallery', () => {
     await waitFor(() => expect(screen.queryByText('2 ausgewählt')).toBeNull());
   });
 
+  it('ignores a held swipe, canceled touch, and a press whose image is removed', async () => {
+    const images = ['first', 'second'].map(makeImage);
+    const onImageClick = vi.fn();
+    const props = { label, color: '#dc2626', onImageClick, onRemoveImages: vi.fn() };
+    const { rerender } = render(<ImageGallery {...props} images={images} />);
+    const thumbnail = await screen.findByRole('button', { name: 'Bild 1 vergrößern' });
+    const touch = { isPrimary: true, pointerId: 1, pointerType: 'touch', clientX: 20, clientY: 40 };
+    vi.useFakeTimers();
+    try {
+      fireEvent.pointerDown(thumbnail, touch);
+      fireEvent.pointerMove(thumbnail, { ...touch, clientY: 20 });
+      act(() => vi.advanceTimersByTime(600));
+      fireEvent.pointerUp(thumbnail, touch);
+      fireEvent.click(thumbnail, { detail: 1 });
+      expect(screen.queryByText(/\d ausgewählt/)).toBeNull();
+      expect(onImageClick).not.toHaveBeenCalled();
+
+      fireEvent.pointerDown(thumbnail, touch);
+      fireEvent.pointerCancel(thumbnail, touch);
+      act(() => vi.advanceTimersByTime(600));
+      expect(screen.queryByText(/\d ausgewählt/)).toBeNull();
+
+      fireEvent.pointerDown(thumbnail, touch);
+      rerender(<ImageGallery {...props} images={[images[1]]} />);
+      act(() => vi.advanceTimersByTime(600));
+      expect(screen.queryByText(/\d ausgewählt/)).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Bild 1 vergrößern' }));
+    expect(onImageClick).toHaveBeenCalledExactlyOnceWith(images[1]);
+  });
+
   it('preserves the focused image across column changes and offscreen range updates', async () => {
     const resize = trackResizeEvents();
     render(
