@@ -216,7 +216,12 @@ test.describe('touch gallery', () => {
     await settleEntryAnimations(page);
     const video = second.locator('video');
     await expect
-      .poll(() => video.evaluate((element) => element.readyState >= element.HAVE_CURRENT_DATA))
+      .poll(() =>
+        video.evaluate(
+          (element) =>
+            element instanceof HTMLVideoElement && element.readyState >= element.HAVE_CURRENT_DATA,
+        ),
+      )
       .toBe(true);
     const readMovement = await observeCapturePosition(record);
     const release = await beginTouchHold(record);
