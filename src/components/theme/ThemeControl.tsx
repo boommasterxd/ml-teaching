@@ -7,29 +7,12 @@ import { Moon } from '../icons/moon';
 import { Sun } from '../icons/sun';
 import Button from '../Button';
 import { DeferredMenuLoadError } from '../DeferredMenuLoadError';
+import { DropdownMenu, DropdownMenuTrigger } from '../ui/dropdown-menu-trigger';
 import { Switch } from '../ui/switch';
 import { Spinner } from '../ui/spinner';
 import { useMenuModule, usePendingMenuDismissal } from '../use-menu-module';
 import { loadThemeMenu } from './theme-menu-loader';
 import { useTheme } from './ThemeProvider';
-
-function useDeferredThemeMenu() {
-  const [opening, setOpening] = useState<'first' | 'last' | null>(null);
-  const { module, failed, prepare } = useMenuModule(loadThemeMenu);
-  const Menu = module?.ThemeMenu;
-  const open = opening !== null;
-  const { area, trigger } = usePendingMenuDismissal({
-    active: open && !Menu,
-    popupSelector: '[data-theme-menu]',
-    onDismiss: () => setOpening(null),
-  });
-  function activate(position: 'first' | 'last') {
-    setOpening(open ? null : position);
-    if (!open) prepare();
-  }
-
-  return { trigger, area, Menu, opening, open, failed, prepare, activate, setOpening };
-}
 
 export function ThemeControl() {
   const { preference, select } = useTheme();
@@ -37,10 +20,16 @@ export function ThemeControl() {
   const prepareThumb = () => setThumbReady(true);
   const initial = preference.revision === 0;
   const label = useId();
-  const popupId = useId();
-  const { trigger, area, Menu, opening, open, failed, prepare, activate, setOpening } =
-    useDeferredThemeMenu();
+  const [opening, setOpening] = useState<'hover' | 'first' | 'last' | null>(null);
+  const { module, failed, prepare } = useMenuModule(loadThemeMenu);
+  const Menu = module?.ThemeMenu;
+  const open = opening !== null;
   const pending = open && !Menu && !failed;
+  const { area, trigger } = usePendingMenuDismissal({
+    active: open && !Menu && opening !== 'hover',
+    popupSelector: '[data-theme-menu]',
+    onDismiss: () => setOpening(null),
+  });
   const MoonIcon = thumbReady ? Moon : StaticMoon;
   const SunIcon = thumbReady ? Sun : StaticSun;
 
@@ -71,33 +60,42 @@ export function ThemeControl() {
         )}
         {initial && <StaticMoon className="theme-switch-initial-moon" aria-hidden="true" />}
       </Switch>
-      <Button
-        ref={trigger}
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        className="size-(--theme-trigger-size)"
-        tapScale={1}
-        aria-label="Darstellung einstellen"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={open && Menu ? popupId : undefined}
-        aria-busy={pending || undefined}
-        onPointerEnter={prepare}
-        onFocus={prepare}
-        onPointerDown={prepare}
-        onClick={() => activate('first')}
-        onKeyDown={(event) => {
-          if (open || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')) return;
-          event.preventDefault();
-          activate(event.key === 'ArrowUp' ? 'last' : 'first');
+      <DropdownMenu
+        modal={false}
+        open={open}
+        onOpenChange={(next, details) => {
+          const { event, reason } = details;
+          if (next) {
+            const position =
+              event instanceof KeyboardEvent && event.key === 'ArrowUp' ? 'last' : 'first';
+            setOpening(reason === 'trigger-hover' ? 'hover' : position);
+            prepare();
+          } else if (reason === 'trigger-hover' && opening !== 'hover') {
+            // A queued hover close can arrive after keyboard or pointer activation.
+            details.cancel();
+          } else {
+            setOpening(null);
+          }
         }}
       >
-        {pending ? <Spinner aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
-      </Button>
-      {Menu && (
-        <Menu id={popupId} trigger={trigger} opening={opening} close={() => setOpening(null)} />
-      )}
+        <DropdownMenuTrigger
+          ref={trigger}
+          render={<Button variant="ghost" size="icon-sm" tapScale={1} />}
+          className="size-(--theme-trigger-size)"
+          aria-label="Darstellung einstellen"
+          aria-busy={pending || undefined}
+          {...(!Menu && { 'aria-controls': undefined })}
+          openOnHover
+          delay={50}
+          closeDelay={50}
+          onPointerEnter={prepare}
+          onFocus={prepare}
+          onPointerDown={prepare}
+        >
+          {pending ? <Spinner aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+        </DropdownMenuTrigger>
+        {Menu && <Menu trigger={trigger} opening={opening} />}
+      </DropdownMenu>
       {pending && (
         <span role="status" className="sr-only">
           Darstellungsmenü wird geladen.

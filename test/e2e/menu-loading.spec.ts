@@ -156,6 +156,66 @@ test('only the visible navigation is active and an open panel closes across the 
   expect(failures).toEqual([]);
 });
 
+test('the appearance menu opens on first hover and stays open when moving into it', async ({
+  page,
+}) => {
+  const failures = diagnostics(page);
+  await page.goto('/lernen');
+  const scripts = '**/_next/static/chunks/*.js';
+  const allowScripts = Promise.withResolvers<void>();
+  await page.route(scripts, async (route) => {
+    await allowScripts.promise;
+    await route.continue();
+  });
+
+  const trigger = page.getByRole('button', { name: 'Darstellung einstellen' });
+  const menu = page.getByRole('menu', { name: 'Darstellung einstellen' });
+  const brand = page
+    .getByRole('navigation', { name: 'Hauptnavigation' })
+    .getByRole('link', { name: 'ML Teaching – Startseite' });
+  try {
+    await brand.focus();
+    await trigger.hover();
+    await expect(trigger).toHaveAttribute('aria-busy', 'true');
+    await expect(menu).toHaveCount(0);
+    await expect(trigger).not.toHaveAttribute('aria-controls');
+    await page.keyboard.press('Escape');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(brand).toBeFocused();
+
+    await page.mouse.move(1, 1);
+    await trigger.hover();
+    await expect(trigger).toHaveAttribute('aria-busy', 'true');
+    allowScripts.resolve();
+    await page.unrouteAll({ behavior: 'wait' });
+    await expect(menu).toBeVisible();
+    await expect(menu).toHaveCSS('opacity', '1');
+    await expect(brand).toBeFocused();
+
+    const button = (await trigger.boundingBox())!;
+    const popup = (await menu.boundingBox())!;
+    await page.mouse.move(button.x + button.width / 2, popup.y + 36, { steps: 12 });
+    await expect(menu).toBeVisible();
+    await expectAccessible(page);
+    await page.mouse.move(1, 360);
+    await expect(menu).toBeHidden();
+
+    await trigger.hover();
+    await expect(menu).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+    await page.mouse.move(1, 360);
+    await trigger.press('ArrowUp');
+    await expect(menu.getByRole('menuitemcheckbox')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(trigger).toBeFocused();
+    expect(failures).toEqual([]);
+  } finally {
+    allowScripts.resolve();
+    await page.unrouteAll({ behavior: 'wait' });
+  }
+});
+
 test.describe('mobile header menu', () => {
   test.use({
     viewport: { width: 390, height: 844 },
