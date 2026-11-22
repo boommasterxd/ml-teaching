@@ -315,7 +315,7 @@ for (const [width, colorScheme] of [
   [1280, 'light'],
 ] as const) {
   test(`complete initial consent survives hydration at ${width}px`, async ({ page, baseURL }) => {
-    await page.setViewportSize({ width, height: 900 });
+    await page.setViewportSize({ width, height: width === 390 ? 350 : 900 });
     await page.emulateMedia({ colorScheme });
     const failures = diagnostics(page);
     const transitions = await observeViewTransitions(page);
@@ -330,7 +330,7 @@ for (const [width, colorScheme] of [
       await response?.finished();
       await scripts.expectHeld();
       const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
-      await expectReadable(dialog.getByRole('heading'));
+      await expect(dialog.getByRole('heading')).toBeInViewport({ ratio: 1 });
       const local = dialog.locator('label[for="privacy-consent"]');
       const model = dialog.locator('label[for="model-consent"]');
       await expectReadable(local);
@@ -361,9 +361,9 @@ for (const [width, colorScheme] of [
       }
       const confirm = dialog.getByRole('button', { name: 'Zustimmen', exact: true });
       const cancel = dialog.getByRole('button', { name: 'Abbrechen', exact: true });
-      await expectReadable(confirm);
+      await expect(confirm).toBeInViewport({ ratio: 1 });
       await expect(confirm).toBeDisabled();
-      await expectReadable(cancel);
+      await expect(cancel).toBeInViewport({ ratio: 1 });
       await expect(cancel).toBeEnabled();
       const initialDialog = await dialog.elementHandle();
       const initialChoices = await choices.elementHandles();

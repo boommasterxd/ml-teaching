@@ -466,13 +466,15 @@ On the homepage, the brand clears any fragment and scrolls to the top. Reduced
 motion uses an immediate scroll. From other App Router pages, the brand opens
 the homepage with the shared backward Flow transition.
 
-Dialogs have constrained viewport height and scrollable content. Base UI and the
-initial native dialog handle focus and Escape. React Remove Scroll contains scrolling.
+The shared dialog surface fits the dynamic viewport height (`dvh`), including
+when browser toolbars reduce the available space. The heading and actions stay
+visible while `DialogBody` scrolls. Base UI and the initial native dialog handle
+focus and Escape. React Remove Scroll contains scrolling.
 The training setup focuses each new step's title and announces loading progress
 in place. On narrow screens the consent text uses the available width inside the
 dialog, which retains vertical scrolling for short viewports and zoom.
 Controlled dialogs restore focus when they close.
-The gallery, dialog viewports, and menus share Animate UI's Scroll Fade. The fade
+The gallery, dialog bodies, and menus share Animate UI's Scroll Fade. The fade
 and slight blur follow the edges with more content. The scroll containers keep
 their CSS overflow, scrollbars, and keyboard behavior. Only the content viewport
 fades, so surrounding surfaces and dialog scrims stay separate. Gallery blur

@@ -1,7 +1,7 @@
 import { useRef, type ReactNode } from 'react';
 import { useDialogReturnFocus } from '../dialog-state';
 import ModalContent from '../ModalContent';
-import { DialogFooter, DialogHeading } from '../ui/dialog';
+import { DialogBody, DialogFooter, DialogHeading } from '../ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,7 +64,7 @@ export default function ConfirmDialog({
         aria-modal
         ref={rememberOpener}
         render={
-          <ModalContent maxWidth="md" className="gap-5">
+          <ModalContent maxWidth="md" className="[--dialog-gap:1.25rem]">
             <DialogHeading icon={icon}>
               <AlertDialogTitle
                 id={titleId}
@@ -74,12 +74,14 @@ export default function ConfirmDialog({
                 {title}
               </AlertDialogTitle>
             </DialogHeading>
-            <AlertDialogDescription
-              id={descId}
-              className="text-sm text-muted-foreground leading-relaxed [overflow-wrap:anywhere]"
-            >
-              {description}
-            </AlertDialogDescription>
+            <DialogBody tabIndex={0} role="region" aria-labelledby={titleId}>
+              <AlertDialogDescription
+                id={descId}
+                className="text-sm text-muted-foreground leading-relaxed [overflow-wrap:anywhere]"
+              >
+                {description}
+              </AlertDialogDescription>
+            </DialogBody>
             <DialogFooter>
               <AlertDialogCancel ref={cancel}>{cancelLabel}</AlertDialogCancel>
               <AlertDialogAction onClick={onConfirm}>{confirmLabel}</AlertDialogAction>

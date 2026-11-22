@@ -22,10 +22,11 @@ import { RemoveScroll } from 'react-remove-scroll';
 import { cn } from '@/lib/utils';
 import { ScrollFadeViewport } from './scroll-fade-viewport';
 
-// Adapted from shadcn/ui's Base UI Dialog; the viewport supports tall mobile content.
+// Adapted from shadcn/ui's Base UI Dialog; only DialogBody scrolls.
 export const dialogSurface =
-  'relative my-auto grid max-h-fit w-full gap-4 rounded-(--glass-radius) border border-(--glass-line) [background:var(--glass-surface)] p-6 text-foreground shadow-(--glass-highlight) outline-none';
-const dialogScrollLayout = 'flex items-start justify-center overflow-y-auto overscroll-contain p-4';
+  'relative flex max-h-(--dialog-height) w-full flex-col gap-[min(var(--dialog-gap),4dvh)] rounded-(--glass-radius) border border-(--glass-line) [background:var(--glass-surface)] px-(--dialog-padding) py-(--dialog-block-padding) text-foreground shadow-(--glass-highlight) outline-none [--dialog-block-padding:min(var(--dialog-padding),5dvh)] [--dialog-gap:1rem] [--dialog-height:calc(100dvh-2*var(--dialog-inset))] [--dialog-padding:1.5rem]';
+const dialogViewportLayout =
+  'flex items-center justify-center overflow-clip px-4 py-(--dialog-inset) [--dialog-inset:min(1rem,4dvh)]';
 export const dialogScrim = 'pointer-events-none fixed inset-0 z-50 bg-media-overlay';
 
 function getDialogTabStops(dialog: HTMLDialogElement) {
@@ -151,15 +152,10 @@ export function InitialDialog({
           data-closed={present ? undefined : ''}
           data-slot="dialog-overlay"
           data-initial-training-consent={suppressForRememberedTrainingConsent || undefined}
-          className="pointer-events-auto fixed inset-0 z-50 m-0 h-full max-h-none w-full max-w-none overflow-hidden bg-transparent backdrop:bg-transparent"
+          className="pointer-events-auto fixed inset-x-0 top-0 z-50 m-0 h-dvh max-h-none w-full max-w-none overflow-hidden overscroll-contain bg-transparent backdrop:bg-transparent"
         >
           <div className={cn(dialogScrim, 'z-auto')} aria-hidden="true" />
-          <ScrollFadeViewport
-            enabled={present}
-            className={cn('relative size-full', dialogScrollLayout)}
-          >
-            {children}
-          </ScrollFadeViewport>
+          <div className={cn('relative size-full', dialogViewportLayout)}>{children}</div>
         </dialog>
       </Effect>
     </RemoveScroll>
@@ -173,6 +169,22 @@ export function InitialDialogContent({ render }: { render: ReactElement<{ classN
     render,
   });
 }
+
+export function DialogBody({ className, ...props }: ComponentProps<'div'>) {
+  const present = useIsPresent();
+  return (
+    <ScrollFadeViewport
+      enabled={present}
+      data-slot="dialog-body"
+      className={cn(
+        '-mx-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain px-1 focus-visible:-outline-offset-4',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
 export function DialogFooter({
   className,
   layout = 'default',
@@ -182,7 +194,7 @@ export function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        'grid gap-3',
+        'grid shrink-0 gap-3',
         layout === 'auto-fit'
           ? 'grid-cols-[repeat(auto-fit,minmax(min(100%,7.5rem),1fr))]'
           : 'grid-cols-1 sm:grid-cols-2',
@@ -253,19 +265,18 @@ export function DialogViewport({
       inert={false}
       allowPinchZoom
     >
-      <ScrollFadeViewport
-        enabled={present}
+      <div
         data-slot="dialog-viewport"
         className={cn(
-          'pointer-events-auto fixed inset-0 z-50',
-          dialogScrollLayout,
+          'pointer-events-auto fixed inset-x-0 top-0 z-50 h-dvh',
+          dialogViewportLayout,
           !present && 'pointer-events-none',
           className,
         )}
         {...props}
       >
         {children}
-      </ScrollFadeViewport>
+      </div>
     </RemoveScroll>
   );
 }
