@@ -54,10 +54,10 @@ function TrainingPipeline({
   onPrepare: (step: TrainingStep) => void;
 }) {
   return (
-    <nav aria-label="Trainingsablauf" inert={!ready}>
-      <ol className="flex flex-wrap gap-1">
+    <nav aria-label="Trainingsablauf" className="max-sm:@container/training-steps" inert={!ready}>
+      <ol className="flex flex-wrap justify-between gap-1 sm:justify-start">
         {steps.map(({ step, label }, index) => (
-          <li key={step} className="grow lg:grow-0">
+          <li key={step} className="sm:grow lg:grow-0">
             <Button
               id={`training-step-${step}`}
               variant="ghost"

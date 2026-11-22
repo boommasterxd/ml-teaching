@@ -22,7 +22,11 @@
   display: grid;
   align-items: center;
   gap: 1.5rem;
-  padding-block: clamp(1.75rem, 4vw, 4rem) clamp(2rem, 4.5vw, 4rem);
+  padding-block: clamp(1.75rem, 4vw, 4rem) 1rem;
+
+  @variant sm {
+    padding-block-end: clamp(2rem, 4.5vw, 4rem);
+  }
 
   @variant lg {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -45,12 +49,18 @@
 
 .training-step {
   --step-scale: 0.8;
+  --step-padding-inline: calc(0.875rem * var(--step-scale));
   width: 100%;
   height: auto;
   min-height: 2.75rem;
   padding: 0;
   border-radius: 1.15rem;
   color: var(--muted-foreground);
+
+  @container training-steps (min-width: 22rem) {
+    --step-scale: 1;
+    --step-padding-inline: 0.75rem;
+  }
 
   @variant sm {
     --step-scale: 1;
@@ -63,7 +73,7 @@
   justify-content: center;
   min-height: calc(2.75rem * var(--step-scale));
   gap: calc(0.5rem * var(--step-scale));
-  padding-inline: calc(0.875rem * var(--step-scale));
+  padding-inline: var(--step-padding-inline);
   border-radius: calc(1.15rem * var(--step-scale));
   font-size: calc(0.875rem * var(--step-scale));
 }
