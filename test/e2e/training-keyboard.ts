@@ -220,13 +220,19 @@ export async function expectHeaderLayout(page: Page) {
   const start = navigation.getByRole('link', { name: 'Startseite', exact: true });
   const legal = navigation.getByRole('button', { name: 'Rechtliches', exact: true });
   const theme = navigation.getByRole('switch', { name: 'Dunkle Darstellung' });
-  const [brandBox, startBox, legalBox, themeBox] = await Promise.all(
-    [brand, start, legal, theme].map((control) => control.boundingBox()),
-  );
-  if (!brandBox || !startBox || !legalBox || !themeBox)
-    throw new Error('Header controls have no visible geometry.');
-  expect(brandBox.x + brandBox.width).toBeLessThan(startBox.x);
-  expect(legalBox.x + legalBox.width).toBeLessThan(themeBox.x);
+  // Hydration replaces the static desktop menu with the interactive controls.
+  await expect
+    .poll(async () => {
+      const [brandBox, startBox, legalBox, themeBox] = await Promise.all(
+        [brand, start, legal, theme].map((control) => control.boundingBox()),
+      );
+      if (!brandBox || !startBox || !legalBox || !themeBox) return null;
+      return {
+        brandBeforeStart: brandBox.x + brandBox.width < startBox.x,
+        legalBeforeTheme: legalBox.x + legalBox.width < themeBox.x,
+      };
+    })
+    .toEqual({ brandBeforeStart: true, legalBeforeTheme: true });
 }
 
 export async function expectThemeControlAlignment(page: Page) {

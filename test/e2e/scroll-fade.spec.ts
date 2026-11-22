@@ -65,6 +65,7 @@ test('consent and the virtual gallery fade only while more content is available'
         buffer: photo,
       })),
     );
+  await expect(page.getByText('20 Bilder', { exact: true })).toBeVisible();
   await expectEdges(gallery, false, true);
   await scrollViewport(gallery, 'middle');
   await expectEdges(gallery, true, true);
@@ -90,9 +91,11 @@ test('short navigation and options menus fade their scrollable content', async (
   await page.setViewportSize({ width: 390, height: 225 });
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
   await page.goto('/');
+  await expect(page.locator('.header-menu-desktop')).toHaveCount(0);
   const headerTrigger = page.getByRole('button', { name: 'Menü', exact: true });
   await headerTrigger.press('Enter');
   const headerViewport = page.locator('.header-menu-viewport');
+  await expect(headerViewport.getByRole('link', { name: 'Startseite' })).toBeVisible();
   await expectEdges(headerViewport, false, true);
   await scrollViewport(headerViewport, 'end');
   await expectEdges(headerViewport, true, false);
