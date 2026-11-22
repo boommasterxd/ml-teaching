@@ -48,10 +48,7 @@ export default function CameraStep({
           </p>
         )}
       </DialogBody>
-      <DialogFooter
-        layout="auto-fit"
-        className="[&>button]:h-auto [&>button]:min-h-9 [&>button]:whitespace-normal"
-      >
+      <DialogFooter className="[&>button]:h-auto [&>button]:min-h-9 [&>button]:whitespace-normal">
         <Button variant="secondary" onClick={onDecline}>
           Ohne Kamera fortfahren
         </Button>

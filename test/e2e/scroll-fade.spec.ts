@@ -63,7 +63,24 @@ test('consent and the virtual gallery fade only while more content is available'
   await expect(firstChoice).toBeInViewport({ ratio: 1 });
   await expectAccessible(page);
   await grantModelConsent(page);
-  await page.getByRole('button', { name: 'Ohne Kamera fortfahren' }).press('Enter');
+  const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
+  const skipCamera = camera.getByRole('button', { name: 'Ohne Kamera fortfahren' });
+  const allowCamera = camera.getByRole('button', { name: 'Erlauben' });
+  await expect(skipCamera).toBeInViewport({ ratio: 1 });
+  await expect(allowCamera).toBeInViewport({ ratio: 1 });
+  await expectAccessible(page);
+  const labelFitsOnOneLine = await skipCamera.evaluate((button) => {
+    const label = document.createRange();
+    label.selectNodeContents(button);
+    const { left, right } = label.getBoundingClientRect();
+    const bounds = button.getBoundingClientRect();
+    return label.getClientRects().length === 1 && left >= bounds.left && right <= bounds.right;
+  });
+  expect(labelFitsOnOneLine).toBe(true);
+  await allowCamera.focus();
+  await page.keyboard.press('Shift+Tab');
+  await expect(skipCamera).toBeFocused();
+  await page.keyboard.press('Enter');
 
   await page.setViewportSize({ width: 390, height: 844 });
   const gallery = page.getByRole('region', { name: /Trainingsbilder von Klasse 1:/ });
