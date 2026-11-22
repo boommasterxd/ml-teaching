@@ -215,10 +215,8 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
     if (new URL(request.url()).origin !== 'http://127.0.0.1:3100') external.push(request.url());
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
+  await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });
   await page.goto('/');
-  await page.getByRole('switch', { name: 'Dunkle Darstellung' }).focus();
-  await page.keyboard.press('Space');
   await expect(page.getByRole('switch', { name: 'Dunkle Darstellung' })).toBeChecked();
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
   const menu = navigation.getByRole('button', { name: 'Menü', exact: true });

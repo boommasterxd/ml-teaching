@@ -25,7 +25,6 @@ export default function AccessibilityPage() {
           <li>Sichtbare Fokusindikatoren für die Tastaturnavigation</li>
           <li>Skip-Link zum Überspringen der Navigation</li>
           <li>Per Tastatur bedienbare Navigation durch Bildersammlung, Training und Vorhersage</li>
-          <li>Abrufbare Textbeschreibung des Merkmalsraums in der Live-Vorhersage</li>
           <li>
             Bei aktivierter Systemeinstellung für reduzierte Bewegung erscheinen Inhalte ohne
             Einblendanimation. Die Lernschleife und die automatischen Lernbeispiele auf der
@@ -34,7 +33,14 @@ export default function AccessibilityPage() {
           <li>Responsive Darstellung für verschiedene Bildschirmgrößen</li>
         </ul>
         <h2>Bekannte Einschränkungen</h2>
-        <p>Nach aktuellem Kenntnisstand sind keine Barrieren bekannt.</p>
+        <p>Folgende Einschränkungen sind bekannt:</p>
+        <ul>
+          <li>
+            Die Lage der Punkte im Merkmalsraum der Live-Vorhersage ist nur visuell erkennbar. Die
+            vorhergesagte Klasse und die Konfidenzwerte sind als Text verfügbar.
+          </li>
+        </ul>
+        <p>Bei Schwierigkeiten nutzen Sie bitte den unten angegebenen Kontakt.</p>
         <h2>Feedback</h2>
         <p>
           Haben Sie Schwierigkeiten beim Zugriff auf Inhalte dieser Website oder bemerken Sie eine
@@ -48,7 +54,7 @@ export default function AccessibilityPage() {
         </p>
         <h2>Stand</h2>
         <p>
-          Diese Seite wurde zuletzt im <time dateTime="2026-11-21">November 2026</time>{' '}
+          Diese Seite wurde zuletzt im <time dateTime="2026-11-22">November 2026</time>{' '}
           aktualisiert.
         </p>
         <p>
