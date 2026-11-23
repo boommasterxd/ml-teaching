@@ -185,7 +185,7 @@ export default function PredictionPanel({
   ...workspace
 }: PredictionPanelProps) {
   return (
-    <EntryReveal asChild kind="reading" active={entryReady} scrollOnly index={1}>
+    <EntryReveal asChild kind="reading" active={entryReady} index={1}>
       <section aria-labelledby="training-prediction">
         <Card className="@container/prediction gap-4">
           <CardHeader className="grid-rows-[minmax(2.75rem,auto)] items-center">

@@ -384,6 +384,55 @@ test('a missing camera leaves the direct-entry dialog visible through its fade b
   }
 });
 
+test('reloading with remembered consent shows the model loading dialog', async ({
+  page,
+  baseURL,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  const failures = diagnostics(page);
+  const network = await routeSyntheticModel(page, baseURL!);
+  const transitions = await observeViewTransitions(page);
+  await page.goto(learningPaths.imagePractice);
+  await grantModelConsent(page, true);
+  await page.getByRole('button', { name: 'Ohne Kamera fortfahren' }).press('Enter');
+  const heading = page.getByRole('heading', { name: 'Bilder sammeln' });
+  await expect(heading).toBeFocused();
+
+  const held = Promise.withResolvers<void>();
+  await page.route(
+    '**/mobilenet_v2_100_224/classification/2/model.json?tfjs-format=file',
+    async (route) => {
+      await held.promise;
+      await route.fallback();
+    },
+  );
+  try {
+    await page.reload();
+    const loading = page.getByRole('dialog', { name: 'Lade KI-Modelle...' });
+    await expect(loading).toBeVisible();
+    await expect.poll(() => loading.evaluate((dialog) => dialog.matches(':modal'))).toBe(true);
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+    await heading.evaluate((node: HTMLElement) => node.focus());
+    await expect(loading.getByRole('heading')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(loading.getByRole('region')).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(loading.getByRole('button', { name: 'Einwilligung widerrufen' })).toBeFocused();
+    await expectAccessible(page);
+  } finally {
+    held.resolve();
+  }
+
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(heading).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Bilder auswählen' })).toHaveCount(2);
+  expect(network.modelRequests).toEqual(['graph', 'weights', 'graph', 'weights']);
+  expect(network.unexpectedRequests).toEqual([]);
+  expect(await transitions()).toEqual([]);
+  expect(failures).toEqual([]);
+});
+
 test('withdrawing remembered consent from training returns to the homepage', async ({
   page,
   baseURL,

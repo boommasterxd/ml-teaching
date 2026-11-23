@@ -116,7 +116,7 @@ export default function TrainingControls(props: TrainingControlsProps) {
       ? finishTransition
       : motionTokens.transition.fill;
   return (
-    <EntryReveal asChild kind="reading" active={props.entryReady} scrollOnly>
+    <EntryReveal asChild kind="reading" active={props.entryReady}>
       <section aria-labelledby="training-model" className="mx-auto w-full lg:max-w-3xl">
         <Card className="gap-4">
           <CardHeader>

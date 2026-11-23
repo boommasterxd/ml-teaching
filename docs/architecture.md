@@ -153,16 +153,15 @@ intent. The appearance popup loads its Base UI menu on intent. It anchors to the
 header on mobile and to its shared button on desktop. The button retains its
 role across loading, focus and dismissal.
 
-The everyday recognition quiz samples three matching and three nonmatching examples
-from the 40-entry pool in `src/content/recognition-examples.ts`. Six complete choices
-are rendered during SSG; a stable hydration snapshot switches to a randomized browser
-visit round. Replay selects a different set through `src/lib/recognition-quiz.ts`.
+The everyday recognition quiz renders the same three matching and three nonmatching
+examples before and after hydration. Replay selects a different set from the 40-entry
+pool in `src/content/recognition-examples.ts` through `src/lib/recognition-quiz.ts`.
 Small local React state tracks unique attempts and correct selections; explanations
 mount only after an answer. It does not invoke ML, request a camera, send answers,
 persist state or create a learning profile. Reset and document reload discard the
 quiz state independently of model consent, theme preferences and the learning lab.
 
-The KNN exercise loads near the viewport, with pointer/focus/touch intent warming
+The KNN exercise opens on explicit activation. Pointer, focus and touch intent warm
 the same retryable module. Its twelve synthetic points and query use a bounded random
 construction with separated targets. The round ranks its points once. Changing
 K clears the previous answer and selection within that round. The explanatory
@@ -195,7 +194,8 @@ does not affect inclusion or ranking in Google Search.
    initializes TensorFlow.js and loads the KNN module. It downloads the MobileNet v2
    graph, warms it and extracts features in the browser. Loading can be aborted and
    graph resources are disposed when no longer in use. The WebGL backend and compiled
-   kernels are reusable within the document.
+   kernels are reusable within the document. A reload with valid remembered consent
+   opens directly on the loading step, where consent can still be withdrawn.
 3. When the models are ready, the dialog presents the optional camera choice.
    Camera access starts only after separate camera consent and browser permission.
    Source-page setup hands off the initialized model and live stream to the training

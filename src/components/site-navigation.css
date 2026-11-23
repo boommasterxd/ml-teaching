@@ -66,10 +66,6 @@
   line-height: 1.35;
 }
 
-.header-menu-row[data-overview] {
-  font-weight: 600;
-}
-
 .menu-highlight-container {
   position: relative;
   isolation: isolate;
@@ -185,6 +181,9 @@
   }
   .header-menu-desktop .header-menu-content:has([data-overview]) {
     width: calc(16.5rem - 2px);
+  }
+  .header-menu-desktop .header-menu-row[data-overview] {
+    font-weight: 600;
   }
   @media (pointer: fine) {
     .header-menu-panel .header-menu-row {

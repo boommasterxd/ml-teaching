@@ -216,9 +216,9 @@ Inline feedback can reserve extra space when a retry is needed.
 The lightweight local answer state remains with the required triggers; closed
 explanations and their motion mount only on activation. No separate import or
 preparation controller is warranted for six visible choices and a bounded state set.
-The 40-entry content pool supplies three matching and three nonmatching examples
-per browser visit or replay. A stable server snapshot preserves hydration; a replay
-changes the selection and restores focus to the new first choice after commit.
+The first round keeps the same three matching and three nonmatching examples
+from static HTML through hydration. A replay draws a new selection from the
+40-entry pool and restores focus to the first choice after commit.
 A shared result component dims the entire Card, including its one-pixel glass rim,
 with an 82% black overlay. A green Check or red X sits above it. Its `quiz-result`
 Button opens the standard shared shadcn Tooltip with Animate UI primitives on hover,
@@ -268,9 +268,8 @@ fills its section's content width; standard side padding is retained.
 At `lg`, a centered layout limits controls to 18rem and
 gives the plot up to 42rem across both control rows. The Card header shares its
 reading edges with this inner layout.
-The retryable exercise chunk loads near the viewport, with shared intent warming.
-Its placeholder retains reading instructions in SSG. Intent can prepare the
-synthetic exercise in a hidden React Activity, which keeps effects inactive.
+The static exercise card opens on activation. Pointer, touch and focus intent can
+prepare the retryable exercise chunk in a hidden React Activity with inactive effects.
 On activation the visible exercise takes focus from its placeholder action when
 that action still owns focus.
 The compact Footer contains the brand, copyright and information links. Below `md`,
@@ -547,13 +546,11 @@ TensorFlow and model imports remain consent-gated and are never prepared on inte
 
 ## Motion ownership
 
-`EntryReveal` composes Animate UI `Effect` for first arrival and one-time scroll
-admission. Shared roles use 6 px for reading/shell, 8 px for navigation, 10 px for
-text and 16 px for surfaces on initial entry. Small peer groups stagger by 80 ms
-on entry and 50 ms on scroll, each capped at two steps. Initially visible content
-remains opaque and readable and only shifts briefly. Primary page headings stay static.
-The homepage headline, supporting text and actions remain sharp and in place
-from the first paint through hydration and highlight startup.
+`EntryReveal` composes Animate UI `Effect` for one-time scroll admission and
+explicit user activation, such as restarting the image-recognition quiz. Small peer
+groups stagger by 80 ms on activation and 50 ms on scroll, each capped at two steps.
+Initially visible content stays in place from the first paint through hydration on
+direct entry and reload.
 On first arrival from below, cards and navigation surfaces fade in with a short
 14–16 px slide. Standalone text, reading groups and the footer stay opaque during
 scroll reveals. The shared header stays in place from the first paint through
@@ -565,7 +562,7 @@ SSG and hydration start with visible content and no initial style attributes.
 The installed Animate UI Effect remounts its descendants when its reduced-motion
 setting changes. `EntryTarget` therefore isolates only that motion boundary with a
 fixed setting and restores the actual inherited Animate UI/Motion preference below
-it. EntryReveal applies the user's preference itself and retires completed load
+it. EntryReveal applies the user's preference itself and retires completed activation
 keyframes. Changing the preference preserves controls and completed entries.
 
 The persistent PageTransition tracks document arrival versus subsequent pathname
@@ -574,7 +571,7 @@ entries do not replay over its snapshots. Offscreen groups still reveal on first
 scroll admission. Initial viewport classification follows the native transition's
 completion and Next.js scroll restoration; content stays visible and usable during
 that preparation. No animation adds a navigation delay or mounts destination pages
-speculatively. The footer has one independent shell admission. Theme changes
+speculatively. The footer reveals once if it starts below the viewport. Theme changes
 preserve the shared header and footer instances and completed entries.
 
 Landing supporting hero copy, step cards, demonstrations, quiz cards, guidance
@@ -583,8 +580,9 @@ with its answer for scroll admission. Its main heading is stationary, and its
 introduction uses the reading role.
 Legal text is grouped at existing
 h2/h3 boundaries without changing controlled copy, while its H1 stays visible.
-The training workspace keeps its geometry through setup and becomes interactive
-when the model is ready and the first dialog closes. Panels below the viewport
+The training title, description and step navigation stay in place from first paint
+through setup. The workspace becomes interactive when the model is ready and the
+first dialog closes. Panels below the viewport
 admit scroll reveals once the workspace is ready. Training settings remain
 available while consent is active or remembered. Their Alert Dialog pairs the
 footer shield with the title and gives each action a full-width row on narrow

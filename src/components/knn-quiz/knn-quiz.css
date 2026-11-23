@@ -1,5 +1,4 @@
-.knn-quiz-card,
-.knn-quiz-placeholder {
+.knn-quiz-card {
   --knn-plot-max: 24rem;
   width: 100%;
 }
@@ -75,12 +74,8 @@
   place-items: center;
   pointer-events: none;
 }
-.knn-quiz-placeholder {
-  min-height: 45rem;
-}
 @variant lg {
-  .knn-quiz-card,
-  .knn-quiz-placeholder {
+  .knn-quiz-card {
     --knn-plot-max: 42rem;
   }
   .knn-quiz-header,
@@ -95,9 +90,6 @@
     justify-content: center;
     gap: 3rem;
     align-items: start;
-  }
-  .knn-quiz-placeholder {
-    min-height: 35rem;
   }
   .knn-quiz-figure {
     grid-column: 2;

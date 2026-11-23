@@ -107,21 +107,28 @@ for (const [entry, width, height, colorScheme] of [
         )
         .toBe(1);
       const selectors = ['.site-header-inner', '.hero-title', '.hero-description', '.hero-actions'];
+      if (width >= 768) selectors.push('.header-menu-desktop [data-header-control="/"]');
       for (const selector of selectors) {
         await expect(page.locator(selector)).toHaveCSS('filter', 'none');
       }
       await page.evaluate((selectors) => {
-        const initial = selectors.map(
-          (selector) => document.querySelector(selector)!.getBoundingClientRect().top + scrollY,
-        );
+        function position(element: Element) {
+          const { x, y, width } = element.getBoundingClientRect();
+          return [x, y + scrollY, width];
+        }
+        const initial = selectors.map((selector) => position(document.querySelector(selector)!));
         const probe: HeroEntryProbe = { maxDisplacement: 0, blurred: false, done: false };
         Object.assign(window, { heroPositionProbe: probe });
         const sample = () => {
           selectors.forEach((selector, index) => {
             const element = document.querySelector(selector)!;
-            const top = element.getBoundingClientRect().top + scrollY;
             if (getComputedStyle(element).filter !== 'none') probe.blurred = true;
-            probe.maxDisplacement = Math.max(probe.maxDisplacement, Math.abs(top - initial[index]));
+            position(element).forEach((value, axis) => {
+              probe.maxDisplacement = Math.max(
+                probe.maxDisplacement,
+                Math.abs(value - initial[index][axis]),
+              );
+            });
           });
           if (!probe.done) requestAnimationFrame(sample);
         };
@@ -137,7 +144,7 @@ for (const [entry, width, height, colorScheme] of [
         probe.done = true;
         return { displacement: probe.maxDisplacement, blurred: probe.blurred };
       });
-      expect(readability.displacement).toBeLessThanOrEqual(1);
+      expect(readability.displacement).toBeLessThan(1);
       expect(readability.blurred).toBe(false);
       await expectAccessible(page);
       expect(failures).toEqual([]);

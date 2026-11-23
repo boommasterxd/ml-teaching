@@ -1,31 +1,16 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { diagnostics, expectAccessible, observeViewTransitions } from './browser-checks';
+import {
+  diagnostics,
+  expectAccessible,
+  holdApplicationScripts,
+  observePositionShift,
+  observeViewTransitions,
+  settleEntryAnimations,
+} from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
 import { headerLegalLinks } from '../../src/content/site-navigation';
 import { routeSyntheticModel } from './synthetic-model';
 import { grantModelConsent } from './training-keyboard';
-
-async function holdApplicationScripts(page: Page) {
-  let held = 0;
-  let delivered = 0;
-  let release!: () => void;
-  const pending = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  await page.route('**/_next/static/**/*.js', async (route) => {
-    held++;
-    await pending;
-    delivered++;
-    await route.continue();
-  });
-  return {
-    release,
-    async expectHeld() {
-      await expect.poll(() => held).toBeGreaterThan(0);
-      expect(delivered).toBe(0);
-    },
-  };
-}
 
 async function expectReadable(content: Locator) {
   await content.scrollIntoViewIfNeeded();
@@ -145,11 +130,18 @@ for (const path of publicRoutes) {
         await expectLegalNavigation(page, path);
       }
       await scripts.expectHeld();
+      await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+      const measureShift = await observePositionShift(
+        page.locator('body'),
+        'main h1, [data-entry-reveal]',
+      );
       scripts.release();
       await expect(main.getByRole('heading', { level: 1 })).toBeVisible();
       const appearance = page.getByRole('switch', { name: 'Dunkle Darstellung' });
       // The switch reflects the system theme in its ARIA state once React is ready.
       await expect(appearance).toBeChecked();
+      await settleEntryAnimations(page);
+      expect(await measureShift()).toBeLessThan(1);
       await appearance.press('Space');
       await expect(appearance).not.toBeChecked();
       expect(failures).toEqual([]);
@@ -429,6 +421,8 @@ test('remembered consent skips the first paint dialog and expires only for the n
   await page.clock.setFixedTime(new Date(initialTime.getTime() + 29 * 60_000));
   const scripts = await holdApplicationScripts(page);
   const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  const header = page.locator('header').filter({ has: page.getByRole('heading', { level: 1 }) });
+  let measureHeaderShift: () => Promise<number>;
   try {
     const response = await page.reload({ waitUntil: 'commit' });
     expect(response?.status()).toBe(200);
@@ -436,6 +430,8 @@ test('remembered consent skips the first paint dialog and expires only for the n
     expect(await response?.text()).toContain('Einwilligung zur Datenverarbeitung');
     await scripts.expectHeld();
     await expect(consent).toBeHidden();
+    await expect(header).toHaveCSS('display', 'grid');
+    measureHeaderShift = await observePositionShift(header);
   } finally {
     scripts.release();
   }
@@ -443,6 +439,8 @@ test('remembered consent skips the first paint dialog and expires only for the n
   await expect(preview).toBeVisible();
   await expect(cameraChoice).toBeHidden();
   await expect(consent).toBeHidden();
+  await settleEntryAnimations(page);
+  expect(await measureHeaderShift()).toBeLessThan(1);
   const className = page.getByRole('textbox', { name: /^Name für Klasse / }).first();
   await className.fill('Meine Klasse');
   expect(await browserStorage()).toEqual(remembered);
