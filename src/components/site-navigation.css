@@ -1,3 +1,7 @@
+:root {
+  --menu-highlight-radius: 0.75rem;
+}
+
 .header-menu-desktop {
   display: none;
 }
@@ -13,6 +17,11 @@
   position: static;
 }
 
+.header-menu-panel,
+.legal-navigation {
+  border-radius: 1.4rem;
+}
+
 .header-menu-panel {
   --menu-inset: 0.625rem;
   --menu-icon: 1rem;
@@ -24,7 +33,6 @@
   max-height: calc(100dvh - var(--header-height) - 1rem);
   overflow: hidden;
   border: 1px solid var(--glass-line);
-  border-radius: 1.4rem;
   background: var(--glass-surface);
   color: var(--popover-foreground);
   box-shadow:
@@ -49,7 +57,8 @@
   overscroll-behavior: contain;
 }
 
-.header-menu-content {
+.header-menu-content,
+.legal-navigation {
   padding: 0.5rem;
 }
 
@@ -62,7 +71,7 @@
   column-gap: var(--menu-gap);
   min-height: 2.75rem;
   padding: 0.375rem var(--menu-inset);
-  border-radius: 0.75rem;
+  border-radius: var(--menu-highlight-radius);
   line-height: 1.35;
 }
 
@@ -78,7 +87,7 @@
 
 .menu-highlight-surface {
   pointer-events: none;
-  border-radius: var(--menu-highlight-radius, 0.75rem);
+  border-radius: var(--menu-highlight-radius);
   background-color: var(--primary-soft);
 }
 
@@ -107,9 +116,10 @@
   color: var(--primary);
 }
 
-:is(.header-menu-desktop, .header-menu-mobile) > .menu-highlight-container,
-.legal-navigation .menu-highlight-container {
-  --menu-highlight-radius: 9999px;
+:is(.header-menu-desktop, .header-menu-mobile)
+  > .menu-highlight-container
+  > .menu-highlight-surface {
+  border-radius: 9999px;
 }
 
 .header-menu-label {
