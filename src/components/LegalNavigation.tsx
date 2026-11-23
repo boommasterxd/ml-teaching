@@ -15,7 +15,7 @@ export default function LegalNavigation({ page }: { page: LegalPage }) {
         <LegalMobileNavigation selectedValue={page} />
         <div className="legal-navigation-group">
           <Text variant="muted">Informationen</Text>
-          <Card as="nav" aria-label="Informationsseiten" className="legal-navigation p-1.5">
+          <Card as="nav" aria-label="Informationsseiten" className="legal-navigation">
             <LegalNavigationLinks page={page} />
           </Card>
         </div>
