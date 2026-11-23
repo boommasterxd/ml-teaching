@@ -10,6 +10,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useModelTraining, type TrainingCallbacks } from '@/hooks/useModelTraining';
 import { ANIMATION, ML } from '@/constants';
+import { createClassNameValidator } from '@/lib/training-class-names';
 import type { MLClass } from '@/types/ml';
 import type { Classifier } from '@/types/ml-models';
 
@@ -67,7 +68,8 @@ function makeClasses(count: number, imagesPerClass: number = ML.MIN_IMAGES_PER_C
 
 function useTrainingFixture(classes: MLClass[], callbacks: TrainingCallbacks) {
   const names = classes.map(({ id, name }) => ({ classId: id, name }));
-  return useModelTraining(classes, callbacks, names);
+  const { validity } = createClassNameValidator()({ names });
+  return useModelTraining(classes, callbacks, { current: validity, read: () => validity });
 }
 
 describe('useModelTraining', () => {

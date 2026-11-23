@@ -87,10 +87,10 @@ export const PrivacyCollection = (
     </p>
     <h4>Download des KI-Modells</h4>
     <p>
-      Nach Ihrer Einwilligung lädt Ihr Browser das vortrainierte Modell MobileNet von Google über
-      TensorFlow Hub, Kaggle und Google Cloud Storage. Google und Kaggle erhalten dabei Ihre
-      IP-Adresse und technische Angaben zum Abruf, etwa Browserinformationen und den Zeitpunkt der
-      Anfrage. Der Download stellt die für die Bilderkennung erforderlichen Modellparameter bereit.
+      Nach Ihrer Einwilligung lädt Ihr Browser ein vortrainiertes Modell, das die Lernfunktion zur
+      Bilderkennung benötigt. Kaggle leitet den Abruf weiter und Google liefert die Modelldateien
+      aus. Beide erhalten dabei Ihre IP-Adresse sowie technische Angaben wie Browserinformationen
+      und den Zeitpunkt des Abrufs.
     </p>
     <p>
       Nach Googles Datenschutzerklärung ist Google Ireland Limited, Gordon House, Barrow Street,
@@ -101,10 +101,12 @@ export const PrivacyCollection = (
     </p>
     <h4>Bildtraining auf Ihrem Gerät</h4>
     <p>
-      Die Lernfunktion verarbeitet Ihre ausgewählten Bilder, Kamerabilder und die daraus berechneten
-      Merkmale auf Ihrem Gerät. Mit den Beispielen können Sie einen eigenen Bildklassifikator
-      trainieren und dessen Vorhersagen testen. Die Anwendung lädt diese Trainingsdaten auf keinen
-      Server hoch.
+      Zum Training verarbeitet die Lernfunktion ausgewählte Bilddateien oder aufgenommene
+      Kamerabilder und die daraus berechneten Merkmale. Bei der Live-Vorhersage wertet die Anwendung
+      mit freigegebener Kamera laufend aktuelle Kamerabilder aus, um zu zeigen, welcher Ihrer
+      Klassen sie das Bild zuordnet. Das Training und die Live-Vorhersage laufen in Ihrem Browser.
+      Die Anwendung übermittelt dabei keine Bilddaten oder daraus berechneten Merkmale an einen
+      Server.
     </p>
     <h4>Einwilligung und Widerruf</h4>
     <p>
@@ -121,10 +123,17 @@ export const PrivacyCollection = (
       Bildbeispiele, Bildmerkmale, Klassennamen und der trainierte Klassifikator werden für die
       aktuelle Nutzung im Arbeitsspeicher Ihres Browsers gehalten. Wenn Sie „Einwilligung
       widerrufen“ wählen, die Seite neu laden oder schließen, wird dieser Anwendungszustand
-      verworfen. Die Anwendung speichert Ihre Trainingsdaten nicht dauerhaft. Ein Neuladen löscht
-      keine bereits bei Google oder Kaggle angefallenen Verbindungsdaten. Google richtet die
-      Aufbewahrung seiner Daten nach Datenart, Verwendungszweck und gesetzlichen Anforderungen,
-      insbesondere Sicherheits- und Missbrauchsabwehrzwecken; Einzelheiten erläutert die{' '}
+      verworfen. Die Anwendung speichert Ihre Trainingsdaten nicht dauerhaft.
+    </p>
+    <p>
+      Die Kamerabilder der Live-Vorhersage und die dafür berechneten Merkmale werden vorübergehend
+      im Browser verarbeitet und nicht als Trainingsbeispiele gespeichert.
+    </p>
+    <p>
+      Ein Neuladen löscht keine bereits bei Google oder Kaggle angefallenen Verbindungsdaten. Google
+      richtet die Aufbewahrung seiner Daten nach Datenart, Verwendungszweck und gesetzlichen
+      Anforderungen, insbesondere Sicherheits- und Missbrauchsabwehrzwecken; Einzelheiten erläutert
+      die{' '}
       <a href="https://policies.google.com/privacy?hl=de&amp;gl=de">
         Datenschutzerklärung von Google
       </a>

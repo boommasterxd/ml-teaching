@@ -122,6 +122,44 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
   expect(failures).toEqual([]);
 });
 
+test('legal navigation layout and desktop enhancement switch at the same breakpoint', async ({
+  page,
+}) => {
+  const height = 900;
+  await page.setViewportSize({ width: 1023, height });
+  await page.goto('/datenschutz');
+
+  const sidebar = page.locator('.legal-sidebar');
+  const mobile = sidebar.getByRole('button', { name: 'Informationen', exact: true });
+  const desktop = sidebar.getByRole('navigation', { name: 'Informationsseiten' });
+  // This shared list is mounted only after the desktop navigation has been enhanced.
+  const enhanced = sidebar.locator('[data-slot="navigation-menu-list"]');
+  const back = sidebar.getByRole('link', { name: 'Zurück', exact: true });
+  await expect(mobile).toBeVisible();
+  await expect(desktop).toBeHidden();
+  await back.focus();
+
+  await page.setViewportSize({ width: 1024, height });
+  await expect(desktop).toBeVisible();
+  await expect(mobile).toBeHidden();
+  await expect(enhanced).toBeVisible();
+  await expect(back).toBeFocused();
+
+  const imprint = desktop.getByRole('link', { name: 'Impressum', exact: true });
+  await imprint.focus();
+  await page.setViewportSize({ width: 1025, height });
+  await expect(enhanced).toBeVisible();
+  await expect(imprint).toBeFocused();
+
+  await back.focus();
+  await page.setViewportSize({ width: 1023, height });
+  await expect(mobile).toBeVisible();
+  await expect(desktop).toBeHidden();
+  // Check after loading the module so a hidden but mounted desktop list also fails.
+  await expect(enhanced).toHaveCount(0);
+  await expect(back).toBeFocused();
+});
+
 test('the keyboard legal back action animates the previous history entry', async ({ page }) => {
   await page.addInitScript(() => {
     // Hold the next native popstate before Next restores its content.

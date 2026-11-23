@@ -3,12 +3,20 @@ import {
   diagnostics,
   expectAccessible,
   expectMenuHighlight,
+  observeViewTransitions,
   settleEntryAnimations,
 } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
 
 function isLearningPayload(request: Request) {
   return new URL(request.url()).pathname === learningPaths.hub && request.headers().rsc === '1';
+}
+
+function isLearningPagePrefetch(request: Request) {
+  return (
+    isLearningPayload(request) &&
+    Boolean(request.headers()['next-router-segment-prefetch']?.endsWith('/__PAGE__'))
+  );
 }
 
 function resourceKey(request: Request) {
@@ -52,6 +60,11 @@ async function focusByKeyboard(page: Page, target: Locator) {
 }
 
 for (const intent of ['hover', 'keyboard', 'touch'] as const) {
+  const activation =
+    intent === 'touch'
+      ? 'a cold tap navigates without parallel prefetch'
+      : 'defers learning payloads until intent and keeps pending navigation usable';
+
   test.describe(`learning navigation with ${intent} intent`, () => {
     test.use({
       hasTouch: intent === 'touch',
@@ -59,12 +72,10 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
       colorScheme: intent === 'hover' ? 'dark' : 'light',
     });
 
-    test('defers learning payloads until intent and keeps pending navigation usable', async ({
-      page,
-      baseURL,
-    }) => {
+    test(activation, async ({ page, baseURL }) => {
       const failures = diagnostics(page);
       const network = await holdLearningPayloads(page, baseURL!);
+      const transitions = intent === 'hover' ? await observeViewTransitions(page) : undefined;
       try {
         await page.goto('/');
         await settleEntryAnimations(page);
@@ -93,21 +104,32 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
           await page.keyboard.press('ArrowDown');
           await expect(link).toBeFocused();
         } else await link.tap();
-        await expect.poll(() => network.prefetches.length).toBeGreaterThan(0);
         if (intent !== 'touch') {
+          await expect.poll(() => network.prefetches.length).toBeGreaterThan(0);
           await link.focus();
           await expect(link).toBeFocused();
           await link.hover();
           expect(await link.evaluate((node, original) => node === original, original)).toBe(true);
+          if (transitions) expect(await transitions()).toEqual([]);
           if (intent === 'keyboard') await page.keyboard.press('Enter');
           else await link.click();
+        } else {
+          await expect.poll(() => network.payloads.length).toBeGreaterThan(0);
         }
         expect(network.documents()).toBe(1);
         network.release();
         await expect(page).toHaveURL(new RegExp(`${learningPaths.hub}$`));
         await expect(link).toHaveCount(0);
         await expect(page.getByRole('dialog')).toHaveCount(0);
+        await expect(
+          page.getByRole('heading', { name: 'Dein Lernlabor', exact: true }),
+        ).toBeVisible();
         await expectAccessible(page);
+        if (intent === 'touch') expect(network.prefetches).toEqual([]);
+        if (transitions)
+          expect(await transitions()).toEqual([
+            { root: false, outgoingPages: 1, incomingPages: 1, back: false },
+          ]);
         const imageLink = page.getByRole('link', { name: 'Bilderkennung verstehen', exact: true });
         await imageLink.focus();
         await page.keyboard.press('Enter');
@@ -265,13 +287,9 @@ test('finished link preparation supplies the complete page on first activation a
     await trigger.hover();
     await expect(overview).toBeVisible();
     expect(network.payloads).toEqual([]);
-    const destination = page.waitForResponse((response) => {
-      const request = response.request();
-      return (
-        isLearningPayload(request) &&
-        request.headers()['next-router-segment-prefetch']?.endsWith('/__PAGE__')
-      );
-    });
+    const destination = page.waitForResponse((response) =>
+      isLearningPagePrefetch(response.request()),
+    );
     await expect.poll(() => arrowOffset(overview)).toBe(0);
     await overview.hover();
     await expect.poll(() => network.prefetches.length).toBeGreaterThan(0);
@@ -305,6 +323,71 @@ test('finished link preparation supplies the complete page on first activation a
   } finally {
     network.release();
   }
+});
+
+test.describe('held touch navigation', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+
+  test('prepares the complete learning page and reuses it on tap and reentry', async ({
+    page,
+    baseURL,
+  }) => {
+    const failures = diagnostics(page);
+    const network = await holdLearningPayloads(page, baseURL!);
+    await page.goto('/');
+    const link = page.getByRole('main').getByRole('link', { name: 'Lernlabor', exact: true });
+    await link.tap({ trial: true });
+    expect(network.payloads).toEqual([]);
+    const bounds = (await link.boundingBox())!;
+    const session = await page.context().newCDPSession(page);
+    try {
+      const prepared = page.waitForResponse((response) =>
+        isLearningPagePrefetch(response.request()),
+      );
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }],
+      });
+      await expect.poll(() => network.prefetches.length).toBeGreaterThan(0);
+      await expect(page).toHaveURL('/');
+      network.release();
+      const response = await prepared;
+      expect(response.ok()).toBe(true);
+      expect(await response.text()).toContain('Dein Lernlabor');
+      await settleEntryAnimations(page);
+      await expect(page).toHaveURL('/');
+    } finally {
+      network.release();
+      try {
+        // End preparation without activating the link, then use a fresh tap.
+        await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+      } finally {
+        await session.detach();
+      }
+    }
+
+    const preparedRequests = network.payloads.length;
+    const heading = page.getByRole('heading', { name: 'Dein Lernlabor', exact: true });
+    await link.tap();
+    await expect(page).toHaveURL(learningPaths.hub);
+    await expect(heading).toBeVisible();
+    await settleEntryAnimations(page);
+    expect(network.payloads).toHaveLength(preparedRequests);
+
+    await page
+      .getByRole('navigation', { name: 'Hauptnavigation' })
+      .getByRole('link', { name: 'ML Teaching – Startseite', exact: true })
+      .tap();
+    await expect(page).toHaveURL('/');
+    await link.tap();
+    await expect(page).toHaveURL(learningPaths.hub);
+    await expect(heading).toBeVisible();
+    await settleEntryAnimations(page);
+    expect(network.payloads).toHaveLength(preparedRequests);
+    expect(network.documents()).toBe(1);
+    expect(network.unexpected).toEqual([]);
+    expect(failures).toEqual([]);
+  });
 });
 
 test('failed preparation keeps the first hover feedback and the link remains keyboard operable', async ({

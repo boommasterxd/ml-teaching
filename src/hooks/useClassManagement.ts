@@ -4,10 +4,11 @@
  * Hook for managing the list of ML classification classes and their training images.
  * Provides CRUD operations for classes and exposes model invalidation on destructive changes.
  */
-import { useState, useCallback } from 'react';
-import { useFieldArray, useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { trainingClassNamesSchema, type TrainingClassNames } from '@/lib/training-class-names';
+import { useState, useCallback, useMemo } from 'react';
+import { useFieldArray, useForm, useWatch, type FieldError, type Resolver } from 'react-hook-form';
+import { toNestErrors } from '@hookform/resolvers';
+import { createInitialTrainingClasses } from '@/lib/training-class-defaults';
+import { createClassNameValidator, type TrainingClassNames } from '@/lib/training-class-names';
 import type { MLClass, MLImage } from '../types/ml';
 import { COLORS } from '../types/ml';
 import { ML } from '../constants';
@@ -23,19 +24,13 @@ function getNextClassNumber(classes: TrainingClassNames['names']): number {
 
 type ClassExamples = Omit<MLClass, 'name'>;
 
+const initialClasses = createInitialTrainingClasses();
 const initialNames: TrainingClassNames = {
-  names: [
-    { classId: 'class-1', name: 'Klasse 1' },
-    { classId: 'class-2', name: 'Klasse 2' },
-  ],
+  names: initialClasses.map(({ id: classId, name }) => ({ classId, name })),
 };
 
 function createInitialExamples(): ClassExamples[] {
-  return initialNames.names.map(({ classId }, index) => ({
-    id: classId,
-    images: [],
-    color: COLORS[index],
-  }));
+  return initialClasses.map(({ id, color }) => ({ id, color, images: [] }));
 }
 
 function appendClassImages(
@@ -53,13 +48,32 @@ function appendClassImages(
   });
 }
 
+function createNameResolver(
+  validate: ReturnType<typeof createClassNameValidator>,
+): Resolver<TrainingClassNames> {
+  return (values, _context, options) => {
+    const { parsed } = validate(values);
+    if (parsed.success) return { values: parsed.data, errors: {} };
+
+    const errors: Record<string, FieldError> = {};
+    for (const issue of parsed.error.issues) {
+      errors[issue.path.join('.')] ??= { type: issue.code, message: issue.message };
+    }
+    return { values: {}, errors: toNestErrors(errors, options) };
+  };
+}
+
 function useClassNames(onWarning?: (message: string) => void) {
+  const [validate] = useState(createClassNameValidator);
+  const resolver = useMemo(() => createNameResolver(validate), [validate]);
   const { control, getValues, setValue, trigger } = useForm<TrainingClassNames>({
     defaultValues: initialNames,
-    resolver: zodResolver(trainingClassNamesSchema, undefined, { mode: 'sync' }),
+    resolver,
   });
   const { append, remove } = useFieldArray({ control, name: 'names' });
   const names = useWatch({ control, name: 'names' });
+  const nameValidity = useMemo(() => validate({ names }).validity, [names, validate]);
+  const readNameValidity = useCallback(() => validate(getValues()).validity, [getValues, validate]);
 
   const addName = useCallback(() => {
     const current = getValues('names');
@@ -98,7 +112,15 @@ function useClassNames(onWarning?: (message: string) => void) {
     [getValues, setValue, trigger],
   );
 
-  return { names, nameControl: control, addName, removeName, updateClassName };
+  return {
+    names,
+    nameControl: control,
+    nameValidity,
+    readNameValidity,
+    addName,
+    removeName,
+    updateClassName,
+  };
 }
 
 function useNamedClasses(examples: ClassExamples[], names: TrainingClassNames['names']) {
@@ -128,7 +150,15 @@ export function useClassManagement(
   onWarning?: (message: string) => void,
 ) {
   const [examples, setExamples] = useState(createInitialExamples);
-  const { names, nameControl, addName, removeName, updateClassName } = useClassNames(onWarning);
+  const {
+    names,
+    nameControl,
+    nameValidity,
+    readNameValidity,
+    addName,
+    removeName,
+    updateClassName,
+  } = useClassNames(onWarning);
   const classes = useNamedClasses(examples, names);
 
   const addClass = useCallback(() => {
@@ -207,6 +237,8 @@ export function useClassManagement(
     classes,
     names,
     nameControl,
+    nameValidity,
+    readNameValidity,
     addClass,
     removeClass,
     updateClassName,

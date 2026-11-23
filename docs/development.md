@@ -54,8 +54,10 @@ Without a saved choice, appearance follows the operating system. The theme menu
 offers an explicit remember control; ordinary toggles do not create a storage key.
 Disabling remembering removes that enum preference. Browser-denied storage has
 visible recovery feedback, and it never affects ML consent or workspace lifetime.
-Keep ThemeProvider outside the route boundary and preserve the static trusted
-bootstrap and upstream wipe style in CSP-verified HTML, including native errors.
+Keep ThemeProvider outside the route boundary and preserve the trusted static
+theme bootstrap in CSP-verified HTML, including native errors. The decorative
+wipe mounts on user-initiated appearance changes as described in
+[Motion ownership](design-system.md#motion-ownership).
 
 Optional theme settings load on intent and mount their portal on opening. The
 network demo can prepare a hidden React Activity after intent. Its persistent dog/cat
@@ -102,8 +104,14 @@ OS dependency setup is separate and must respond to actual missing requirements.
 Playwright starts `npm start` on
 127.0.0.1:3100 and refuses to reuse an unrelated server. Build once first.
 
-The local Lighthouse command expects a separately started native production server
-on that same port. It resolves Lighthouse through the active npm's global package
+For local Lighthouse audits, build the site first. Start the native production
+server in a separate terminal.
+
+```sh
+npm start -- --hostname 127.0.0.1 --port 3100
+```
+
+The audit resolves Lighthouse through the active npm's global package
 root, verifies the package, Node.js engine compatibility and native CLI version,
 and reuses that absolute CLI for both mobile and desktop profiles. A present but
 invalid or incompatible global installation fails without a silent fallback.
@@ -127,11 +135,11 @@ Largest Contentful Paint and Total Blocking Time. A missed budget also prints th
 available LCP phases and up to five long tasks.
 
 For a local comparison, build with `NEXT_PUBLIC_DEFER_DECORATIVE_MOTION=1 npm run build`.
-Then use the same `npm start` command. The headline and static icons stay visible
-while the opt-in defers WebGL, parallax and animated icons until after the document
-loads and paints. Input over the artwork or its playback control can prepare and
-start the visible WebGL scene earlier. A regular `npm run build` restores the
-default startup schedule.
+Then restart the production server with the command above. The headline and static
+icons stay visible while the opt-in defers WebGL, parallax and animated icons until
+after the document loads and paints. Input over the artwork or its playback control
+can prepare and start the visible WebGL scene earlier. A regular `npm run build`
+restores the default startup schedule.
 
 ## Build and recovery
 

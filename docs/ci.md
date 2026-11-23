@@ -61,6 +61,11 @@ boundaries. Cleanup runs from the current trusted `main` source after a successf
 cache producer, closed pull requests or declared workflow completion. It verifies
 replacement receipts and active runs before deleting eligible obsolete caches,
 rechecks the trusted branch identity and bounds deletion to 100 entries per run.
+Workflow completions and PR closures can both resume deferred main rotation using
+a verified producer receipt. For main rotation, the active lifecycle workflow
+can proceed past queued or pending runs with the same verified GitHub workflow
+identity because the shared concurrency group serializes them. Other active runs
+still block main rotation. PR cache checks consider all associated active runs.
 Unknown legacy families have no automatic retirement mapping. The provider's
 existing seven-day inactivity eviction and 10 GB repository limit remain unchanged.
 
@@ -74,9 +79,9 @@ in the denominator. Initial and dependency-changing installs are tracked separat
 This is a target, not a measured hit rate; retention and capacity remain unchanged
 pending workload evidence, without a separate keepalive job or a paid increase.
 
-The lifecycle engine in `.github/scripts/cache-lifecycle/` uses the canonical
-GitHub plugin template with its upstream type declarations. The core and planner
-modules use the template from version 1.5.6. Cleanup manages npm caches and
+The lifecycle engine in `.github/scripts/cache-lifecycle/` is based on the
+GitHub plugin template with its upstream type declarations. The core adapts the
+version 1.5.6 template for serialized cleanup recovery. Cleanup manages npm caches and
 superseded CodeQL overlay database caches. A CodeQL replacement must be nonempty
 and tied to a successful default-setup `Push on main` run at the current `main`
 revision. Cleanup compares only caches in the same family, branch and cache

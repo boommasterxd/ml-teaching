@@ -1,35 +1,32 @@
-import { Accessibility, Gavel, LockKeyhole } from 'lucide-react';
 import { headerLegalLinks } from '@/content/site-navigation';
+import AnimatedLink from './AnimatedLink';
 import LegalMobileNavigation from './LegalMobileNavigation';
 import LegalBackLink from './LegalBackLink';
 import LegalDesktopNavigation from './LegalDesktopNavigation';
 import type { LegalPage } from './LegalNavigationLinks';
-import IntentLink from './IntentLink';
-import { buttonVariants } from './button-variants';
+import { legalPageIcons } from './site-navigation-icons';
 import { Card } from './ui/card';
 import { Text } from './ui/typography';
 import { EntryReveal } from './ui/entry-reveal';
 
 export type { LegalPage } from './LegalNavigationLinks';
 
-const staticIcons = { imprint: Gavel, privacy: LockKeyhole, accessibility: Accessibility };
-
 function InitialLegalLinks({ page }: { page: LegalPage }) {
   return (
     <ul className="flex list-none flex-col gap-1">
       {headerLegalLinks.map(({ id, href, label }) => {
-        const Icon = staticIcons[id];
+        const Icon = legalPageIcons[id];
         return (
           <li key={id}>
-            <IntentLink
+            <AnimatedLink
               href={href}
+              variant="ghost"
               aria-current={page === id ? 'page' : undefined}
-              className={buttonVariants({ variant: 'ghost', className: 'legal-page-link' })}
-              data-slot="button"
+              className="legal-page-link"
             >
               <Icon data-icon="inline-start" aria-hidden="true" />
               {label}
-            </IntentLink>
+            </AnimatedLink>
           </li>
         );
       })}

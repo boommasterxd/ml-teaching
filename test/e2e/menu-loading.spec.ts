@@ -61,11 +61,13 @@ test('a failed navigation chunk can be retried from the open menu', async ({ pag
   await trigger.press('Enter');
   const retry = page.getByRole('button', { name: 'Erneut versuchen' });
   await expect(retry).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(retry).toBeFocused();
   await page.unroute(assets);
-  await retry.press('Enter');
+  await page.keyboard.press('Enter');
   const overview = page.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
   await expect(overview).toBeVisible();
-  await trigger.focus();
+  await expect(trigger).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(overview).toBeFocused();
   await page.keyboard.press('Escape');

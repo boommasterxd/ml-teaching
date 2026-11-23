@@ -121,6 +121,31 @@ describe('useClassManagement', () => {
   });
 
   describe('updateClassName', () => {
+    it('keeps field errors and training validity aligned after rapid corrections', async () => {
+      const { result } = renderHook(() => {
+        const management = useClassManagement(onInvalidate);
+        const { errors } = useFormState({ control: management.nameControl, name: 'names' });
+        return { management, errors };
+      });
+      const [first, second] = result.current.management.classes;
+
+      await act(async () => {
+        result.current.management.updateClassName(second.id, first.name);
+        expect(result.current.management.readNameValidity().hasDuplicateNames).toBe(true);
+        result.current.management.updateClassName(second.id, ' ');
+      });
+      expect(result.current.management.nameValidity).toEqual({
+        hasInvalidNames: true,
+        hasDuplicateNames: false,
+      });
+      expect(result.current.errors.names?.[0]?.name).toBeUndefined();
+      expect(result.current.errors.names?.[1]?.name?.message).toBe('Name darf nicht leer sein');
+
+      await act(async () => result.current.management.updateClassName(second.id, 'Hund'));
+      expect(result.current.management.nameValidity.hasInvalidNames).toBe(false);
+      expect(result.current.errors.names).toBeUndefined();
+    });
+
     it('reports both conflicting fields and clears the surviving field after removal', async () => {
       const { result } = renderHook(() => {
         const management = useClassManagement(onInvalidate);

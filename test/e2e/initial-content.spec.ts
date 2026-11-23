@@ -301,7 +301,10 @@ for (const [width, colorScheme] of [
 ] as const) {
   test(`complete initial consent survives hydration at ${width}px`, async ({ page, baseURL }) => {
     await page.setViewportSize({ width, height: width === 390 ? 350 : 900 });
-    await page.emulateMedia({ colorScheme });
+    await page.emulateMedia({
+      colorScheme,
+      reducedMotion: width === 390 ? 'reduce' : 'no-preference',
+    });
     const failures = diagnostics(page);
     const transitions = await observeViewTransitions(page);
     const external: string[] = [];
@@ -361,6 +364,7 @@ for (const [width, colorScheme] of [
       await scripts.expectHeld();
       scripts.release();
       await page.waitForLoadState('load');
+      await expect(dialog.and(page.locator('dialog:modal'))).toBeVisible();
       expect(await dialog.evaluate((node, original) => node === original, initialDialog)).toBe(
         true,
       );
@@ -383,8 +387,11 @@ for (const [width, colorScheme] of [
       await expect(remember).not.toBeChecked();
       await expectAccessible(page);
       expect(await transitions()).toEqual([]);
-      await cancel.focus();
-      await page.keyboard.press('Enter');
+      if (width === 390) {
+        await page.keyboard.press('Escape');
+      } else {
+        await cancel.press('Enter');
+      }
       await expect(page).toHaveURL(new RegExp(`${learningPaths.images}$`));
       expect(external).toEqual([]);
       expect(failures).toEqual([]);
@@ -399,6 +406,11 @@ test.describe('training entry with JavaScript disabled', () => {
 
   test('the initial consent can be declined using the keyboard', async ({ page }) => {
     await page.goto(learningPaths.imagePractice);
+    const workspace = page.locator('.training-workspace');
+    await expect(workspace).toHaveAttribute('inert', '');
+    await expect(workspace.locator('#training-images')).toBeVisible();
+    await expect(workspace.locator('#class-name-class-1')).toHaveValue('Klasse 1');
+    await expect(workspace.locator('#class-name-class-2')).toHaveValue('Klasse 2');
     const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
     const cancel = dialog.getByRole('link', { name: 'Abbrechen', exact: true });
     await page.keyboard.press('Tab');

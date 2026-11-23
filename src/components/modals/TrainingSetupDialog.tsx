@@ -1,10 +1,13 @@
 'use client';
 
+import { useState, type ReactNode } from 'react';
 import Button from '../Button';
 import AnimatedLink from '../AnimatedLink';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import { DialogBody, DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Spinner } from '../ui/spinner';
 import CameraStep from './CameraStep';
 import ConsentStep from './ConsentStep';
 import LoadingStep from './LoadingStep';
@@ -29,6 +32,80 @@ interface TrainingSetupDialogProps {
   cameraError?: string;
   onRetryCamera?: () => void;
   onRetryModel?: () => void;
+  workspaceFailed?: boolean;
+  onRetryWorkspace?: () => void;
+}
+
+function WorkspaceStep({
+  failed,
+  onRetry,
+  cancelAction,
+}: {
+  failed: boolean;
+  onRetry?: () => void;
+  cancelAction: ReactNode;
+}) {
+  const [attempted, setAttempted] = useState(false);
+  return (
+    <>
+      <DialogTitle id="workspace-modal-title" tabIndex={-1}>
+        Arbeitsbereich vorbereiten
+      </DialogTitle>
+      <DialogBody>
+        <div id="workspace-modal-desc">
+          {failed ? (
+            <Alert variant="destructive" role="alert">
+              <AlertDescription>Der Arbeitsbereich konnte nicht geladen werden.</AlertDescription>
+            </Alert>
+          ) : (
+            <DialogDescription className="flex items-center gap-2" role="status">
+              <Spinner aria-hidden="true" /> Arbeitsbereich wird geladen …
+            </DialogDescription>
+          )}
+        </div>
+      </DialogBody>
+      <DialogFooter layout="auto-fit">
+        {cancelAction}
+        {(failed || attempted) && (
+          <Button
+            aria-disabled={!failed || undefined}
+            onClick={() => {
+              if (!failed) return;
+              setAttempted(true);
+              onRetry?.();
+            }}
+          >
+            Erneut versuchen
+          </Button>
+        )}
+      </DialogFooter>
+    </>
+  );
+}
+
+function ModelLoadError({
+  declineAction,
+  onRetryModel,
+}: {
+  declineAction: ReactNode;
+  onRetryModel?: () => void;
+}) {
+  return (
+    <>
+      <DialogTitle id="error-modal-title" tabIndex={-1}>
+        KI-Modell konnte nicht geladen werden
+      </DialogTitle>
+      <DialogBody tabIndex={0} role="region" aria-labelledby="error-modal-title">
+        <DialogDescription id="error-modal-desc">
+          Überprüfe deine Verbindung und versuche es erneut.
+        </DialogDescription>
+      </DialogBody>
+      <DialogFooter>
+        {declineAction}
+        <Button onClick={onRetryModel}>Erneut versuchen</Button>
+      </DialogFooter>
+    </>
+  );
 }
 
 export default function TrainingSetupDialog({
@@ -50,12 +127,15 @@ export default function TrainingSetupDialog({
   cameraError,
   onRetryCamera,
   onRetryModel,
+  workspaceFailed = false,
+  onRetryWorkspace,
 }: TrainingSetupDialogProps) {
   const decline = {
     consent: onDeclineConsent,
     camera: onDeclineCamera,
     loading: undefined,
     error: onDeclineConsent,
+    workspace: onDeclineConsent,
   };
   const declineAction = declineConsentHref ? (
     <AnimatedLink href={declineConsentHref} variant="secondary" transitionTypes={['nav-back']}>
@@ -104,20 +184,14 @@ export default function TrainingSetupDialog({
               />
             )}
             {step === 'error' && (
-              <>
-                <DialogTitle id="error-modal-title" tabIndex={-1}>
-                  KI-Modell konnte nicht geladen werden
-                </DialogTitle>
-                <DialogBody tabIndex={0} role="region" aria-labelledby="error-modal-title">
-                  <DialogDescription id="error-modal-desc">
-                    Überprüfe deine Verbindung und versuche es erneut.
-                  </DialogDescription>
-                </DialogBody>
-                <DialogFooter>
-                  {declineAction}
-                  <Button onClick={onRetryModel}>Erneut versuchen</Button>
-                </DialogFooter>
-              </>
+              <ModelLoadError declineAction={declineAction} onRetryModel={onRetryModel} />
+            )}
+            {step === 'workspace' && (
+              <WorkspaceStep
+                failed={workspaceFailed}
+                onRetry={onRetryWorkspace}
+                cancelAction={declineAction}
+              />
             )}
           </SetupStepTransition>
         )}

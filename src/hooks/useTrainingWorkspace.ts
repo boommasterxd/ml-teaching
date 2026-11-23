@@ -218,7 +218,7 @@ function useTrainingData(resources: ReturnType<typeof useTrainingResources>) {
       setHasTrainedModel,
       onError: reportOperationError,
     },
-    classes.names,
+    { current: classes.nameValidity, read: classes.readNameValidity },
   );
   const activity = useImageActivity(training.isTrainingActive, notifyError);
   const images = useTrainingImages(resources, classes, activity, training.isTrainingActive);
