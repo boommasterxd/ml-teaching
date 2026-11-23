@@ -127,8 +127,10 @@ async function audit(
       console.error(`${path} ${profile}: Lighthouse did not return all requested scores.`);
       process.exitCode = 1;
     } else if (typeof performance === 'number' && performance <= performanceThreshold) {
+      const lcp = report.audits['largest-contentful-paint']?.displayValue;
+      const blocking = report.audits['total-blocking-time']?.displayValue;
       console.error(
-        `${path} ${profile}: Performance must exceed ${performanceThreshold * 100} points.`,
+        `${path} ${profile}: Performance must exceed ${performanceThreshold * 100} points (LCP ${lcp}, total blocking time ${blocking}).`,
       );
       process.exitCode = 1;
     }

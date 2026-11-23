@@ -331,6 +331,9 @@ active first-frame deadline switches to the optimized responsive poster.
 Pointer and keyboard intent prepare the shared renderer. The poster covers
 renderer failure, reduced motion and disabled scripting. Recovery actions remain
 available throughout.
+The recovery artwork and the mobile homepage start both WebGL passes at a
+low resolution and increase quality only when frame timing allows it. The
+desktop homepage keeps its sharper initial frame.
 Visible scenes support pointer, touch and keyboard impulses and a pause control.
 The [playback and menu-loading decisions](decisions/error-artwork-and-menus.md)
 record why these interactions share their implementations.
