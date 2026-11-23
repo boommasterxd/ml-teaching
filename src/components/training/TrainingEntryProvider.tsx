@@ -28,6 +28,7 @@ import TrainingConsentControls from './TrainingConsentControls';
 import { TrainingEntryContext, TrainingSessionContext } from './TrainingEntryContext';
 import { useTrainingWithdrawal } from './use-training-withdrawal';
 import TrainingWithdrawalFeedback from './TrainingWithdrawalFeedback';
+import { getPreparedTrainingWorkspace, loadTrainingWorkspace } from './training-workspace-loader';
 
 type Entry = {
   source: string;
@@ -39,9 +40,10 @@ function loadSetup() {
   return import('../modals/TrainingSetupDialog');
 }
 
-function getStep(engine: TrainingEngine): SetupStep {
+function getStep(engine: TrainingEngine, workspaceReady: boolean): SetupStep {
   if (!engine.consent.hasConsented) return 'consent';
   if (engine.resourceLoadFailed || engine.error?.category === 'model') return 'error';
+  if (finishAllowed(engine) && !workspaceReady) return 'workspace';
   if (!engine.canUseModels || engine.consent.restored) return 'loading';
   return 'camera';
 }
@@ -103,7 +105,9 @@ function useTrainingEntryState() {
   const pathname = usePathname();
   const inTraining = pathname === learningPaths.imagePractice;
   const setup = useMenuModule(loadSetup);
+  const workspace = useMenuModule(loadTrainingWorkspace, getPreparedTrainingWorkspace());
   const { module, prepare } = setup;
+  const { prepare: prepareWorkspace } = workspace;
   const [entry, setEntry] = useState<Entry | null>(null);
   const [visit, setVisit] = useState<{
     pathname: string | null;
@@ -138,7 +142,8 @@ function useTrainingEntryState() {
   const prepareEntry = useCallback(() => {
     prepare();
     prepareResources();
-  }, [prepare, prepareResources]);
+    prepareWorkspace();
+  }, [prepare, prepareResources, prepareWorkspace]);
   const openEntry = useCallback(
     (opener: HTMLElement | null) => {
       if (!pathname || inTraining || activeEntry) return;
@@ -167,6 +172,7 @@ function useTrainingEntryState() {
     router,
     inTraining,
     setup,
+    workspace,
     engine,
     ResourceHost,
     resourceProps,
@@ -187,6 +193,7 @@ function useTrainingEntryFlow() {
     router,
     inTraining,
     setup,
+    workspace,
     engine,
     ResourceHost,
     resourceProps,
@@ -203,7 +210,8 @@ function useTrainingEntryFlow() {
   const { module, failed } = setup;
   const { consent, clearError } = engine;
   const [workspaceVersion, setWorkspaceVersion] = useState(0);
-  const complete = activeEntry?.phase === 'setup' && Boolean(module) && finishAllowed(engine);
+  const complete =
+    activeEntry?.phase === 'setup' && Boolean(module && workspace.module) && finishAllowed(engine);
 
   const resetForPageHide = useEffectEvent(() => {
     clearRememberedTrainingConsent();
@@ -269,6 +277,7 @@ function useTrainingEntryFlow() {
     inTraining,
     activeEntry,
     complete,
+    workspace,
     Setup: module?.default,
     failed,
     prepare: actions.prepareEntry,
@@ -332,15 +341,19 @@ export default function TrainingEntryProvider({ children }: { children: ReactNod
 }
 
 function TrainingEntryOverlay({ flow }: { flow: ReturnType<typeof useTrainingEntryFlow> }) {
-  const { activeEntry, Setup, complete, failed, prepare, engine } = flow;
+  const { activeEntry, Setup, complete, failed, prepare, engine, workspace } = flow;
   const { consent } = engine;
+  const [lastStep, setLastStep] = useState<SetupStep>('consent');
+  const open = activeEntry?.phase === 'setup' && !complete;
+  const step = open ? getStep(engine, Boolean(workspace.module)) : lastStep;
+  if (open && step !== lastStep) setLastStep(step);
   if (!activeEntry) return null;
   if (Setup) {
     return (
       <Setup
         initialContent={false}
-        step={getStep(engine)}
-        open={activeEntry.phase === 'setup' && !complete}
+        step={step}
+        open={open}
         onExited={flow.finishClose}
         loadingText={engine.models.loadingText}
         onWithdrawLoading={() => flow.revokeConsent()}
@@ -354,6 +367,8 @@ function TrainingEntryOverlay({ flow }: { flow: ReturnType<typeof useTrainingEnt
         cameraError={engine.error?.category === 'camera' ? engine.error.message : undefined}
         onRetryCamera={engine.camera.retryCamera}
         onRetryModel={engine.retryModels}
+        workspaceFailed={workspace.failed}
+        onRetryWorkspace={workspace.prepare}
       />
     );
   }

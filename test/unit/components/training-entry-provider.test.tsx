@@ -6,6 +6,10 @@ import { useTrainingEntry, useTrainingSession } from '@/components/training/Trai
 import { learningPaths } from '@/lib/learning-paths';
 import TrainingPage from '@/screens/TrainingPage';
 import {
+  getPreparedTrainingWorkspace,
+  loadTrainingWorkspace,
+} from '@/components/training/training-workspace-loader';
+import {
   clearRememberedTrainingConsent,
   readRememberedTrainingConsent,
   TRAINING_CONSENT_DURATION,
@@ -27,6 +31,13 @@ const browser = vi.hoisted(() => ({
 vi.mock(import('@/components/training/TrainingResourceHost'), async (original) => {
   browser.loadResourceHost();
   return original();
+});
+vi.mock(import('@/components/training/training-workspace-loader'), async (original) => {
+  const loader = await original();
+  return {
+    loadTrainingWorkspace: vi.fn(loader.loadTrainingWorkspace),
+    getPreparedTrainingWorkspace: vi.fn(loader.getPreparedTrainingWorkspace),
+  };
 });
 vi.mock('@/lib/mobilenet-embedding', () => ({ loadMobileNetEmbedding: browser.model }));
 vi.mock('@tensorflow/tfjs-core', () => ({
@@ -175,6 +186,7 @@ describe('training entry across routes', () => {
     );
     await act(() => vi.dynamicImportSettled());
     expect(browser.loadResourceHost).not.toHaveBeenCalled();
+    expect(loadTrainingWorkspace).not.toHaveBeenCalled();
 
     const consent = within(screen.getByRole('dialog', { name: consentName }));
     const confirm = consent.getByRole('button', { name: 'Zustimmen' });
@@ -184,6 +196,7 @@ describe('training entry across routes', () => {
     act(() => confirm.focus());
     await act(() => vi.dynamicImportSettled());
     expect(browser.loadResourceHost).toHaveBeenCalledOnce();
+    expect(loadTrainingWorkspace).toHaveBeenCalledOnce();
     expect(browser.model).not.toHaveBeenCalled();
     expect(browser.getUserMedia).not.toHaveBeenCalled();
 
@@ -191,6 +204,58 @@ describe('training entry across routes', () => {
     await screen.findByRole('dialog', { name: cameraName });
     expect(browser.model).toHaveBeenCalledOnce();
     expect(browser.getUserMedia).not.toHaveBeenCalled();
+  });
+
+  it('keeps source setup open for a failed workspace and retries without restarting resources', async () => {
+    vi.mocked(getPreparedTrainingWorkspace).mockReturnValueOnce(undefined);
+    vi.mocked(loadTrainingWorkspace).mockRejectedValueOnce(new Error('Workspace not available'));
+    showPage(learningPaths.images);
+    expect(loadTrainingWorkspace).not.toHaveBeenCalled();
+    startTraining();
+    await agreeToTraining();
+    const camera = within(await screen.findByRole('dialog', { name: cameraName }));
+    fireEvent.click(camera.getByRole('button', { name: 'Ohne Kamera fortfahren' }));
+
+    const workspace = within(
+      await screen.findByRole('dialog', { name: 'Arbeitsbereich vorbereiten' }),
+    );
+    expect(workspace.getByRole('alert').textContent).toContain('konnte nicht geladen werden');
+    expect(testRouter.push).not.toHaveBeenCalled();
+    expect(browser.model).toHaveBeenCalledOnce();
+
+    fireEvent.click(workspace.getByRole('button', { name: 'Erneut versuchen' }));
+    await waitFor(() =>
+      expect(testRouter.push).toHaveBeenCalledWith(learningPaths.imagePractice, {
+        transitionTypes: ['nav-forward'],
+      }),
+    );
+    expect(loadTrainingWorkspace).toHaveBeenCalledTimes(2);
+    expect(browser.model).toHaveBeenCalledOnce();
+    expect(browser.getUserMedia).not.toHaveBeenCalled();
+  });
+
+  it('discards a source setup when the document is hidden with its workspace still loading', async () => {
+    const prepared = getPreparedTrainingWorkspace()!;
+    const pending = Promise.withResolvers<typeof prepared>();
+    vi.mocked(getPreparedTrainingWorkspace).mockReturnValueOnce(undefined);
+    vi.mocked(loadTrainingWorkspace).mockReturnValueOnce(pending.promise);
+    showPage(learningPaths.images);
+    startTraining();
+    await agreeToTraining(true);
+    const camera = within(await screen.findByRole('dialog', { name: cameraName }));
+    fireEvent.click(camera.getByRole('button', { name: 'Ohne Kamera fortfahren' }));
+    const workspace = within(
+      await screen.findByRole('dialog', { name: 'Arbeitsbereich vorbereiten' }),
+    );
+    expect(workspace.getByRole('status').textContent).toContain('wird geladen');
+    expect(testRouter.push).not.toHaveBeenCalled();
+
+    fireEvent(window, new Event('pagehide'));
+    await act(async () => pending.resolve(prepared));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(testRouter.push).not.toHaveBeenCalled();
+    expect(browser.disposeModel).toHaveBeenCalledOnce();
+    expect(readRememberedTrainingConsent()).toBeNull();
   });
 
   it('prepares the training host on focus without starting its subscriptions before activation', async () => {

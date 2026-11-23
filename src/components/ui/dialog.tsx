@@ -13,14 +13,15 @@ import { Dialog as DialogPrimitive } from '@animate-ui/react/primitives/base-ui/
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import {
   motionTokens,
-  useShouldReduceMotion,
+  ReducedMotionContext,
   useTempoTransition,
 } from '@animate-ui/react/utils/motion';
 import { useRender } from '@base-ui/react/use-render';
-import { useIsPresent } from 'motion/react';
+import { MotionConfig, useIsPresent } from 'motion/react';
 import { RemoveScroll } from 'react-remove-scroll';
 import { cn } from '@/lib/utils';
 import { ScrollFadeViewport } from './scroll-fade-viewport';
+import { useMotionPreference } from './use-motion-preference';
 
 // Adapted from shadcn/ui's Base UI Dialog; only DialogBody scrolls.
 export const dialogSurface =
@@ -98,7 +99,7 @@ export function DialogContent({
 export function InitialDialog({ children, ...props }: ComponentProps<'dialog'>) {
   const ref = useRef<HTMLDialogElement>(null);
   const present = useIsPresent();
-  const reduceMotion = useShouldReduceMotion();
+  const { preference, reduce } = useMotionPreference();
   const exitTransition = useTempoTransition(motionTokens.transition.overlay);
   useLayoutEffect(() => {
     const dialog = ref.current;
@@ -116,30 +117,39 @@ export function InitialDialog({ children, ...props }: ComponentProps<'dialog'>) 
   }, []);
 
   return (
-    <RemoveScroll ref={ref} forwardProps removeScrollBar={false} inert={false} allowPinchZoom>
-      <Effect
-        asChild
-        fade
-        initial={false}
-        animate={undefined}
-        transition={reduceMotion ? { duration: 0 } : exitTransition}
-      >
-        <dialog
-          {...props}
-          open
-          inert={!present || undefined}
-          aria-hidden={!present || undefined}
-          onKeyDown={wrapDialogTab}
-          data-open={present ? '' : undefined}
-          data-closed={present ? undefined : ''}
-          data-slot="dialog-overlay"
-          className="pointer-events-auto fixed inset-x-0 top-0 z-50 m-0 h-dvh max-h-none w-full max-w-none overflow-hidden overscroll-contain bg-transparent backdrop:bg-transparent"
-        >
-          <div className={cn(dialogScrim, 'z-auto')} aria-hidden="true" />
-          <div className={cn('relative size-full', dialogViewportLayout)}>{children}</div>
-        </dialog>
-      </Effect>
-    </RemoveScroll>
+    // Effect remounts its target when its motion preference changes. Keep the native modal mounted.
+    <ReducedMotionContext value="never">
+      <MotionConfig reducedMotion="never">
+        <RemoveScroll ref={ref} forwardProps removeScrollBar={false} inert={false} allowPinchZoom>
+          <Effect
+            asChild
+            fade
+            initial={false}
+            animate={undefined}
+            transition={reduce ? { duration: 0 } : exitTransition}
+          >
+            <dialog
+              {...props}
+              open
+              inert={!present || undefined}
+              aria-hidden={!present || undefined}
+              onKeyDown={wrapDialogTab}
+              data-open={present ? '' : undefined}
+              data-closed={present ? undefined : ''}
+              data-slot="dialog-overlay"
+              className="pointer-events-auto fixed inset-x-0 top-0 z-50 m-0 h-dvh max-h-none w-full max-w-none overflow-hidden overscroll-contain bg-transparent backdrop:bg-transparent"
+            >
+              <div className={cn(dialogScrim, 'z-auto')} aria-hidden="true" />
+              <div className={cn('relative size-full', dialogViewportLayout)}>
+                <ReducedMotionContext value={preference}>
+                  <MotionConfig reducedMotion={preference}>{children}</MotionConfig>
+                </ReducedMotionContext>
+              </div>
+            </dialog>
+          </Effect>
+        </RemoveScroll>
+      </MotionConfig>
+    </ReducedMotionContext>
   );
 }
 

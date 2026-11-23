@@ -40,99 +40,37 @@ describe('useConsentFlow', () => {
     expect(result.current.showCameraModal).toBe(true);
     expect(result.current.cameraConsent).toBe(false);
   });
-  describe('initial state', () => {
-    it('hasConsented starts as false', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      expect(result.current.hasConsented).toBe(false);
-    });
 
-    it('cameraConsent starts as false', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      expect(result.current.cameraConsent).toBe(false);
-    });
-
-    it('showConsentModal is true initially', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      expect(result.current.showConsentModal).toBe(true);
-    });
-
-    it('showCameraModal is false initially', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      expect(result.current.showCameraModal).toBe(false);
-    });
-
-    it('isFullyConsented is false initially', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      expect(result.current.isFullyConsented).toBe(false);
+  it('requires general consent before offering the camera choice', () => {
+    const { result } = renderHook(() => useConsentFlow());
+    expect(result.current).toMatchObject({
+      hasConsented: false,
+      cameraConsent: false,
+      showConsentModal: true,
+      showCameraModal: false,
+      isFullyConsented: false,
     });
   });
 
-  describe('grantConsent', () => {
-    it('sets hasConsented to true', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      act(() => {
-        result.current.grantConsent();
-      });
-      expect(result.current.hasConsented).toBe(true);
-    });
-
-    it('hides showConsentModal', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      act(() => {
-        result.current.grantConsent();
-      });
-      expect(result.current.showConsentModal).toBe(false);
-    });
-
-    it('shows showCameraModal after general consent is granted', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      act(() => {
-        result.current.grantConsent();
-      });
-      expect(result.current.showCameraModal).toBe(true);
-    });
-
-    it('isFullyConsented remains false without camera consent', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      act(() => {
-        result.current.grantConsent();
-      });
-      expect(result.current.isFullyConsented).toBe(false);
+  it('offers the camera choice after general consent', () => {
+    const { result } = renderHook(() => useConsentFlow());
+    act(() => result.current.grantConsent());
+    expect(result.current).toMatchObject({
+      hasConsented: true,
+      showConsentModal: false,
+      showCameraModal: true,
+      isFullyConsented: false,
     });
   });
 
-  describe('grantCameraConsent', () => {
-    it('sets cameraConsent to true', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      act(() => {
-        result.current.grantConsent();
-      });
-      act(() => {
-        result.current.grantCameraConsent();
-      });
-      expect(result.current.cameraConsent).toBe(true);
-    });
-
-    it('sets isFullyConsented to true after completing the full consent flow', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      act(() => {
-        result.current.grantConsent();
-      });
-      act(() => {
-        result.current.grantCameraConsent();
-      });
-      expect(result.current.isFullyConsented).toBe(true);
-    });
-
-    it('hides showCameraModal after camera consent is granted', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      act(() => {
-        result.current.grantConsent();
-      });
-      act(() => {
-        result.current.grantCameraConsent();
-      });
-      expect(result.current.showCameraModal).toBe(false);
+  it('completes the consent flow after the camera choice is granted', () => {
+    const { result } = renderHook(() => useConsentFlow());
+    act(() => result.current.grantConsent());
+    act(() => result.current.grantCameraConsent());
+    expect(result.current).toMatchObject({
+      cameraConsent: true,
+      isFullyConsented: true,
+      showCameraModal: false,
     });
   });
 

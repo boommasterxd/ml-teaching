@@ -31,9 +31,10 @@ export default function CameraStep({
       </DialogTitle>
       <DialogBody tabIndex={0} role="region" aria-labelledby="camera-modal-title">
         <DialogDescription id="camera-modal-desc" className="leading-relaxed">
-          Die Kamera ist optional. Nach Ihrer Freigabe startet sie beim Sammeln von Trainingsbildern
-          und in der Live-Vorhersage automatisch. Für das Training können Sie auch Bilder von Ihrem
-          Gerät auswählen.{' '}
+          Die Kamera ist optional. Wenn Sie „Erlauben“ wählen, kann die Kamera schon während der
+          Einrichtung starten, sobald Ihr Browser den Zugriff freigibt. Beim Sammeln von Bildern und
+          bei der Live-Vorhersage kann sie automatisch wieder starten. Sie können auch Bilder von
+          Ihrem Gerät auswählen.{' '}
           <strong>
             Die erfassten Bilddaten werden ausschließlich lokal im Browser verarbeitet und zu keinem
             Zeitpunkt an externe Server übermittelt oder dort gespeichert.

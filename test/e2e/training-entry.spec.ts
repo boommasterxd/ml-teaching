@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page, type Request } from '@playwright/test';
+import { readdir, readFile } from 'node:fs/promises';
 import { learningPaths } from '../../src/lib/learning-paths';
 import {
   diagnostics,
@@ -82,7 +83,7 @@ async function followPreparedRoute(
   path: string,
   content: Locator,
   text: string,
-  afterActivation?: () => Promise<void>,
+  actions?: { beforeActivation: () => Promise<void>; afterActivation: () => Promise<void> },
 ) {
   const requests: Request[] = [];
   const recordDestination = (request: Request) => {
@@ -106,10 +107,11 @@ async function followPreparedRoute(
     expect(payload.ok()).toBe(true);
     expect(payload.headers()['content-type']).toContain('text/x-component');
     expect(await payload.text()).toContain(text);
+    await actions?.beforeActivation();
     await settleEntryAnimations(page);
     const preparedRequests = requests.length;
     await page.keyboard.press('Enter');
-    await afterActivation?.();
+    await actions?.afterActivation();
     await expect(page).toHaveURL(path);
     await expect(content).toBeVisible();
     await settleEntryAnimations(page);
@@ -118,7 +120,24 @@ async function followPreparedRoute(
     page.off('request', recordDestination);
   }
 }
-
+async function observeWorkspaceChunk(page: Page) {
+  const directory = '.next/static/chunks';
+  const scripts = (await readdir(directory)).filter((file) => file.endsWith('.js'));
+  const code = await Promise.all(scripts.map((file) => readFile(`${directory}/${file}`, 'utf8')));
+  const chunks = scripts.filter((_, index) =>
+    code[index].includes('Die Ansicht konnte nicht geladen werden.'),
+  );
+  expect(chunks).toHaveLength(1);
+  const isWorkspace = (url: string) => new URL(url).pathname.endsWith(`/${chunks[0]}`);
+  let count = 0;
+  page.on('request', (request) => {
+    if (isWorkspace(request.url())) count++;
+  });
+  return {
+    count: () => count,
+    loaded: () => page.waitForResponse((response) => isWorkspace(response.url()) && response.ok()),
+  };
+}
 test('keyboard setup hands off a single model and camera stream before Flow navigation', async ({
   page,
   baseURL,
@@ -127,10 +146,10 @@ test('keyboard setup hands off a single model and camera stream before Flow navi
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
   const transitions = await observeViewTransitions(page, { checkDialogExit: true });
   const failures = diagnostics(page);
+  const workspaceChunk = await observeWorkspaceChunk(page);
   await page.goto(learningPaths.hub);
   await settleEntryAnimations(page);
   expect(await transitions()).toEqual([]);
-
   const main = page.getByRole('main');
   await followPreparedRoute(
     page,
@@ -141,8 +160,9 @@ test('keyboard setup hands off a single model and camera stream before Flow navi
   );
   const imageTransition = { root: false, outgoingPages: 1, incomingPages: 1, back: false };
   expect(await transitions()).toEqual([imageTransition]);
-
   const network = await routeSyntheticModel(page, baseURL!);
+  expect(workspaceChunk.count()).toBe(0);
+  const workspacePreparation = workspaceChunk.loaded();
   const expectCamera = await observeWorkspaceCamera(page);
   const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   const trainingTitle = 'Eigenes Bilderkennungsmodell trainieren | ML Teaching';
@@ -153,23 +173,30 @@ test('keyboard setup hands off a single model and camera stream before Flow navi
     learningPaths.imagePractice,
     workspace,
     trainingTitle,
-    async () => {
-      await expect(consent).toBeVisible();
-      await expect(page).toHaveURL(learningPaths.images);
-      expect(await transitions()).toEqual([imageTransition]);
-      expect(network.modelRequests).toEqual([]);
-      await expectCamera(0, 0);
-      await grantModelConsent(page);
-      const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
-      await expect(camera).toBeVisible();
-      await expect(page).toHaveURL(learningPaths.images);
-      await expectCamera(0, 0);
-      await camera.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
+    {
+      beforeActivation: async () => {
+        expect(await (await workspacePreparation).finished()).toBeNull();
+        expect(network.modelRequests).toEqual([]);
+      },
+      afterActivation: async () => {
+        await expect(consent).toBeVisible();
+        await expect(page).toHaveURL(learningPaths.images);
+        expect(await transitions()).toEqual([imageTransition]);
+        expect(network.modelRequests).toEqual([]);
+        await expectCamera(0, 0);
+        await grantModelConsent(page);
+        const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
+        await expect(camera).toBeVisible();
+        await expect(page).toHaveURL(learningPaths.images);
+        await expectCamera(0, 0);
+        await camera.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
+      },
     },
   );
   await expect(page).toHaveTitle(trainingTitle);
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(workspace).toBeFocused();
+  expect(workspaceChunk.count()).toBe(1);
   await expectCamera(1, 1, 'user', learningPaths.images);
   expect(network.modelRequests).toEqual(['graph', 'weights']);
   await expectAccessible(page);

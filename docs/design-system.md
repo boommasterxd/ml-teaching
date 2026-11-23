@@ -302,9 +302,11 @@ the full row. The sidebar and header dropdown share the same panel radius and
 inner padding. The links' hit areas meet between rows so crossing the spacing
 keeps the highlight moving directly between destinations. Base UI's `render`
 prop composes the links with native anchors and their current-page semantics.
-The server renders usable desktop links before hydration. Only at `lg` or wider
-does the browser load the moving highlight and its interactive rows. The
-server-rendered links stay in place while the pointer or focus is in the list.
+The server renders the desktop links as native anchors with style-free SVGs.
+After hydration, the shared `AnimatedLink` and icon entries provide pointer,
+keyboard and touch feedback while the desktop highlight module loads or if it
+fails. The browser loads the moving highlight at `lg` or wider. The initial links
+stay in place while the pointer or focus is in the list.
 Below `lg`, the toolbar pairs the back action with the Informationen dropdown.
 Back traverses the previous browser entry when available and uses the homepage for a direct entry.
 The dropdown's three native links use the shared Animate UI menu, including
@@ -547,9 +549,10 @@ Direct-entry consent remains part of the static document. While the dialog is op
 before hydration, the surrounding navigation is inert or hidden. The native
 cancel link remains usable without JavaScript. Hydration upgrades the same dialog
 to native modality. Pointer entry, keyboard
-focus and pointer down on a training link prepare the shared setup dialog and
-the browser resource host in parallel. On direct entry, intent on the enabled
-consent action prepares the host. It mounts after model consent as a sibling of
+focus and pointer down on a training link prepare the shared setup dialog,
+workspace module and browser resource host in parallel. On direct entry, intent on
+the enabled consent action prepares the workspace module and host. The host mounts
+after model consent as a sibling of
 the page, preserving the inline consent dialog.
 It stays mounted during the transition from source-page setup into the workspace.
 Source-page setup uses one dialog for consent, model loading and the camera decision.
@@ -603,9 +606,11 @@ with its answer for scroll admission. Its main heading is stationary, and its
 introduction uses the reading role.
 Legal text is grouped at existing
 h2/h3 boundaries without changing controlled copy, while its H1 stays visible.
-The training title, description and step navigation stay in place from first paint
-through setup. The workspace becomes interactive when the model is ready and the
-first dialog closes. Panels below the viewport
+The training title, description, step navigation and two initial class cards are
+visible from first paint. The inert frame shares the card and gallery layout with
+the active collection. The workspace becomes interactive when the model and
+workspace module are ready and setup exits. A separate setup step shows pending
+workspace loading and offers a retry when the workspace module fails. Panels below the viewport
 admit scroll reveals once the workspace is ready. Training settings remain
 available while consent is active or remembered. Their Alert Dialog pairs the
 footer shield with the title and gives each action a full-width row on narrow

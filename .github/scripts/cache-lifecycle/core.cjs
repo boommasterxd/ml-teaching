@@ -32,6 +32,42 @@ function activeRuns(api, base, self) {
     .filter((r) => r.id !== self);
 }
 
+/** @param {import('./types').Run} entry */
+function isLifecycleRun(entry) {
+  return (
+    entry.name === "Cache lifecycle" &&
+    entry.path === ".github/workflows/cache-lifecycle.yml" &&
+    ["pull_request_target", "workflow_run"].includes(entry.event)
+  );
+}
+
+/** @param {Options} options @param {string} base @param {import('./types').Run[]} running */
+function blocksMainRotation(options, base, running) {
+  if (!running.length) return false;
+  if (
+    options.workflow !== "Cache lifecycle" ||
+    !running.every((entry) => isLifecycleRun(entry) && ["queued", "pending"].includes(entry.status))
+  )
+    return true;
+
+  // A waiting sibling cannot run while this workflow holds its concurrency group.
+  const current = run(options.api.read(`${base}/actions/runs/${identifier(options.runId)}`));
+  if (
+    current.id !== options.runId ||
+    !isLifecycleRun(current) ||
+    current.event !== options.eventName ||
+    current.status !== "in_progress"
+  )
+    return true;
+  const workflowId = object(current).workflow_id;
+  return (
+    typeof workflowId !== "number" ||
+    !Number.isSafeInteger(workflowId) ||
+    workflowId <= 0 ||
+    !running.every((entry) => object(entry).workflow_id === workflowId)
+  );
+}
+
 /** @param {Options} options @param {Policy} rules @param {string} base */
 function context(options, rules, base) {
   const meta = object(options.api.read(base));
@@ -187,11 +223,7 @@ function runLifecycle(options) {
   const caches = inventory(options.api, base);
   const active = activeRuns(options.api, base, options.runId);
   let candidates = closedPullRequests(caches, options.api, base, active);
-  const receipts = producer
-    ? options.replacements
-    : options.eventName === "workflow_run"
-      ? recoverReceipts(options, rules, base, head)
-      : [];
+  const receipts = producer ? options.replacements : recoverReceipts(options, rules, base, head);
   candidates.push(...replacements(caches, receipts, rules));
   candidates.push(...codeql(caches, codeqlProofs(caches, options, head, base), rules, head));
   const unique = [...new Map(candidates.map((c) => [c.cache.id, c])).values()];
@@ -203,8 +235,10 @@ function runLifecycle(options) {
   if (object(latest.object).sha !== head)
     throw new Error("Default branch changed during planning; no caches deleted");
   const running = activeRuns(options.api, base, options.runId);
+  const mainRotationBlocked =
+    unique.some((candidate) => candidate.replacement) && blocksMainRotation(options, base, running);
   const eligible = unique.filter(
-    (c) => (!c.replacement || !running.length) && stillValid(c, fresh, options, base, running),
+    (c) => (!c.replacement || !mainRotationBlocked) && stillValid(c, fresh, options, base, running),
   );
   const deleted = [];
   for (const candidate of eligible) {

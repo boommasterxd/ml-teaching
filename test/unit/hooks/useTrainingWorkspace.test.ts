@@ -418,6 +418,23 @@ describe('local training workspace', () => {
     expect(mocks.toastError).not.toHaveBeenCalled();
   });
 
+  it('blocks training when a previously valid class name becomes a duplicate before render', async () => {
+    const { result } = await renderWorkspace();
+    await collectMinimumImages(result);
+    expect(result.current.data.canTrain).toBe(true);
+
+    const { data, cardActions } = result.current;
+    const [first, second] = data.classes.classes;
+    await act(async () => {
+      cardActions.onUpdateName(second.id, first.name);
+      data.trainModel();
+      expect(data.training.isTrainingActive()).toBe(false);
+    });
+    expect(result.current.data.canTrain).toBe(false);
+    expect(result.current.data.hasDuplicateNames).toBe(true);
+    expect(mocks.setClassifier).not.toHaveBeenCalled();
+  });
+
   it('reports one error per failed training run and retains the examples for retry', async () => {
     const { result } = await renderWorkspace();
     await collectMinimumImages(result);

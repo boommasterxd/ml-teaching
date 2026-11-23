@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type MouseEventHandler,
   type RefCallback,
 } from 'react';
 import { usePathname } from 'next/navigation';
@@ -70,6 +71,12 @@ function containsCurrentPage(groups: readonly HeaderNavGroup[], pathname: string
 function currentHeaderItem(pathname: string) {
   if (pathname === home.href) return home.href;
   return desktopMenus.find(({ groups }) => containsCurrentPage(groups, pathname))?.label;
+}
+
+function findHeaderTrigger(control: HTMLElement, menuClass: string, label: string) {
+  return control
+    .closest(`.${menuClass}`)
+    ?.querySelector<HTMLButtonElement>(`[data-header-control="${CSS.escape(label)}"]`);
 }
 
 function HomeNavigationItem({ active }: { active: boolean }) {
@@ -151,18 +158,22 @@ function HeaderMenu({ mobile, pathname, runtime, focusRef }: MenuProps) {
                   groups={groups}
                   current={containsCurrentPage(groups, pathname) ? pathname : null}
                   onTrainingEntry={(link) => {
-                    const opener = link
-                      .closest(`.${menuClass}`)
-                      ?.querySelector<HTMLButtonElement>(
-                        `[data-header-control="${CSS.escape(label)}"]`,
-                      );
+                    const opener = findHeaderTrigger(link, menuClass, label);
                     pendingFocus.current = null;
                     setOpen({ pathname, value: null });
                     return opener ?? null;
                   }}
                 />
               ) : (
-                <HeaderMenuLoading failed={failed} prepare={prepare} />
+                <HeaderMenuLoading
+                  failed={failed}
+                  onRetry={(event) => {
+                    findHeaderTrigger(event.currentTarget, menuClass, label)?.focus({
+                      preventScroll: true,
+                    });
+                    prepare();
+                  }}
+                />
               )}
             </NavigationMenuContent>
           </NavigationMenuItem>
@@ -172,11 +183,17 @@ function HeaderMenu({ mobile, pathname, runtime, focusRef }: MenuProps) {
   );
 }
 
-function HeaderMenuLoading({ failed, prepare }: { failed: boolean; prepare: () => void }) {
+function HeaderMenuLoading({
+  failed,
+  onRetry,
+}: {
+  failed: boolean;
+  onRetry: MouseEventHandler<HTMLButtonElement>;
+}) {
   return failed ? (
     <Alert role="alert">
       <AlertDescription>Das Menü konnte nicht geladen werden.</AlertDescription>
-      <Button variant="secondary" size="sm" onClick={prepare}>
+      <Button variant="secondary" size="sm" onClick={onRetry}>
         Erneut versuchen
       </Button>
     </Alert>
