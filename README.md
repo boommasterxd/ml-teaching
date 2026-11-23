@@ -42,10 +42,11 @@ consent. You can supply local image files without enabling the camera.
 
 Training images, class names, features and classifier state stay in browser
 memory, as does quiz progress. If you choose to remember training consent, the
-current page keeps that consent and your camera choice in memory for up to 30
-minutes while you navigate within the same document. Reloading or opening the
-training in a new document asks for consent again. The appearance setting is
-stored on your device only when you choose to remember it.
+document keeps that consent and your camera choice in memory for up to 30 minutes
+so you can return to training within the same document. A training visit already
+in progress can continue after that deadline. Reloading or opening the training
+in a new document asks for consent again. The appearance setting is stored on
+your device only when you choose to remember it.
 
 The browser downloads pretrained MobileNet weights after consent. Google and
 Kaggle receive connection metadata during the download, and model files can

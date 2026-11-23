@@ -1,12 +1,13 @@
 /** Composes browser resources and local training data for the static training route. */
 import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
+import { subscribeToVisibility } from '@/lib/document-visibility';
 import { toast } from '@/lib/toast';
 import type { TrainingStep } from '@/components/training-panel-loading';
 import { ML } from '../constants';
 import type { ErrorCategory } from '../types/errors';
 import { useModalState } from './useModalState';
 import { useImageFeatureExtraction } from './useImageFeatureExtraction';
-import { subscribeToVisibility, type TrainingEngine } from './useTrainingEngine';
+import type { TrainingEngine } from './useTrainingEngine';
 import { usePredictionLoop } from './usePredictionLoop';
 import { useModelTraining } from './useModelTraining';
 import { useClassManagement } from './useClassManagement';

@@ -146,6 +146,27 @@ describe('useNeuralNetAnimation', () => {
   });
 
   describe('cleanup on unmount', () => {
+    it('keeps the selected step while hidden and resumes it when visible', () => {
+      const { result, rerender } = renderHook(({ visible }) => useNeuralNetAnimation(visible), {
+        initialProps: { visible: true },
+      });
+      act(() => result.current.triggerAnimation('dog'));
+      act(() => vi.advanceTimersByTime(STEP * 2));
+      expect(result.current.animStep).toBe(2);
+
+      rerender({ visible: false });
+      act(() => vi.advanceTimersByTime(STEP * NETWORK_STAGES.COMPLETE));
+      expect(result.current.animStep).toBe(2);
+      expect(result.current.result).toBeNull();
+
+      rerender({ visible: true });
+      act(() => vi.advanceTimersByTime(STEP));
+      expect(result.current.animStep).toBe(3);
+      act(() => vi.advanceTimersByTime(STEP * (NETWORK_STAGES.COMPLETE - 3)));
+      expect(result.current.result).toBe('Hund erkannt (2 von 3 Stimmen)');
+      expect(result.current.animating).toBe(false);
+    });
+
     it('cancels pending timeouts on unmount', () => {
       const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
       const { result, unmount } = renderHook(() => useNeuralNetAnimation());

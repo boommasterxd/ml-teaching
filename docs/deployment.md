@@ -74,10 +74,11 @@ including every covered subdomain.
 
 There are no application mutation endpoints, image-upload API, auth flows or shared
 databases. Native image optimization must remain outside custom restrictive WAF
-rules. Vercel Bot Protection uses `challenge`. AI bots remain subject to general
-bot protection without an additional AI-bot rule. Vercel Authentication protects
-deployment URLs while the custom domain serves the public app. Do not add BotID
-solely because this is hosted on Vercel.
+rules. Vercel Bot Protection uses `challenge` without a separate AI-bot rule. The
+[discovery bot protection decision](decisions/discovery-bot-protection.md) records
+the accepted challenge behavior for automated clients and the required crawler
+exemptions. Vercel Authentication protects deployment URLs while the custom domain
+serves the public app. Do not add BotID solely because this is hosted on Vercel.
 
 No application secrets are required. Never pull private environment values just to
 verify setup. `.vercelignore` excludes local secrets and unnecessary development

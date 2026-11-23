@@ -1,10 +1,14 @@
 import { useRef, useState } from 'react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AnimatedList, AnimatedListItem } from '@/components/ui/animated-list';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
-beforeEach(installBrowserHost);
+beforeEach(() => {
+  installBrowserHost();
+  // JSDOM cannot restore scroll after Motion measures the exiting row.
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+});
 afterEach(restoreBrowserHost);
 
 function RemovableClasses() {

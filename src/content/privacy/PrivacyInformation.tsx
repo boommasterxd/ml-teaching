@@ -75,11 +75,12 @@ export const PrivacyInformation = (
     </p>
     <h3>Empfänger von personenbezogenen Daten</h3>
     <p>
-      Für den Betrieb dieser Website und die Bearbeitung Ihrer Anfragen werden die in dieser
-      Datenschutzerklärung beschriebenen Hosting- und Modelldienste sowie Anbieter von E-Mail- und
-      Telekommunikationsdiensten eingesetzt. Personenbezogene Daten werden nur auf einer anwendbaren
-      Rechtsgrundlage weitergegeben. Die jeweiligen Datenschutzrollen sind in den betreffenden
-      Dienstabschnitten erläutert.
+      Vercel verarbeitet technische Daten zu Ihrem Besuch, um diese Website bereitzustellen und
+      abzusichern. Wenn Sie dem Modell-Download zustimmen, erhalten Google und Kaggle beim Abruf
+      Verbindungsdaten. Für E-Mail-Anfragen nutzen wir Hostinger. Bei Anrufen erhalten die
+      beteiligten Telekommunikationsanbieter Verbindungsdaten. Einzelheiten zu den Rechtsgrundlagen
+      und Datenschutzrollen finden Sie in den Abschnitten „Vercel“, „Download des KI-Modells“ und
+      „Anfrage per E-Mail oder Telefon“.
     </p>
     <h3 id="widerruf-der-einwilligung">Widerruf Ihrer Einwilligung zur Datenverarbeitung</h3>
     <p>

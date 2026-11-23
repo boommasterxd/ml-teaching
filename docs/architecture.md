@@ -145,8 +145,10 @@ data. The educational illustration starts with a server-rendered Input placehold
 labeled feature maps, neighbor points and class labels. Intent loads its animation module, prepares a
 hidden React Activity and warms the selected native optimized image. Persistent
 dog/cat Buttons record the choice; the sequence starts after image decoding and
-the visible commit, without moving focus or consuming steps during loading. Public
-image preparation is deduplicated, bounded to two assets and an eight-second
+the visible commit without moving focus. Learning steps advance only while the
+diagram intersects the viewport and the document is visible. The sequence
+continues from the current step when visibility returns. Public image
+preparation is deduplicated, bounded to two assets and an eight-second
 failure deadline, with explicit retry. The four-stage illustration uses synthetic
 two-dimensional coordinates from `src/lib/network-demo.ts`. It computes both sets
 of three nearest neighbors once and derives the highlighted points, votes and
@@ -220,15 +222,19 @@ how Article 8 GDPR applies to the current private educational offer.
    No TensorFlow runtime, model weights or camera stream is needed for initial HTML.
 2. After model consent, the same dialog shows loading progress while the browser
    initializes TensorFlow.js and loads the KNN module. It downloads the MobileNet v2
-   graph, warms it and extracts features in the browser. Loading can be aborted and
-   graph resources are disposed when no longer in use. The WebGL backend and compiled
-   kernels are reusable within the document. The model error step can retry the
-   resource host import or restart model loading. Same-document reentry with valid
-   remembered consent opens on the loading step, where consent can still be withdrawn.
+   graph, warms it and extracts features in the browser. The resource host holds
+   the WebGL backend for the active training session. Model loading, feature
+   extraction, training and prediction keep it available until their in-flight
+   work settles. Session cleanup releases the host's hold and retires the models.
+   After the last hold ends, TensorFlow.js removes the backend. A later session
+   initializes it again if it was released, using the already loaded code. The
+   model error step can retry the resource host import or restart model loading.
+   Same-document reentry with valid remembered consent opens on the loading step,
+   where consent can still be withdrawn.
 3. When the models are ready, the dialog presents the optional camera choice.
    Camera access starts only after separate camera consent and browser permission.
    The resource host stays mounted when source-page setup hands off to the training
-   route, carrying over the initialized model and any active stream. Remembered
+   route, carrying over the initialized model, backend and any active stream. Remembered
    consent restores camera use only after the browser reports that permission is
    still granted. The visible
    collection step and the trained prediction step request the stream while camera

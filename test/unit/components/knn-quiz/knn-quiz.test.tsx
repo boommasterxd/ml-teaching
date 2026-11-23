@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import KnnQuiz from '@/components/knn-quiz/KnnQuiz';
 import {
   installBrowserHost,
@@ -60,23 +60,39 @@ describe('KNN neighbor exercise', () => {
     expect(classChoice('Hund').disabled).toBe(true);
     expect(classChoice('Katze').disabled).toBe(true);
     const distant = rankedPoints().at(-1)!;
+    const status = screen.getByRole('status');
     fireEvent.click(distant);
     expect(distant.getAttribute('aria-pressed')).toBe('false');
     expect(distant.getAttribute('aria-invalid')).toBe('true');
-    expect(screen.getByRole('status').textContent).toContain('Suche näher an der Raute.');
+    expect(status.textContent).toMatch(/^Fehlversuch 1: Punkt \d+ gehört nicht/);
     expect((await screen.findByRole('tooltip')).textContent).toContain(
       'Dieser Punkt gehört nicht zu den 3 nächsten.',
     );
+    fireEvent.click(distant);
+    expect(status.textContent).toMatch(/^Fehlversuch 2: Punkt \d+ gehört nicht/);
     fireEvent.scroll(document);
     expect(screen.getByRole('tooltip').textContent).toContain('Suche näher an der Raute.');
     expect(distant.getAttribute('aria-invalid')).toBe('true');
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('tooltip')).toBeNull();
     expect(distant.hasAttribute('aria-invalid')).toBe(false);
+    fireEvent.click(distant);
+    expect(screen.getByRole('status')).toBe(status);
+    expect(status.textContent).toMatch(/^Fehlversuch 3: Punkt \d+ gehört nicht/);
     expect(screen.getByText('K = 3 · 0 von 3 gefunden')).toBeTruthy();
     fireEvent.click(rankedPoints()[0]);
     expect(screen.getByText('K = 3 · 1 von 3 gefunden')).toBeTruthy();
     expect(distant.hasAttribute('aria-invalid')).toBe(false);
+  });
+
+  it('exposes the plot symbols as entries in a named legend', () => {
+    render(<KnnQuiz />);
+    const legend = screen.getByRole('list', { name: 'Legende' });
+    expect(
+      within(legend)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual(['Hund', 'Katze', 'Neues Bild']);
   });
 
   it('allows deselection and unlocks class answers only for the complete nearest set', () => {

@@ -49,3 +49,5 @@ export const headerLegalLinks = [
   { id: 'privacy', href: '/datenschutz', label: 'Datenschutz' },
   { id: 'accessibility', href: '/barrierefreiheit', label: 'Barrierefreiheit' },
 ] as const;
+
+export type LegalPage = (typeof headerLegalLinks)[number]['id'];

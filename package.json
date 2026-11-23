@@ -27,6 +27,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:model": "playwright test --config test/e2e/mobilenet-provider.config.ts",
     "ci": "npm run format:check && npm run lint && npm run typecheck && npm run check:boundaries && npm run check:quality && npm run check:dead-code && npm run check:duplication && npm run audit:production && npm run test:coverage",
     "ui:audit": "animate-ui audit src --json",
     "ui:info": "shadcn info --json",

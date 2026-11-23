@@ -272,58 +272,78 @@ async function watchStationaryHover(link: Locator) {
   };
 }
 
-test('finished link preparation supplies the complete page on first activation and reentry', async ({
-  page,
-  baseURL,
-}) => {
-  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
-  const failures = diagnostics(page);
-  const network = await holdLearningPayloads(page, baseURL!);
-  try {
-    await page.goto('/');
-    const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
-    const trigger = navigation.getByRole('button', { name: 'Lernlabor', exact: true });
-    const overview = navigation.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
-    await trigger.hover();
-    await expect(overview).toBeVisible();
-    expect(network.payloads).toEqual([]);
-    const destination = page.waitForResponse((response) =>
-      isLearningPagePrefetch(response.request()),
-    );
-    await expect.poll(() => arrowOffset(overview)).toBe(0);
-    await overview.hover();
-    await expect.poll(() => network.prefetches.length).toBeGreaterThan(0);
-    await expect.poll(() => arrowOffset(overview)).toBeGreaterThan(0);
-    const verifyHover = await watchStationaryHover(overview);
-    network.release();
-    const prepared = await destination;
-    expect(prepared.ok()).toBe(true);
-    expect(await prepared.text()).toContain('Dein Lernlabor');
-    await settleEntryAnimations(page);
-    await verifyHover();
-    expect(await arrowOffset(overview)).toBeGreaterThan(0);
+for (const intent of ['hover', 'keyboard'] as const) {
+  test(`finished ${intent} preparation supplies the complete page on first activation and reentry`, async ({
+    page,
+    baseURL,
+  }) => {
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+    const failures = diagnostics(page);
+    const network = await holdLearningPayloads(page, baseURL!);
+    try {
+      await page.goto('/');
+      const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
+      const trigger = navigation.getByRole('button', { name: 'Lernlabor', exact: true });
+      const overview = navigation.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
+      async function openOverview() {
+        if (intent === 'hover') await trigger.hover();
+        else await trigger.press('Enter');
+        await expect(overview).toBeVisible();
+      }
+      async function prepareOverview() {
+        if (intent === 'hover') await overview.hover();
+        else await page.keyboard.press('ArrowDown');
+      }
+      const activateOverview = () =>
+        intent === 'hover' ? overview.click() : page.keyboard.press('Enter');
+      await openOverview();
+      expect(network.payloads).toEqual([]);
+      const destination = page.waitForResponse((response) =>
+        isLearningPagePrefetch(response.request()),
+      );
+      await expect.poll(() => arrowOffset(overview)).toBe(0);
+      await prepareOverview();
+      await expect.poll(() => network.prefetches.length).toBeGreaterThan(0);
+      let verifyHover: (() => Promise<void>) | undefined;
+      if (intent === 'hover') {
+        await expect.poll(() => arrowOffset(overview)).toBeGreaterThan(0);
+        verifyHover = await watchStationaryHover(overview);
+      }
+      network.release();
+      const prepared = await destination;
+      expect(prepared.ok()).toBe(true);
+      expect(await prepared.text()).toContain('Dein Lernlabor');
+      await settleEntryAnimations(page);
+      if (verifyHover) {
+        await verifyHover();
+        expect(await arrowOffset(overview)).toBeGreaterThan(0);
+      } else {
+        await expect(overview).toBeFocused();
+      }
 
-    const preparedRequests = network.payloads.length;
-    const heading = page.getByRole('heading', { name: 'Dein Lernlabor', exact: true });
-    await overview.click();
-    await expect(heading).toBeVisible();
-    await expect(page).toHaveURL(learningPaths.hub);
-    expect(network.payloads).toHaveLength(preparedRequests);
+      const preparedRequests = network.payloads.length;
+      const heading = page.getByRole('heading', { name: 'Dein Lernlabor', exact: true });
+      await activateOverview();
+      await expect(heading).toBeVisible();
+      await expect(page).toHaveURL(learningPaths.hub);
+      expect(network.payloads).toHaveLength(preparedRequests);
 
-    await navigation.getByRole('link', { name: 'Startseite', exact: true }).click();
-    await expect(page).toHaveURL('/');
-    await trigger.hover();
-    await overview.click();
-    await expect(heading).toBeVisible();
-    await expect(page).toHaveURL(learningPaths.hub);
-    await settleEntryAnimations(page);
-    expect(network.payloads).toHaveLength(preparedRequests);
-    expect(network.documents()).toBe(1);
-    expect(failures).toEqual([]);
-  } finally {
-    network.release();
-  }
-});
+      await navigation.getByRole('link', { name: 'Startseite', exact: true }).press('Enter');
+      await expect(page).toHaveURL('/');
+      await openOverview();
+      await prepareOverview();
+      await activateOverview();
+      await expect(heading).toBeVisible();
+      await expect(page).toHaveURL(learningPaths.hub);
+      await settleEntryAnimations(page);
+      expect(network.payloads).toHaveLength(preparedRequests);
+      expect(network.documents()).toBe(1);
+      expect(failures).toEqual([]);
+    } finally {
+      network.release();
+    }
+  });
+}
 
 test.describe('held touch navigation', () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });

@@ -34,8 +34,9 @@ The introduction pairs the AI question with its definition. The educational
 purpose and the opportunities comparison each use one neutral Card. The purpose
 Card includes one decorative waveform made of twelve curves. The complete
 drawing is present in static HTML. On first viewport entry an Animate UI clip
-passes across it once. Reduced motion and the homepage pause control leave the
-complete drawing visible.
+passes across it once while the page is visible. Leaving the viewport, hiding the
+page, pausing or enabling reduced motion during playback settles the complete
+drawing without a replay.
 
 Homepage experiments and learning hub topics use the same shadcn Card, glass
 surface and title styles. Each homepage Card groups its illustration and
@@ -669,7 +670,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   use the Navigation API's precommit support when available; the legal Back control
   also applies Flow layers to native history traversal. The browser owns this capture
   because a cached history restore can bypass React's view transition. Capture
-  follows the matching history entry and rendered route commit. Interruption,
+  follows the matching history entry and rendered route commit. A repeated Back
+  action for the same destination keeps the pending traversal. A different Back
+  destination skips the superseded capture and uses native history. Interruption,
   failed navigation or browser cancellation releases the pending capture.
   Reduced motion opts out of page capture. Unsupported browsers retain
   normal navigation. Full withdrawal clears the remembered consent and discards
@@ -694,10 +697,12 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   legal destination on intent using its hashed Speculation Rules. Supporting
   browsers can prerender the selected document. The link keeps native document
   navigation, and only the homepage crossing opts into the recovery transition.
-  The theme wipe uses a decorative Motion layer with Animate UI motion tokens.
-  The layer allows pointer events to reach the page. The Base UI switch retains
-  its DOM node and thumb spring, and the latest selection applies immediately.
-  Reduced motion skips the decorative layer.
+  Animate UI's ThemeToggler reveals the new theme from left to right with native
+  root snapshots. The browser pauses pointer hit-testing during the capture;
+  keyboard controls remain available. The Base UI switch retains its DOM node
+  and thumb spring. A second keyboard activation applies the latest choice and
+  ends the active wipe. Reduced motion and browsers without View Transitions
+  apply the selection directly.
   Each pathname change alternates the main content's capture name. This keeps
   the departing and arriving pages at their own sizes and scroll positions.
   External CSS animates their opacity, horizontal translation and blur and excludes
@@ -806,8 +811,12 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   patterns and a feature vector, draws neighbor connections and introduces the result.
   The three nearest synthetic points determine both highlighted neighbors and the
   shared Progress vote bars. No invented confidence percentage is shown.
-  Domain timers select nine finite stages rather than interpolating geometry. Sequence identities
-  restart only the decorative surfaces, preserving genuine Buttons and focus.
+  Domain timers select nine finite stages while the diagram intersects the viewport
+  and the document is visible. Losing either visibility condition pauses the stage
+  timer and settles the decorative effects. On return, the example continues from
+  the current stage without replaying those effects. A new visible example can
+  animate again. Sequence identities restart only the decorative surfaces, preserving
+  the Buttons and focus.
   Reduced motion omits the scan and traveling pulse and changes feature states
   without interpolation. The same `NetworkScene` reserves geometry in the SSG
   preview and deferred animation. The `network-demo` inline-size container owns its
