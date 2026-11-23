@@ -24,35 +24,39 @@ function TrainingWithdrawalNotice({
   return (
     <Alert
       role="presentation"
-      className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-40 mx-auto flex max-h-[80dvh] w-auto max-w-lg flex-col items-stretch gap-3 overflow-y-auto rounded-2xl border-(--glass-line) [background:var(--glass-surface)] p-4 shadow-(--glass-highlight) sm:flex-row sm:items-center sm:justify-between"
+      className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-40 mx-auto flex max-h-[80dvh] w-auto max-w-lg flex-col rounded-2xl border-(--glass-line) [background:var(--glass-surface)] p-3 shadow-(--glass-highlight)"
     >
-      <div className="flex min-w-0 items-center gap-3">
-        <CheckCircle2
-          className="size-6 shrink-0 text-success"
-          animate
-          persistOnAnimateEnd
-          aria-hidden="true"
-        />
-        <AlertTitle
-          id="training-withdrawal-notice"
-          role="status"
-          className="line-clamp-none leading-snug"
-        >
-          Deine Einwilligung wurde widerrufen.
-        </AlertTitle>
+      <div className="min-h-0 overflow-y-auto p-1">
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <CheckCircle2
+              className="size-6 shrink-0 text-success"
+              animate
+              persistOnAnimateEnd
+              aria-hidden="true"
+            />
+            <AlertTitle
+              id="training-withdrawal-notice"
+              role="status"
+              className="line-clamp-none leading-snug"
+            >
+              Deine Einwilligung wurde widerrufen.
+            </AlertTitle>
+          </div>
+          <Button
+            ref={action}
+            variant="outline"
+            className="h-auto min-h-11 whitespace-normal"
+            aria-describedby="training-withdrawal-notice"
+            onPointerEnter={prepareHome}
+            onPointerDown={prepareHome}
+            onFocus={prepareHome}
+            onClick={finish}
+          >
+            {actionLabel}
+          </Button>
+        </div>
       </div>
-      <Button
-        ref={action}
-        variant="outline"
-        className="h-auto min-h-11 whitespace-normal"
-        aria-describedby="training-withdrawal-notice"
-        onPointerEnter={prepareHome}
-        onPointerDown={prepareHome}
-        onFocus={prepareHome}
-        onClick={finish}
-      >
-        {actionLabel}
-      </Button>
     </Alert>
   );
 }

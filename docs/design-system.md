@@ -508,6 +508,14 @@ overflow, scrollbars, and keyboard behavior. Only the content viewport fades,
 so surrounding surfaces and dialog scrims stay separate. The gallery also applies
 a slight blur to mounted thumbnails near the scroll edge. Its scroll viewport
 reaches the bottom edge, where the gallery's rounded corners clip the thumbnails.
+
+Native scrollbars use a theme-colored pill with a transparent track. Chromium and
+WebKit hide the arrow buttons and inset the track ends where rounded surfaces meet
+the scrollport. Browsers without scrollbar part styling use a thin native thumb
+and inset the viewport at those corners. Forced-color modes retain the system
+scrollbar and the viewport inset. Wheel, touch, keyboard and thumb dragging use
+the browser's native scrolling and can reach the full content.
+
 Buttons share disabled, keyboard and touch behavior. Error messages, empty data,
 loading state and deletion confirmations stay explicit.
 
