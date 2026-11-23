@@ -3,10 +3,11 @@ name: Secret scan
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
 concurrency:
-  group: gitleaks-${{ github.event.pull_request.number || github.ref }}
+  group: gitleaks-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'edited' && !github.event.changes.base && github.run_id || 'checks' }}
   cancel-in-progress: true
 
 permissions:
@@ -22,12 +23,32 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: github.event.action == 'edited' && !github.event.changes.base
+        with:
+          node-version: '26.x'
+          check-latest: true
+          package-manager-cache: false
+      - id: evidence
+        if: github.event.action == 'edited' && !github.event.changes.base
+        run: |
+          test "$(git rev-parse HEAD)" = "$CHANGE_MERGE_SHA"
+          node .github/scripts/pr-check-evidence.ts
+        env:
+          CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CHANGE_MERGE_SHA: ${{ github.sha }}
       - name: Run gitleaks
+        if: steps.evidence.outputs.reused != 'true'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            [[ "$BASE_SHA" =~ ^[a-f0-9]{40}$ && "$HEAD_SHA" =~ ^[a-f0-9]{40}$ ]]
+            [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          fi
           manifest="$RUNNER_TEMP/gitleaks-version.json"
           policy="$RUNNER_TEMP/gitleaks.toml"
           if [ -n "$BASE_SHA" ]; then
@@ -55,3 +76,9 @@ jobs:
           else
             "$RUNNER_TEMP/gitleaks" git --config "$policy" --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow --timeout 180 --no-banner --redact --exit-code 1 .
           fi
+      - name: Verified PR revisions ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} ${{ github.sha }}
+        if: github.event_name == 'pull_request' && steps.evidence.outputs.reused != 'true'
+        run: echo 'The required scan passed for the checked-out revisions.'
+      - name: Reused PR revisions ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} ${{ github.sha }}
+        if: steps.evidence.outputs.reused == 'true'
+        run: echo 'The required scan already passed for the checked-out revisions.'

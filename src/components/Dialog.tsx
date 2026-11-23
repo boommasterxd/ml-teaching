@@ -19,7 +19,6 @@ interface DialogProps {
   labelledBy: string;
   describedBy?: string;
   initialContent?: boolean;
-  initialSuppressedByRememberedConsent?: boolean;
   restoreFocus?: boolean;
   onExited?: () => void;
   children: ReactElement<{ className?: string }>;
@@ -32,7 +31,6 @@ export default function Dialog({
   labelledBy,
   describedBy,
   initialContent = false,
-  initialSuppressedByRememberedConsent = false,
   restoreFocus = true,
   onExited,
   children,
@@ -53,7 +51,6 @@ export default function Dialog({
           {isOpen && (
             <InitialDialog
               {...labels}
-              suppressForRememberedTrainingConsent={initialSuppressedByRememberedConsent}
               role="dialog"
               onCancel={(event) => {
                 event.preventDefault();

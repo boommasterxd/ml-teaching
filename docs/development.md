@@ -67,23 +67,23 @@ prefetched before consent. See the [design system](design-system.md) for ownersh
 
 ## Checks
 
-| Command                     | Purpose                                                           |
-| --------------------------- | ----------------------------------------------------------------- |
-| `npm run format:check`      | Prettier for maintained source and documentation.                 |
-| `npm run lint`              | ESLint, React and enforceable complexity limits.                  |
-| `npm run typecheck`         | Generate route types and check all application/test TypeScript.   |
-| `npm run check:boundaries`  | Parse server/client route and transitive import boundaries.       |
-| `npm run check:quality`     | Enforce the source file-size limit.                               |
-| `npm run check:dead-code`   | Discover unused files, dependencies and public exports.           |
-| `npm run check:duplication` | Check handwritten source duplication at 50 tokens.                |
-| `npm run test:coverage`     | All unit/integration tests with blocking coverage.                |
-| `npm run test:e2e`          | All browser tests against the existing native production build.   |
-| `npm run test:lighthouse`   | Mobile/desktop lab metrics with a production server on port 3100. |
-| `npm run audit:production`  | Blocking high/critical production dependency audit.               |
-| `npm run audit`             | Full local dependency audit including development tooling.        |
-| `npm run ui:audit`          | Inspect actual animation owners without changing source.          |
-| `npm run ui:info`           | Inspect the configured shadcn foundation.                         |
-| `npm run skills:list`       | List project-local Codex skills.                                  |
+| Command                     | Purpose                                                                   |
+| --------------------------- | ------------------------------------------------------------------------- |
+| `npm run format:check`      | Prettier for maintained source and documentation.                         |
+| `npm run lint`              | ESLint, React and enforceable complexity limits.                          |
+| `npm run typecheck`         | Generate route types and check TypeScript and the CommonJS cache runtime. |
+| `npm run check:boundaries`  | Parse server/client route and transitive import boundaries.               |
+| `npm run check:quality`     | Enforce the source file-size limit.                                       |
+| `npm run check:dead-code`   | Discover unused files, dependencies and public exports.                   |
+| `npm run check:duplication` | Check handwritten source duplication at 50 tokens.                        |
+| `npm run test:coverage`     | All unit/integration tests with blocking coverage.                        |
+| `npm run test:e2e`          | All browser tests against the existing native production build.           |
+| `npm run test:lighthouse`   | Mobile/desktop lab metrics with a production server on port 3100.         |
+| `npm run audit:production`  | Blocking high/critical production dependency audit.                       |
+| `npm run audit`             | Full local dependency audit including development tooling.                |
+| `npm run ui:audit`          | Inspect actual animation owners without changing source.                  |
+| `npm run ui:info`           | Inspect the configured shadcn foundation.                                 |
+| `npm run skills:list`       | List project-local Codex skills.                                          |
 
 Unit/integration tests mirror the application under `test/unit/hooks/`,
 `test/unit/lib/`, `test/unit/components/` and `test/unit/screens/`. Tooling gate
@@ -111,6 +111,9 @@ stable version and accepts the existing project-local Lighthouse only when its
 version matches. A missing, outdated or incompatible fallback fails with an error;
 the command does not install or update tools. Prepare any required local fallback
 separately under the repository's installation controls.
+CI passes `--locked` so that when no global installation exists, the runner verifies
+the installed package against `package-lock.json` instead of querying the registry.
+The flag retains global-first selection and the Node.js and native CLI checks.
 The default run measures the homepage and saves reports under
 `test-results/lighthouse/`. With `--all`, the command reads the route list from the
 static CSP configuration and checks each HTML status, including the native 404
@@ -120,11 +123,11 @@ Performance score strictly above 95 points for each measured route on mobile and
 desktop. A score of exactly 95 causes the command to exit unsuccessfully.
 
 For a local comparison, build with `NEXT_PUBLIC_DEFER_DECORATIVE_MOTION=1 npm run build`.
-Then use the same `npm start` command. This opt-in keeps the loading indicator,
-headline and static icons available while WebGL, parallax and animated icons wait for the
-document to load and paint. Input over the artwork or its playback control can
-prepare and start the visible WebGL scene earlier. A regular `npm run build`
-restores the default startup schedule.
+Then use the same `npm start` command. The headline and static icons stay visible
+while the opt-in defers WebGL, parallax and animated icons until after the document
+loads and paints. Input over the artwork or its playback control can prepare and
+start the visible WebGL scene earlier. A regular `npm run build` restores the
+default startup schedule.
 
 ## Build and recovery
 
@@ -138,8 +141,9 @@ afterward.
 and verifies the resulting manifest. The production build uses
 `tsconfig.build.json` for application code, build configuration, CSP declarations
 and generated Next.js types. It inherits the project compiler options. The
-blocking `npm run typecheck` uses `tsconfig.json` and also checks tests and
-TypeScript tooling. `npm start` verifies the manifest again before native
+blocking `npm run typecheck` uses `tsconfig.json` for application code, tests and
+TypeScript tooling, and `tsconfig.cache-lifecycle.json` for the CommonJS cache
+runtime. `npm start` verifies the manifest again before native
 `next start`. A failed or modified build cannot reuse a previous manifest. Rebuild
 from source after changing the content, runtime, lockfile or configuration.
 

@@ -58,7 +58,6 @@ export default function TrainingSetupDialog({
   return (
     <Dialog
       initialContent={initialContent}
-      initialSuppressedByRememberedConsent={initialContent}
       isOpen={open}
       labelledBy={`${step}-modal-title`}
       describedBy={`${step}-modal-desc`}

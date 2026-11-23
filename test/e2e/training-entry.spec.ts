@@ -168,9 +168,6 @@ test('keyboard setup hands off a single model and camera stream before Flow navi
     },
   );
   await expect(page).toHaveTitle(trainingTitle);
-  await expect(page.locator('main script').filter({ hasText: 'data.trainingConsent' })).toHaveCount(
-    0,
-  );
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(workspace).toBeFocused();
   await expectCamera(1, 1, 'user', learningPaths.images);
@@ -393,7 +390,7 @@ test('a missing camera leaves the direct-entry dialog visible through its fade b
   }
 });
 
-test('reloading with remembered consent shows the model loading dialog', async ({
+test('the first model download keeps keyboard focus inside the loading dialog', async ({
   page,
   baseURL,
 }) => {
@@ -403,11 +400,7 @@ test('reloading with remembered consent shows the model loading dialog', async (
   const network = await routeSyntheticModel(page, baseURL!);
   const transitions = await observeViewTransitions(page);
   await page.goto(learningPaths.imagePractice);
-  await grantModelConsent(page, true);
-  await page.getByRole('button', { name: 'Ohne Kamera fortfahren' }).press('Enter');
   const heading = page.getByRole('heading', { name: 'Bilder sammeln' });
-  await expect(heading).toBeFocused();
-
   const held = Promise.withResolvers<void>();
   await page.route(
     '**/mobilenet_v2_100_224/classification/2/model.json?tfjs-format=file',
@@ -417,10 +410,10 @@ test('reloading with remembered consent shows the model loading dialog', async (
     },
   );
   try {
-    await page.reload();
+    await grantModelConsent(page);
     const loading = page.getByRole('dialog', { name: 'Lade KI-Modelle...' });
     await expect(loading).toBeVisible();
-    await expect.poll(() => loading.evaluate((dialog) => dialog.matches(':modal'))).toBe(true);
+    await expect(loading).toHaveAttribute('aria-modal', 'true');
     await expect(page.getByRole('dialog')).toHaveCount(1);
     await heading.evaluate((node: HTMLElement) => node.focus());
     await expect(loading.getByRole('heading')).toBeFocused();
@@ -433,10 +426,10 @@ test('reloading with remembered consent shows the model loading dialog', async (
     held.resolve();
   }
 
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Ohne Kamera fortfahren' }).press('Enter');
   await expect(heading).toBeFocused();
   await expect(page.getByRole('button', { name: 'Bilder auswählen' })).toHaveCount(2);
-  expect(network.modelRequests).toEqual(['graph', 'weights', 'graph', 'weights']);
+  expect(network.modelRequests).toEqual(['graph', 'weights']);
   expect(network.unexpectedRequests).toEqual([]);
   expect(await transitions()).toEqual([]);
   expect(failures).toEqual([]);
@@ -458,7 +451,7 @@ test('withdrawing remembered consent from training returns to the homepage', asy
   await grantModelConsent(page, true);
   await page.getByRole('button', { name: 'Ohne Kamera fortfahren', exact: true }).press('Enter');
   await expect(page).toHaveURL(learningPaths.imagePractice);
-  await expect.poll(() => page.evaluate(() => sessionStorage.length)).toBe(1);
+  await expectNoStoredTrainingData(page);
 
   await page.setViewportSize({ width: 320, height: 256 });
   const confirmation = await confirmTrainingWithdrawal(page);

@@ -60,14 +60,15 @@ function ConfidenceResults({
             ? Math.round(Math.max(0, Math.min(1, confidence)) * 100)
             : 0;
           return (
-            <div key={cls.id} className="flex items-center text-xs">
-              <span className="w-20 truncate font-semibold text-muted-foreground">{cls.name}</span>
-              <Progress
-                value={percentage}
-                aria-label={`Konfidenz für ${cls.name}`}
-                className="mx-3 flex-1"
-              />
-              <span className="w-10 text-right font-mono font-medium text-muted-foreground tabular-nums">
+            <div
+              key={cls.id}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-xs @sm/prediction:grid-cols-[minmax(0,2fr)_minmax(0,3fr)_auto]"
+            >
+              <span className="col-span-2 font-semibold wrap-anywhere text-muted-foreground @sm/prediction:col-span-1">
+                {cls.name}
+              </span>
+              <Progress value={percentage} aria-label={`Konfidenz für ${cls.name}`} />
+              <span className="w-[4ch] text-right font-mono font-medium text-muted-foreground tabular-nums">
                 {prediction ? `${percentage}%` : '—'}
               </span>
             </div>

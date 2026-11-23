@@ -98,11 +98,7 @@ function Scene({ children, sources }: HeroSceneProps) {
             initial={false}
             style={parallaxVisible ? { y: fieldY } : undefined}
           >
-            <GlassArtworkPlaceholder
-              sources={sources}
-              fallback={failed || (paused && !rendered)}
-              pending={pending}
-            />
+            <GlassArtworkPlaceholder sources={sources} fallback={failed} pending={pending} />
             {viewportReady && available && Field && (
               <Field
                 sharpDesktopStart

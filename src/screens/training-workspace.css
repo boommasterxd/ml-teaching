@@ -139,8 +139,3 @@
   width: auto;
   margin-inline: auto;
 }
-
-/* The build-known bootstrap suppresses the inline fallback before hydration. */
-:root[data-training-consent='remembered'] [data-initial-training-consent] {
-  display: none;
-}

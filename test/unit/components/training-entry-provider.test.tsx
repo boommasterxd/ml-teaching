@@ -5,6 +5,7 @@ import TrainingEntryProvider from '@/components/training/TrainingEntryProvider';
 import { useTrainingEntry, useTrainingSession } from '@/components/training/TrainingEntryContext';
 import { learningPaths } from '@/lib/learning-paths';
 import {
+  clearRememberedTrainingConsent,
   readRememberedTrainingConsent,
   TRAINING_CONSENT_DURATION,
   writeRememberedTrainingConsent,
@@ -55,7 +56,7 @@ beforeEach(() => {
   installBrowserHost();
   vi.clearAllMocks();
   vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
-  window.sessionStorage.clear();
+  clearRememberedTrainingConsent();
   browser.model.mockReset().mockResolvedValue({
     infer: browser.tensor,
     dispose: browser.disposeModel,
@@ -76,7 +77,7 @@ afterEach(() => {
   cleanup();
   restoreBrowserHost();
   vi.useRealTimers();
-  window.sessionStorage.clear();
+  clearRememberedTrainingConsent();
   if (mediaDevices) Object.defineProperty(navigator, 'mediaDevices', mediaDevices);
   else Reflect.deleteProperty(navigator, 'mediaDevices');
   if (permissions) Object.defineProperty(navigator, 'permissions', permissions);
@@ -98,7 +99,10 @@ function EntryContents({ pathname }: { pathname: string }) {
         </main>
       ) : (
         <main>
-          <button onClick={(event) => entry.openEntry(event.currentTarget)}>
+          <button
+            onFocus={entry.prepareEntry}
+            onClick={(event) => entry.openEntry(event.currentTarget)}
+          >
             Bildmodell trainieren
           </button>
         </main>
@@ -154,6 +158,26 @@ async function openSettings() {
 }
 
 describe('training entry across routes', () => {
+  it('prepares the training host on focus without starting its subscriptions before activation', async () => {
+    const subscribe = vi.spyOn(document, 'addEventListener');
+    const visibilitySubscriptions = () =>
+      subscribe.mock.calls.filter(([event]) => event === 'visibilitychange');
+    showPage(learningPaths.images);
+    const opener = screen.getByRole('button', { name: 'Bildmodell trainieren' });
+    expect(visibilitySubscriptions()).toHaveLength(0);
+
+    act(() => opener.focus());
+    await act(() => vi.dynamicImportSettled());
+    expect(visibilitySubscriptions()).toHaveLength(0);
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    fireEvent.click(opener);
+    await screen.findByRole('dialog', { name: consentName });
+    expect(visibilitySubscriptions()).toHaveLength(1);
+    expect(browser.model).not.toHaveBeenCalled();
+    expect(browser.getUserMedia).not.toHaveBeenCalled();
+  });
+
   it('closes the source-page dialog with Escape and returns focus without starting any resources', async () => {
     showPage();
     const opener = startTraining();
@@ -312,5 +336,39 @@ describe('training entry across routes', () => {
     startTraining();
     expect(await screen.findByRole('dialog', { name: consentName })).toBeTruthy();
     expect(browser.model).not.toHaveBeenCalled();
+  });
+
+  it('discards remembered consent and releases resources before a page can enter the back-forward cache', async () => {
+    const expiresAt = Date.now() + TRAINING_CONSENT_DURATION;
+    writeRememberedTrainingConsent(expiresAt, 'allowed');
+    browser.queryPermission.mockResolvedValue({ state: 'granted' });
+    showPage(learningPaths.imagePractice);
+    expect(await screen.findByText('Kamera verbunden')).toBeTruthy();
+
+    fireEvent(window, new Event('pagehide'));
+    fireEvent(window, new Event('pageshow'));
+
+    expect(readRememberedTrainingConsent()).toBeNull();
+    expect(screen.queryByText('Kamera verbunden')).toBeNull();
+    expect(browser.stopCamera).toHaveBeenCalledOnce();
+    await waitFor(() => expect(browser.disposeModel).toHaveBeenCalledOnce());
+    expect(browser.getUserMedia).toHaveBeenCalledOnce();
+  });
+
+  it('does not restore camera access when its permission result arrives after withdrawal', async () => {
+    const expiresAt = Date.now() + TRAINING_CONSENT_DURATION;
+    const permission = Promise.withResolvers<{ state: 'granted' }>();
+    writeRememberedTrainingConsent(expiresAt, 'allowed');
+    browser.queryPermission.mockReturnValueOnce(permission.promise);
+    showPage(learningPaths.imagePractice);
+    await waitFor(() => expect(browser.queryPermission).toHaveBeenCalledOnce());
+
+    const settings = await openSettings();
+    fireEvent.click(settings.getByRole('button', { name: 'Kamera ausschalten' }));
+    await act(async () => permission.resolve({ state: 'granted' }));
+
+    expect(readRememberedTrainingConsent()?.camera).toBe('declined');
+    expect(browser.getUserMedia).not.toHaveBeenCalled();
+    expect(screen.getByText('Modell einsatzbereit')).toBeTruthy();
   });
 });

@@ -91,8 +91,9 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
                   Für 30 Minuten in diesem Tab merken
                 </FieldLabel>
                 <FieldDescription id="remember-training-consent-description">
-                  Wenn du die Kamera erlaubst und dein Browser sie weiterhin freigibt, kann sie beim
-                  nächsten Trainingsstart in diesem Tab automatisch angehen.
+                  Deine Auswahl gilt bis zum Neuladen oder Schließen der Seite. Wenn du die Kamera
+                  erlaubst und dein Browser sie weiterhin freigibt, kann sie beim erneuten
+                  Trainingsstart automatisch angehen.
                 </FieldDescription>
               </div>
             </Field>

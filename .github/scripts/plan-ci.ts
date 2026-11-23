@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { reusableCheck } from './pr-check-evidence.ts';
 
 const revision = /^[a-f0-9]{40}$/;
 const unitTest = /^test\/unit\/.+\.test\.(?:ts|tsx|mjs)$/;
@@ -14,7 +15,7 @@ export interface CiRevisions {
 interface Work {
   quality: boolean;
   browser: boolean;
-  reason: 'docs' | 'unit-tests' | 'full';
+  reason: 'docs' | 'unit-tests' | 'full' | 'verified-revision';
 }
 
 export interface CiPlan extends CiRevisions, Work {
@@ -57,12 +58,18 @@ export function createPlan({ base, head, merge }: CiRevisions, readGit = git): C
   return { version: 1, base, head, merge, ...work };
 }
 
-function main() {
-  const plan = createPlan({
+async function main() {
+  const revisions = {
     base: process.env.CHANGE_BASE_SHA ?? '',
     head: process.env.CHANGE_HEAD_SHA ?? '',
     merge: git(['rev-parse', 'HEAD']),
-  });
+  };
+  if (revisions.merge !== process.env.CHANGE_MERGE_SHA) {
+    throw new Error('Checked-out source differs from the CI revision.');
+  }
+  const plan: CiPlan = (await reusableCheck('ci', revisions))
+    ? { version: 1, ...revisions, quality: false, browser: false, reason: 'verified-revision' }
+    : createPlan(revisions);
   const output = process.env.GITHUB_OUTPUT;
   if (!output) throw new Error('CI requires GITHUB_OUTPUT.');
   for (const [key, value] of Object.entries({ plan: JSON.stringify(plan), ...plan })) {
@@ -70,4 +77,4 @@ function main() {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();

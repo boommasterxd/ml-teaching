@@ -6,7 +6,7 @@ import {
   type GlassShape,
 } from './topography-gl';
 
-interface FieldFrame {
+export interface FieldFrame {
   width: number;
   height: number;
   dpr: number;
@@ -89,7 +89,10 @@ function fieldDimensions(field: FieldFrame, limit: number) {
 }
 
 /** No fallback loop: failed or lost contexts retain the server-rendered poster. */
-export function createTopographyRenderer(canvas: HTMLCanvasElement, shape: GlassShape = 'ring') {
+export function createTopographyRenderer(
+  canvas: HTMLCanvasElement | OffscreenCanvas,
+  shape: GlassShape = 'ring',
+) {
   const gl = canvas.getContext('webgl', {
     premultipliedAlpha: true,
     preserveDrawingBuffer: false,

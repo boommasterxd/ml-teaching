@@ -13,6 +13,20 @@ type IntentLinkProps = ComponentProps<typeof Link> & {
 };
 const forwardNavigation = ['nav-forward'];
 
+function prepareDocument(anchor: HTMLAnchorElement, target: URL) {
+  if (
+    !HTMLScriptElement.supports?.('speculationrules') ||
+    (anchor.target && anchor.target !== '_self') ||
+    anchor.hasAttribute('download')
+  )
+    return;
+
+  const previous = document.querySelector<HTMLAnchorElement>('a[data-recovery-intent]');
+  if (previous === anchor) return;
+  previous?.removeAttribute('data-recovery-intent');
+  anchor.dataset.recoveryIntent = target.pathname === '/' && !target.search ? 'home' : 'page';
+}
+
 function startsTraining(target: URL, current: Location) {
   return (
     target.origin === current.origin &&
@@ -38,7 +52,8 @@ export default function IntentLink({
   const prepare = useCallback(
     (event: SyntheticEvent<HTMLAnchorElement>) => {
       if (!prepareOnIntent || event.defaultPrevented) return;
-      const target = new URL(event.currentTarget.href);
+      const anchor = event.currentTarget;
+      const target = new URL(anchor.href);
       const current = window.location;
       if (
         !['http:', 'https:'].includes(target.protocol) ||
@@ -46,6 +61,11 @@ export default function IntentLink({
         (target.pathname === current.pathname && target.search === current.search)
       )
         return;
+      // The Pages Router cannot warm an App Router destination's document.
+      if (document.getElementById('error-recovery-speculation')) {
+        prepareDocument(anchor, target);
+        return;
+      }
       const path = target.pathname + target.search;
       prepareRoute(router, path.startsWith('//') ? target.origin + path : path, target.pathname);
       if (startsTraining(target, current)) entry?.prepareEntry();

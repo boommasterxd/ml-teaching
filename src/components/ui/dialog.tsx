@@ -95,48 +95,25 @@ export function DialogContent({
 }
 
 // Base UI Popup requires a portal, which cannot render the already-visible SSG dialog.
-export function InitialDialog({
-  children,
-  suppressForRememberedTrainingConsent = false,
-  ...props
-}: ComponentProps<'dialog'> & { suppressForRememberedTrainingConsent?: boolean }) {
+export function InitialDialog({ children, ...props }: ComponentProps<'dialog'>) {
   const ref = useRef<HTMLDialogElement>(null);
   const present = useIsPresent();
   const reduceMotion = useShouldReduceMotion();
   const exitTransition = useTempoTransition(motionTokens.transition.overlay);
   useLayoutEffect(() => {
-    const initialLabel = ref.current?.getAttribute('aria-labelledby');
-    let attached = true;
-    let promoted: HTMLDialogElement | undefined;
-    function promote() {
-      const dialog = ref.current;
-      if (!attached || !dialog?.isConnected || !dialog.showModal) return;
-      const focused = document.activeElement;
-      const label = dialog.getAttribute('aria-labelledby');
-      const activeTitle = label && label !== initialLabel ? document.getElementById(label) : null;
-      const initialFocus =
-        activeTitle ??
-        (focused instanceof HTMLElement && dialog.contains(focused)
-          ? focused
-          : getDialogTabStops(dialog)[0]);
-      // Upgrade the server-rendered open dialog without replacing its controls.
-      dialog.removeAttribute('open');
-      dialog.showModal();
-      promoted = dialog;
-      initialFocus?.focus({ preventScroll: true });
-    }
-    if (
-      suppressForRememberedTrainingConsent &&
-      document.documentElement.dataset.trainingConsent === 'remembered'
-    ) {
-      // Let restored consent select the current step before promoting the live dialog.
-      queueMicrotask(promote);
-    } else promote();
-    return () => {
-      attached = false;
-      promoted?.close();
-    };
-  }, [suppressForRememberedTrainingConsent]);
+    const dialog = ref.current;
+    if (!dialog?.isConnected || !dialog.showModal) return;
+    const focused = document.activeElement;
+    const initialFocus =
+      focused instanceof HTMLElement && dialog.contains(focused)
+        ? focused
+        : getDialogTabStops(dialog)[0];
+    // Upgrade the server-rendered open dialog without replacing its controls.
+    dialog.removeAttribute('open');
+    dialog.showModal();
+    initialFocus?.focus({ preventScroll: true });
+    return () => dialog.close();
+  }, []);
 
   return (
     <RemoveScroll ref={ref} forwardProps removeScrollBar={false} inert={false} allowPinchZoom>
@@ -156,7 +133,6 @@ export function InitialDialog({
           data-open={present ? '' : undefined}
           data-closed={present ? undefined : ''}
           data-slot="dialog-overlay"
-          data-initial-training-consent={suppressForRememberedTrainingConsent || undefined}
           className="pointer-events-auto fixed inset-x-0 top-0 z-50 m-0 h-dvh max-h-none w-full max-w-none overflow-hidden overscroll-contain bg-transparent backdrop:bg-transparent"
         >
           <div className={cn(dialogScrim, 'z-auto')} aria-hidden="true" />

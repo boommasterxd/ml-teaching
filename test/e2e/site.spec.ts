@@ -185,12 +185,15 @@ test('educational examples start directly and keep the selected control focused'
   await expect(stages.getByText('Input', { exact: true })).toBeVisible();
   await page.keyboard.press('Enter');
   await expect(page.getByText('Katze erkannt', { exact: true })).toBeVisible();
-  await expect(page.locator('.landing-demo').getByRole('status')).toContainText(
-    '2 von 3 Nachbarn stimmen für Katze.',
-  );
+  const status = page.locator('.landing-demo').getByRole('status');
+  await expect(status).toContainText('2 von 3 Nachbarn stimmen für Katze.');
   await expect(
     stages.getByRole('img', { name: 'Generiertes Beispielbild einer Katze' }),
   ).toBeVisible();
+  await expect(cat).toHaveAttribute('aria-current', 'true');
+  await cat.press('Enter');
+  await expect(status).toContainText('Signal wird verarbeitet');
+  await expect(status).toContainText('2 von 3 Nachbarn stimmen für Katze.');
   await expect(cat).toBeFocused();
   await expectNetworkLayout(page, 'column');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
@@ -199,8 +202,9 @@ test('educational examples start directly and keep the selected control focused'
   await expectNetworkLayout(page, 'grid');
   await page.getByRole('button', { name: 'Hundebild zeigen', exact: true }).click();
   await expect(page.getByText('Hund erkannt', { exact: true })).toBeVisible();
-  await expect(page.locator('.landing-demo').getByRole('status')).toContainText(
-    '2 von 3 Nachbarn stimmen für Hund.',
+  await expect(status).toContainText('2 von 3 Nachbarn stimmen für Hund.');
+  await expect(page.locator('.landing-demo [aria-current="true"]')).toHaveAccessibleName(
+    'Hundebild zeigen',
   );
   await page.setViewportSize({ width: 1440, height: 900 });
   await expectNetworkLayout(page, 'row');

@@ -1,8 +1,50 @@
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempDisposableSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createPlan, selectWork } from '../../.github/scripts/plan-ci.ts';
 import { validatePlan, validateResults } from '../../.github/scripts/validate-ci.ts';
 
 const revisions = { base: 'a'.repeat(40), head: 'b'.repeat(40), merge: 'c'.repeat(40) };
+const planner = resolve('.github/scripts/plan-ci.ts');
+const validator = resolve('.github/scripts/validate-ci.ts');
+const gitEnv = {
+  PATH: process.env.PATH,
+  NODE_ENV: 'test' as const,
+  GIT_CONFIG_NOSYSTEM: '1',
+  GIT_CONFIG_GLOBAL: '/dev/null',
+  GIT_AUTHOR_NAME: 'CI Fixture',
+  GIT_AUTHOR_EMAIL: 'ci@example.invalid',
+  GIT_COMMITTER_NAME: 'CI Fixture',
+  GIT_COMMITTER_EMAIL: 'ci@example.invalid',
+};
+
+function createMergeFixture(cwd: string) {
+  const git = (...args: string[]) =>
+    execFileSync('git', args, { cwd, env: gitEnv, encoding: 'utf8', timeout: 5_000 }).trim();
+  git('init', '-q', '--template=', '--initial-branch=main');
+  mkdirSync(join(cwd, 'docs'));
+  writeFileSync(join(cwd, 'docs', 'guide.md'), 'Guide\n');
+  git('add', 'docs');
+  git('commit', '-qm', 'Initial documentation');
+  git('switch', '-qc', 'feature');
+  git('mv', 'docs/guide.md', 'guide.md');
+  git('commit', '-qm', 'Move guide to repository root');
+  mkdirSync(join(cwd, 'docs'), { recursive: true });
+  writeFileSync(join(cwd, 'docs', 'notes.md'), 'Feature notes\n');
+  git('add', 'docs');
+  git('commit', '-qm', 'Add feature note');
+  const head = git('rev-parse', 'HEAD');
+  git('switch', '-q', 'main');
+  writeFileSync(join(cwd, 'docs', 'contributing.md'), 'Contributing\n');
+  git('add', 'docs');
+  git('commit', '-qm', 'Update base branch');
+  const base = git('rev-parse', 'HEAD');
+  git('merge', '-q', '--no-ff', 'feature', '-m', 'Simulated pull request merge');
+  return { base, head, merge: git('rev-parse', 'HEAD') };
+}
+
 describe('CI selection and required gate', () => {
   it('skips costly work only for a complete nonempty documentation diff', () => {
     expect(selectWork(['docs/architecture.md'])).toEqual({
@@ -22,27 +64,47 @@ describe('CI selection and required gate', () => {
     ).toBe(true);
   });
 
-  it('uses the whole merge-base diff and falls back to all work for missing history', () => {
-    const reads: string[][] = [];
-    const plan = createPlan(revisions, (args: string[]) => {
-      reads.push(args);
-      return reads.length === 1 ? revisions.base : 'docs/architecture.md\0src/app/page.tsx\0';
-    });
-    expect(reads[1]).toEqual([
-      'diff',
-      '--name-only',
-      '--no-renames',
-      '-z',
-      revisions.base,
-      revisions.head,
-    ]);
-    expect(plan.browser).toBe(true);
+  it('selects all work for missing history and rejects incomplete revisions', () => {
     expect(
       createPlan(revisions, () => {
         throw new Error('Missing history');
       }).reason,
     ).toBe('full');
     expect(() => createPlan({ ...revisions, head: 'truncated' })).toThrow();
+  });
+
+  it('selects browser checks for an earlier rename out of docs and fails if CI skips them', () => {
+    using directory = mkdtempDisposableSync(join(tmpdir(), 'ml-teaching-ci-'));
+    const cwd = directory.path;
+    const { base, head, merge } = createMergeFixture(cwd);
+    const output = join(cwd, 'github-output');
+    const env = {
+      ...gitEnv,
+      CHANGE_BASE_SHA: base,
+      CHANGE_HEAD_SHA: head,
+      CHANGE_MERGE_SHA: merge,
+    };
+    const options = { cwd, encoding: 'utf8' as const, timeout: 5_000 };
+    execFileSync(process.execPath, [planner], {
+      ...options,
+      env: { ...env, GITHUB_OUTPUT: output },
+    });
+    const plan = readFileSync(output, 'utf8').match(/^plan=(.+)$/m)?.[1];
+    if (!plan) throw new Error('The CI planner did not publish a plan.');
+    expect(JSON.parse(plan)).toMatchObject({ base, head, merge, quality: true, browser: true });
+    const validate = (browser: string) =>
+      spawnSync(process.execPath, [validator], {
+        ...options,
+        env: {
+          ...env,
+          CI_PLAN: plan,
+          CI_RESULTS: JSON.stringify({ plan: 'success', quality: 'success', browser }),
+        },
+      });
+    expect(validate('success').status).toBe(0);
+    const skipped = validate('skipped');
+    expect(skipped.status).toBe(1);
+    expect(skipped.stderr).toContain('Unexpected browser result: skipped');
   });
 
   it('rejects failed planning, selected failures, unexpected skips and stale plans', () => {

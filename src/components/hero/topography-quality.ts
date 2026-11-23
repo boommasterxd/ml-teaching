@@ -6,6 +6,8 @@ export interface TopographyQuality {
 }
 
 const qualityLevels: readonly TopographyQuality[] = [
+  // Keep the first frame cheap when the rendering device's capacity is unknown.
+  { dpr: 0.5, rasterPixels: 100_000, fieldScale: 0.4, fieldTexels: 16_000 },
   { dpr: 0.8, rasterPixels: 256_000, fieldScale: 0.65, fieldTexels: 40_000 },
   { dpr: 1.5, rasterPixels: 2_073_600, fieldScale: 1, fieldTexels: 150_000 },
   { dpr: 2, rasterPixels: 4_147_200, fieldScale: 1.35, fieldTexels: 300_000 },
@@ -19,7 +21,7 @@ const RECOVERY_WINDOWS = 6;
 
 /** Adjust both passes using sustained frame cadence. */
 export function createTopographyQuality(sharpStart = false) {
-  const startLevel = sharpStart ? 2 : 1;
+  const startLevel = sharpStart ? 3 : 0;
   let level = startLevel;
   let promotionWindows = 1;
   let baselineFrameMs = FAST_FRAME_MS;

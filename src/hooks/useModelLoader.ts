@@ -6,7 +6,6 @@ import {
   initializeBackend,
   loadClassifierModule,
   loadTensorFlow,
-  retainModel,
   retireModel,
 } from '../lib/ml-runtime';
 import type { ErrorCategory } from '../types/errors';
@@ -74,8 +73,11 @@ async function loadWhenIdle(load: MobileNetLoader, signal: AbortSignal) {
   }
 }
 
-/** Cancel the HTTP requests while allowing an already-started GPU read to finish. */
-function awaitModel(loadModel: MobileNetLoader, parent: AbortSignal): Promise<FeatureExtractor> {
+/** Bound the loading attempt while allowing an already-started GPU read to finish safely. */
+function loadModelWithDeadline(
+  loadModel: MobileNetLoader,
+  parent: AbortSignal,
+): Promise<FeatureExtractor> {
   const controller = new AbortController();
   const signal = AbortSignal.any([parent, controller.signal]);
   return new Promise((resolve, reject) => {
@@ -134,7 +136,7 @@ async function prepareMobileNet(): Promise<LoadingStep<FeatureExtractor>> {
   return (setText, signal) => {
     setText('Lade MobileNet (Feature Extractor)...');
     return loadWithRetry(
-      () => awaitModel(loadMobileNetEmbedding, signal),
+      () => loadMobileNetEmbedding(signal),
       {
         maxAttempts: MODEL_LOAD_RETRY.MAX_ATTEMPTS,
         baseDelayMs: MODEL_LOAD_RETRY.BASE_DELAY_MS,
@@ -163,6 +165,26 @@ async function warmupKnnShaders(model: FeatureExtractor, signal: AbortSignal) {
   } finally {
     knn.dispose();
   }
+}
+
+function loadAndWarmModel(
+  load: LoadingStep<FeatureExtractor>,
+  warmup: typeof warmupKnnShaders,
+  setText: (text: string) => void,
+): MobileNetLoader {
+  return async (signal) => {
+    const model = await load(setText, signal);
+    try {
+      signal.throwIfAborted();
+      setText('Optimiere GPU-Performance...');
+      await warmup(model, signal);
+      signal.throwIfAborted();
+      return model;
+    } catch (error) {
+      retireModel(model);
+      throw error;
+    }
+  };
 }
 
 export interface ModelLoaderFunctions {
@@ -216,15 +238,12 @@ export function useModelLoader(
         signal.throwIfAborted();
         pendingClassifier = await loadClassifier(setText, signal);
         signal.throwIfAborted();
-        model = await loadFeatureExtractor(setText, signal);
-        signal.throwIfAborted();
-        setText('Optimiere GPU-Performance...');
-        const release = retainModel(model);
-        try {
-          await (loaders?.warmup ?? warmupKnnShaders)(model, signal);
-        } finally {
-          release?.();
-        }
+        const load = loadAndWarmModel(
+          loadFeatureExtractor,
+          loaders?.warmup ?? warmupKnnShaders,
+          setText,
+        );
+        model = await loadModelWithDeadline(load, signal);
         signal.throwIfAborted();
         setClassifier(pendingClassifier);
         pendingClassifier = null;

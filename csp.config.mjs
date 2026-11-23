@@ -34,7 +34,7 @@ const config = {
       ],
       'frame-src': ["'none'"],
       'media-src': ["'self'", 'blob:'],
-      'worker-src': ["'none'"],
+      'worker-src': ["'self'"],
       'manifest-src': ["'self'"],
     },
     ssg: {},

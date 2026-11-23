@@ -3,20 +3,13 @@ export const PrivacyInformation = (
     <h2>3. Allgemeine Hinweise und Pflichtinformationen</h2>
     <h3>Datenschutz</h3>
     <p>
-      Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir
-      behandeln Ihre personenbezogenen Daten vertraulich und entsprechend den gesetzlichen
-      Datenschutzvorschriften sowie dieser Datenschutzerklärung.
+      Personenbezogene Daten sind Informationen, die sich auf eine identifizierte oder
+      identifizierbare Person beziehen. Diese Datenschutzerklärung erläutert, welche
+      personenbezogenen Daten wir verarbeiten, zu welchen Zwecken und welche Rechte Sie haben.
     </p>
     <p>
-      Wenn Sie diese Website benutzen, werden verschiedene personenbezogene Daten erhoben.
-      Personenbezogene Daten sind Daten, mit denen Sie persönlich identifiziert werden können. Die
-      vorliegende Datenschutzerklärung erläutert, welche Daten wir erheben und wofür wir sie nutzen.
-      Sie erläutert auch, wie und zu welchem Zweck das geschieht.
-    </p>
-    <p>
-      Wir weisen darauf hin, dass die Datenübertragung im Internet (z. B. bei der Kommunikation per
-      E-Mail) Sicherheitslücken aufweisen kann. Ein lückenloser Schutz der Daten vor dem Zugriff
-      durch Dritte ist nicht möglich.
+      Die Datenübertragung im Internet, etwa per E-Mail, kann Sicherheitslücken aufweisen. Ein
+      lückenloser Schutz der Daten vor dem Zugriff durch Dritte ist nicht möglich.
     </p>
     <h3 id="verantwortliche-stelle">Hinweis zur verantwortlichen Stelle</h3>
     <p>Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:</p>
@@ -111,11 +104,11 @@ export const PrivacyInformation = (
       WENN DIE DATENVERARBEITUNG AUF GRUNDLAGE VON ART. 6 ABS. 1 LIT. E ODER F DSGVO ERFOLGT, HABEN
       SIE JEDERZEIT DAS RECHT, AUS GRÜNDEN, DIE SICH AUS IHRER BESONDEREN SITUATION ERGEBEN, GEGEN
       DIE VERARBEITUNG IHRER PERSONENBEZOGENEN DATEN WIDERSPRUCH EINZULEGEN; DIES GILT AUCH FÜR EIN
-      AUF DIESE BESTIMMUNGEN GESTÜTZTES PROFILING. DIE JEWEILIGE RECHTSGRUNDLAGE, AUF DENEN EINE
-      VERARBEITUNG BERUHT, ENTNEHMEN SIE DIESER DATENSCHUTZERKLÄRUNG. WENN SIE WIDERSPRUCH EINLEGEN,
-      WERDEN WIR IHRE BETROFFENEN PERSONENBEZOGENEN DATEN NICHT MEHR VERARBEITEN, ES SEI DENN, WIR
-      KÖNNEN ZWINGENDE SCHUTZWÜRDIGE GRÜNDE FÜR DIE VERARBEITUNG NACHWEISEN, DIE IHRE INTERESSEN,
-      RECHTE UND FREIHEITEN ÜBERWIEGEN ODER DIE VERARBEITUNG DIENT DER GELTENDMACHUNG, AUSÜBUNG ODER
+      AUF DIESE BESTIMMUNGEN GESTÜTZTES PROFILING. DIE RECHTSGRUNDLAGE DER JEWEILIGEN VERARBEITUNG
+      FINDEN SIE IN DIESER DATENSCHUTZERKLÄRUNG. WENN SIE WIDERSPRUCH EINLEGEN, WERDEN WIR IHRE
+      BETROFFENEN PERSONENBEZOGENEN DATEN NICHT MEHR VERARBEITEN, ES SEI DENN, WIR KÖNNEN ZWINGENDE
+      SCHUTZWÜRDIGE GRÜNDE FÜR DIE VERARBEITUNG NACHWEISEN, DIE IHRE INTERESSEN, RECHTE UND
+      FREIHEITEN ÜBERWIEGEN ODER DIE VERARBEITUNG DIENT DER GELTENDMACHUNG, AUSÜBUNG ODER
       VERTEIDIGUNG VON RECHTSANSPRÜCHEN (WIDERSPRUCH NACH ART. 21 ABS. 1 DSGVO).
     </p>
     <p>
@@ -190,13 +183,9 @@ export const PrivacyInformation = (
     </p>
     <h3>SSL- bzw. TLS-Verschlüsselung</h3>
     <p>
-      Diese Website nutzt TLS-Verschlüsselung zum Schutz der Datenübertragung zwischen Ihrem Browser
-      und dem Webserver. Eine verschlüsselte Verbindung erkennen Sie an „https://“ in der
-      Adresszeile Ihres Browsers.
-    </p>
-    <p>
-      Die TLS-Verschlüsselung schützt die Daten während der Übertragung zwischen Ihrem Browser und
-      dem Webserver vor unbefugtem Mitlesen.
+      Diese Website nutzt TLS-Verschlüsselung, um die Datenübertragung zwischen Ihrem Browser und
+      dem Webserver vor unbefugtem Mitlesen zu schützen. Eine verschlüsselte Verbindung erkennen Sie
+      an „https://“ in der Adresszeile Ihres Browsers.
     </p>
   </>
 );

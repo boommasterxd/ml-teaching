@@ -18,14 +18,26 @@ export function ActionFeedback({
 }) {
   const { reduce } = useMotionPreference();
   const [focused, setFocused] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
+
+  function clearPointerFeedback() {
+    setHovered(false);
+    setPressed(false);
+  }
 
   return (
     <AnimateIcon
-      animate={!disabled && focused}
-      animateOnHover={!disabled}
-      animateOnTap={!disabled}
+      animate={!disabled && (focused || hovered || pressed)}
       onFocusCapture={() => setFocused(true)}
       onBlurCapture={() => setFocused(false)}
+      onPointerEnter={(event) => setHovered(event.pointerType !== 'touch')}
+      onPointerLeave={clearPointerFeedback}
+      onPointerDown={(event) => {
+        if (event.isPrimary && event.button === 0) setPressed(true);
+      }}
+      onPointerUp={() => setPressed(false)}
+      onPointerCancel={clearPointerFeedback}
       className="contents"
     >
       <ButtonPrimitive

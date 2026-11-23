@@ -1,9 +1,22 @@
-import { Heading } from '@/components/ui/typography';
+import AnimatedLink from '@/components/AnimatedLink';
+import { LearningChapterIntro } from '@/components/LearningChapter';
+import { ArrowLeft } from '@/components/icons/arrow-left';
+import { learningPaths } from '@/lib/learning-paths';
 
 export default function QLearningPage() {
   return (
-    <Heading as="h1" lang="en" className="learning-hub-heading learning-hub text-center">
-      Coming Soon
-    </Heading>
+    <div className="learning-hub landing-container">
+      <LearningChapterIntro title="Q-Learning verstehen">
+        Die Einführung erscheint demnächst.
+      </LearningChapterIntro>
+      <AnimatedLink
+        href={learningPaths.hub}
+        transitionTypes={['nav-back']}
+        variant="link"
+        className="h-auto min-h-11 px-0"
+      >
+        <ArrowLeft data-icon="inline-start" aria-hidden="true" /> Zum Lernlabor
+      </AnimatedLink>
+    </div>
   );
 }

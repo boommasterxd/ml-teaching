@@ -3,7 +3,10 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import TrainingPage from '@/screens/TrainingPage';
 import TrainingEntryProvider from '@/components/training/TrainingEntryProvider';
 import { learningPaths } from '@/lib/learning-paths';
-import { readRememberedTrainingConsent } from '@/lib/training-consent-storage';
+import {
+  clearRememberedTrainingConsent,
+  readRememberedTrainingConsent,
+} from '@/lib/training-consent-storage';
 import { fitFeatureProjection } from '@/lib/feature-projection';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
@@ -78,7 +81,7 @@ function createCameraStream() {
 beforeEach(() => {
   installBrowserHost();
   vi.clearAllMocks();
-  window.sessionStorage.clear();
+  clearRememberedTrainingConsent();
   boundary.load.mockReset().mockImplementation(async () => ({
     infer: vi.fn(boundary.tensor),
     dispose: vi.fn(),
@@ -135,6 +138,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  clearRememberedTrainingConsent();
   restoreBrowserHost();
   for (const [target, name, descriptor] of [
     [navigator, 'mediaDevices', originalMediaDevices],

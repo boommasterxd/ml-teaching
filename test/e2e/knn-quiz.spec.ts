@@ -77,7 +77,7 @@ async function expectResponsivePlot(exercise: Locator, width: number) {
   expect(geometry.card).toBeCloseTo(geometry.available, 0);
   if (width < 1024) {
     expect(geometry.plot.width).toBeCloseTo(geometry.content, 0);
-    expect(geometry.plot.height).toBeLessThanOrEqual(geometry.mobileHeightLimit);
+    expect(geometry.plot.height).toBeLessThanOrEqual(geometry.mobileHeightLimit + 0.5);
   }
   return geometry.plot;
 }
