@@ -298,7 +298,8 @@ the document scrolls. Gavel, LockKeyhole and Accessibility identify the three le
 destinations in both navigation variants. The current link and its icon use
 the primary color. On desktop each link fills the menu's inner width. The vertical
 shadcn Navigation Menu shares the header's moving Animate UI highlight across
-the full row. The links' hit areas meet between rows so crossing the spacing
+the full row. The sidebar and header dropdown share the same panel radius and
+inner padding. The links' hit areas meet between rows so crossing the spacing
 keeps the highlight moving directly between destinations. Base UI's `render`
 prop composes the links with native anchors and their current-page semantics.
 The desktop links and highlight items share a client boundary so Animate UI can
