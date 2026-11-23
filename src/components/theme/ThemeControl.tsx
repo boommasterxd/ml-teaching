@@ -62,6 +62,7 @@ export function ThemeControl() {
       </Switch>
       <DropdownMenu
         modal={false}
+        highlightItemOnHover={false}
         open={open}
         onOpenChange={(next, details) => {
           const { event, reason } = details;

@@ -268,10 +268,10 @@ fills its section's content width; standard side padding is retained.
 At `lg`, a centered layout limits controls to 18rem and
 gives the plot up to 42rem across both control rows. The Card header shares its
 reading edges with this inner layout.
-The static exercise card opens on activation. Pointer, touch and focus intent can
-prepare the retryable exercise chunk in a hidden React Activity with inactive effects.
-On activation the visible exercise takes focus from its placeholder action when
-that action still owns focus.
+The KNN exercise loads automatically near the viewport or on pointer, touch and
+keyboard focus intent. The static loading card shares the exercise's responsive
+layout to preserve scroll restoration. On a load failure it offers a retry.
+Keyboard focus can wait on the exercise group and Tab into the loaded controls.
 The compact Footer contains the brand, copyright and information links. Below `md`,
 the groups stack and center, including wrapped information-link rows. While training
 consent is active or remembered, the footer offers the labeled training settings.

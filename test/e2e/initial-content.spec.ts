@@ -45,8 +45,11 @@ async function expectImageExercises(main: Locator) {
   await expect(choices).toHaveCount(6);
   for (const choice of await choices.all()) await expectReadable(choice);
   const neighbors = main.getByRole('region', { name: 'Welche Nachbarn zählen?' });
-  await expectReadable(neighbors.getByText(/Finde die nächsten Nachbarn/));
-  await expectReadable(neighbors.getByRole('button', { name: 'Übung öffnen' }));
+  await expectReadable(neighbors.getByText(/Finde die nächsten Nachbarn der Raute/));
+  await expectReadable(neighbors.getByRole('heading', { name: 'Hund oder Katze?' }));
+  await expectReadable(
+    neighbors.getByRole('status').filter({ hasText: 'Die Übung wird geladen …' }),
+  );
   await expectReadableLink(
     main.getByRole('link', { name: 'Jetzt ausprobieren' }),
     learningPaths.imagePractice,

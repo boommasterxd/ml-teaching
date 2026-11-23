@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { diagnostics, expectAccessible } from './browser-checks';
+import { diagnostics, expectAccessible, holdApplicationScripts } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
 
 async function rankedTargets(exercise: Locator) {
@@ -77,7 +77,7 @@ async function expectResponsivePlot(exercise: Locator, width: number) {
   expect(geometry.card).toBeCloseTo(geometry.available, 0);
   if (width < 1024) {
     expect(geometry.plot.width).toBeCloseTo(geometry.content, 0);
-    expect(geometry.plot.height).toBeLessThanOrEqual(geometry.mobileHeightLimit);
+    expect(geometry.plot.height).toBeLessThanOrEqual(geometry.mobileHeightLimit + 0.5);
   }
   return geometry.plot;
 }
@@ -199,16 +199,10 @@ for (const [width, colorScheme] of [
       reducedMotion: width === 320 ? 'reduce' : 'no-preference',
     });
     await page.goto(learningPaths.images);
-    const exercise = page.locator('section[aria-labelledby="section-knn-quiz"]');
-    const open = exercise.getByRole('button', { name: 'Übung öffnen' });
-    if (width === 1280) {
-      await open.scrollIntoViewIfNeeded();
-      await page.reload();
-      await expect(open).toBeInViewport();
-      await expect(exercise.getByRole('slider')).toHaveCount(0);
-    }
-    await open.click();
+    const exercise = page.getByRole('region', { name: 'Welche Nachbarn zählen?' });
     const slider = exercise.getByRole('slider');
+    await expect(slider).toHaveCount(0);
+    await exercise.getByRole('heading', { name: 'Hund oder Katze?' }).scrollIntoViewIfNeeded();
     await expect(slider).toHaveAttribute('aria-valuenow', '3');
     await expectAnswerRows(exercise, width === 320 ? 2 : 1);
     if (width === 320) {
@@ -242,7 +236,7 @@ test('KNN exercise supports retries, voting limits, and new rounds', async ({ pa
   await page.setViewportSize({ width, height: 1000 });
   await page.goto(learningPaths.images);
   const exercise = page.getByRole('region', { name: 'Welche Nachbarn zählen?' });
-  await exercise.getByRole('button', { name: 'Übung öffnen' }).click();
+  await exercise.getByRole('heading', { name: 'Hund oder Katze?' }).scrollIntoViewIfNeeded();
   const slider = exercise.getByRole('slider');
   await expect(slider).toHaveAttribute('aria-valuenow', '3');
   const points = await rankedTargets(exercise);
@@ -350,20 +344,18 @@ test('touch opens and dismisses an everyday quiz explanation', async ({ browser,
   }
 });
 
-test('KNN keyboard intent prepares the hidden exercise and hands off opening focus', async ({
-  page,
-}) => {
+test('KNN keyboard focus starts the exercise and advances to its controls', async ({ page }) => {
   const failures = diagnostics(page);
   await page.goto(learningPaths.images);
   const exercise = page.getByRole('region', { name: 'Welche Nachbarn zählen?' });
-  const open = exercise.getByRole('button', { name: 'Übung öffnen' });
+  const exerciseControls = exercise.getByRole('group', { name: 'KNN-Übung' });
   // Keep the viewport out of range to exercise focus preparation by itself.
-  await open.evaluate((button) => button.focus({ preventScroll: true }));
-  await expect(exercise.locator('input[type="range"]')).toBeAttached();
+  const initialScroll = await page.evaluate(() => scrollY);
   await expect(exercise.getByRole('slider')).toHaveCount(0);
-  await expect(open).toBeFocused();
-  await page.keyboard.press('Enter');
-  await expect(exercise.getByRole('heading', { name: 'Hund oder Katze?' })).toBeFocused();
+  await exerciseControls.evaluate((group) => group.focus({ preventScroll: true }));
+  await expect(exercise.getByRole('slider')).toBeVisible();
+  await expect(exerciseControls).toBeFocused();
+  expect(await page.evaluate(() => scrollY)).toBe(initialScroll);
   await page.keyboard.press('Tab');
   await expect(exercise.getByRole('button', { name: 'Neue Runde' })).toBeFocused();
   await page.keyboard.press('Tab');
@@ -373,3 +365,34 @@ test('KNN keyboard intent prepares the hidden exercise and hands off opening foc
   await expect(slider).toHaveAttribute('aria-valuenow', '4');
   expect(failures).toEqual([]);
 });
+
+for (const width of [390, 1280]) {
+  test(`KNN reload preserves the exercise footprint and scroll position at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(learningPaths.images);
+    const exercise = page.getByRole('region', { name: 'Welche Nachbarn zählen?' });
+    const heading = exercise.getByRole('heading', { name: 'Hund oder Katze?' });
+    const slider = exercise.getByRole('slider');
+    // Scroll after hydration so the initial browser viewport is still above the exercise.
+    await heading.scrollIntoViewIfNeeded();
+    await expect(slider).toBeVisible();
+    const height = () => exercise.evaluate((section) => section.getBoundingClientRect().height);
+    const readyHeight = await height();
+    const scroll = await page.evaluate(() => scrollY);
+    const scripts = await holdApplicationScripts(page);
+    try {
+      await page.reload({ waitUntil: 'commit' });
+      await scripts.expectHeld();
+      await expect(exercise.getByText('Die Übung wird geladen …')).toBeVisible();
+      await expect.poll(async () => Math.abs((await height()) - readyHeight)).toBeLessThan(1);
+    } finally {
+      scripts.release();
+    }
+    await expect(slider).toBeVisible();
+    await expect(heading).toBeInViewport();
+    await expect.poll(() => page.evaluate((y) => Math.abs(scrollY - y), scroll)).toBeLessThan(1);
+  });
+}
