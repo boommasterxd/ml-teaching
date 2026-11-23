@@ -54,7 +54,9 @@ template's header persistence. The fallback route's source pattern excludes
 native static assets. Next.js compiles the source at startup, so the manifest
 regex carries the same exclusion for adapters that consume it directly.
 Model weights require only connect access to the specific Google/TF Hub/Kaggle
-origins. The WebGL runtime needs neither WASM script permission nor a worker source.
+origins. The decorative WebGL renderer permits the bundled same-origin worker
+through `worker-src 'self'`. It needs no blob or remote worker source and no WASM
+script permission.
 
 Public HTML has `public, max-age=300, must-revalidate`. Five minutes balances
 browser reuse with content freshness; native RSC/error/variant behavior remains

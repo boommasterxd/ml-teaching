@@ -130,6 +130,8 @@ test('the homepage starts without a glass spinner and skips the poster during pl
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const workers: string[] = [];
+  page.on('worker', (worker) => workers.push(worker.url()));
   const scripts = Promise.withResolvers<void>();
   const scriptPattern = '**/_next/static/chunks/*.js';
   await page.route(scriptPattern, async (route) => {
@@ -156,6 +158,8 @@ test('the homepage starts without a glass spinner and skips the poster during pl
   await expect(page.locator('.hero-field')).toHaveAttribute('data-enhanced', 'true');
   await expect(spinner).toHaveCount(0);
   expect(posters).toEqual([]);
+  expect(workers).toHaveLength(1);
+  expect(new URL(workers[0]!).origin).toBe(new URL(page.url()).origin);
 
   const impulse = page.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
   await expect(impulse).toBeEnabled();

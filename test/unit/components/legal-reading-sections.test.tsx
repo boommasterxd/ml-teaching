@@ -38,7 +38,10 @@ describe('legal reading content preservation', () => {
       Array.from(document.querySelectorAll('h2, h3, p, a, ul, li'), (element) => element.outerHTML);
     expect(elements(grouped)).toEqual(elements(original));
     expect(
-      Array.from(grouped.body.children, (section) => section.firstElementChild?.tagName),
+      Array.from(
+        grouped.querySelectorAll('.legal-reading-section'),
+        (section) => section.firstElementChild?.tagName,
+      ),
     ).toEqual(['P', 'H2', 'H3', 'H2']);
   });
 });

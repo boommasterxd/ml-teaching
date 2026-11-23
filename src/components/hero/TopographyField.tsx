@@ -59,12 +59,19 @@ export default function TopographyField({
   shape?: GlassShape;
   sharpDesktopStart?: boolean;
 }) {
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const surface = useRef<HTMLDivElement>(null);
   const playback = inView ? (userPaused ? 'paused' : 'running') : 'offscreen';
   const paused = playback !== 'running';
   const { values, pointerX, pointerY, raised } = useFieldMotion(playback);
   const { ripples } = values;
-  useTopographyRenderer(canvas, values, onUnavailable, onRendered, shape, sharpDesktopStart);
+  const canvas = useTopographyRenderer(
+    surface,
+    values,
+    onUnavailable,
+    onRendered,
+    shape,
+    sharpDesktopStart,
+  );
   function point(event: PointerPoint, fromKeyboard = false) {
     const rect = canvas.current!.getBoundingClientRect();
     return fromKeyboard
@@ -79,7 +86,7 @@ export default function TopographyField({
 
   return (
     <div className="hero-field-canvas">
-      <canvas ref={canvas} className="size-full" aria-hidden="true" />
+      <div ref={surface} className="size-full" aria-hidden="true" />
       <Button
         type="button"
         variant="ghost"

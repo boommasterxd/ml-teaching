@@ -1,5 +1,5 @@
 import { Children, Fragment, isValidElement, type ReactNode } from 'react';
-import { EntryReveal } from './ui/entry-reveal';
+import LegalReadingMotion from './LegalReadingMotion';
 
 const sectionHeadings = new Set(['h2', 'h3', 'h4']);
 
@@ -21,9 +21,13 @@ export default function LegalReadingSections({ children }: { children: ReactNode
     sections[sections.length - 1].push(child);
   }
 
-  return sections.map((section, index) => (
-    <EntryReveal key={index} kind="reading" asChild>
-      <div className="legal-reading-section">{section}</div>
-    </EntryReveal>
-  ));
+  return (
+    <LegalReadingMotion>
+      {sections.map((section, index) => (
+        <div key={index} className="legal-reading-section">
+          {section}
+        </div>
+      ))}
+    </LegalReadingMotion>
+  );
 }

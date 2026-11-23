@@ -566,8 +566,10 @@ direct entry and reload.
 On first arrival from below, cards and navigation surfaces fade in with a short
 14–16 px slide. Standalone text, reading groups and the footer stay opaque during
 scroll reveals. The shared header stays in place from the first paint through
-hydration. Legal documents reveal by heading-led group, and
-the training and prediction sections enter independently after workspace setup.
+hydration. Legal documents reveal by heading-led group through one shared
+viewport observer and a Motion transform at admission. The text groups are
+rendered on the server. The training and prediction sections enter independently
+after workspace setup.
 Virtualized thumbnails keep their existing list lifecycle.
 Reduced motion and keyboard focus reveal immediately without spatial movement.
 SSG and hydration start with visible content and no initial style attributes.
@@ -687,11 +689,11 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   and surface normals. The second pass resolves edge coverage at output resolution.
   Desktop homepage playback starts at up to 2× display
   scaling, 300,000 field texels and 4,147,200 output pixels. Mobile and error artwork
-  start at up to 1.5× display scaling, 150,000 field texels and 2,073,600 output pixels.
+  start at up to 0.5× display scaling, 16,000 field texels and 100,000 output pixels.
   Sustained frame cadence can raise
   both passes to 3× display scaling, 600,000 field texels and 8,294,400 output pixels,
   subject to GPU dimension limits. Sustained slow frames can lower the renderer
-  to 0.8× display scaling, 40,000 field texels and 256,000 output pixels.
+  to 0.5× display scaling, 16,000 field texels and 100,000 output pixels.
   After a reduction, six stable measurement windows allow
   the next higher tier to be tried again. Quality changes retain the Canvas
   and animation time.
@@ -721,7 +723,10 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   static error pages start preparing the renderer after the visible artwork has
   had a chance to paint, even while the document is still loading.
   The resolved component mounts directly on the client after any incoming page
-  transition.
+  transition. With OffscreenCanvas support, a same-origin worker compiles and
+  draws the WebGL programs. The caller keeps one draw in flight and coalesces
+  pending resizes. Browsers without canvas transfer use the same renderer on
+  the main thread.
   The poster is used for reduced motion, unsupported WebGL, context loss or expiry
   of the two-second active first-frame deadline.
   Reduced motion, a hidden tab or a lost context unmounts the enhancement and
