@@ -173,6 +173,7 @@ test('the appearance menu opens on first hover and stays open when moving into i
 
   const trigger = page.getByRole('button', { name: 'Darstellung einstellen' });
   const menu = page.getByRole('menu', { name: 'Darstellung einstellen' });
+  const dark = menu.getByRole('menuitemradio', { name: 'Dunkel' });
   const brand = page
     .getByRole('navigation', { name: 'Hauptnavigation' })
     .getByRole('link', { name: 'ML Teaching – Startseite' });
@@ -199,6 +200,8 @@ test('the appearance menu opens on first hover and stays open when moving into i
     const popup = (await menu.boundingBox())!;
     await page.mouse.move(button.x + button.width / 2, popup.y + 36, { steps: 12 });
     await expect(menu).toBeVisible();
+    await dark.hover();
+    await expect(brand).toBeFocused();
     await expectAccessible(page);
     await page.mouse.move(1, 360);
     await expect(menu).toBeHidden();
@@ -209,7 +212,12 @@ test('the appearance menu opens on first hover and stays open when moving into i
     await expect(menu).toBeHidden();
     await page.mouse.move(1, 360);
     await trigger.press('ArrowUp');
-    await expect(menu.getByRole('menuitemcheckbox')).toBeFocused();
+    const remember = menu.getByRole('menuitemcheckbox');
+    await expect(remember).toBeFocused();
+    await dark.hover();
+    await expect(remember).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(menu.getByRole('menuitemradio', { name: 'Hell' })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(trigger).toBeFocused();
     expect(failures).toEqual([]);

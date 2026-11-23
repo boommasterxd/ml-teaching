@@ -16,13 +16,13 @@ afterEach(() => {
 describe('KNN chunk failure', () => {
   it('explains a failed download and permits an explicit retry', async () => {
     render(<DeferredKnnQuiz />);
-    fireEvent.click(screen.getByRole('button', { name: 'Übung öffnen' }));
     expect(await screen.findByText('Die Übung konnte nicht geladen werden.')).toBeTruthy();
     const retry = screen.getByRole('button', { name: 'Erneut versuchen' });
+    retry.focus();
     fireEvent.click(retry);
     expect(screen.queryByText('Die Übung konnte nicht geladen werden.')).toBeNull();
     expect(await screen.findByText('Die Übung konnte nicht geladen werden.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Erneut versuchen' })).toBe(retry);
+    expect(document.activeElement).toBe(retry);
     expect(screen.queryByRole('slider')).toBeNull();
   });
 });
