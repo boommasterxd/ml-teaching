@@ -171,6 +171,7 @@ maintained documentation change.
 | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
 | [`docs/architecture.md`](docs/architecture.md)                                                         | Describes route, component and browser ML boundaries.           |
 | [`docs/ci.md`](docs/ci.md)                                                                             | Explains protected PR planning, jobs and quality controls.      |
+| [`docs/decisions/admin-ruleset-bypass.md`](docs/decisions/admin-ruleset-bypass.md)                     | Records the intentional ruleset bypass for the owner.           |
 | [`docs/decisions/ci-trust-boundary.md`](docs/decisions/ci-trust-boundary.md)                           | Records CI provenance and complementary secret scanning.        |
 | [`docs/decisions/error-artwork-and-menus.md`](docs/decisions/error-artwork-and-menus.md)               | Records the shared playback and menu-loading decisions.         |
 | [`docs/decisions/hostinger-mail-retention.md`](docs/decisions/hostinger-mail-retention.md)             | Records mailbox recovery and the accepted backup gap.           |
