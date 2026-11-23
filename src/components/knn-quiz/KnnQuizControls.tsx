@@ -2,43 +2,39 @@
 
 import Image from 'next/image';
 import { AnimatePresence } from 'motion/react';
-import Button from '@/components/Button';
-import { Cat } from '@/components/icons/cat';
 import { CheckCircle2 } from '@/components/icons/check-circle2';
-import { Dog } from '@/components/icons/dog';
 import { X } from '@/components/icons/x';
 import { NETWORK_EXAMPLES } from '@/components/network/examples';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatedFeedback } from '@/components/ui/animated-feedback';
-import { Field, FieldLabel, FieldDescription, FieldSet, FieldLegend } from '@/components/ui/field';
 import { Slider } from '@/components/ui/slider';
-import { Text } from '@/components/ui/typography';
 import { KNN_MAX_NEIGHBORS, KNN_MIN_NEIGHBORS } from '@/lib/knn-quiz';
 import type { KnnQuizState } from './useKnnQuiz';
+import {
+  KnnQuizChoices,
+  KnnQuizInputLayout,
+  knnQuizImageClass,
+  neighborLabelId,
+} from './KnnQuizLayout';
 
 export function KnnQuizInput({ state }: { state: KnnQuizState }) {
   const example = NETWORK_EXAMPLES[state.round.input];
   return (
-    <div className="flex min-w-0 flex-col gap-3 lg:gap-6">
-      <div className="flex items-center gap-3 lg:gap-4">
+    <KnnQuizInputLayout
+      image={
         <Image
           src={example.src}
           alt={example.alt}
           width={80}
           height={80}
           sizes="80px"
-          className="size-16 rounded-xl object-cover lg:size-20"
+          className={knnQuizImageClass}
         />
-        <div className="flex flex-col gap-1">
-          <Text variant="small">Dein Eingabebild</Text>
-          <Text variant="muted">Die Raute ist sein neuer Datenpunkt.</Text>
-        </div>
-      </div>
-      <Field className="gap-1 lg:gap-3">
-        <FieldLabel id="knn-count-label">1. Finde die nächsten Nachbarn.</FieldLabel>
+      }
+      slider={
         <Slider
           id="knn-neighbor-count"
-          aria-labelledby="knn-count-label"
+          aria-labelledby={neighborLabelId}
           aria-valuetext={`${state.k} ${state.k === 1 ? 'Nachbar' : 'Nachbarn'}`}
           min={KNN_MIN_NEIGHBORS}
           max={KNN_MAX_NEIGHBORS}
@@ -47,11 +43,9 @@ export function KnnQuizInput({ state }: { state: KnnQuizState }) {
           onValueChange={state.changeK}
           className="min-h-11"
         />
-        <FieldDescription className="tabular-nums">
-          K = {state.k} · {state.selected.length} von {state.k} gefunden
-        </FieldDescription>
-      </Field>
-    </div>
+      }
+      progress={`K = ${state.k} · ${state.selected.length} von ${state.k} gefunden`}
+    />
   );
 }
 
@@ -72,46 +66,8 @@ export function KnnQuizAnswer({
     if (keyboard && signal === state.winner) onKeyboardSuccess();
   }
   return (
-    <div className="knn-quiz-answer min-w-0">
-      <FieldSet className="min-w-0 gap-3 lg:gap-6">
-        <FieldLegend>2. Welche Klasse gewinnt?</FieldLegend>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="min-h-11"
-            disabled={disabled}
-            onClick={(event) => chooseAnswer('dog', event.detail === 0)}
-          >
-            <Dog data-icon="inline-start" aria-hidden="true" />
-            Hund
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="min-h-11"
-            disabled={disabled}
-            onClick={(event) => chooseAnswer('cat', event.detail === 0)}
-          >
-            <Cat data-icon="inline-start" aria-hidden="true" />
-            Katze
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="min-h-11"
-            disabled={disabled}
-            onClick={(event) => chooseAnswer(null, event.detail === 0)}
-          >
-            Gleichstand
-          </Button>
-        </div>
-        <Text variant="muted">
-          {ready
-            ? 'Zähle die Klassen der umkreisten Nachbarn.'
-            : 'Wähle zuerst die nächsten Punkte im Diagramm.'}
-        </Text>
-      </FieldSet>
+    <>
+      <KnnQuizChoices ready={ready} disabled={disabled} chooseAnswer={chooseAnswer} />
       <AnimatePresence initial={false}>
         {state.result && (
           <AnimatedFeedback
@@ -146,6 +102,6 @@ export function KnnQuizAnswer({
       <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {state.result === 'correct' ? `${successTitle} ${state.announcement}` : state.announcement}
       </p>
-    </div>
+    </>
   );
 }
