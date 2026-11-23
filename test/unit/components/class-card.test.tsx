@@ -22,6 +22,7 @@ describe('class card', () => {
     };
     const actions = {
       onAddExample: vi.fn(),
+      onCommitCapture: vi.fn(),
       onAddImageExample: vi.fn(),
       onClear: vi.fn(),
       onRemove: vi.fn(),
@@ -36,7 +37,6 @@ describe('class card', () => {
     const props = {
       cls,
       position: 1,
-      isDuplicate: false,
       camera,
       actions,
     };
@@ -44,13 +44,17 @@ describe('class card', () => {
     const name = screen.getByRole('textbox', { name: 'Name für Klasse 1: Rot' });
     fireEvent.change(name, { target: { value: '' } });
     expect(actions.onUpdateName).toHaveBeenCalledWith('red', '');
-    rerender(<ClassCard {...props} cls={{ ...cls, name: '' }} />);
+    rerender(
+      <ClassCard {...props} cls={{ ...cls, name: '' }} nameError="Name darf nicht leer sein" />,
+    );
     const empty = screen.getByRole('textbox', { name: 'Name für Klasse 1: ohne Namen' });
     expect(empty.getAttribute('aria-invalid')).toBe('true');
     expect(document.getElementById(empty.getAttribute('aria-describedby')!)?.textContent).toBe(
       'Name darf nicht leer sein',
     );
-    rerender(<ClassCard {...props} cls={{ ...cls, name: 'Blau' }} isDuplicate />);
+    rerender(
+      <ClassCard {...props} cls={{ ...cls, name: 'Blau' }} nameError="Name muss eindeutig sein" />,
+    );
     expect(screen.getByRole('alert').textContent).toBe('Name muss eindeutig sein');
     rerender(<ClassCard {...props} />);
     expect(screen.getByRole('textbox').getAttribute('aria-invalid')).toBe('false');

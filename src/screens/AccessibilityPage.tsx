@@ -37,11 +37,13 @@ export default function AccessibilityPage() {
         <ul>
           <li>
             Die Lage der Punkte im Merkmalsraum der Live-Vorhersage ist nur visuell erkennbar. Die
-            vorhergesagte Klasse und die Konfidenzwerte sind als Text verfügbar.
+            vorhergesagte Klasse und die Konfidenzwerte sind als Text verfügbar. Eine laufend
+            aktualisierte Textbeschreibung der Punktlagen ist für diese Übung unpraktisch.
           </li>
           <li>
             Für Trainingsbilder und ihre Vorschauen fehlen Beschreibungen des Bildinhalts. In der
-            Galerie lassen sich die Bilder über ihre Nummer zuordnen.
+            Galerie lassen sich die Bilder über ihre Nummer zuordnen. Die Lernenden wählen ihre
+            Trainingsbilder selbst aus oder nehmen sie mit der Kamera auf.
           </li>
         </ul>
         <p>Bei Schwierigkeiten nutzen Sie bitte den unten angegebenen Kontakt.</p>

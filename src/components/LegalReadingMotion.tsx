@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import { animate } from 'motion/mini';
+import { animate } from 'motion/react';
 import { motionTokens } from '@animate-ui/react/utils/motion';
 import { useEntryViewportReady } from './ui/entry-policy';
 import { useMotionPreference } from './ui/use-motion-preference';

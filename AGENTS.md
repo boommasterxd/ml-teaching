@@ -90,8 +90,8 @@
   pause, offscreen and reduced-motion handling.
 - Follow the OS theme unless the user selects another appearance. Persist only the
   light/dark/system enum after explicit remembering; keep it independent of ML
-  consent/data. ThemeProvider stays outside the route boundary. Preserve trusted
-  static theme bootstrap and wipe-style hashes, including native error output.
+  consent/data. ThemeProvider stays outside the route boundary. Preserve the trusted
+  static theme bootstrap and its CSP hashes, including native error output.
 - Always use a suitable shadcn/ui component first. Reuse its shared implementation
   in `src/components/ui/` or the product component that wraps it. If it is missing
   locally, use the matching component from the official shadcn/ui catalog.
@@ -172,6 +172,7 @@ maintained documentation change.
 | [`docs/architecture.md`](docs/architecture.md)                                                         | Describes route, component and browser ML boundaries.           |
 | [`docs/ci.md`](docs/ci.md)                                                                             | Explains protected PR planning, jobs and quality controls.      |
 | [`docs/decisions/admin-ruleset-bypass.md`](docs/decisions/admin-ruleset-bypass.md)                     | Records the intentional ruleset bypass for the owner.           |
+| [`docs/decisions/children-training-consent.md`](docs/decisions/children-training-consent.md)           | Explains the scoped Article 8 GDPR decision for image training. |
 | [`docs/decisions/ci-trust-boundary.md`](docs/decisions/ci-trust-boundary.md)                           | Records CI provenance and complementary secret scanning.        |
 | [`docs/decisions/error-artwork-and-menus.md`](docs/decisions/error-artwork-and-menus.md)               | Records the shared playback and menu-loading decisions.         |
 | [`docs/decisions/hostinger-mail-retention.md`](docs/decisions/hostinger-mail-retention.md)             | Records mailbox recovery and the accepted backup gap.           |

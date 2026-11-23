@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import {
   diagnostics,
   expectAccessible,
@@ -27,7 +27,6 @@ import {
   expectTrainingCompletion,
   expectTrainingGlide,
   expectThemeMenuTriggers,
-  expectImmediateThemeFeedback,
   grantModelConsent,
   openDeferredTrainingStep,
   openThemeMenu,
@@ -37,32 +36,6 @@ import {
   withdrawTrainingConsent,
   withdrawWithActiveCamera,
 } from './training-keyboard';
-
-async function pageBackgroundBrightness(page: Page) {
-  // The empty page margin below the header shows the composited background, including any theme wipe.
-  const banner = await page.getByRole('banner').boundingBox();
-  if (!banner) throw new Error('Header is missing.');
-  const y = Math.ceil(banner.y + banner.height) + 12;
-  const sample = await page.screenshot({ clip: { x: 2, y, width: 4, height: 4 } });
-  const pixels = await sharp(sample).removeAlpha().greyscale().raw().toBuffer();
-  return pixels.reduce((sum, pixel) => sum + pixel, 0) / pixels.length;
-}
-
-async function expectRootThemeWipe(page: Page) {
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        document
-          .getAnimations()
-          .some(
-            (animation) =>
-              animation.effect instanceof KeyframeEffect &&
-              animation.effect.pseudoElement === '::view-transition-new(root)',
-          ),
-      ),
-    )
-    .toBe(true);
-}
 
 async function uploadTrainingClasses(page: Page) {
   const empty = await classLayout(page);
@@ -309,6 +282,14 @@ test('consent can be withdrawn while a model download is pending', async ({ page
   }
 });
 
+async function clickDuringThemeWipe(page: Page, control: Locator) {
+  const box = await control.boundingBox();
+  if (!box) throw new Error('The control to click during the theme wipe is missing.');
+  await expect(page.locator('[data-theme-wipe]')).toBeVisible();
+  // Do not let locator actionability wait for an overlay to stop intercepting clicks.
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+}
+
 test('theme changes preserve navigation and require explicit remembering across visits and tabs', async ({
   page,
   context,
@@ -319,25 +300,26 @@ test('theme changes preserve navigation and require explicit remembering across 
   const theme = page.getByRole('switch', { name: 'Dunkle Darstellung' });
   await expect(theme).not.toBeChecked();
   await expectThemeControlAlignment(page);
-  await expect.poll(() => pageBackgroundBrightness(page)).toBeGreaterThan(200);
+  await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
   await theme.focus();
   await page.keyboard.press('Space');
   await expect(theme).toBeChecked();
-  await expect.poll(() => pageBackgroundBrightness(page)).toBeLessThan(55);
+  await expect(page.locator('html')).toHaveClass(/\bdark\b/);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
   await page.reload();
   await expect(theme).not.toBeChecked();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'system');
   await expectLiveSystemThemeChanges(page, theme);
 
+  const learning = page.getByRole('main').getByRole('link', { name: 'Lernlabor', exact: true });
+  await learning.scrollIntoViewIfNeeded();
   await theme.focus();
   await page.keyboard.press('Space');
-  await expect(theme).toBeChecked();
-  await expectRootThemeWipe(page);
-  await expectImmediateThemeFeedback(page);
-  await page.keyboard.press('Space');
+  await clickDuringThemeWipe(page, theme);
   await expect(theme).not.toBeChecked();
-  await expectImmediateThemeFeedback(page);
+  await expect(theme).toBeFocused();
+  await clickDuringThemeWipe(page, learning);
+  await expect(page).toHaveURL(learningPaths.hub);
   await page
     .getByRole('contentinfo')
     .getByRole('link', { name: 'Datenschutz', exact: true })

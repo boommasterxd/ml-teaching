@@ -43,8 +43,8 @@ export const PrivacyInformation = (
     </p>
     <p>
       Es besteht keine gesetzliche oder vertragliche Pflicht, Bildbeispiele für die Lernfunktion zu
-      verwenden oder uns zu kontaktieren. Für einen Vertragsschluss über diese Website sind
-      Bildbeispiele und Kontaktangaben nicht erforderlich.
+      verwenden oder uns zu kontaktieren. Über diese Website werden keine Verbraucherverträge
+      angebahnt oder abgeschlossen.
     </p>
     <h4>Folgen einer Nichtbereitstellung</h4>
     <p>

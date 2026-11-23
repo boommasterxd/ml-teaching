@@ -1,9 +1,14 @@
 # Local dependencies, builds and test output
 node_modules/
 .next/
+out/
+*.tsbuildinfo
+next-env.d.ts
 coverage/
 playwright-report/
 test-results/
+lighthouse-report*.json
+*.log
 
 # Credentials and local provider state
 .env

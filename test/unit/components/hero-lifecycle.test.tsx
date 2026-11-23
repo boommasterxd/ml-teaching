@@ -5,6 +5,7 @@ import HeroScene from '@/components/hero/HeroScene';
 import { heroPosterImages } from '@/components/hero/poster-assets';
 import { EntryViewportReadyContext } from '@/components/ui/entry-policy';
 import { HomePlaybackProvider, useHomePlayback } from '@/components/home/HomePlaybackProvider';
+import { ReducedMotionContext } from '@animate-ui/react/utils/motion';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
 const lifecycle = vi.hoisted(() => ({
@@ -33,7 +34,12 @@ vi.mock('@/components/hero/TopographyField', () => ({
         onRendered(false);
       };
     }, [onRendered, onUnavailable]);
-    return lifecycle.available ? <canvas aria-hidden="true" /> : null;
+    return lifecycle.available ? (
+      <>
+        <canvas aria-hidden="true" />
+        <button type="button">Lichtimpuls auslösen</button>
+      </>
+    ) : null;
   },
 }));
 beforeEach(() => {
@@ -89,6 +95,30 @@ describe('decorative hero lifetime', () => {
     expect(container.querySelector('canvas')).toBeNull();
     expect(lifecycle.disposed).toHaveBeenCalledTimes(1);
     expect(lifecycle.created).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns focus to playback when reduced motion removes the focused light impulse', async () => {
+    const hero = (reduce: boolean) => (
+      <ReducedMotionContext value={reduce ? 'always' : 'never'}>
+        <HomePlaybackProvider>
+          <HeroScene sources={heroPosterImages} />
+        </HomePlaybackProvider>
+      </ReducedMotionContext>
+    );
+    const { container, rerender } = render(hero(false));
+    const impulse = await screen.findByRole('button', { name: 'Lichtimpuls auslösen' });
+    act(() => impulse.focus());
+
+    rerender(hero(true));
+    const playback = screen.getByRole('button', { name: 'Bewegung reduziert' });
+    expect(document.activeElement).toBe(playback);
+    expect(playback.getAttribute('aria-disabled')).toBe('true');
+    expect(playback.tabIndex).toBe(-1);
+    expect(container.querySelector('canvas')).toBeNull();
+
+    rerender(hero(false));
+    await screen.findByRole('button', { name: 'Lichtimpuls auslösen' });
+    expect(document.activeElement).toBe(playback);
   });
 
   it('keeps the shared playback control usable when the GPU field fails', async () => {

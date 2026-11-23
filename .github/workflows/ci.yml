@@ -132,10 +132,10 @@ jobs:
           CACHE_RESTORE_OUTCOME: ${{ steps.cache.outcome }}
       - run: npm ci --no-audit
       - run: npm run build
-      - name: Install the locked Chromium headless shell
-        run: npx --no-install playwright install --only-shell chromium
-      - run: npm run test:e2e
+      - name: Install the locked Chromium browser and headless shell
+        run: npx --no-install playwright install chromium
       - name: Enforce Lighthouse performance budgets
+        id: lighthouse
         run: |
           set -euo pipefail
           log="$RUNNER_TEMP/lighthouse-next.log"
@@ -155,6 +155,9 @@ jobs:
           cat "$log"
           exit 1
         timeout-minutes: 20
+      - name: Run npm run test:e2e
+        if: ${{ !cancelled() && (steps.lighthouse.outcome == 'success' || steps.lighthouse.outcome == 'failure') }}
+        run: npm run test:e2e
 
   CI:
     name: CI

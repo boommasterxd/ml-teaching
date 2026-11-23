@@ -94,6 +94,8 @@ and unit coverage. These commands also remain available individually in
 and audit execution failures; development dependencies remain installed. Before an
 authorized integration, run the separate full local `npm audit --include=dev` and
 review development-only findings.
+The blocking typecheck also checks the Next.js configuration and hash-CSP build
+tooling as JavaScript through `tsconfig.build-tooling.json`.
 The [minimatch decision](decisions/minimatch-development-advisory.md) records the
 scope and remaining risk of the accepted development-only advisory.
 
@@ -152,12 +154,18 @@ that Proxy remain forbidden.
 `npm run build` uses the native Next.js build and its CSP verification hooks.
 `npm run test:e2e` runs the complete browser suite against the native production
 server, including accessibility and keyboard contracts. It remains unfiltered with
-`CI=true`. CI downloads only the lockfile-matched Chromium headless shell; browser
+`CI=true`. CI downloads the lockfile-matched Chromium Headless Shell and full
+Chromium for the back-forward cache test. Browser
 launch and host dependency validation stay blocking.
-After Playwright stops its server, the browser job starts the same verified build
-with `npm start` and runs `npm run test:lighthouse -- --all --locked`. The job
-cleans up that server and fails if it cannot start or an audited route scores
-95 or below on either profile. Both checks use one native production build.
+The browser job runs `npm run test:lighthouse -- --all --locked` before Playwright
+to keep the measurement separate from the browser suite's workload. It starts the
+verified build with `npm start` and stops its server before Playwright starts its
+own server for the same build. After successful setup, the browser suite still runs
+if Lighthouse fails, and either failure blocks CI. Each audited route must score
+above 95 on both profiles. Lighthouse identifies each report by URL, profile,
+collection time and file path, and logs the browser version, throttling settings,
+CPU benchmark index, Largest Contentful Paint and Total Blocking Time. A score
+that misses the budget also logs the available Largest Contentful Paint phases.
 
 ## Security automation and release boundary
 

@@ -21,6 +21,8 @@ function ErrorGlassScene({ digits, sources }: ErrorGlassArtworkProps) {
   const {
     artwork,
     Field,
+    fieldRef,
+    playbackControl,
     available,
     inView,
     failed,
@@ -46,22 +48,28 @@ function ErrorGlassScene({ digits, sources }: ErrorGlassArtworkProps) {
         data-field-unavailable={failed || undefined}
         onPointerEnter={prepare}
       >
-        {viewportReady && available && Field && (
-          <Field
-            paused={paused}
-            inView={inView}
-            shape={digits ? 'digits' : 'ring'}
-            onUnavailable={onUnavailable}
-            onRendered={onRendered}
-          />
+        {Field && (
+          <div ref={fieldRef} className="contents">
+            <Field
+              paused={paused}
+              inView={inView}
+              shape={digits ? 'digits' : 'ring'}
+              onUnavailable={onUnavailable}
+              onRendered={onRendered}
+            />
+          </div>
         )}
       </ErrorGlassFrame>
       <div className="error-glass-controls">
         <Button
+          ref={playbackControl}
           variant="outline"
           size="sm"
+          className="aria-disabled:cursor-default"
           aria-controls="error-glass-art"
           disabled={reduce || failed}
+          focusableWhenDisabled
+          tabIndex={reduce || failed ? -1 : undefined}
           onPointerEnter={prepare}
           onPointerDown={prepare}
           onFocus={prepare}

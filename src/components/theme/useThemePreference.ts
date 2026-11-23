@@ -17,7 +17,6 @@ import {
 export interface ThemePreference {
   selection: ThemeSelection;
   resolved: ResolvedTheme;
-  applied: ResolvedTheme;
   remember: boolean;
   revision: number;
   animate: boolean;
@@ -26,7 +25,6 @@ export interface ThemePreference {
 const initial: ThemePreference = {
   selection: 'system',
   resolved: 'light',
-  applied: 'light',
   remember: false,
   revision: 0,
   animate: false,
@@ -34,10 +32,6 @@ const initial: ThemePreference = {
 
 const rememberUnavailable =
   'Dein Browser erlaubt das Merken nicht. Die Auswahl gilt für diesen Aufruf.';
-
-function animationFailed() {
-  toast.info('Die Darstellung wurde ohne Animation geändert.', { id: 'theme-animation' });
-}
 
 export function useThemePreference() {
   const [preference, setPreference] = useState(initial);
@@ -51,13 +45,14 @@ export function useThemePreference() {
       const previous = current.current;
       const saved = !previous.remember || rememberTheme(selection);
       if (!saved) toast.error(rememberUnavailable, { id: 'theme-storage' });
+      const resolved = resolveTheme(selection, systemPrefersDark());
+      applyTheme(selection, resolved);
       update({
-        ...previous,
         selection,
-        resolved: resolveTheme(selection, systemPrefersDark()),
+        resolved,
         remember: previous.remember && saved,
         revision: previous.revision + 1,
-        animate: true,
+        animate: resolved !== previous.resolved,
       });
     },
     [update],
@@ -80,13 +75,6 @@ export function useThemePreference() {
     },
     [update],
   );
-  const captureAppearance = useCallback(
-    (applied: ResolvedTheme) => {
-      update({ ...current.current, applied });
-    },
-    [update],
-  );
-
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const applyExternal = (selection: ThemeSelection, remember: boolean) => {
@@ -96,13 +84,11 @@ export function useThemePreference() {
         previous.animate ||
         previous.selection !== selection ||
         previous.resolved !== resolved ||
-        previous.applied !== resolved ||
         previous.remember !== remember
       ) {
         update({
           selection,
           resolved,
-          applied: resolved,
           remember,
           revision: previous.revision + 1,
           animate: false,
@@ -133,5 +119,5 @@ export function useThemePreference() {
     };
   }, [update]);
 
-  return { preference, current, select, setRemember, animationFailed, captureAppearance };
+  return { preference, select, setRemember };
 }

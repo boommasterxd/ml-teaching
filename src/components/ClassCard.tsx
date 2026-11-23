@@ -25,11 +25,6 @@ import { Badge } from './ui/badge';
 import { Field, FieldError, FieldLabel } from './ui/field';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
-const nameErrors = {
-  empty: 'Name darf nicht leer sein',
-  duplicate: 'Name muss eindeutig sein',
-};
-
 /**
  * Callback actions for the ClassCard component, grouped to reduce prop count.
  */
@@ -57,8 +52,7 @@ interface ClassCardProps extends Pick<CameraPreviewProps, 'camera'> {
   position: number;
   /** The ML class data to display and manage. */
   cls: MLClass;
-  /** Whether the class name conflicts with another class name. */
-  isDuplicate: boolean;
+  nameError?: string;
   /** Grouped callback actions for class management and user interactions. */
   actions: ClassCardActions;
 }
@@ -71,7 +65,7 @@ function ClassNameInput({
 }: {
   id: string;
   name: string;
-  error: string | null;
+  error?: string;
   onChange: (name: string) => void;
 }) {
   const [showError, setShowError] = useState(false);
@@ -140,18 +134,16 @@ function ClassNameInput({
 function ClassHeader({
   cls,
   position,
-  isDuplicate,
+  nameError,
   actions,
-}: Pick<ClassCardProps, 'cls' | 'position' | 'isDuplicate' | 'actions'>) {
+}: Pick<ClassCardProps, 'cls' | 'position' | 'nameError' | 'actions'>) {
   const { onUpdateName } = actions;
   const count = cls.images.length;
   const enoughImages = count >= ML.MIN_IMAGES_PER_CLASS;
   const atLimit = count >= ML.MAX_IMAGES_PER_CLASS;
-  const isEmpty = cls.name.trim() === '';
-  const errorMsg = isEmpty ? nameErrors.empty : isDuplicate ? nameErrors.duplicate : null;
   return (
     <CardHeader className="items-center px-4 @md/training-class:px-5">
-      <Field data-invalid={!!errorMsg} className="min-w-0 gap-2">
+      <Field data-invalid={!!nameError} className="min-w-0 gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <div
             className={cn(
@@ -166,7 +158,7 @@ function ClassHeader({
           <ClassNameInput
             id={`class-name-${cls.id}`}
             name={cls.name}
-            error={errorMsg}
+            error={nameError}
             onChange={(name) => onUpdateName(cls.id, name)}
           />
           <Badge
@@ -229,7 +221,7 @@ function ClassManagementActions({
 const ClassCard = memo(function ClassCard({
   cls,
   position,
-  isDuplicate,
+  nameError,
   actions,
   camera,
 }: ClassCardProps) {
@@ -255,7 +247,7 @@ const ClassCard = memo(function ClassCard({
 
   return (
     <Card className="@container/training-class gap-4 py-4 lg:h-full">
-      <ClassHeader cls={cls} position={position} isDuplicate={isDuplicate} actions={actions} />
+      <ClassHeader cls={cls} position={position} nameError={nameError} actions={actions} />
       <CardContent className="grid min-w-0 gap-3 px-4 @md/training-class:px-5 @xl/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]">
         <CameraPreview
           camera={camera}

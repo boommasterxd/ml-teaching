@@ -190,6 +190,7 @@ describe('local training workspace', () => {
       result.current.resources.consent.grantConsent();
       result.current.resources.consent.grantCameraConsent();
     });
+    await waitFor(() => expect(result.current.resources.camera.stream).toBe(mocks.stream));
     await collectMinimumImages(result);
     let finish!: (image: MLImage) => void;
     mocks.extract.mockImplementationOnce(
@@ -218,6 +219,7 @@ describe('local training workspace', () => {
   it('keeps local image uploads usable after declining camera access and can reopen the choice', async () => {
     const { result } = await renderWorkspace();
     act(() => result.current.resources.consent.grantConsent());
+    await waitFor(() => expect(result.current.resources.showCameraPrompt).toBe(true));
     act(() => result.current.resources.consent.declineCameraConsent());
     expect(result.current.resources.consent.cameraConsent).toBe(false);
     expect(result.current.resources.showCameraPrompt).toBe(false);
@@ -234,7 +236,7 @@ describe('local training workspace', () => {
     mocks.modelReady = false;
     const { result } = await renderWorkspace();
     act(() => result.current.resources.consent.grantConsent());
-    expect(result.current.resources.models.isModelLoading).toBe(false);
+    await waitFor(() => expect(result.current.resources.models.isModelLoading).toBe(false));
     expect(result.current.resources.models.mobilenetModel).toBeNull();
     expect(result.current.resources.showCameraPrompt).toBe(false);
   });
@@ -267,7 +269,7 @@ describe('local training workspace', () => {
     expect(result.current.resources.consent.showConsentModal).toBe(true);
     act(() => result.current.resources.consent.grantConsent());
     expect(result.current.resources.consent.showCameraModal).toBe(true);
-    expect(result.current.resources.showCameraPrompt).toBe(true);
+    await waitFor(() => expect(result.current.resources.showCameraPrompt).toBe(true));
     act(() => result.current.resources.consent.grantCameraConsent());
     expect(result.current.resources.consent.isFullyConsented).toBe(true);
     const classId = result.current.data.classes.classes[0].id;
@@ -353,6 +355,7 @@ describe('local training workspace', () => {
       result.current.resources.consent.grantConsent();
       result.current.resources.consent.grantCameraConsent();
     });
+    await waitFor(() => expect(result.current.resources.camera.stream).toBe(mocks.stream));
     const { cardActions: actions } = result.current;
     await act(async () => actions.onAddImageExample('class-1', document.createElement('img')));
     expect(result.current.cardActions).toBe(actions);
@@ -371,6 +374,28 @@ describe('local training workspace', () => {
     expect(result.current.resources.consent.cameraConsent).toBe(true);
     expect(result.current.resources.consent.showCameraModal).toBe(false);
     expect(result.current.data.classes.classes[0].images.map(({ id }) => id)).toEqual(['image-0']);
+  });
+
+  it('commits held frames only to the same class version and camera stream', async () => {
+    const { result } = await renderWorkspace();
+    act(() => {
+      result.current.resources.consent.grantConsent();
+      result.current.resources.consent.grantCameraConsent();
+    });
+    await waitFor(() => expect(result.current.resources.camera.stream).toBe(mocks.stream));
+    const { cardActions: actions } = result.current;
+    const frames = { images: [image('first'), image('second')], version: 0, stream: mocks.stream };
+    act(() => actions.onCommitCapture('class-1', frames));
+    expect(result.current.data.classes.classes[0].images.map(({ id }) => id)).toEqual([
+      'first',
+      'second',
+    ]);
+    act(() => result.current.data.classes.clearClass('class-1'));
+    act(() => actions.onCommitCapture('class-1', frames));
+    expect(result.current.data.classes.classes[0].images).toHaveLength(0);
+    act(() => result.current.resources.camera.pause());
+    act(() => actions.onCommitCapture('class-1', { ...frames, version: 1 }));
+    expect(result.current.data.classes.classes[0].images).toHaveLength(0);
   });
 
   it('passes extraction failures to the upload batch and still validates class changes', async () => {

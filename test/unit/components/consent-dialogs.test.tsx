@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  act,
   fireEvent,
   render as renderComponent,
   screen,
@@ -9,7 +10,8 @@ import {
 } from '@testing-library/react';
 import { SetupDialogFixture } from '../helpers/training-setup-dialog';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
-import { AppRouterHost } from '../helpers/app-router-host';
+import { AppRouterHost, testRouter } from '../helpers/app-router-host';
+import { learningPaths } from '@/lib/learning-paths';
 
 const render = (ui: ReactNode) => renderComponent(ui, { wrapper: AppRouterHost });
 
@@ -96,5 +98,27 @@ describe('consent dialogs', () => {
     rerender(<SetupDialogFixture step="loading" loadingText="GPU wird vorbereitet" />);
     expect(screen.getByText('GPU wird vorbereitet')).toBe(progress);
     expect(document.activeElement).toBe(withdrawal);
+  });
+
+  it('prepares the direct-entry model error return before navigating', () => {
+    testRouter.prefetch.mockClear();
+    testRouter.push.mockClear();
+    const decline = vi.fn();
+    render(
+      <SetupDialogFixture
+        step="error"
+        declineConsentHref={learningPaths.images}
+        onDeclineConsent={decline}
+      />,
+    );
+
+    const cancel = screen.getByRole('link', { name: 'Abbrechen' });
+    expect(cancel.getAttribute('href')).toBe(learningPaths.images);
+    expect(testRouter.prefetch).not.toHaveBeenCalled();
+    act(() => cancel.focus());
+    expect(testRouter.prefetch).toHaveBeenCalledExactlyOnceWith(learningPaths.images);
+    expect(testRouter.push).not.toHaveBeenCalled();
+    fireEvent(screen.getByRole('dialog'), new Event('cancel', { cancelable: true }));
+    expect(decline).toHaveBeenCalledOnce();
   });
 });

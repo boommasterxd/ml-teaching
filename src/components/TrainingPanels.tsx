@@ -69,7 +69,7 @@ export default function TrainingPanels({
           <TrainingClassesPanel
             entryReady={ready}
             classes={classes.classes}
-            duplicateClassNames={data.duplicateClassNames}
+            nameControl={classes.nameControl}
             camera={cameraView}
             mainHeadingRef={resources.mainHeadingRef}
             cardActions={cardActions}

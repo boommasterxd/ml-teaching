@@ -6,7 +6,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import { useFormState } from 'react-hook-form';
 import { useClassManagement } from '@/hooks/useClassManagement';
 import { ML } from '@/constants';
 import type { MLImage } from '@/types/ml';
@@ -120,6 +121,30 @@ describe('useClassManagement', () => {
   });
 
   describe('updateClassName', () => {
+    it('reports both conflicting fields and clears the surviving field after removal', async () => {
+      const { result } = renderHook(() => {
+        const management = useClassManagement(onInvalidate);
+        const { errors } = useFormState({ control: management.nameControl, name: 'names' });
+        return { management, errors };
+      });
+      const [first, second] = result.current.management.classes;
+      await act(async () => {
+        result.current.management.addImage(second.id, mockImage('kept'));
+        result.current.management.updateClassName(second.id, ` ${first.name} `);
+      });
+      await waitFor(() => {
+        expect(result.current.errors.names?.[0]?.name?.message).toBe('Name muss eindeutig sein');
+        expect(result.current.errors.names?.[1]?.name?.message).toBe('Name muss eindeutig sein');
+      });
+
+      await act(async () => result.current.management.removeClass(first.id));
+      await waitFor(() => expect(result.current.errors.names).toBeUndefined());
+      expect(result.current.management.classes[0]).toMatchObject({
+        id: second.id,
+        name: ` ${first.name} `,
+        images: [{ id: 'kept' }],
+      });
+    });
     it('benennt die Klasse um', () => {
       const { result } = renderHook(() => useClassManagement(onInvalidate));
       const id = result.current.classes[0].id;
@@ -150,15 +175,20 @@ describe('useClassManagement', () => {
   });
 
   describe('addImage / removeImage', () => {
-    it('fügt ein Bild zur Klasse hinzu', () => {
+    it('fügt ein Bild hinzu und behält die andere Klasse und Namensfelder bei', () => {
       const { result } = renderHook(() => useClassManagement(onInvalidate));
-      const classId = result.current.classes[0].id;
+      const {
+        classes: [first, second],
+        names,
+      } = result.current;
       const img = mockImage('img-1');
 
-      act(() => result.current.addImage(classId, img));
+      act(() => result.current.addImage(first.id, img));
 
       expect(result.current.classes[0].images).toHaveLength(1);
       expect(result.current.classes[0].images[0]).toEqual(img);
+      expect(result.current.classes[1]).toBe(second);
+      expect(result.current.names).toBe(names);
     });
 
     it('addImage ruft onInvalidate NICHT auf', () => {

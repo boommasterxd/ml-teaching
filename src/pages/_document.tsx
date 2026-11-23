@@ -1,13 +1,32 @@
 import { Html, Head, Main, NextScript } from 'next/document';
 import { ErrorRecoveryStyle } from '@/components/ErrorRecoveryTransitionStyles';
+import { headerLegalLinks } from '@/content/site-navigation';
+import { learningPaths } from '@/lib/learning-paths';
 import { supportedColorSchemes, THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
+
+const recoveryDestinations = [
+  '/',
+  ...Object.values(learningPaths),
+  ...headerLegalLinks.map(({ href }) => href),
+];
 
 const recoveryRules = JSON.stringify({
   prerender: [
-    { where: { selector_matches: 'a[data-recovery-intent="home"]' }, eagerness: 'immediate' },
-  ],
-  prefetch: [
-    { where: { selector_matches: 'a[data-recovery-intent="page"]' }, eagerness: 'immediate' },
+    {
+      where: {
+        and: [
+          { selector_matches: 'a[data-recovery-intent]' },
+          {
+            href_matches: recoveryDestinations.map((pathname) => ({
+              pathname,
+              search: '',
+              hash: '',
+            })),
+          },
+        ],
+      },
+      eagerness: 'immediate',
+    },
   ],
 });
 

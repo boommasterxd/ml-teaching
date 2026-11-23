@@ -71,7 +71,7 @@ prefetched before consent. See the [design system](design-system.md) for ownersh
 | --------------------------- | ------------------------------------------------------------------------- |
 | `npm run format:check`      | Prettier for maintained source and documentation.                         |
 | `npm run lint`              | ESLint, React and enforceable complexity limits.                          |
-| `npm run typecheck`         | Generate route types and check TypeScript and the CommonJS cache runtime. |
+| `npm run typecheck`         | Generate route types and check application, build and cache tooling code. |
 | `npm run check:boundaries`  | Parse server/client route and transitive import boundaries.               |
 | `npm run check:quality`     | Enforce the source file-size limit.                                       |
 | `npm run check:dead-code`   | Discover unused files, dependencies and public exports.                   |
@@ -96,9 +96,10 @@ Use focused Vitest paths for local changes. `npm run ci` runs the combined quali
 and unit-coverage gates; native builds and browser checks remain explicit. Do not
 run tests or source refactors to satisfy a counter without a real behavioral risk.
 
-Browser tests use the version-matched Chromium Headless Shell. Install it with
-`npx playwright install --only-shell chromium`; OS dependency setup is separate and
-must respond to actual missing requirements. Playwright starts `npm start` on
+Browser tests use the version-matched Chromium Headless Shell. The back-forward
+cache test uses the full Chromium browser. Install both with `npx playwright install chromium`.
+OS dependency setup is separate and must respond to actual missing requirements.
+Playwright starts `npm start` on
 127.0.0.1:3100 and refuses to reuse an unrelated server. Build once first.
 
 The Lighthouse command expects a separately started native production server on
@@ -142,10 +143,12 @@ and verifies the resulting manifest. The production build uses
 `tsconfig.build.json` for application code, build configuration, CSP declarations
 and generated Next.js types. It inherits the project compiler options. The
 blocking `npm run typecheck` uses `tsconfig.json` for application code, tests and
-TypeScript tooling, and `tsconfig.cache-lifecycle.json` for the CommonJS cache
-runtime. `npm start` verifies the manifest again before native
-`next start`. A failed or modified build cannot reuse a previous manifest. Rebuild
-from source after changing the content, runtime, lockfile or configuration.
+TypeScript tooling. It uses `tsconfig.build-tooling.json` to check the JavaScript
+types in the Next.js configuration and hash-CSP build tooling, and
+`tsconfig.cache-lifecycle.json` for the CommonJS cache runtime. `npm start` verifies
+the manifest again before native `next start`. A failed or modified build cannot
+reuse a previous manifest. Rebuild from source after changing the content,
+runtime, lockfile or configuration.
 
 Do not deploy generated `.next/` files separately from their matching source,
 headers and assets. Rollbacks must keep that set together. Browser HTML freshness
