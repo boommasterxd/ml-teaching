@@ -40,12 +40,22 @@ vi.mock(import('@/components/training/training-workspace-loader'), async (origin
   };
 });
 vi.mock('@/lib/mobilenet-embedding', () => ({ loadMobileNetEmbedding: browser.model }));
-vi.mock('@tensorflow/tfjs-core', () => ({
-  setBackend: vi.fn(async () => true),
-  ready: vi.fn(async () => {}),
-  tidy: (operation: () => unknown) => operation(),
-  zeros: browser.tensor,
-}));
+vi.mock('@tensorflow/tfjs-core', () => {
+  let factory: (() => unknown) | null = () => ({});
+  return {
+    findBackendFactory: () => factory,
+    registerBackend: (_name: string, next: () => unknown) => {
+      factory = next;
+    },
+    setBackend: async () => factory !== null,
+    removeBackend: () => {
+      factory = null;
+    },
+    ready: vi.fn(async () => {}),
+    tidy: (operation: () => unknown) => operation(),
+    zeros: browser.tensor,
+  };
+});
 vi.mock('@tensorflow/tfjs-backend-webgl', () => ({}));
 vi.mock('@tensorflow-models/knn-classifier', () => ({
   create: () => ({
@@ -71,6 +81,8 @@ function cameraStream() {
 
 beforeEach(() => {
   installBrowserHost();
+  // Motion restores scroll after measuring animated heights. JSDOM cannot scroll.
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   vi.clearAllMocks();
   vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
   clearRememberedTrainingConsent();

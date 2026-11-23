@@ -13,13 +13,13 @@ import {
   type ResolvedTheme,
   type ThemeSelection,
 } from '@/lib/theme';
+import { useThemeWipe } from './useThemeWipe';
 
 export interface ThemePreference {
   selection: ThemeSelection;
   resolved: ResolvedTheme;
   remember: boolean;
   revision: number;
-  animate: boolean;
 }
 
 const initial: ThemePreference = {
@@ -27,7 +27,6 @@ const initial: ThemePreference = {
   resolved: 'light',
   remember: false,
   revision: 0,
-  animate: false,
 };
 
 const rememberUnavailable =
@@ -40,22 +39,26 @@ export function useThemePreference() {
     current.current = next;
     setPreference(next);
   }, []);
+  const applyCurrent = useCallback(() => {
+    const { selection, resolved } = current.current;
+    applyTheme(selection, resolved);
+  }, []);
+  const { startWipe, finishWipe } = useThemeWipe(applyCurrent);
   const select = useCallback(
-    (selection: ThemeSelection) => {
+    (selection: ThemeSelection, toggleTheme: (selection: ThemeSelection) => void) => {
       const previous = current.current;
       const saved = !previous.remember || rememberTheme(selection);
       if (!saved) toast.error(rememberUnavailable, { id: 'theme-storage' });
       const resolved = resolveTheme(selection, systemPrefersDark());
-      applyTheme(selection, resolved);
       update({
         selection,
         resolved,
         remember: previous.remember && saved,
         revision: previous.revision + 1,
-        animate: resolved !== previous.resolved,
       });
+      startWipe(selection, resolved, toggleTheme);
     },
-    [update],
+    [startWipe, update],
   );
   const setRemember = useCallback(
     (remember: boolean) => {
@@ -81,7 +84,6 @@ export function useThemePreference() {
       const resolved = resolveTheme(selection, media.matches);
       const previous = current.current;
       if (
-        previous.animate ||
         previous.selection !== selection ||
         previous.resolved !== resolved ||
         previous.remember !== remember
@@ -91,7 +93,6 @@ export function useThemePreference() {
           resolved,
           remember,
           revision: previous.revision + 1,
-          animate: false,
         });
       }
       applyTheme(selection, resolved);
@@ -119,5 +120,5 @@ export function useThemePreference() {
     };
   }, [update]);
 
-  return { preference, select, setRemember };
+  return { preference, select, setRemember, finishWipe };
 }

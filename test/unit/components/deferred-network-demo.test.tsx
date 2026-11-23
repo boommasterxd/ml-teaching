@@ -50,6 +50,16 @@ describe('optional educational demo', () => {
         fireEvent.click(dog);
       });
       expect(cat.getAttribute('data-active')).toBe('true');
+      const visibility = vi.spyOn(document, 'visibilityState', 'get');
+      visibility.mockReturnValue('hidden');
+      fireEvent(document, new Event('visibilitychange'));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(ANIMATION.STEP_DURATION_MS * NETWORK_STAGES.COMPLETE);
+      });
+      expect(screen.getByText('Signal wird verarbeitet…')).toBeTruthy();
+      expect(screen.queryByText('Katze erkannt')).toBeNull();
+      visibility.mockReturnValue('visible');
+      fireEvent(document, new Event('visibilitychange'));
       await act(async () => {
         await vi.advanceTimersByTimeAsync(ANIMATION.STEP_DURATION_MS * NETWORK_STAGES.COMPLETE);
       });

@@ -193,6 +193,27 @@ export async function expectLiveSystemThemeChanges(page: Page, theme: Locator) {
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 }
 
+export async function expectThemeWipe(page: Page) {
+  await page.waitForFunction(() =>
+    document.getAnimations().some(({ effect }) => {
+      if (
+        !(effect instanceof KeyframeEffect) ||
+        effect.pseudoElement !== '::view-transition-new(root)'
+      )
+        return false;
+      const progress = effect.getComputedTiming().progress;
+      const [start, end] = effect.getKeyframes();
+      return (
+        typeof progress === 'number' &&
+        progress > 0 &&
+        progress < 1 &&
+        /^inset\(0(?:px)? 100%(?: 0(?:px)?){0,2}\)$/.test(String(start?.clipPath)) &&
+        /^inset\(0(?:px)?(?: 0(?:px)?){0,3}\)$/.test(String(end?.clipPath))
+      );
+    }),
+  );
+}
+
 type TransitionSnapshot = {
   root: boolean;
   outgoingPages: number;

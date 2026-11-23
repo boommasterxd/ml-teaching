@@ -11,7 +11,7 @@ function initialState(k = 3) {
     round: createKnnRound(),
     k,
     selected: [] as string[],
-    error: null as { id: string; attempt: number } | null,
+    error: { id: null as string | null, attempt: 0 },
     result: null as 'correct' | 'incorrect' | null,
     announcement: '',
   };
@@ -25,19 +25,22 @@ export function useKnnQuiz() {
     setState((current) => {
       if (current.result === 'correct') return current;
       const nearest = current.round.ranked.slice(0, current.k);
-      if (!nearest.some((point) => point.id === id))
+      if (!nearest.some((point) => point.id === id)) {
+        const attempt = current.error.attempt + 1;
+        const pointNumber = id.replace('point-', '');
         return {
           ...current,
-          error: { id, attempt: (current.error?.attempt ?? 0) + 1 },
-          announcement: `Dieser Punkt gehört nicht zu den ${current.k} nächsten Nachbarn. Suche näher an der Raute.`,
+          error: { id, attempt },
+          announcement: `Fehlversuch ${attempt}: Punkt ${pointNumber} gehört nicht zu den ${current.k} nächsten Nachbarn. Suche näher an der Raute.`,
         };
+      }
       const selected = current.selected.includes(id)
         ? current.selected.filter((point) => point !== id)
         : [...current.selected, id];
       return {
         ...current,
         selected,
-        error: null,
+        error: { ...current.error, id: null },
         result: null,
         announcement: `${selected.length} von ${current.k} Nachbarn gefunden.`,
       };
@@ -52,7 +55,7 @@ export function useKnnQuiz() {
             ...current,
             k,
             selected: [],
-            error: null,
+            error: { ...current.error, id: null },
             result: null,
             announcement: `Finde jetzt ${k} Nachbarn.`,
           },
@@ -73,7 +76,9 @@ export function useKnnQuiz() {
     });
   };
   const clearError = () =>
-    setState((current) => (current.error ? { ...current, error: null } : current));
+    setState((current) =>
+      current.error.id ? { ...current, error: { ...current.error, id: null } } : current,
+    );
   const restart = () =>
     setState((current) => ({
       ...initialState(current.k),

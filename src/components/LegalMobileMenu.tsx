@@ -1,8 +1,7 @@
-import { headerLegalLinks } from '@/content/site-navigation';
+import { headerLegalLinks, type LegalPage } from '@/content/site-navigation';
 import Link from './IntentLink';
 import { legalPageIcons } from './site-navigation-icons';
 import { DropdownMenuContent, DropdownMenuGroup, DropdownMenuLinkItem } from './ui/dropdown-menu';
-import type { LegalPage } from './LegalNavigation';
 
 export default function LegalMobileMenu({ selectedValue }: { selectedValue: LegalPage }) {
   return (

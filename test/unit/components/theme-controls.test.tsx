@@ -44,7 +44,7 @@ describe('theme controls', () => {
     expect(document.querySelector('h1')?.textContent).toBe('ML Teaching');
     expect(document.querySelector('[role="switch"]')).not.toBeNull();
     expect(document.querySelector('[style]')).toBeNull();
-    expect(document.querySelector('[data-theme-wipe]')).toBeNull();
+    expect(document.querySelector('style')?.textContent).toContain('animate-ui-theme');
   });
 
   it('follows OS changes without writes and keeps an ordinary switch selection temporary', async () => {

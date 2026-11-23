@@ -1,17 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useMenuModule } from '@/components/use-menu-module';
+import type { TrainingResources } from '@/components/training/TrainingResourceHost';
+import { useDeferredModule } from './use-deferred-module';
 import { useAppError } from './useAppError';
-import type { useCameraStream } from './useCameraStream';
 import { useConsentFlow } from './useConsentFlow';
-import type { useModelLoader } from './useModelLoader';
-
-export { subscribeToVisibility } from '@/components/training/TrainingEntryContext';
-
-export interface TrainingResources {
-  visible: boolean;
-  models: ReturnType<typeof useModelLoader>;
-  camera: ReturnType<typeof useCameraStream>;
-}
 
 const initialResources: TrainingResources = {
   visible: true,
@@ -45,7 +36,7 @@ export function useTrainingEngine(active: boolean, canRestoreCamera: boolean) {
   const [cameraNeeded, setCameraNeeded] = useState(true);
   const [modelAttempt, setModelAttempt] = useState(0);
   const [resources, setResources] = useState(initialResources);
-  const { module, failed, prepare } = useMenuModule(loadResourceHost);
+  const { module, failed, prepare } = useDeferredModule(loadResourceHost);
   const resourcesActive = active && consent.hasConsented;
   useEffect(() => {
     if (resourcesActive) prepare();

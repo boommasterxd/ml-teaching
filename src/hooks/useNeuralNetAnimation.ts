@@ -4,7 +4,7 @@
  * Advances the educational feature-extraction and neighbor-vote stages.
  * Timers select algorithmic stages; Animate UI owns all visual interpolation.
  */
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useLayoutEffect, useCallback } from 'react';
 import { ANIMATION, NETWORK_STAGES } from '../constants';
 import { NETWORK_RESULTS } from '../lib/network-demo';
 
@@ -21,28 +21,34 @@ import { NETWORK_RESULTS } from '../lib/network-demo';
  *   - `sequence` — identifies each selected example so its decorative signal can restart.
  *   - `triggerAnimation` — starts a new animation sequence for the given signal type.
  */
-export function useNeuralNetAnimation() {
+export function useNeuralNetAnimation(visible = true) {
   const [activeSignal, setActiveSignal] = useState<'dog' | 'cat' | null>(null);
   const [animStep, setAnimStep] = useState(-1);
   const [animating, setAnimating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [sequence, setSequence] = useState(0);
 
-  // Bounded educational stages, independent of animation frames and exit lifetimes.
-  const timeoutIdsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  // Clears all pending timeouts when the component unmounts to prevent state updates on
-  // an unmounted component.
-  useEffect(() => {
-    return () => {
-      timeoutIdsRef.current.forEach(clearTimeout);
-    };
-  }, []);
+  const currentStep = useRef(0);
+  useLayoutEffect(() => {
+    if (!visible || !animating || !activeSignal) return;
+    const signal = activeSignal;
+    let timer = setTimeout(advance, ANIMATION.STEP_DURATION_MS);
+    function advance() {
+      const step = ++currentStep.current;
+      setAnimStep(step);
+      if (step === NETWORK_STAGES.COMPLETE) {
+        setResult(NETWORK_RESULTS[signal]);
+        setAnimating(false);
+      } else {
+        timer = setTimeout(advance, ANIMATION.STEP_DURATION_MS);
+      }
+    }
+    return () => clearTimeout(timer);
+  }, [activeSignal, animating, visible]);
 
   /**
    * Starts the forward-propagation animation sequence for the given signal type.
-   * No-ops if an animation is already running. Cancels any orphaned timeouts from a
-   * previous run before scheduling the new sequence.
+   * No-ops if an animation is already running. The sequence advances only while visible.
    *
    * Each stage advances at `ANIMATION.STEP_DURATION_MS` intervals.
    * Completion announces the neighbor vote and releases the input controls.
@@ -52,26 +58,12 @@ export function useNeuralNetAnimation() {
   const triggerAnimation = useCallback(
     (type: 'dog' | 'cat') => {
       if (animating) return;
-      timeoutIdsRef.current.forEach(clearTimeout);
+      currentStep.current = 0;
       setAnimating(true);
       setActiveSignal(type);
       setResult(null);
       setSequence((current) => current + 1);
       setAnimStep(0);
-
-      const d = ANIMATION.STEP_DURATION_MS;
-
-      timeoutIdsRef.current = Array.from({ length: NETWORK_STAGES.COMPLETE }, (_, index) => {
-        const step = index + 1;
-        return setTimeout(() => {
-          setAnimStep(step);
-          if (step === NETWORK_STAGES.COMPLETE) {
-            setResult(NETWORK_RESULTS[type]);
-            setAnimating(false);
-            timeoutIdsRef.current = [];
-          }
-        }, d * step);
-      });
     },
     [animating],
   );

@@ -7,7 +7,7 @@
  */
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { Tensor2D } from '@tensorflow/tfjs-core';
-import { createClassifier, loadTensorFlow } from '../lib/ml-runtime';
+import { createClassifier, loadTensorFlow, retainBackendWork } from '../lib/ml-runtime';
 import type { ClassNameValidity } from '@/lib/training-class-names';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
@@ -185,6 +185,7 @@ export function useModelTraining(
       setProgress({ processed: 0, total });
       let nextProgressAt = 0;
       let newClassifier: Classifier | null = null;
+      const releaseBackend = retainBackendWork();
       try {
         newClassifier = await createClassifier();
         await waitForTrainingUi(ML.TRAINING_UI_YIELD_MS, controller.signal);
@@ -206,6 +207,7 @@ export function useModelTraining(
         newClassifier?.dispose();
         if (!controller.signal.aborted) onError('training', 'Fehler beim Training des Modells.');
       } finally {
+        releaseBackend?.();
         if (trainingRef.current === controller) {
           trainingRef.current = null;
           setProgress(null);

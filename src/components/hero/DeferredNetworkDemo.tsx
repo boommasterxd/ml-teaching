@@ -1,6 +1,8 @@
 'use client';
 
 import { Activity, Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { usePageVisible } from '@animate-ui/react/utils/use-page-visible';
+import { useInView } from 'motion/react';
 import {
   DiagramSurface,
   NetworkInputButtons,
@@ -35,6 +37,13 @@ function useMountedRef() {
   return mounted;
 }
 
+function useDemoViewport() {
+  const surface = useRef<HTMLDivElement>(null);
+  const inView = useInView(surface);
+  const pageVisible = usePageVisible();
+  return { surface, visible: inView && pageVisible };
+}
+
 export default function DeferredNetworkDemo() {
   const [prepared, setPrepared] = useState(false);
   const [active, setActive] = useState(false);
@@ -43,7 +52,8 @@ export default function DeferredNetworkDemo() {
   const pending = useRef(false);
   const ready = useRef(false);
   const mounted = useMountedRef();
-  const state = useNeuralNetAnimation();
+  const { surface, visible } = useDemoViewport();
+  const state = useNeuralNetAnimation(visible);
   const { triggerAnimation } = state;
 
   const prepare = (signal?: ExampleSignal) => {
@@ -89,6 +99,7 @@ export default function DeferredNetworkDemo() {
 
   return (
     <div
+      ref={surface}
       className="landing-demo"
       onPointerEnter={() => prepare()}
       onFocusCapture={() => prepare()}
@@ -122,6 +133,7 @@ export default function DeferredNetworkDemo() {
             <Activity mode={active ? 'visible' : 'hidden'}>
               <NetworkDiagram
                 {...state}
+                visible={visible}
                 onReady={startPreparedSignal}
                 preparing={Boolean(pendingSignal)}
                 failed={failed}

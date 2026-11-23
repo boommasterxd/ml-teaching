@@ -1,15 +1,12 @@
-import { headerLegalLinks } from '@/content/site-navigation';
+import { headerLegalLinks, type LegalPage } from '@/content/site-navigation';
 import AnimatedLink from './AnimatedLink';
 import LegalMobileNavigation from './LegalMobileNavigation';
 import LegalBackLink from './LegalBackLink';
 import LegalDesktopNavigation from './LegalDesktopNavigation';
-import type { LegalPage } from './LegalNavigationLinks';
 import { legalPageIcons } from './site-navigation-icons';
 import { Card } from './ui/card';
 import { Text } from './ui/typography';
 import { EntryReveal } from './ui/entry-reveal';
-
-export type { LegalPage } from './LegalNavigationLinks';
 
 function InitialLegalLinks({ page }: { page: LegalPage }) {
   return (

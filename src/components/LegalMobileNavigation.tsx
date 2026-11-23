@@ -1,11 +1,11 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import type { LegalPage } from '@/content/site-navigation';
 import { DeferredMenuLoadError } from './DeferredMenuLoadError';
 import { ChevronDown } from './icons/chevron-down';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuTrigger } from './ui/dropdown-menu-trigger';
-import type { LegalPage } from './LegalNavigation';
 import { useMenuModule, usePendingMenuDismissal } from './use-menu-module';
 
 type MenuContent = typeof import('./LegalMobileMenu').default;

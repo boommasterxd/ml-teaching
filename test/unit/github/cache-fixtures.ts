@@ -108,9 +108,7 @@ export class FixtureApi implements Api {
     if (!this.keepDeleted) this.caches = this.caches.filter((item) => item.id !== id);
   }
 
-  readReceipts(): unknown[] {
-    return this.receipts;
-  }
+  readReceipts: Api['readReceipts'] = () => this.receipts;
 }
 
 export function options(api: FixtureApi, eventName = 'push'): Options {

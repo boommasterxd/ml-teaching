@@ -62,6 +62,21 @@ function confirmScheduleMiss(mainSha: string, cacheInventory: string) {
   }
 }
 
+it('serializes each PR revision independently and isolates manual Gitleaks scans', () => {
+  const concurrency = (workflow: string) =>
+    /^concurrency:\n((?: +[^\n]+\n)+)/m.exec(workflow)?.[1].trim().replace(/\s+/g, ' ');
+  expect(concurrency(ci)).toBe(
+    'group: ci-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.base.sha }}-' +
+      '${{ github.event.pull_request.head.sha }}-${{ github.sha }} cancel-in-progress: false',
+  );
+  expect(concurrency(read('workflows/gitleaks.yml'))).toBe(
+    "group: >- gitleaks-${{ github.event_name == 'pull_request' && format('pr-{0}-{1}-{2}-{3}', " +
+      'github.event.pull_request.number, github.event.pull_request.base.sha, ' +
+      "github.event.pull_request.head.sha, github.sha) || format('manual-{0}', github.ref) }} " +
+      "cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' }}",
+  );
+});
+
 describe('dependency-cache workflow contracts', () => {
   it('shares complete dependency identities and covers every producer input trigger', () => {
     const hashes = [...`${ci}\n${producer}\n${reconciliation}`.matchAll(/CACHE_INPUT_HASH: (.+)/g)];

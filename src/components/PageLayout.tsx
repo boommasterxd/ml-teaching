@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import LegalNavigation, { type LegalPage } from './LegalNavigation';
+import type { LegalPage } from '@/content/site-navigation';
+import LegalNavigation from './LegalNavigation';
 import './legal.css';
 
 /** Shared legal reading layout beneath the persistent site shell. */

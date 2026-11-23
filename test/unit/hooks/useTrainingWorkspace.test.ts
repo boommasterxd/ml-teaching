@@ -67,6 +67,7 @@ vi.mock('@/hooks/useImageFeatureExtraction', () => ({
   useImageFeatureExtraction: () => ({ extractFeatures: mocks.extract }),
 }));
 vi.mock('@/lib/ml-runtime', () => ({
+  retainBackendWork: () => undefined,
   createClassifier: async () => mocks.classifier,
   loadTensorFlow: async () => ({
     tensor2d: (_rows: Float32Array, shape: [number, number]) => ({ shape }),
