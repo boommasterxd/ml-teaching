@@ -188,12 +188,19 @@ test('educational examples start directly and keep the selected control focused'
 
 test('mobile consent is keyboard accessible, rejects safely and makes no external requests', async ({
   page,
+  context,
+  baseURL,
 }) => {
   const failures = diagnostics(page);
-  const external: string[] = [];
-  page.on('request', (request) => {
-    if (new URL(request.url()).origin !== 'http://127.0.0.1:3100') external.push(request.url());
-  });
+  const localOrigin = new URL(baseURL!).origin;
+  const externalOrigins: string[] = [];
+  await context.route(
+    (url) => ['http:', 'https:'].includes(url.protocol) && url.origin !== localOrigin,
+    async (route) => {
+      externalOrigins.push(new URL(route.request().url()).origin);
+      await route.abort();
+    },
+  );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });
   await page.goto('/');
@@ -223,7 +230,7 @@ test('mobile consent is keyboard accessible, rejects safely and makes no externa
   await practice.press('Enter');
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('checkbox').first()).not.toBeChecked();
-  expect(external).toEqual([]);
+  expect(externalOrigins).toEqual([]);
   await expectNoStoredTrainingData(page);
   expect(failures).toEqual([]);
 });

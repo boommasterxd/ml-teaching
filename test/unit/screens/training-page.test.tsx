@@ -477,7 +477,7 @@ describe('training page integration', () => {
     const decline = screen.getByRole('link', { name: 'Abbrechen' });
     expect(decline.getAttribute('href')).toBe(learningPaths.images);
     expect(boundary.prefetch).not.toHaveBeenCalled();
-    fireEvent.pointerDown(decline, { pointerType: 'touch' });
+    act(() => decline.focus());
     expect(boundary.prefetch).toHaveBeenCalledWith(learningPaths.images);
     expect(boundary.push).not.toHaveBeenCalled();
     fireEvent(decline.closest('dialog')!, new Event('cancel', { cancelable: true }));

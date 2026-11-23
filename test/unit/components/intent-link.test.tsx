@@ -55,10 +55,13 @@ beforeEach(() => {
   vi.clearAllMocks();
   window.history.replaceState(null, '', '/');
 });
-afterEach(restoreBrowserHost);
+afterEach(() => {
+  vi.useRealTimers();
+  restoreBrowserHost();
+});
 
 describe('intent-only native navigation', () => {
-  it('keeps viewport preparation off and warms the native URL on pointer, keyboard and touch intent', () => {
+  it('keeps viewport preparation off and warms the native URL on hover and keyboard focus', () => {
     render(
       <IntentLink href={{ pathname: '/lernen', query: { mode: 'bilder' } }}>Lernen</IntentLink>,
       { wrapper: AppRouterHost },
@@ -66,16 +69,83 @@ describe('intent-only native navigation', () => {
     const link = screen.getByRole('link', { name: 'Lernen' });
     expect(nativeLink.props.mock.lastCall?.[0].prefetch).toBe(false);
     expect(testRouter.prefetch).not.toHaveBeenCalled();
-    fireEvent.pointerEnter(link);
+    fireEvent.pointerEnter(link, { pointerType: 'mouse' });
     fireEvent.focus(link);
-    fireEvent.pointerDown(link, { pointerType: 'touch' });
     expect(testRouter.prefetch.mock.calls).toEqual([
-      ['/lernen?mode=bilder'],
       ['/lernen?mode=bilder'],
       ['/lernen?mode=bilder'],
     ]);
     expect(nativeLink.props.mock.calls.every(([props]) => props.prefetch === false)).toBe(true);
     expect(screen.getByRole('link', { name: 'Lernen' })).toBe(link);
+  });
+
+  const contact = { pointerType: 'touch', pointerId: 1, isPrimary: true };
+
+  it('keeps a quick tap and its focus from preparing the same route as activation', () => {
+    vi.useFakeTimers();
+    render(<IntentLink href="/lernen">Lernen</IntentLink>, { wrapper: LinkActivationHost });
+    const link = screen.getByRole('link');
+    fireEvent.pointerEnter(link, contact);
+    fireEvent.pointerDown(link, contact);
+    vi.advanceTimersByTime(10);
+    fireEvent.pointerUp(link, contact);
+    fireEvent.focus(link);
+    fireEvent.click(link);
+
+    expect(testRouter.push).toHaveBeenCalledOnce();
+    vi.runOnlyPendingTimers();
+    expect(testRouter.prefetch).not.toHaveBeenCalled();
+  });
+
+  it('warms a held touch through the same router and does not repeat on release focus', () => {
+    vi.useFakeTimers();
+    render(<IntentLink href="/lernen?mode=bilder">Lernen</IntentLink>, { wrapper: AppRouterHost });
+    const link = screen.getByRole('link');
+    fireEvent.pointerEnter(link, contact);
+    fireEvent.pointerDown(link, contact);
+    fireEvent.focus(link);
+    expect(testRouter.prefetch).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(79);
+    expect(testRouter.prefetch).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    fireEvent.pointerUp(link, contact);
+    fireEvent.focus(link);
+    vi.runOnlyPendingTimers();
+    expect(testRouter.prefetch).toHaveBeenCalledExactlyOnceWith('/lernen?mode=bilder');
+  });
+
+  it('drops cancelled touch preparation and permits subsequent keyboard focus to warm the route', () => {
+    vi.useFakeTimers();
+    render(<IntentLink href="/lernen">Lernen</IntentLink>, { wrapper: AppRouterHost });
+    const link = screen.getByRole('link');
+    fireEvent.pointerDown(link, contact);
+    fireEvent.pointerCancel(link, contact);
+    vi.runOnlyPendingTimers();
+    expect(testRouter.prefetch).not.toHaveBeenCalled();
+
+    fireEvent.focus(link);
+    expect(testRouter.prefetch).toHaveBeenCalledExactlyOnceWith('/lernen');
+  });
+
+  it('prepares a training destination on a quick touch because activation opens setup first', () => {
+    const entry = { prepareEntry: vi.fn(), openEntry: vi.fn() };
+    render(
+      <TrainingEntryContext value={entry}>
+        <IntentLink href={learningPaths.imagePractice}>Bildmodell trainieren</IntentLink>
+      </TrainingEntryContext>,
+      { wrapper: LinkActivationHost },
+    );
+    const link = screen.getByRole('link');
+    fireEvent.pointerDown(link, contact);
+    fireEvent.pointerUp(link, contact);
+    fireEvent.focus(link);
+    fireEvent.click(link);
+
+    expect(testRouter.prefetch).toHaveBeenCalledExactlyOnceWith(learningPaths.imagePractice);
+    expect(entry.prepareEntry).toHaveBeenCalledOnce();
+    expect(entry.openEntry).toHaveBeenCalledExactlyOnceWith(link);
+    expect(testRouter.push).not.toHaveBeenCalled();
   });
 
   it('respects caller cancellation before each kind of preparation', () => {

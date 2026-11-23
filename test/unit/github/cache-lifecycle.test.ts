@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { describe, expect, it, vi } from 'vitest';
 import cachePolicy from '../../../.github/cache-policy.json';
 import { runLifecycle } from '../../../.github/scripts/cache-lifecycle/core.cjs';
 import {
@@ -14,6 +15,25 @@ import {
 const codeqlWorkflow = { name: 'Push on main', path: 'dynamic/github-code-scanning/codeql' };
 const codeqlKey = (sha: string, runId = 20) =>
   `codeql-overlay-base-database-1-js-${sha}-${runId}-1`;
+const lifecycleWorkflow = {
+  name: 'Cache lifecycle',
+  path: '.github/workflows/cache-lifecycle.yml',
+  workflow_id: 123,
+  event: 'workflow_run',
+};
+
+function lifecycleOptions(api: FixtureApi, event = 'workflow_run') {
+  const current = {
+    ...run({ id: 40, status: 'in_progress', conclusion: null }),
+    ...lifecycleWorkflow,
+    event,
+  };
+  const read = api.read.bind(api);
+  vi.spyOn(api, 'read').mockImplementation((path) =>
+    path.endsWith('/actions/runs/40') ? current : read(path),
+  );
+  return { ...options(api, event), runId: current.id, workflow: current.name };
+}
 
 describe('cache lifecycle', () => {
   it('removes only API-confirmed closed PR caches without an associated active run', () => {
@@ -71,6 +91,54 @@ describe('cache lifecycle', () => {
     const result = runLifecycle(options(api));
     expect(result.deleted).toEqual([]);
     expect(result.deferred).toBe(1);
+  });
+
+  it('resumes main rotation when only a waiting sibling of the same workflow remains', () => {
+    const api = new FixtureApi();
+    generations(api);
+    const sibling = {
+      ...run({ id: 30, status: 'pending', conclusion: null }),
+      ...lifecycleWorkflow,
+    };
+    api.runs = [sibling, run({ id: 31, name: 'CI', status: 'in_progress', conclusion: null })];
+    const opts = lifecycleOptions(api);
+    expect(runLifecycle(opts)).toMatchObject({ deleted: [], deferred: 1 });
+
+    api.runs = [sibling];
+    expect(runLifecycle(opts).deleted.map(({ id }) => id)).toEqual([1]);
+    expect(api.caches.map(({ id }) => id)).toEqual([2]);
+  });
+
+  it.each([{ status: 'in_progress' }, { workflow_id: undefined }, { workflow_id: 456 }])(
+    'preserves main caches when a sibling is running or its identity is unclear: %j',
+    (override) => {
+      const api = new FixtureApi();
+      generations(api);
+      api.runs = [
+        {
+          ...run({ id: 30, status: 'queued', conclusion: null }),
+          ...lifecycleWorkflow,
+          ...override,
+        },
+      ];
+      expect(runLifecycle(lifecycleOptions(api))).toMatchObject({ deleted: [], deferred: 1 });
+      expect(api.removed).toEqual([]);
+    },
+  );
+
+  it('recovers pending main rotation on a pull request close', () => {
+    const api = new FixtureApi();
+    generations(api);
+    const opts = lifecycleOptions(api, 'pull_request_target');
+    opts.event = { action: 'closed', pull_request: { number: 1 } };
+    expect(runLifecycle(opts).deleted.map(({ id }) => id)).toEqual([1]);
+  });
+
+  it('serializes lifecycle runs across both event types', () => {
+    const workflow = readFileSync(lifecycleWorkflow.path, 'utf8');
+    expect(workflow).toMatch(
+      /^concurrency:\n  group: cache-lifecycle\n  cancel-in-progress: false$/m,
+    );
   });
 
   it('ignores CodeQL proof candidates from non-main refs or empty caches', () => {

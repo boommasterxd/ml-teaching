@@ -65,12 +65,15 @@ artwork share one browser listener for the operating-system reduced-motion
 preference. They still resolve local Animate UI overrides before applying it.
 
 Shared `IntentLink` keeps native Next.js links and a fixed `prefetch={false}`
-while pointer entry, keyboard focus and pointer down call `router.prefetch` for
-other same-origin routes. Native router caches reuse in-flight and prepared work;
-there is no second cache or automatic invalidation loop. Viewport admission alone
-does not load another page. Caller event handlers, refs, modified clicks and route
-transition types remain native. Current path/search and fragment-only navigation
-do not prepare another route.
+while mouse or pen intent and keyboard focus call `router.prefetch` for other
+same-origin routes. Sustained touch preparation starts after 80 ms, so a short tap
+can navigate without a parallel prefetch. Training links prepare on touch-down
+because setup precedes navigation. Native router caches reuse prepared work.
+Activation stays immediate if preparation is still pending, when Next.js can
+make a full request. There is no second cache or automatic invalidation loop.
+Viewport admission alone does not load another page. Caller event handlers,
+refs, modified clicks and route transition types remain native. Current
+path/search and fragment-only navigation do not prepare another route.
 
 The current complete static routes have no loading-only prefetch boundary. Native
 preparation includes the route tree, leaf page and build-time initial content.
@@ -93,7 +96,7 @@ during intent and destination rendering.
 React Flow creates the destination's browser tree
 on actual navigation within the current document. Browser speculation prerenders
 a separate document, which cannot supply that same-document transition. Training
-intent prepares the static route and setup code. Activation opens setup outside
+intent prepares the static route, setup and workspace code. Activation opens setup outside
 the page capture; Flow starts after the dialog exits. Direct entry serves the
 complete inline consent in static HTML.
 Full training withdrawal clears the remembered choice, resets the workspace and
@@ -198,9 +201,11 @@ The [children's consent decision](decisions/children-training-consent.md) record
 how Article 8 GDPR applies to the current private educational offer.
 
 1. Pointer entry, keyboard focus or pointer down on a training link prepares the
-   setup dialog and browser resource host in parallel. The direct route renders
-   its initial consent in static HTML. When both required choices are selected,
-   intent on the consent action prepares the same host. The provider mounts it
+   setup dialog, interactive workspace module and browser resource host in parallel.
+   The direct route renders its initial consent and the inert collection frame in
+   static HTML. The frame and active collection share card and gallery markup.
+   When both required choices are selected, intent on the consent action prepares
+   the workspace module and resource host. The provider mounts the host
    after model consent is granted or valid remembered consent is restored.
    Opt-in remembering keeps the choices in the current document's memory for up
    to 30 minutes. The deadline governs reentry
@@ -208,6 +213,10 @@ how Article 8 GDPR applies to the current private educational offer.
    the workspace before the browser can cache the document for history traversal.
    Reloads, new documents and new tabs ask again. Within the document, the current
    workspace stays active until withdrawal or exit.
+   Form, upload and gallery state mount in the interactive workspace after consent.
+   Source-page setup waits for the workspace module before navigation. Setup
+   shows a separate workspace loading or retry step when that module is pending or
+   unavailable. Retrying it reuses the initialized model and camera.
    No TensorFlow runtime, model weights or camera stream is needed for initial HTML.
 2. After model consent, the same dialog shows loading progress while the browser
    initializes TensorFlow.js and loads the KNN module. It downloads the MobileNet v2

@@ -1,14 +1,9 @@
 import { memo, useState, useEffect, useRef, useCallback, type RefObject } from 'react';
 import Button from './Button';
-import { Image as ImageIcon } from './icons/image';
+import TrainingGalleryFrame from './TrainingGalleryFrame';
 import { Trash2 } from './icons/trash2';
 import { X } from './icons/x';
-import { cn } from '../lib/utils';
-import { classColorClasses } from '../lib/class-colors';
 import { Alert, AlertDescription } from './ui/alert';
-import { Empty, EmptyDescription, EmptyMedia } from './ui/empty';
-import { ScrollFadeViewport } from './ui/scroll-fade-viewport';
-import { ML } from '../constants';
 import type { MLImage } from '../types/ml';
 import type { ImageGalleryRowsProps } from './ImageGalleryRows';
 
@@ -166,20 +161,6 @@ function GalleryToolbar({
   );
 }
 
-function GalleryEmpty() {
-  return (
-    <Empty className="h-full gap-3 p-2 md:p-2">
-      <EmptyMedia variant="icon" className="gallery-empty-symbol" aria-hidden="true">
-        <ImageIcon className="size-5" />
-      </EmptyMedia>
-      <EmptyDescription className="max-w-[34ch]">
-        Sammle mindestens {ML.MIN_IMAGES_PER_CLASS} Bilder desselben Motivs aus verschiedenen
-        Blickwinkeln.
-      </EmptyDescription>
-    </Empty>
-  );
-}
-
 const ImageGallery = memo(function ImageGallery({
   className,
   label,
@@ -226,48 +207,37 @@ const ImageGallery = memo(function ImageGallery({
   };
 
   return (
-    <div
-      className={cn(
-        '@container/gallery flex h-58 min-w-0 flex-col gap-1 overflow-clip rounded-2xl bg-muted/60 px-1.5 pt-1.5 dark:bg-background/40',
-        classColorClasses(color),
-        className,
-      )}
+    <TrainingGalleryFrame
+      className={className}
+      label={label}
+      color={color}
+      scrollContainerRef={scrollContainerRef}
+      toolbar={
+        hasImages && (
+          <GalleryToolbar
+            isSelectionMode={isSelectionMode}
+            selectedCount={selectedIds.size}
+            onDelete={handleBulkDelete}
+            modeButtonRef={modeButtonRef}
+            onToggleMode={() => {
+              if (isSelectionMode) setSelectedIds(new Set());
+              setIsSelectionMode(!isSelectionMode);
+            }}
+          />
+        )
+      }
     >
       {hasImages && (
-        <GalleryToolbar
+        <DeferredGalleryRows
+          images={images}
+          selectedIds={selectedIds}
           isSelectionMode={isSelectionMode}
-          selectedCount={selectedIds.size}
-          onDelete={handleBulkDelete}
-          modeButtonRef={modeButtonRef}
-          onToggleMode={() => {
-            if (isSelectionMode) setSelectedIds(new Set());
-            setIsSelectionMode(!isSelectionMode);
-          }}
+          onToggleSelect={toggleImageSelection}
+          onImageClick={onImageClick}
+          scrollContainerRef={scrollContainerRef}
         />
       )}
-      <ScrollFadeViewport
-        enabled={hasImages}
-        blurItems
-        ref={scrollContainerRef}
-        tabIndex={hasImages ? 0 : -1}
-        role="region"
-        aria-label={label}
-        className="gallery-region min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-0.5"
-      >
-        {hasImages ? (
-          <DeferredGalleryRows
-            images={images}
-            selectedIds={selectedIds}
-            isSelectionMode={isSelectionMode}
-            onToggleSelect={toggleImageSelection}
-            onImageClick={onImageClick}
-            scrollContainerRef={scrollContainerRef}
-          />
-        ) : (
-          <GalleryEmpty />
-        )}
-      </ScrollFadeViewport>
-    </div>
+    </TrainingGalleryFrame>
   );
 });
 

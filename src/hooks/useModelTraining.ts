@@ -8,11 +8,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { Tensor2D } from '@tensorflow/tfjs-core';
 import { createClassifier, loadTensorFlow } from '../lib/ml-runtime';
-import {
-  trainingClassNameErrors,
-  trainingClassNamesSchema,
-  type TrainingClassNames,
-} from '@/lib/training-class-names';
+import type { ClassNameValidity } from '@/lib/training-class-names';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import type { ErrorCategory } from '../types/errors';
@@ -101,8 +97,7 @@ async function trainClassifier(
  */
 function validateClasses(
   classes: MLClass[],
-  hasInvalidNames: boolean,
-  hasDuplicateNames: boolean,
+  { hasInvalidNames, hasDuplicateNames }: ClassNameValidity,
   onError: (category: Extract<ErrorCategory, 'training' | 'validation'>, msg: string) => void,
 ): boolean {
   if (classes.length < ML.MIN_CLASSES) {
@@ -139,15 +134,19 @@ function validateClasses(
  *
  * @param classes - The list of ML classes, each carrying its captured images and feature vectors.
  * @param callbacks - Grouped callbacks for updating parent state and reporting errors.
- * @param names - Current name fields, independent of captured images.
+ * @param validation - Rendered validity and the current form snapshot for activation.
  * @returns An object with the training state flag, the train function, and derived validation flags.
  */
 export function useModelTraining(
   classes: MLClass[],
   callbacks: TrainingCallbacks,
-  names: TrainingClassNames['names'],
+  validation: { current: ClassNameValidity; read: () => ClassNameValidity },
 ) {
   const { setClassifier, setHasTrainedModel, onError } = callbacks;
+  const {
+    current: { hasInvalidNames, hasDuplicateNames },
+    read,
+  } = validation;
   const [progress, setProgress] = useState<TrainingProgress | null>(null);
   const trainingRef = useRef<AbortController | null>(null);
   useEffect(
@@ -156,17 +155,6 @@ export function useModelTraining(
     },
     [classes],
   );
-
-  const { hasInvalidNames, hasDuplicateNames } = useMemo(() => {
-    const validation = trainingClassNamesSchema.safeParse({ names });
-    const issues = validation.error?.issues ?? [];
-    return {
-      hasInvalidNames: issues.some(({ message }) => message !== trainingClassNameErrors.duplicate),
-      hasDuplicateNames: issues.some(
-        ({ message }) => message === trainingClassNameErrors.duplicate,
-      ),
-    };
-  }, [names]);
 
   /**
    * True when all training prerequisites are met: minimum class count,
@@ -190,7 +178,7 @@ export function useModelTraining(
   const trainModel = useCallback(
     async (completionFeedbackMs = 0) => {
       if (trainingRef.current && !trainingRef.current.signal.aborted) return;
-      if (!validateClasses(classes, hasInvalidNames, hasDuplicateNames, onError)) return;
+      if (!validateClasses(classes, read(), onError)) return;
       const controller = new AbortController();
       trainingRef.current = controller;
       const total = classes.reduce((count, cls) => count + cls.images.length, 0);
@@ -224,7 +212,7 @@ export function useModelTraining(
         }
       }
     },
-    [classes, setClassifier, setHasTrainedModel, onError, hasInvalidNames, hasDuplicateNames],
+    [classes, setClassifier, setHasTrainedModel, onError, read],
   );
 
   const isTrainingActive = useCallback(

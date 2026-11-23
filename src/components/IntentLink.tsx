@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, type ComponentProps, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useRef, type ComponentProps, type PointerEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { learningPaths } from '@/lib/learning-paths';
@@ -12,6 +12,50 @@ type IntentLinkProps = ComponentProps<typeof Link> & {
   onTrainingEntry?: (link: HTMLAnchorElement) => HTMLElement | null;
 };
 const forwardNavigation = ['nav-forward'];
+const touchIntentDelay = 80;
+
+function useTouchPreparation(prepare: (anchor: HTMLAnchorElement) => void) {
+  const touch = useRef<{ pointerId: number; timer?: number } | null>(null);
+  const cancel = useCallback(() => {
+    if (touch.current) window.clearTimeout(touch.current.timer);
+    touch.current = null;
+  }, []);
+  useEffect(() => cancel, [cancel, prepare]);
+
+  function start(event: PointerEvent<HTMLAnchorElement>, prepareImmediately: boolean) {
+    if (event.isPrimary === false) return;
+    cancel();
+    const anchor = event.currentTarget;
+    const href = anchor.href;
+    const contact: NonNullable<typeof touch.current> = { pointerId: event.pointerId };
+    touch.current = contact;
+    if (prepareImmediately) {
+      prepare(anchor);
+    } else {
+      contact.timer = window.setTimeout(() => {
+        if (anchor.isConnected && anchor.href === href) prepare(anchor);
+      }, touchIntentDelay);
+    }
+  }
+
+  function release(event: PointerEvent<HTMLAnchorElement>) {
+    const contact = touch.current;
+    if (!contact || event.pointerId !== contact.pointerId) return;
+    window.clearTimeout(contact.timer);
+    // Touch activation can move focus between pointerup and click.
+    contact.timer = window.setTimeout(cancel, touchIntentDelay);
+  }
+
+  return {
+    start,
+    release,
+    cancel,
+    cancelPointer: (event: PointerEvent<HTMLAnchorElement>) => {
+      if (touch.current?.pointerId === event.pointerId) cancel();
+    },
+    hasTouch: () => touch.current !== null,
+  };
+}
 
 function prepareDocument(anchor: HTMLAnchorElement, target: URL) {
   if (
@@ -43,6 +87,8 @@ export default function IntentLink({
   onPointerEnter,
   onFocus,
   onPointerDown,
+  onPointerUp,
+  onPointerCancel,
   onNavigate,
   onTrainingEntry,
   prepareOnIntent = true,
@@ -52,9 +98,8 @@ export default function IntentLink({
   const entry = useTrainingEntry();
   const activatedLink = useRef<HTMLAnchorElement | null>(null);
   const prepare = useCallback(
-    (event: SyntheticEvent<HTMLAnchorElement>) => {
-      if (!prepareOnIntent || event.defaultPrevented) return;
-      const anchor = event.currentTarget;
+    (anchor: HTMLAnchorElement) => {
+      if (!prepareOnIntent) return;
       const target = new URL(anchor.href);
       const current = window.location;
       if (
@@ -74,6 +119,7 @@ export default function IntentLink({
     },
     [entry, prepareOnIntent, router],
   );
+  const touch = useTouchPreparation(prepare);
 
   const navigate: IntentLinkProps['onNavigate'] = (event) => {
     const anchor = activatedLink.current;
@@ -100,21 +146,40 @@ export default function IntentLink({
       {...props}
       prefetch={false}
       onClick={(event) => {
+        touch.cancel();
         onClick?.(event);
         activatedLink.current = event.defaultPrevented ? null : event.currentTarget;
       }}
       onNavigate={navigate}
       onPointerEnter={(event) => {
         onPointerEnter?.(event);
-        prepare(event);
+        if (event.pointerType !== 'touch' && !event.defaultPrevented) prepare(event.currentTarget);
       }}
       onFocus={(event) => {
         onFocus?.(event);
-        prepare(event);
+        if (!touch.hasTouch() && !event.defaultPrevented) prepare(event.currentTarget);
       }}
       onPointerDown={(event) => {
         onPointerDown?.(event);
-        prepare(event);
+        if (!prepareOnIntent || event.defaultPrevented) return;
+        const anchor = event.currentTarget;
+        if (event.pointerType !== 'touch') {
+          prepare(anchor);
+          return;
+        }
+        // The training dialog intercepts activation, so its route can warm during setup.
+        const opensTraining = Boolean(
+          entry && startsTraining(new URL(anchor.href), window.location),
+        );
+        touch.start(event, opensTraining);
+      }}
+      onPointerUp={(event) => {
+        onPointerUp?.(event);
+        touch.release(event);
+      }}
+      onPointerCancel={(event) => {
+        onPointerCancel?.(event);
+        touch.cancelPointer(event);
       }}
     />
   );

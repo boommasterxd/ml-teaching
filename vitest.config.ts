@@ -16,6 +16,7 @@ export default defineConfig({
         'src/lib/**/*.ts',
         'src/components/**/*.{ts,tsx}',
         'src/screens/TrainingPage.tsx',
+        'src/screens/TrainingWorkspace.tsx',
         'src/app/error.tsx',
         'src/proxy.dev.ts',
       ],

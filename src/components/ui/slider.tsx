@@ -35,11 +35,11 @@ function Slider<Value extends number | readonly number[]>({
       >
         <SliderPrimitive.Track
           data-slot="slider-track"
-          className="relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5"
+          className="relative grow overflow-hidden rounded-full bg-muted outline outline-control data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5 forced-colors:outline-[CanvasText]"
         >
           <SliderPrimitive.Indicator
             data-slot="slider-range"
-            className="bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
+            className="bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full forced-colors:bg-[Highlight] forced-colors:forced-color-adjust-none"
           />
         </SliderPrimitive.Track>
         {Array.from({ length: thumbCount }, (_, index) => (
