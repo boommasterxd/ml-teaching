@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useClassCapture } from '@/hooks/useClassCapture';
+import { useClassCapture, type CaptureActions } from '@/hooks/useClassCapture';
 import { processImageFiles } from '@/lib/image-upload';
 import { CAMERA, ML } from '@/constants';
 import type { MLClass } from '@/types/ml';
@@ -19,15 +19,20 @@ const makeClass = (count = 0): MLClass => ({
   })),
 });
 const actions = () => ({
-  onAddExample: vi.fn(),
+  onAddExample: vi.fn<CaptureActions['onAddExample']>(),
+  onCommitCapture: vi.fn<CaptureActions['onCommitCapture']>(),
   onAddImageExample: vi.fn(),
   onError: vi.fn(),
   captureDisabled: false,
   onUploadStart: vi.fn(() => true),
   onUploadEnd: vi.fn(),
 });
-const makeAttachedVideo = () =>
-  Object.assign(document.createElement('video'), { srcObject: {} as MediaStream });
+function makeAttachedVideo() {
+  const video = document.createElement('video');
+  video.srcObject = {} as MediaStream;
+  Object.defineProperty(video, 'readyState', { value: video.HAVE_CURRENT_DATA });
+  return video;
+}
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -124,6 +129,40 @@ describe('class image capture', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('discards cancelled held frames including late results and commits a later hold once', () => {
+    const callbacks = actions();
+    const cls = makeClass(ML.MAX_IMAGES_PER_CLASS - 1);
+    const { result } = renderHook(() => useClassCapture(cls, callbacks));
+    const video = makeAttachedVideo();
+    result.current.videoRef.current = video;
+    const [, first, late, kept] = makeClass(4).images;
+    act(() => result.current.startRecording(true));
+    const cancelled = callbacks.onAddExample.mock.calls[0][2]!;
+    cancelled.receive(first);
+    act(() => vi.advanceTimersByTime(CAMERA.CAPTURE_INTERVAL_MS));
+    expect(vi.getTimerCount()).toBe(0);
+    expect(result.current.isRecording).toBe(true);
+    act(() => result.current.stopRecording());
+    cancelled.receive(late);
+    expect(cancelled.signal.aborted).toBe(true);
+    expect(callbacks.onCommitCapture).not.toHaveBeenCalled();
+
+    act(() => result.current.startRecording(true));
+    const accepted = callbacks.onAddExample.mock.calls[1][2]!;
+    accepted.receive(kept);
+    act(() => {
+      result.current.stopRecording(true);
+      result.current.stopRecording();
+    });
+    accepted.receive(late);
+    expect(callbacks.onCommitCapture).toHaveBeenCalledExactlyOnceWith(cls.id, {
+      images: [kept],
+      stream: video.srcObject,
+      version: 0,
+    });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('waits for an offscreen recording to attach the camera before requesting a frame', () => {
     const callbacks = actions();
     const cls = makeClass();
@@ -137,6 +176,51 @@ describe('class image capture', () => {
     video.srcObject = {} as MediaStream;
     act(() => vi.advanceTimersByTime(CAMERA.CAPTURE_INTERVAL_MS));
     expect(callbacks.onAddExample).toHaveBeenCalledWith(cls.id, video);
+  });
+
+  it('starts a hold before the preview attaches and waits for the first available frame', () => {
+    const callbacks = actions();
+    const cls = makeClass();
+    const { result } = renderHook(() => useClassCapture(cls, callbacks));
+    const video = document.createElement('video');
+    const readiness = vi.spyOn(video, 'readyState', 'get').mockReturnValue(video.HAVE_NOTHING);
+    result.current.videoRef.current = video;
+    act(() => result.current.startRecording(true));
+    act(() => vi.advanceTimersByTime(CAMERA.CAPTURE_INTERVAL_MS));
+    expect(result.current.isRecording).toBe(true);
+    expect(callbacks.onAddExample).not.toHaveBeenCalled();
+
+    const stream = {} as MediaStream;
+    video.srcObject = stream;
+    act(() => vi.advanceTimersByTime(CAMERA.CAPTURE_INTERVAL_MS));
+    expect(callbacks.onAddExample).not.toHaveBeenCalled();
+    readiness.mockReturnValue(video.HAVE_CURRENT_DATA);
+    act(() => vi.advanceTimersByTime(CAMERA.CAPTURE_INTERVAL_MS));
+    const frame = makeClass(1).images[0];
+    callbacks.onAddExample.mock.calls[0][2]!.receive(frame);
+    act(() => result.current.stopRecording(true));
+    expect(callbacks.onCommitCapture).toHaveBeenCalledExactlyOnceWith(cls.id, {
+      images: [frame],
+      stream,
+      version: 0,
+    });
+  });
+
+  it('discards held frames when the stream changes immediately before release', () => {
+    const callbacks = actions();
+    const cls = makeClass();
+    const { result } = renderHook(() => useClassCapture(cls, callbacks));
+    const video = makeAttachedVideo();
+    result.current.videoRef.current = video;
+    act(() => result.current.startRecording(true));
+    const target = callbacks.onAddExample.mock.calls[0][2]!;
+    target.receive(makeClass(1).images[0]);
+
+    video.srcObject = {} as MediaStream;
+    act(() => result.current.stopRecording(true));
+    expect(target.signal.aborted).toBe(true);
+    expect(callbacks.onCommitCapture).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it('stops recording at the supported image limit and can be stopped by the control', () => {

@@ -40,7 +40,7 @@ test('consent and the virtual gallery fade only while more content is available'
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   const consent = dialog.locator(fadeViewport);
   const title = dialog.getByRole('heading');
-  const cancel = dialog.getByRole('button', { name: 'Abbrechen' });
+  const cancel = dialog.getByRole('link', { name: 'Abbrechen', exact: true });
   const confirm = dialog.getByRole('button', { name: 'Zustimmen' });
   for (const fixedPart of [title, cancel, confirm]) {
     await expect(fixedPart).toBeInViewport({ ratio: 1 });

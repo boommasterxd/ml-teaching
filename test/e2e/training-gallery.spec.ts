@@ -14,7 +14,7 @@ async function expectWindowed(gallery: Locator) {
     .toBeLessThan(limit / 2);
 }
 
-async function collectGalleryImages(page: Page, count: number) {
+async function collectGalleryImages(page: Page, count: number, classIndex = 0) {
   const buffer = await sharp({
     create: { width: 16, height: 16, channels: 3, background: '#ff0000' },
   })
@@ -22,7 +22,7 @@ async function collectGalleryImages(page: Page, count: number) {
     .toBuffer();
   await page
     .locator('input[type="file"]')
-    .first()
+    .nth(classIndex)
     .setInputFiles(
       Array.from({ length: count }, (_, index) => ({
         name: `synthetic-${index}.png`,
@@ -40,13 +40,43 @@ async function beginTouchHold(target: Locator) {
     type: 'touchStart',
     touchPoints: [{ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }],
   });
-  return async () => {
+  return async (type: 'touchEnd' | 'touchCancel' = 'touchEnd') => {
     try {
-      await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await session.send('Input.dispatchTouchEvent', { type, touchPoints: [] });
     } finally {
       await session.detach();
     }
   };
+}
+
+async function observeEncodedFrames(page: Page) {
+  const counter = await page.evaluateHandle(() => {
+    const state = { count: 0 };
+    const encode = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = function (type, quality) {
+      const output = encode.call(this, type, quality);
+      if (type === 'image/jpeg') state.count++;
+      return output;
+    };
+    return state;
+  });
+  return () => counter.evaluate(({ count }) => count);
+}
+
+async function expectCancelledHold(
+  record: Locator,
+  existingImageCount: Locator,
+  encodedFrames: () => Promise<number>,
+) {
+  const release = await beginTouchHold(record);
+  try {
+    await expect.poll(encodedFrames).toBeGreaterThanOrEqual(3);
+    await expect(existingImageCount).toBeVisible();
+  } finally {
+    await release('touchCancel');
+  }
+  await expect(record).toBeEnabled();
+  await expect(existingImageCount).toBeVisible();
 }
 
 async function observeControlPosition(control: Locator) {
@@ -170,14 +200,16 @@ test('a full training gallery keeps keyboard focus and selection across virtual 
   expect(failures).toEqual([]);
 });
 
+const touchOptions = {
+  hasTouch: true,
+  isMobile: true,
+  viewport: { width: 390, height: 844 },
+  colorScheme: 'dark',
+  reducedMotion: 'reduce',
+} as const;
+
 test.describe('touch gallery', () => {
-  test.use({
-    hasTouch: true,
-    isMobile: true,
-    viewport: { width: 390, height: 844 },
-    colorScheme: 'dark',
-    reducedMotion: 'reduce',
-  });
+  test.use(touchOptions);
 
   test('holding a thumbnail selects it once and leaves short taps available', async ({
     page,
@@ -213,6 +245,10 @@ test.describe('touch gallery', () => {
     await expect(page.getByRole('dialog', { name: 'Bild 1 aus Klasse 1' })).toBeVisible();
     expect(failures).toEqual([]);
   });
+});
+
+test.describe('touch recording', () => {
+  test.use(touchOptions);
 
   test('recording in the second class stays in place when training unlocks', async ({
     page,
@@ -235,6 +271,11 @@ test.describe('touch gallery', () => {
     });
     const next = page.getByRole('button', { name: 'Weiter zum Training' }).last();
     const record = second.getByRole('button', { name: 'Aufnehmen', exact: true });
+    await collectGalleryImages(page, 1, 1);
+    const existingImageCount = second.getByText(`1 / ${ML.MIN_IMAGES_PER_CLASS} Bilder`, {
+      exact: true,
+    });
+    await expect(existingImageCount).toBeVisible();
     await expect(next).toBeDisabled();
     await expect(record).toBeEnabled();
     await record.evaluate((button) =>
@@ -251,16 +292,22 @@ test.describe('touch gallery', () => {
       )
       .toBe(true);
     await record.tap({ trial: true });
+    const encodedFrames = await observeEncodedFrames(page);
+    await expectCancelledHold(record, existingImageCount, encodedFrames);
+    const beforeCommit = await encodedFrames();
     const readMovement = await observeControlPosition(record);
     const release = await beginTouchHold(record);
     try {
       await expect(second.getByRole('button', { name: 'Aufnahme stoppen' })).toBeVisible();
-      await expect(next).toBeEnabled();
-      await expect(second.getByText(/^(1[2-9]|[2-9]\d) Bilder$/)).toBeVisible();
+      await expect.poll(encodedFrames).toBeGreaterThanOrEqual(beforeCommit + 12);
+      await expect(existingImageCount).toBeVisible();
+      await expect(next).toBeDisabled();
     } finally {
       await release();
     }
     await expect(record).toBeEnabled();
+    await expect(next).toBeEnabled();
+    await expect(second.getByText(/^(1[2-9]|[2-9]\d) Bilder$/)).toBeVisible();
     const { scrollMovement, controlMovement } = await readMovement();
     expect(scrollMovement).toBeLessThanOrEqual(1);
     expect(controlMovement).toBeLessThanOrEqual(2);

@@ -8,6 +8,11 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { Tensor2D } from '@tensorflow/tfjs-core';
 import { createClassifier, loadTensorFlow } from '../lib/ml-runtime';
+import {
+  trainingClassNameErrors,
+  trainingClassNamesSchema,
+  type TrainingClassNames,
+} from '@/lib/training-class-names';
 import type { MLClass } from '../types/ml';
 import { ML } from '../constants';
 import type { ErrorCategory } from '../types/errors';
@@ -134,14 +139,13 @@ function validateClasses(
  *
  * @param classes - The list of ML classes, each carrying its captured images and feature vectors.
  * @param callbacks - Grouped callbacks for updating parent state and reporting errors.
- * @param hasDuplicateNames - Pre-computed flag: true when two or more classes share the same trimmed name.
- *   Passed in from the caller to avoid recomputing what is already derived from `duplicateClassNames`.
+ * @param names - Current name fields, independent of captured images.
  * @returns An object with the training state flag, the train function, and derived validation flags.
  */
 export function useModelTraining(
   classes: MLClass[],
   callbacks: TrainingCallbacks,
-  hasDuplicateNames: boolean,
+  names: TrainingClassNames['names'],
 ) {
   const { setClassifier, setHasTrainedModel, onError } = callbacks;
   const [progress, setProgress] = useState<TrainingProgress | null>(null);
@@ -153,8 +157,16 @@ export function useModelTraining(
     [classes],
   );
 
-  /** True when at least one class has an empty or whitespace-only name. */
-  const hasInvalidNames = useMemo(() => classes.some((c) => c.name.trim() === ''), [classes]);
+  const { hasInvalidNames, hasDuplicateNames } = useMemo(() => {
+    const validation = trainingClassNamesSchema.safeParse({ names });
+    const issues = validation.error?.issues ?? [];
+    return {
+      hasInvalidNames: issues.some(({ message }) => message !== trainingClassNameErrors.duplicate),
+      hasDuplicateNames: issues.some(
+        ({ message }) => message === trainingClassNameErrors.duplicate,
+      ),
+    };
+  }, [names]);
 
   /**
    * True when all training prerequisites are met: minimum class count,
@@ -226,5 +238,6 @@ export function useModelTraining(
     trainModel,
     canTrain,
     hasInvalidNames,
+    hasDuplicateNames,
   };
 }

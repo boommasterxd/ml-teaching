@@ -63,7 +63,7 @@ for the hosting setup.
 npm run ci
 npm run audit
 npm run build
-npx playwright install --only-shell chromium
+npx playwright install chromium
 npm run test:e2e
 ```
 

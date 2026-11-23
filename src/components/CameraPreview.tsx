@@ -13,8 +13,8 @@ export interface CameraPreviewProps {
   disabled: boolean;
   camera: CameraView;
   isRecording: boolean;
-  onStartRecording: () => void;
-  onStopRecording: () => void;
+  onStartRecording: (hold?: boolean) => void;
+  onStopRecording: (commitHold?: boolean) => void;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   fileActions?: React.ReactNode;
@@ -52,18 +52,18 @@ function RecordButton({
         if (button.disabled || document.hidden) return;
         press.started = true;
         suppressTouchClick.current = true;
-        onStartRecording();
+        onStartRecording(true);
       }, touchHoldDelayMs),
     };
     touch.current = press;
   };
 
-  const finishPress = (event: React.PointerEvent<HTMLButtonElement>) => {
+  const finishPress = (event: React.PointerEvent<HTMLButtonElement>, commitHold = false) => {
     const press = touch.current;
     if (!press || press.pointerId !== event.pointerId) return;
     touch.current = null;
     window.clearTimeout(press.timer);
-    if (press.started) onStopRecording();
+    if (press.started) onStopRecording(commitHold);
   };
 
   return (
@@ -75,7 +75,14 @@ function RecordButton({
       onPointerEnter={onCaptureIntent}
       onFocus={onCaptureIntent}
       onPointerDown={startPress}
-      onPointerUp={finishPress}
+      onPointerUp={(event) => {
+        const { left, right, top, bottom } = event.currentTarget.getBoundingClientRect();
+        const { clientX, clientY } = event;
+        finishPress(
+          event,
+          clientX >= left && clientX <= right && clientY >= top && clientY <= bottom,
+        );
+      }}
       onPointerCancel={finishPress}
       onLostPointerCapture={finishPress}
       onContextMenu={(event) => {

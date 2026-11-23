@@ -10,12 +10,12 @@ The dependency-free planner reads the complete merge-base-to-head Git diff. Rena
 include both endpoints, and deletions remain part of the scope. Its plan records the
 base, head and merge revisions. Consumers reject a different checked-out revision.
 
-| Complete changed scope                                                                         | Selected work                                                                     |
-| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Nonempty root `docs/` files only                                                               | Real successful final gate; no dependency installation, tests or build            |
-| Unit test files under `test/unit/` only                                                        | Static quality, dependency audit and full unit coverage                           |
-| Application, browser tests, shared assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build, browser suite and Lighthouse budgets |
-| Empty diff or unavailable Git history                                                          | All checks                                                                        |
+| Complete changed scope                                                                         | Selected work                                                          |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Nonempty root `docs/` files only                                                               | Real successful final gate; no dependency installation, tests or build |
+| Unit test files under `test/unit/` only                                                        | Static quality, dependency audit and full unit coverage                |
+| Application, browser tests, shared assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and browser suite          |
+| Empty diff or unavailable Git history                                                          | All checks                                                             |
 
 Selection and the final result gate use `ubuntu-slim`. Selected quality and browser
 jobs use regular runners; job-level conditions prevent allocation of unselected
@@ -94,6 +94,8 @@ and unit coverage. These commands also remain available individually in
 and audit execution failures; development dependencies remain installed. Before an
 authorized integration, run the separate full local `npm audit --include=dev` and
 review development-only findings.
+The blocking typecheck also checks the Next.js configuration and hash-CSP build
+tooling as JavaScript through `tsconfig.build-tooling.json`.
 The [minimatch decision](decisions/minimatch-development-advisory.md) records the
 scope and remaining risk of the accepted development-only advisory.
 
@@ -152,12 +154,10 @@ that Proxy remain forbidden.
 `npm run build` uses the native Next.js build and its CSP verification hooks.
 `npm run test:e2e` runs the complete browser suite against the native production
 server, including accessibility and keyboard contracts. It remains unfiltered with
-`CI=true`. CI downloads only the lockfile-matched Chromium headless shell; browser
-launch and host dependency validation stay blocking.
-After Playwright stops its server, the browser job starts the same verified build
-with `npm start` and runs `npm run test:lighthouse -- --all --locked`. The job
-cleans up that server and fails if it cannot start or an audited route scores
-95 or below on either profile. Both checks use one native production build.
+`CI=true`. CI downloads the lockfile-matched Chromium Headless Shell and full
+Chromium for the back-forward cache test. Browser launch, host dependency
+validation and the suite are blocking when selected. Lighthouse runs locally as
+described in the [performance audit decision](decisions/performance-audits.md).
 
 ## Security automation and release boundary
 

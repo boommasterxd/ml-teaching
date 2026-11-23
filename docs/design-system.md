@@ -302,8 +302,9 @@ the full row. The sidebar and header dropdown share the same panel radius and
 inner padding. The links' hit areas meet between rows so crossing the spacing
 keeps the highlight moving directly between destinations. Base UI's `render`
 prop composes the links with native anchors and their current-page semantics.
-The desktop links and highlight items share a client boundary so Animate UI can
-attach its row refs during hydration. The surrounding layout renders on the server.
+The server renders usable desktop links before hydration. Only at `lg` or wider
+does the browser load the moving highlight and its interactive rows. The
+server-rendered links stay in place while the pointer or focus is in the list.
 Below `lg`, the toolbar pairs the back action with the Informationen dropdown.
 Back traverses the previous browser entry when available and uses the homepage for a direct entry.
 The dropdown's three native links use the shared Animate UI menu, including
@@ -326,7 +327,9 @@ The static 404 and 500 documents and the App Router recovery screen share
 render. The 404 uses three separately modeled glass digits in the shared
 Topography renderer. The 500 and recovery screen use its ring. Like the homepage,
 all three recovery views reserve the artwork area and start playback automatically
-when the artwork is visible. The shared Spinner appears after 500 ms of active
+when the artwork is visible. On the native 500 page, automatic WebGL startup waits
+until after document load, paint and an idle opportunity. Pointer or keyboard
+intent can start it sooner. The shared Spinner appears after 500 ms of active
 waiting and clears when the first frame is ready or loading stops. A two-second
 active first-frame deadline switches to the optimized responsive poster.
 Pointer and keyboard intent prepare the shared renderer. The poster covers
@@ -441,6 +444,9 @@ The toolbar also opens selection mode for keyboard and pointer users. The select
 thumbnail uses the same primary red for its border and plain Animate UI checkmark.
 A neutral backing keeps the checkmark readable on arbitrary photos. The class
 marker and empty gallery illustration use the theme-aware class accent.
+React Hook Form owns the class-name fields. The shared Zod schema reports blank
+or duplicate names inline and gates training. Stable class IDs link names to
+local examples and preserve other cards during image updates.
 Class names identify each group. Class counters show
 progress toward the training minimum, then the collected total.
 Each class card has a camera preview, including before camera permission is granted.
@@ -509,16 +515,14 @@ temporary unless the user explicitly enables remembering for future visits. Only
 the enum selection is stored under `ml-teaching-theme`. Remembered training consent
 and training data stay in document memory. System changes, storage events and invalid values never
 write defaults. Blocked reads fall back to the system; failed writes or deletion
-produce an honest status message. The trusted build-known bootstrap and the
-upstream ThemeToggler wipe style are rendered in static HTML for exact CSP hashing.
+produce an honest status message. The trusted build-known bootstrap is rendered
+in static HTML for exact CSP hashing.
 Both document owners declare light and dark color schemes so the browser can
 match the system canvas while the stylesheets load.
-The public theme-wipe callbacks are serialized so the latest selection wins.
 The favicon link precedes the trusted bootstrap in both document owners. Before
 hydration, the bootstrap creates the browser theme-color meta tag and sets its
 color and the favicon for the resolved theme. The default favicon SVG also
-follows the OS color scheme. An explicit
-theme wipe updates both when its existing completion applies the theme.
+follows the OS color scheme. Selecting a theme updates both immediately.
 
 The static switch takes its initial position, track color and glyph from the
 bootstrapped root theme. React adopts that position as it reads the preference.
@@ -539,10 +543,14 @@ The toolbar centers the brand mark and appearance trigger in the rounded ends.
 Their inline insets derive from the toolbar radius and each element's size.
 The mobile and desktop menu offsets align the appearance menu with the navigation
 flyouts.
-Direct-entry consent remains part of the static document. Pointer entry, keyboard
+Direct-entry consent remains part of the static document. While the dialog is open
+before hydration, the surrounding navigation is inert or hidden. The native
+cancel link remains usable without JavaScript. Hydration upgrades the same dialog
+to native modality. Pointer entry, keyboard
 focus and pointer down on a training link prepare the shared setup dialog and
-the browser resource host in parallel. The host mounts during active setup or on
-the training route as a sibling of the page, preserving its inline consent dialog.
+the browser resource host in parallel. On direct entry, intent on the enabled
+consent action prepares the host. It mounts after model consent as a sibling of
+the page, preserving the inline consent dialog.
 It stays mounted during the transition from source-page setup into the workspace.
 Source-page setup uses one dialog for consent, model loading and the camera decision.
 The model error step offers a retry for the host import or model loading. Intent on
@@ -669,15 +677,14 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   navigation. A media condition enables it only on the homepage or native 500
   document and when motion is allowed. Initially visible homepage content skips
   the additional component entrance after a 500 recovery.
-  The static 500 document prepares one same-origin destination on intent using
-  its hashed Speculation Rules. Supporting browsers can prerender the homepage
-  or prefetch another selected destination. The link keeps native document navigation.
-  During the Animate UI theme wipe, only the theme Switch receives a separate
-  named live capture. Its old capture is transparent and its group has no independent
-  animation, so the existing Animate UI thumb spring remains visible immediately
-  in both directions. The Base UI switch retains its DOM node and thumb spring
-  during the theme update. Native document capture continues to intercept pointer
-  clicks during the wipe; keyboard selection and state updates remain immediate.
+  The static 500 document prepares one canonical same-origin homepage, learning or
+  legal destination on intent using its hashed Speculation Rules. Supporting
+  browsers can prerender the selected document. The link keeps native document
+  navigation, and only the homepage crossing opts into the recovery transition.
+  The theme wipe uses a decorative Motion layer with Animate UI motion tokens.
+  The layer allows pointer events to reach the page. The Base UI switch retains
+  its DOM node and thumb spring, and the latest selection applies immediately.
+  Reduced motion skips the decorative layer.
   Each pathname change alternates the main content's capture name. This keeps
   the departing and arriving pages at their own sizes and scroll positions.
   External CSS animates their opacity, horizontal translation and blur and excludes
@@ -731,7 +738,8 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   The poster is used for reduced motion, unsupported WebGL, context loss or expiry
   of the two-second active first-frame deadline.
   Reduced motion, a hidden tab or a lost context unmounts the enhancement and
-  disposes its renderer.
+  disposes its renderer. If the light-impulse button has focus, its removal
+  returns focus to the adjacent playback control, including when the control is disabled.
   The homepage and error artwork pause the render loop when the artwork leaves
   the viewport and retain a single bounded canvas for the active page. Scrolling
   back resumes the same frame without reinitializing WebGL. Explicit pause retains the current GPU image,

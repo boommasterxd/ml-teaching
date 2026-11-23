@@ -31,6 +31,10 @@
   min-height: 2.75rem;
 }
 
+.legal-navigation .legal-page-link {
+  @apply relative flex w-full justify-start rounded-(--menu-highlight-radius) px-3 aria-[current=page]:font-semibold;
+}
+
 /* Cover the gap between rows without changing the size of the moving highlight. */
 .legal-navigation .legal-page-link::after {
   content: '';

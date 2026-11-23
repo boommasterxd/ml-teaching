@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { learningPaths } from '@/lib/learning-paths';
 import { diagnostics, expectAccessible } from './browser-checks';
 
 const stylesheet = 'style#error-recovery-transition';
@@ -54,18 +55,34 @@ async function expectHomepage(page: Page) {
   );
 }
 
+async function observePrerenders(page: Page, pathname: string) {
+  const session = await page.context().newCDPSession(page);
+  const statuses: string[] = [];
+  session.on('Preload.prerenderStatusUpdated', ({ key, status, prerenderStatus }) => {
+    if (new URL(key.url).pathname === pathname) statuses.push(prerenderStatus ?? status);
+  });
+  await session.send('Preload.enable');
+  return statuses;
+}
+
+async function expectPrerenderActivation(page: Page, ready: boolean) {
+  if (!ready) return;
+  const activationStart = await page.evaluate(() => {
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceEntry & {
+      activationStart?: number;
+    };
+    return navigation.activationStart ?? 0;
+  });
+  expect(activationStart).toBeGreaterThan(0);
+}
+
 test('the HTTP 500 recovery animates only the document crossing to the homepage', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   const failures = diagnostics(page);
   await observeDocumentTransitions(page);
-  const cdp = await page.context().newCDPSession(page);
-  const prerenders: string[] = [];
-  cdp.on('Preload.prerenderStatusUpdated', ({ key, status, prerenderStatus }) => {
-    if (new URL(key.url).pathname === '/') prerenders.push(prerenderStatus ?? status);
-  });
-  await cdp.send('Preload.enable');
+  const prerenders = await observePrerenders(page, '/');
   const action = await open500(page);
   await expect(page.locator('#error-glass-art')).toHaveAttribute('data-enhanced', 'true');
   expect(prerenders).toEqual([]);
@@ -78,15 +95,7 @@ test('the HTTP 500 recovery animates only the document crossing to the homepage'
   await expect(action).toBeFocused();
   await page.keyboard.press('Enter');
   await expectHomepage(page);
-  if (prerenderReady) {
-    const activationStart = await page.evaluate(() => {
-      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceEntry & {
-        activationStart?: number;
-      };
-      return navigation.activationStart ?? 0;
-    });
-    expect(activationStart).toBeGreaterThan(0);
-  }
+  await expectPrerenderActivation(page, prerenderReady);
 
   const root = page.locator('html');
   await expect(root).toHaveAttribute('data-recovery-transition', 'finished');
@@ -110,6 +119,56 @@ test('the HTTP 500 recovery animates only the document crossing to the homepage'
   expect(
     failures.filter((message) => !/^Failed to load resource: .*status of 500\b/.test(message)),
   ).toEqual([]);
+});
+
+test('training recovery prepares the public consent page without using model or camera resources', async ({
+  baseURL,
+  context,
+  page,
+}) => {
+  const origin = new URL(baseURL!).origin;
+  const externalRequests: string[] = [];
+  await context.route(
+    (url) => url.origin !== origin,
+    (route) => {
+      externalRequests.push(route.request().url());
+      return route.abort();
+    },
+  );
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
+      value: () => {
+        document.documentElement.dataset.cameraRequested = 'true';
+        return Promise.reject(new Error('Camera access before consent'));
+      },
+    });
+  });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await observeDocumentTransitions(page);
+  const prerenders = await observePrerenders(page, learningPaths.imagePractice);
+  await open500(page);
+  expect(prerenders).toEqual([]);
+
+  const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
+  await navigation.getByRole('button', { name: 'Lernlabor', exact: true }).hover();
+  const link = navigation.getByRole('link', { name: 'Bildmodell trainieren', exact: true });
+  await link.focus();
+  await expect(link).toBeFocused();
+  await expect.poll(() => prerenders.at(-1)).toMatch(/^(Ready|PrerenderingDisabledByDevTools)$/);
+  const prerenderReady = prerenders.at(-1) === 'Ready';
+  await expect(page).toHaveURL('/500');
+
+  await link.press('Enter');
+  await expect(page).toHaveURL(learningPaths.imagePractice);
+  await expectPrerenderActivation(page, prerenderReady);
+  const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  await expect(consent).toBeVisible();
+  await expect(consent.getByRole('button', { name: 'Zustimmen', exact: true })).toBeDisabled();
+  const root = page.locator('html');
+  await expect(root).toHaveAttribute('data-recovery-transition', 'none');
+  await expect(root).not.toHaveAttribute('data-camera-requested');
+  await expectAccessible(page);
+  expect(externalRequests).toEqual([]);
 });
 
 test('the recovery link also works with reduced motion', async ({ page }) => {
@@ -181,6 +240,7 @@ test('the static 500 artwork starts automatically and supports keyboard pause an
   );
   await expectAccessible(page);
 
+  await impulse.focus();
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   await expect(canvas).toHaveCount(0);
   const poster = artwork.locator('picture img');
@@ -188,5 +248,7 @@ test('the static 500 artwork starts automatically and supports keyboard pause an
   await expect
     .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
     .toBeGreaterThan(1);
-  await expect(page.getByRole('button', { name: 'Bewegung reduziert' })).toBeDisabled();
+  const reducedPlayback = page.getByRole('button', { name: 'Bewegung reduziert' });
+  await expect(reducedPlayback).toBeDisabled();
+  await expect(reducedPlayback).toBeFocused();
 });

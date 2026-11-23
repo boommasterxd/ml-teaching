@@ -76,13 +76,67 @@ function verifyReport(report: Result, url: URL, profile: Profile, version: strin
   const label = `${url.pathname} ${profile}`;
   if (report.runtimeError) throw new Error(`${label}: ${report.runtimeError.message}`);
   if (
+    report.gatherMode !== 'navigation' ||
     report.requestedUrl !== url.href ||
     report.mainDocumentUrl !== url.href ||
     report.finalDisplayedUrl !== url.href ||
     report.configSettings.formFactor !== profile ||
-    report.lighthouseVersion !== version
+    report.configSettings.throttlingMethod !== 'simulate' ||
+    report.lighthouseVersion !== version ||
+    !Number.isFinite(Date.parse(report.fetchTime))
   ) {
-    throw new Error(`${label}: Lighthouse returned a different URL, device profile or version.`);
+    throw new Error(`${label}: Lighthouse returned unexpected navigation report metadata.`);
+  }
+}
+
+function lcpPhases(report: Result) {
+  const details = report.audits['lcp-breakdown-insight']?.details;
+  const table =
+    details?.type === 'list' ? details.items.find((item) => item.type === 'table') : undefined;
+  return table?.items.flatMap(({ subpart, duration }) =>
+    typeof subpart === 'string' && typeof duration === 'number' && Number.isFinite(duration)
+      ? [{ phase: subpart, durationMs: duration }]
+      : [],
+  );
+}
+
+function longTasks(report: Result) {
+  const details = report.audits['long-tasks']?.details;
+  if (details?.type !== 'table') return;
+  return details.items.slice(0, 5).map(({ url, duration }) => ({
+    source: typeof url === 'string' && url.startsWith(`${origin}/`) ? new URL(url).pathname : null,
+    durationMs: duration,
+  }));
+}
+
+function reportScores(report: Result, categories: string[], profile: Profile, reportPath: string) {
+  const label = `${report.finalDisplayedUrl} ${profile} ${report.fetchTime}`;
+  const scores = Object.fromEntries(
+    categories.map((category) => [category, report.categories[category]?.score]),
+  );
+  console.log(label, {
+    reportPath,
+    scores,
+    throttlingMethod: report.configSettings.throttlingMethod,
+    throttling: report.configSettings.throttling,
+    benchmarkIndex: report.environment.benchmarkIndex,
+    lcpMs: report.audits['largest-contentful-paint']?.numericValue,
+    totalBlockingTimeMs: report.audits['total-blocking-time']?.numericValue,
+  });
+
+  if (
+    Object.values(scores).some(
+      (score) => typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > 1,
+    )
+  ) {
+    console.error(`${label}: Lighthouse did not return valid scores for all requested categories.`);
+    process.exitCode = 1;
+  } else if (typeof scores.performance === 'number' && scores.performance <= performanceThreshold) {
+    console.error(`${label}: Performance must exceed ${performanceThreshold * 100} points.`, {
+      lcpPhases: lcpPhases(report),
+      longTasks: longTasks(report),
+    });
+    process.exitCode = 1;
   }
 }
 
@@ -117,23 +171,9 @@ async function audit(
     );
     const report = JSON.parse(stdout) as Result;
     verifyReport(report, url, profile, runtime.version);
-    await writeFile(resolve(directory, `${profile}.json`), stdout);
-    const scores = Object.fromEntries(
-      categories.map((category) => [category, report.categories[category]?.score]),
-    );
-    console.log(path, profile, scores);
-    const performance = scores.performance;
-    if (Object.values(scores).some((score) => !Number.isFinite(score))) {
-      console.error(`${path} ${profile}: Lighthouse did not return all requested scores.`);
-      process.exitCode = 1;
-    } else if (typeof performance === 'number' && performance <= performanceThreshold) {
-      const lcp = report.audits['largest-contentful-paint']?.displayValue;
-      const blocking = report.audits['total-blocking-time']?.displayValue;
-      console.error(
-        `${path} ${profile}: Performance must exceed ${performanceThreshold * 100} points (LCP ${lcp}, total blocking time ${blocking}).`,
-      );
-      process.exitCode = 1;
-    }
+    const reportPath = resolve(directory, `${profile}.json`);
+    await writeFile(reportPath, stdout);
+    reportScores(report, categories, profile, reportPath);
   }
 }
 
@@ -153,6 +193,7 @@ const browser = await chromium.launch({
   args: ['--enable-automation', '--remote-debugging-port=0'],
 });
 try {
+  console.log('Chromium', browser.version());
   const port = await debuggingPort(browser);
   for (const target of auditTargets(all)) {
     await audit(target, { all, runtime, port });

@@ -345,11 +345,17 @@ for (const [width, colorScheme] of [
         await expect(choice).not.toBeChecked();
       }
       const confirm = dialog.getByRole('button', { name: 'Zustimmen', exact: true });
-      const cancel = dialog.getByRole('button', { name: 'Abbrechen', exact: true });
+      const cancel = dialog.getByRole('link', { name: 'Abbrechen', exact: true });
       await expect(confirm).toBeInViewport({ ratio: 1 });
       await expect(confirm).toBeDisabled();
       await expect(cancel).toBeInViewport({ ratio: 1 });
-      await expect(cancel).toBeEnabled();
+      await expect(cancel).toHaveAttribute('href', learningPaths.images);
+      await page.keyboard.press('Tab');
+      await expect(choices.first()).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(local.getByRole('link')).toBeFocused();
+      await page.keyboard.press('Shift+Tab');
+      await expect(choices.first()).toBeFocused();
       const initialDialog = await dialog.elementHandle();
       const initialChoices = await choices.elementHandles();
       await scripts.expectHeld();
@@ -387,6 +393,23 @@ for (const [width, colorScheme] of [
     }
   });
 }
+
+test.describe('training entry with JavaScript disabled', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('the initial consent can be declined using the keyboard', async ({ page }) => {
+    await page.goto(learningPaths.imagePractice);
+    const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+    const cancel = dialog.getByRole('link', { name: 'Abbrechen', exact: true });
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('checkbox').first()).toBeFocused();
+    await dialog.getByRole('checkbox').last().focus();
+    await page.keyboard.press('Tab');
+    await expect(cancel).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${learningPaths.images}$`));
+  });
+});
 
 test('a reload or a new tab never restores a remembered camera choice', async ({
   page,

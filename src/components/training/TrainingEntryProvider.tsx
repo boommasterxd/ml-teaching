@@ -113,16 +113,11 @@ function useTrainingEntryState() {
     handoff: false,
   });
   const activeEntry = entry?.source === pathname ? entry : null;
-  const {
-    engine,
-    prepare: prepareResources,
-    ResourceHost,
-    resourceProps,
-  } = useTrainingEngine(
+  const { engine, ResourceHost, resourceProps } = useTrainingEngine(
     inTraining || Boolean(activeEntry && activeEntry.phase !== 'cancelled' && module),
     inTraining,
   );
-  const { consent, clearError } = engine;
+  const { consent, clearError, prepareResources } = engine;
   const { reset, cancel, restore } = consent;
 
   if (visit.pathname !== pathname) {
@@ -351,6 +346,7 @@ function TrainingEntryOverlay({ flow }: { flow: ReturnType<typeof useTrainingEnt
         onWithdrawLoading={() => flow.revokeConsent()}
         onWithdrawIntent={flow.withdrawal.prepare}
         onDeclineConsent={flow.closeEntry}
+        onConfirmConsentIntent={engine.prepareResources}
         onConfirmConsent={flow.grantConsent}
         onDeclineCamera={consent.declineCameraConsent}
         onConfirmCamera={consent.grantCameraConsent}

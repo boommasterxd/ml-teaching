@@ -451,21 +451,17 @@
   color: var(--primary);
 }
 
-/* Keep immediate switch feedback above the page-wide Animate UI theme wipe. */
-:root:active-view-transition-type(animate-ui-theme) body [data-theme-switch] {
-  view-transition-name: theme-switch !important;
-}
-:root:active-view-transition-type(animate-ui-theme)::view-transition-group(theme-switch) {
-  animation: none;
+/* The theme wipe is independent of the live content and navigation snapshots. */
+.theme-wipe {
+  position: fixed;
+  inset: 0;
   z-index: 1;
-}
-:root:active-view-transition-type(animate-ui-theme)::view-transition-old(theme-switch) {
-  animation: none;
-  opacity: 0;
-}
-:root:active-view-transition-type(animate-ui-theme)::view-transition-new(theme-switch) {
-  animation: none;
-  mix-blend-mode: normal;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--primary) 12%, transparent)
+  );
 }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),

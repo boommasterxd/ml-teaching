@@ -75,6 +75,7 @@ describe('restoring the training camera', () => {
     const { getUserMedia, stream, track } = cameraEnvironment(query);
     const { result, rerender } = await renderEngine(true, false);
     act(() => result.current.consent.restore(rememberedCamera()));
+    await waitFor(() => expect(result.current.canUseModels).toBe(true));
     expect(query).not.toHaveBeenCalled();
     expect(getUserMedia).not.toHaveBeenCalled();
 
@@ -97,8 +98,8 @@ describe('restoring the training camera', () => {
       });
       const { getUserMedia } = cameraEnvironment(query);
       const { result } = await renderEngine();
-      await act(async () => result.current.consent.restore(rememberedCamera()));
-      expect(query).toHaveBeenCalledOnce();
+      act(() => result.current.consent.restore(rememberedCamera()));
+      await waitFor(() => expect(query).toHaveBeenCalledOnce());
       expect(result.current.canUseModels).toBe(true);
       expect(result.current.consent.showCameraModal).toBe(false);
       expect(getUserMedia).not.toHaveBeenCalled();
@@ -116,7 +117,7 @@ describe('restoring the training camera', () => {
     const { getUserMedia } = cameraEnvironment(query);
     const { result, rerender } = await renderEngine();
     act(() => result.current.consent.restore(rememberedCamera()));
-    expect(query).toHaveBeenCalledOnce();
+    await waitFor(() => expect(query).toHaveBeenCalledOnce());
     rerender(false);
     await act(async () => status.resolve({ state: 'granted' }));
     expect(getUserMedia).not.toHaveBeenCalled();

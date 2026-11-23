@@ -29,7 +29,7 @@ function afterDocumentPaint(callback: () => void) {
 }
 
 function subscribe(listener: () => void) {
-  if (!deferDecorativeMotion || ready) return () => {};
+  if (ready) return unsubscribe;
   listeners.add(listener);
   prepare ??= afterDocumentPaint(() => {
     ready = true;
@@ -45,9 +45,16 @@ function subscribe(listener: () => void) {
   };
 }
 
-const clientSnapshot = () => !deferDecorativeMotion || ready;
+const unsubscribe = () => {};
+const skip = () => unsubscribe;
+const deferredSnapshot = () => ready;
+const immediateSnapshot = () => true;
 const serverSnapshot = () => false;
 
-export function useMotionStart() {
-  return useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
+export function useMotionStart(deferStartup = deferDecorativeMotion) {
+  return useSyncExternalStore(
+    deferStartup ? subscribe : skip,
+    deferStartup ? deferredSnapshot : immediateSnapshot,
+    serverSnapshot,
+  );
 }

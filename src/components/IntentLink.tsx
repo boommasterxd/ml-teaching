@@ -17,14 +17,16 @@ function prepareDocument(anchor: HTMLAnchorElement, target: URL) {
   if (
     !HTMLScriptElement.supports?.('speculationrules') ||
     (anchor.target && anchor.target !== '_self') ||
-    anchor.hasAttribute('download')
+    anchor.hasAttribute('download') ||
+    target.search ||
+    target.hash
   )
     return;
 
   const previous = document.querySelector<HTMLAnchorElement>('a[data-recovery-intent]');
   if (previous === anchor) return;
   previous?.removeAttribute('data-recovery-intent');
-  anchor.dataset.recoveryIntent = target.pathname === '/' && !target.search ? 'home' : 'page';
+  anchor.dataset.recoveryIntent = '';
 }
 
 function startsTraining(target: URL, current: Location) {

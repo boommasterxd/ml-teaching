@@ -18,6 +18,17 @@
   padding-inline: var(--training-workspace-padding);
 }
 
+/* The inline consent dialog becomes natively modal when React hydrates it. */
+body:has(dialog[data-slot='dialog-overlay'][open]:not(:modal))
+  > :is(.skip-link, .site-header, .site-footer) {
+  visibility: hidden;
+
+  @supports (interactivity: inert) {
+    visibility: visible;
+    interactivity: inert;
+  }
+}
+
 .training-header {
   display: grid;
   align-items: center;

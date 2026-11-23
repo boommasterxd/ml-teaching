@@ -93,7 +93,6 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
   await expectMenuHighlight(imprint, background);
   await expect(imprint).toHaveCSS('color', neutral);
   await expect(current).toHaveCSS('color', activeColor);
-  await expect(current.locator('svg')).toHaveCSS('color', activeColor);
   const imprintBottom = await imprint.evaluate((link) => link.getBoundingClientRect().bottom);
   await page.mouse.move(rightEdge, imprintBottom + 1);
   expect(
