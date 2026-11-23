@@ -451,18 +451,6 @@
   color: var(--primary);
 }
 
-/* The theme wipe is independent of the live content and navigation snapshots. */
-.theme-wipe {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--primary) 12%, transparent)
-  );
-}
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),

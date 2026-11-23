@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import cachePolicy from '../../../.github/cache-policy.json';
 import { runLifecycle } from '../../../.github/scripts/cache-lifecycle/core.cjs';
+import { createGhApi } from '../../../.github/scripts/cache-lifecycle/github.cjs';
 import {
   cache,
   FixtureApi,
@@ -230,12 +231,26 @@ describe('cache lifecycle', () => {
     expect(runLifecycle(options(untrusted, 'workflow_run')).deleted).toEqual([]);
   });
 
-  it('preserves caches when a recovered receipt is expired', () => {
+  it('keeps npm generations and retires independently verified caches after receipt expiry', () => {
     const api = new FixtureApi();
     generations(api);
-    api.producer = run({ head_sha: previousHead });
-    api.receipts = [];
-    expect(runLifecycle(options(api, 'workflow_run')).deleted).toEqual([]);
+    const opts = options(api, 'workflow_run');
+    opts.policy.codeqlWorkflows = cachePolicy.codeqlWorkflows;
+    api.triggering = run({ id: 20, ...codeqlWorkflow, event: 'dynamic' });
+    api.caches.push(
+      cache(3, 'pr-closed', 'refs/pull/1/merge'),
+      cache(4, codeqlKey(previousHead)),
+      cache(5, codeqlKey(opts.sha), 'refs/heads/main', true),
+    );
+    api.prs[1] = { state: 'closed', head: { sha: previousHead, ref: 'merged-branch' } };
+    const nativeApi = createGhApi(opts.repository);
+    vi.spyOn(nativeApi, 'list').mockReturnValue([
+      { name: 'cache-lifecycle-receipts-1', expired: true, size_in_bytes: 277 },
+    ]);
+    vi.spyOn(api, 'readReceipts').mockImplementation(nativeApi.readReceipts);
+
+    expect(runLifecycle(opts).deleted.map(({ id }) => id)).toEqual([3, 4]);
+    expect(api.caches.map(({ id }) => id)).toEqual([1, 2, 5]);
   });
 
   it('reports failed deletion readback', () => {

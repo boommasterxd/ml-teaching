@@ -1,12 +1,14 @@
-import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
+import { expect, test, type Page, type Route } from '@playwright/test';
 import {
   diagnostics,
   expectAccessible,
   expectLiveSystemThemeChanges,
   expectNoStoredTrainingData,
+  expectThemeWipe,
   settleEntryAnimations,
 } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
+import { ANIMATION, NETWORK_STAGES } from '../../src/constants';
 import sharp from 'sharp';
 import { failSyntheticModel, routeSyntheticModel } from './synthetic-model';
 import { expectNetworkLayout } from './network-layout';
@@ -164,8 +166,18 @@ test('educational examples start directly and keep the selected control focused'
     stages.getByRole('img', { name: 'Generiertes Beispielbild einer Katze' }),
   ).toBeVisible();
   await expect(cat).toHaveAttribute('aria-current', 'true');
+  await page.clock.install();
   await cat.press('Enter');
   await expect(status).toContainText('Signal wird verarbeitet');
+  const demo = page.locator('.landing-demo');
+  await page.getByRole('contentinfo').scrollIntoViewIfNeeded();
+  await expect(demo).not.toBeInViewport();
+  const fullSequence = ANIMATION.STEP_DURATION_MS * (NETWORK_STAGES.COMPLETE + 1);
+  await page.clock.runFor(fullSequence);
+  await expect(status).toContainText('Signal wird verarbeitet');
+  await cat.scrollIntoViewIfNeeded();
+  await page.clock.runFor(fullSequence);
+  await expect(status).toContainText('Katze erkannt');
   await expect(status).toContainText('2 von 3 Nachbarn stimmen für Katze.');
   await expect(cat).toBeFocused();
   await expectNetworkLayout(page, 'column');
@@ -289,14 +301,6 @@ test('consent can be withdrawn while a model download is pending', async ({ page
   }
 });
 
-async function clickDuringThemeWipe(page: Page, control: Locator) {
-  const box = await control.boundingBox();
-  if (!box) throw new Error('The control to click during the theme wipe is missing.');
-  await expect(page.locator('[data-theme-wipe]')).toBeVisible();
-  // Do not let locator actionability wait for an overlay to stop intercepting clicks.
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-}
-
 test('theme changes preserve navigation and require explicit remembering across visits and tabs', async ({
   page,
   context,
@@ -310,6 +314,7 @@ test('theme changes preserve navigation and require explicit remembering across 
   await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
   await theme.focus();
   await page.keyboard.press('Space');
+  await expectThemeWipe(page);
   await expect(theme).toBeChecked();
   await expect(page.locator('html')).toHaveClass(/\bdark\b/);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
@@ -322,18 +327,15 @@ test('theme changes preserve navigation and require explicit remembering across 
   await learning.scrollIntoViewIfNeeded();
   await theme.focus();
   await page.keyboard.press('Space');
-  await clickDuringThemeWipe(page, theme);
-  await expect(theme).not.toBeChecked();
-  await expect(theme).toBeFocused();
-  await clickDuringThemeWipe(page, learning);
+  await expectThemeWipe(page);
+  await learning.press('Enter');
   await expect(page).toHaveURL(learningPaths.hub);
   await page
     .getByRole('contentinfo')
     .getByRole('link', { name: 'Datenschutz', exact: true })
     .click();
   await expect(page).toHaveURL(/\/datenschutz$/);
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page
     .getByRole('navigation', { name: 'Hauptnavigation' })
     .getByRole('link', { name: 'ML Teaching – Startseite', exact: true })
@@ -343,9 +345,13 @@ test('theme changes preserve navigation and require explicit remembering across 
   await settleEntryAnimations(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await expectThemeControlAlignment(page);
-  await theme.focus();
+  await theme.click();
+  await expectThemeWipe(page);
+  await expect(theme).not.toBeChecked();
   await page.keyboard.press('Space');
   await expect(theme).toBeChecked();
+  await expect(theme).toBeFocused();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await settleLandingReveals(page);
   await expectThemeMenuTriggers(page);
   const menu = await openThemeMenu(page);

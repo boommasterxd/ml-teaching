@@ -90,25 +90,30 @@ export function KnnQuizFigure({ plot }: { plot: ReactNode }) {
   return (
     <div className="knn-quiz-figure">
       {plot}
-      <div
+      <ul
         className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
+        role="list"
         aria-label="Legende"
       >
         {(['dog', 'cat'] as const).map((signal) => (
-          <Text key={signal} variant="muted" className="flex items-center gap-1">
-            <svg viewBox="-12 -12 24 24" className="size-6" aria-hidden="true">
-              <KnnPoint x={0} y={0} signal={signal} />
-            </svg>
-            {signal === 'dog' ? 'Hund' : 'Katze'}
-          </Text>
+          <li key={signal}>
+            <Text variant="muted" className="flex items-center gap-1">
+              <svg viewBox="-12 -12 24 24" className="size-6" aria-hidden="true">
+                <KnnPoint x={0} y={0} signal={signal} />
+              </svg>
+              {signal === 'dog' ? 'Hund' : 'Katze'}
+            </Text>
+          </li>
         ))}
-        <Text variant="muted" className="flex items-center gap-1">
-          <svg viewBox="-12 -12 24 24" className="size-6" aria-hidden="true">
-            <KnnQuery x={0} y={0} />
-          </svg>
-          Neues Bild
-        </Text>
-      </div>
+        <li>
+          <Text variant="muted" className="flex items-center gap-1">
+            <svg viewBox="-12 -12 24 24" className="size-6" aria-hidden="true">
+              <KnnQuery x={0} y={0} />
+            </svg>
+            Neues Bild
+          </Text>
+        </li>
+      </ul>
     </div>
   );
 }

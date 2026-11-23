@@ -126,6 +126,35 @@ function trackPreviewSteps(previews: Locator) {
   });
 }
 
+test('the home waveform stops after leaving the viewport and does not replay', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  const waveform = page.locator('.home-purpose-waveform');
+  const overlay = waveform.locator(':scope > g');
+
+  await waveform.scrollIntoViewIfNeeded();
+  await expect(overlay).toHaveCount(1);
+  const stoppedOutOfView = await waveform.evaluate((svg) => {
+    return new Promise<boolean>((resolve) => {
+      const observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) return;
+        observer.disconnect();
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve(!svg.querySelector(':scope > g')));
+        });
+      });
+      observer.observe(svg);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+  });
+  expect(stoppedOutOfView).toBe(true);
+
+  await waveform.scrollIntoViewIfNeeded();
+  await expect(waveform).toBeInViewport();
+  await expect(overlay).toHaveCount(0);
+});
+
 test('desktop home previews alternate with a pause after each fade and without model requests', async ({
   page,
   baseURL,

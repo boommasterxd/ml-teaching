@@ -65,12 +65,13 @@ function downloadReceipts(api, repository, runId, attempt) {
   if (!artifacts.length) return [];
   if (
     artifacts.length !== 1 ||
-    artifacts[0].expired !== false ||
+    typeof artifacts[0].expired !== "boolean" ||
     !Number.isSafeInteger(artifacts[0].size_in_bytes) ||
     Number(artifacts[0].size_in_bytes) > 131072
   ) {
     throw new Error("Invalid or ambiguous producer receipt artifact");
   }
+  if (artifacts[0].expired) return [];
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "cache-lifecycle-receipts-"));
   try {
     invoke([

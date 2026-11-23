@@ -45,7 +45,9 @@ describe('educational network demo', () => {
         .getAttribute('aria-valuetext'),
     ).toBe('1 von 3 Stimmen');
     expect(cat.getAttribute('aria-disabled')).toBeNull();
-    fireEvent.click(cat);
+    await act(async () => {
+      fireEvent.click(cat);
+    });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ANIMATION.STEP_DURATION_MS * NETWORK_STAGES.COMPLETE);
     });

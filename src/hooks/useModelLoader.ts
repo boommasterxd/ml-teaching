@@ -2,10 +2,11 @@
 import { useState, useEffect, useRef, useCallback, useEffectEvent } from 'react';
 import { ML, MODEL_LOAD_RETRY } from '../constants';
 import {
+  acquireWebGlBackend,
   createClassifier,
-  initializeBackend,
   loadClassifierModule,
   loadTensorFlow,
+  retainBackendWork,
   retireModel,
 } from '../lib/ml-runtime';
 import type { ErrorCategory } from '../types/errors';
@@ -98,29 +99,26 @@ function loadModelWithDeadline(
     );
     signal.addEventListener('abort', abort, { once: true });
     if (signal.aborted) abort();
-    loadWhenIdle(loadModel, signal).then(
-      (model) => {
-        if (finished) {
-          retireModel(model);
-          return;
-        }
-        finish();
-        resolve(model);
-      },
-      (error) => {
-        if (finished) return;
-        finish();
-        reject(error);
-      },
-    );
+    const release = retainBackendWork();
+    void loadWhenIdle(loadModel, signal)
+      .then(
+        (model) => {
+          if (finished) {
+            retireModel(model);
+            return;
+          }
+          finish();
+          resolve(model);
+        },
+        (error) => {
+          if (finished) return;
+          finish();
+          reject(error);
+        },
+      )
+      .finally(release);
   });
 }
-
-const initTfBackend: LoadingStep<void> = async (setText, signal) => {
-  setText('Lade TensorFlow.js Backend...');
-  await initializeBackend();
-  signal.throwIfAborted();
-};
 
 async function prepareClassifier(): Promise<LoadingStep<Classifier>> {
   const { create } = await loadClassifierModule();
@@ -221,6 +219,7 @@ export function useModelLoader(
     const controller = new AbortController();
     const { signal } = controller;
     const loaders = getLoaders();
+    const backend = loaders?.initBackend ? undefined : acquireWebGlBackend();
     let model: FeatureExtractor | null = null;
     let pendingClassifier: Classifier | null = null;
     const setText = (text: string) => {
@@ -228,10 +227,12 @@ export function useModelLoader(
     };
 
     async function initModels() {
+      const releaseWork = retainBackendWork();
       try {
+        if (backend) setText('Lade TensorFlow.js Backend...');
         // Resources remain consent-gated. Only local code can load in parallel with backend setup.
         const [, loadClassifier, loadFeatureExtractor] = await Promise.all([
-          (loaders?.initBackend ?? initTfBackend)(setText, signal),
+          backend?.ready ?? loaders?.initBackend?.(setText, signal),
           loaders?.createClassifier ?? prepareClassifier(),
           loaders?.loadFeatureExtractor ?? prepareMobileNet(),
         ]);
@@ -254,9 +255,12 @@ export function useModelLoader(
         pendingClassifier = null;
         if (model) retireModel(model);
         model = null;
+        backend?.release?.();
         if (signal.aborted) return;
         reportError('model', 'Fehler beim Laden der KI-Modelle. Bitte lade die Seite neu.');
         setIsModelLoading(false);
+      } finally {
+        releaseWork?.();
       }
     }
     void initModels();
@@ -264,6 +268,7 @@ export function useModelLoader(
       controller.abort(new DOMException('Model loading cancelled', 'AbortError'));
       setClassifier(null);
       if (model) retireModel(model);
+      backend?.release?.();
       setMobilenetModel(null);
       setIsModelLoading(true);
     };

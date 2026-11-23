@@ -6,10 +6,10 @@ export default function AccessibilityPage() {
     <PageLayout page="accessibility">
       <PageContent labelledBy="accessibility-title" title="Barrierefreiheit">
         <p>
-          Diese Seite informiert freiwillig über die Barrierefreiheitsmaßnahmen dieser Website.
-          Yannick Schäfer stellt ML Teaching als kostenloses Lernangebot bereit. Über diese Website
-          werden keine Verbraucherverträge angebahnt oder abgeschlossen. Für dieses Angebot besteht
-          daher keine Pflicht nach dem BFSG.
+          Diese Seite informiert freiwillig über die Barrierefreiheitsmaßnahmen dieser Website. Wir
+          stellen ML Teaching als kostenloses Lernangebot bereit. Über diese Website werden keine
+          Verbraucherverträge angebahnt oder abgeschlossen. Für dieses Angebot besteht daher keine
+          Pflicht nach dem BFSG.
         </p>
         <h2>Unser Anspruch</h2>
         <p>

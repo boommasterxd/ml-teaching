@@ -82,10 +82,10 @@ Training links complete setup on the source page before the native Flow transiti
 SiteLogo reuses the shared animated Brain glyph; favicon and Apple
 assets use the icon-format exception. Local user images remain in the browser and
 bypass server optimization. The trusted, build-known theme bootstrap is included in
-static output so its exact bytes receive a CSP hash. The theme wipe mounts a
-decorative Motion layer only on a user-initiated appearance change. Its surface
-styles are in the shared external stylesheet, including for the native error
-document. No user-supplied script or style is authorized. Animate UI runtime styles and generated
+static output so its exact bytes receive a CSP hash. The Animate UI ThemeToggler
+also emits its constant snapshot stylesheet in every static document, including
+the native error document, so the same build hashes it. Its wipe runs only on a
+user-initiated color change. No user-supplied script or style is authorized. Animate UI runtime styles and generated
 icon/illustration markup must pass the same policy; library origin never permits
 relaxing CSP. Document concrete supported integration boundaries in the
 [design system](../design-system.md).

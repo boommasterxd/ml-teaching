@@ -1,6 +1,6 @@
 'use client';
 
-import { headerLegalLinks } from '@/content/site-navigation';
+import { headerLegalLinks, type LegalPage } from '@/content/site-navigation';
 import AnimatedLink from './AnimatedLink';
 import { legalPageIcons } from './site-navigation-icons';
 import { MenuHighlightItem } from './ui/menu-highlight';
@@ -11,7 +11,6 @@ import {
   NavigationMenuList,
 } from './ui/navigation-menu';
 
-export type LegalPage = (typeof headerLegalLinks)[number]['id'];
 const pages = headerLegalLinks.map((link) => ({ ...link, Icon: legalPageIcons[link.id] }));
 
 /** Compose the highlight and its link in the same client boundary so the item can attach its ref. */

@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from 'react';
 import { useInView } from 'motion/react';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
+import { usePageVisible } from '@animate-ui/react/utils/use-page-visible';
 import {
   motionTokens,
   useShouldReduceMotion,
@@ -25,12 +26,16 @@ const wavePaths = Array.from({ length: 12 }, (_, i) => {
 export default function PurposeWaveform() {
   const id = useId();
   const root = useRef<SVGSVGElement>(null);
-  const seen = useInView(root, { once: true, amount: 0.3 });
+  const inView = useInView(root, { amount: 0.3 });
+  const pageVisible = usePageVisible();
   const { paused } = useHomePlayback();
   const reduce = useShouldReduceMotion();
-  const [finished, setFinished] = useState(false);
+  const [phase, setPhase] = useState<'waiting' | 'playing' | 'finished'>('waiting');
   const timing = useTempoTransition({ duration: 1.3, ease: motionTokens.ease.draw });
-  if (seen && !finished && (paused || reduce)) setFinished(true);
+  const visible = inView && pageVisible;
+  const staticOnly = paused || reduce;
+  if (phase === 'waiting' && visible) setPhase(staticOnly ? 'finished' : 'playing');
+  if (phase === 'playing' && (!visible || staticOnly)) setPhase('finished');
 
   return (
     <svg
@@ -49,14 +54,14 @@ export default function PurposeWaveform() {
         </linearGradient>
         <path id={id} d={wavePaths} />
       </defs>
-      <use href={`#${id}`} opacity={finished || paused || reduce ? 1 : 0.46} />
-      {seen && !finished && !paused && !reduce && (
+      <use href={`#${id}`} opacity={phase === 'finished' || staticOnly ? 1 : 0.46} />
+      {phase === 'playing' && (
         <Effect
           asChild
           initial={{ clipPath: 'inset(0% 100% 0% 0%)' }}
           animate={{ clipPath: 'inset(0% 0% 0% 0%)' }}
           transition={timing}
-          onAnimationComplete={() => setFinished(true)}
+          onAnimationComplete={() => setPhase('finished')}
         >
           <g>
             <use href={`#${id}`} />

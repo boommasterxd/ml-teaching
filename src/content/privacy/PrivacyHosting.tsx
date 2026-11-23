@@ -43,14 +43,17 @@ export const PrivacyHosting = (
     </p>
     <h4>Speicherdauer</h4>
     <p>
-      Für personenbezogene Kundendaten, die Vercel in unserem Auftrag verarbeitet, gelten unsere
-      dokumentierten Weisungen und die{' '}
-      <a href="https://vercel.com/legal/dpa">Auftragsverarbeitungsvereinbarung von Vercel</a>. Nach
-      Vertragsende werden diese Daten innerhalb eines wirtschaftlich angemessenen Zeitraums
-      gelöscht, soweit keine gesetzlichen Aufbewahrungspflichten entgegenstehen. Personenbezogene
-      Dienstmetadaten, für die Vercel selbst verantwortlich ist, werden gelöscht oder anonymisiert,
-      sobald sie für die jeweiligen Zwecke nicht mehr benötigt werden. Weitere Informationen enthält
-      die <a href="https://vercel.com/legal/privacy-notice">Datenschutzerklärung von Vercel</a>.
+      Nach Ende unseres Vertrags mit Vercel löscht Vercel die in unserem Auftrag verarbeiteten
+      personenbezogenen Daten innerhalb eines wirtschaftlich angemessenen Zeitraums, soweit keine
+      gesetzlichen Aufbewahrungspflichten entgegenstehen. Das regelt die{' '}
+      <a href="https://vercel.com/legal/dpa">Auftragsverarbeitungsvereinbarung von Vercel</a>.
+    </p>
+    <p>
+      Daten, die Vercel in eigener Verantwortung verarbeitet, löscht oder anonymisiert Vercel nach
+      eigenen Angaben, sobald sie für die jeweiligen Zwecke nicht mehr benötigt werden. Ist eine
+      Löschung nicht möglich, etwa bei Sicherungskopien, bewahrt Vercel die Daten nach eigenen
+      Angaben weiterhin geschützt auf. Weitere Informationen enthält die{' '}
+      <a href="https://vercel.com/legal/privacy-notice">Datenschutzerklärung von Vercel</a>.
     </p>
     <h4>Drittlandübermittlung und EU-US Data Privacy Framework</h4>
     <p>
@@ -63,17 +66,15 @@ export const PrivacyHosting = (
     </p>
     <h4>Auftragsverarbeitung</h4>
     <p>
-      Für die Verarbeitung von personenbezogenen Daten in unserem Auftrag bestehen Verträge über
-      Auftragsverarbeitung (AVV). Mit Vercel ist eine Auftragsverarbeitungsvereinbarung geschlossen.
-      Vercel verarbeitet personenbezogene Kundendaten als Auftragsverarbeiter. Soweit Vercel
-      personenbezogene Dienstmetadaten für den Betrieb, die Verbesserung und die Absicherung seiner
-      Dienste verarbeitet, handelt Vercel als eigener Verantwortlicher.
+      Mit Vercel besteht ein Vertrag über Auftragsverarbeitung. Vercel ist Auftragsverarbeiter,
+      soweit es personenbezogene Daten nach unseren dokumentierten Weisungen für den Betrieb dieser
+      Website verarbeitet. Dazu gehören zum Beispiel Ihre IP-Adresse und die Angabe, welche Seite
+      oder Datei Ihr Browser zur Auslieferung anfordert.
     </p>
     <p>
-      Hierbei handelt es sich um datenschutzrechtlich vorgeschriebene Verträge, die die
-      Auftragsverarbeiter verpflichten, die in unserem Auftrag verarbeiteten personenbezogenen Daten
-      unserer Websitebesucher nur nach dokumentierten Weisungen und unter Einhaltung der DSGVO zu
-      verarbeiten.
+      Soweit Vercel technische Daten zu Ihrem Zugriff, etwa Ihre IP-Adresse und daraus abgeleitete
+      Angaben zu Land und Stadt, für den Betrieb, die Verbesserung und die Absicherung seiner
+      eigenen Dienste verwendet, handelt Vercel als eigener Verantwortlicher.
     </p>
   </>
 );

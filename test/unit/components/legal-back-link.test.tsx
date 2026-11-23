@@ -34,10 +34,8 @@ function installNavigation(traverseTo = vi.fn<Navigation['traverseTo']>()) {
 
 function installTransition() {
   const skip = vi.fn();
-  const active = { types: new Set(['history-back']) };
   Object.defineProperty(document, 'activeViewTransition', { configurable: true, value: null });
   const start = vi.fn((options: StartViewTransitionOptions) => {
-    Object.defineProperty(document, 'activeViewTransition', { configurable: true, value: active });
     const { promise: ready, resolve, reject } = Promise.withResolvers<void>();
     const updateCallbackDone = Promise.resolve().then(() => options.update?.());
     void updateCallbackDone.then(resolve, reject);
@@ -45,12 +43,18 @@ function installTransition() {
       Object.defineProperty(document, 'activeViewTransition', { configurable: true, value: null });
     };
     void ready.then(release, release);
-    return {
+    const transition = {
+      types: new Set(options.types),
       ready,
       updateCallbackDone,
       skipTransition: skip,
       skipByBrowser: () => reject(new DOMException('Snapshot deadline', 'TimeoutError')),
     };
+    Object.defineProperty(document, 'activeViewTransition', {
+      configurable: true,
+      value: transition,
+    });
+    return transition;
   });
   Object.defineProperty(document, 'startViewTransition', { configurable: true, value: start });
   return { skip, start };
@@ -166,6 +170,34 @@ describe('legal page back navigation', () => {
     await completion;
     expect(settled).toHaveBeenCalledOnce();
     expect(skip).not.toHaveBeenCalled();
+  });
+
+  it('uses native back for a different entry while the first route update is pending', async () => {
+    const { start, skip, traverse, navigation, entry, content } = installBackAction();
+    const older = { key: 'home', index: 0, sameDocument: true, url: new URL('/', entry.url!).href };
+    expect(goBackWithTransition(navigation, entry)).toBe(true);
+    await Promise.resolve();
+    const firstUpdate = start.mock.results[0].value.updateCallbackDone;
+    Object.assign(navigation, { entries: () => [older, entry] });
+    commitHistoryEntry(navigation, entry.key, '/lernen', 1);
+
+    render(
+      <RouterContext.Provider value={testRouter as unknown as NextRouter}>
+        <LegalBackLink />
+      </RouterContext.Provider>,
+      { wrapper: AppRouterHost },
+    );
+    const back = screen.getByRole('link', { name: 'Zurück' });
+    expect(back.getAttribute('href')).toBe('/');
+    await act(async () => {
+      fireEvent.click(back);
+    });
+
+    expect(skip).toHaveBeenCalledOnce();
+    expect(testRouter.back).toHaveBeenCalledOnce();
+    expect(traverse).toHaveBeenCalledExactlyOnceWith(entry.key);
+    content.rerender(<main data-route-capture="learning" data-route-path="/lernen" />);
+    await firstUpdate;
   });
 
   it('releases pending content when the browser skips its snapshot', async () => {

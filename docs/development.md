@@ -79,7 +79,8 @@ prefetched before consent. See the [design system](design-system.md) for ownersh
 | `npm run check:dead-code`   | Discover unused files, dependencies and public exports.                   |
 | `npm run check:duplication` | Check handwritten source duplication at 50 tokens.                        |
 | `npm run test:coverage`     | All unit/integration tests with blocking coverage.                        |
-| `npm run test:e2e`          | All browser tests against the existing native production build.           |
+| `npm run test:e2e`          | Required browser suite against the existing native production build.      |
+| `npm run test:e2e:model`    | Optional browser smoke test for the public MobileNet model.               |
 | `npm run test:lighthouse`   | Mobile/desktop lab metrics with a production server on port 3100.         |
 | `npm run audit:production`  | Blocking high/critical production dependency audit.                       |
 | `npm run audit`             | Full local dependency audit including development tooling.                |
@@ -103,6 +104,17 @@ cache test uses the full Chromium browser. Install both with `npx playwright ins
 OS dependency setup is separate and must respond to actual missing requirements.
 Playwright starts `npm start` on
 127.0.0.1:3100 and refuses to reuse an unrelated server. Build once first.
+
+Run `npm run test:e2e:model` separately from the required browser suite when you
+need to verify the public MobileNet provider. It requires the same local
+`npm run build` output and Playwright Chromium installation, a free port 3100,
+and network access to the configured model provider. Playwright starts the same
+native production server. The test checks that the initial page makes no model
+requests, then grants consent and downloads the real model graph and weights.
+It declines camera access and verifies that the browser extracts features from
+one synthetic PNG generated locally in memory. If the provider is unreachable or
+the model download fails, the optional run fails. Check provider reachability and
+rerun it once access is restored.
 
 For local Lighthouse audits, build the site first. Start the native production
 server in a separate terminal.

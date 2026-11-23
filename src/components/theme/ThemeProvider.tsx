@@ -1,15 +1,14 @@
 'use client';
 
 import { createContext, useContext, type ReactNode } from 'react';
-import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
-import { motion } from 'motion/react';
+import { ThemeToggler } from '@animate-ui/react/primitives/effects/theme-toggler';
+import type { ThemeSelection } from '@/lib/theme';
 import { useThemePreference } from './useThemePreference';
-import { useThemeWipe } from './useThemeWipe';
 
 type ThemeContextValue = Pick<
   ReturnType<typeof useThemePreference>,
-  'preference' | 'select' | 'setRemember'
->;
+  'preference' | 'setRemember'
+> & { select: (selection: ThemeSelection) => void };
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function useTheme() {
@@ -18,30 +17,23 @@ export function useTheme() {
   return value;
 }
 
-function ThemeWipe({ revision, animate }: { revision: number; animate: boolean }) {
-  const { visible, finish } = useThemeWipe(revision, animate);
-  const transition = useTempoTransition({ duration: 0.7, ease: motionTokens.ease.soft });
-  if (!visible) return null;
-  return (
-    <motion.div
-      key={revision}
-      aria-hidden="true"
-      className="theme-wipe"
-      data-theme-wipe=""
-      initial={{ clipPath: 'inset(0% 100% 0% 0%)', opacity: 1 }}
-      animate={{ clipPath: 'inset(0% 0% 0% 0%)', opacity: 0 }}
-      transition={transition}
-      onAnimationComplete={finish}
-    />
-  );
-}
-
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const value = useThemePreference();
+  const { preference, select, setRemember, finishWipe } = useThemePreference();
+  // Keep the primitive's constant reset style in the hashed static HTML.
   return (
-    <ThemeContext value={value}>
-      {children}
-      <ThemeWipe revision={value.preference.revision} animate={value.preference.animate} />
-    </ThemeContext>
+    <ThemeToggler
+      theme={preference.selection}
+      resolvedTheme={preference.resolved}
+      setTheme={finishWipe}
+      direction="ltr"
+    >
+      {({ toggleTheme }) => (
+        <ThemeContext
+          value={{ preference, select: (theme) => select(theme, toggleTheme), setRemember }}
+        >
+          {children}
+        </ThemeContext>
+      )}
+    </ThemeToggler>
   );
 }

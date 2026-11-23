@@ -1,10 +1,12 @@
 const historyBackType = 'history-back';
 const historyForwardType = 'history-forward';
+type HistoryTarget = Pick<NavigationDestination, 'key' | 'url'>;
+const historyTargets = new WeakMap<ViewTransition, HistoryTarget>();
 
 function observePageCommit(
   content: HTMLElement,
   navigation: Navigation,
-  destination: Pick<NavigationDestination, 'key' | 'url'>,
+  destination: HistoryTarget,
   transition: ViewTransition,
   lifetime?: AbortSignal,
 ) {
@@ -109,6 +111,7 @@ function animateBrowserTraversal(
           }
         },
       });
+      historyTargets.set(transition, event.destination);
       // If a capture is interrupted, the browser must still be free to traverse.
       void transition.ready.catch(allowTraversal);
       return oldPageCaptured;
@@ -162,8 +165,15 @@ export function subscribeToHistoryTransitions(navigation: Navigation, content: H
 /** Bridge native history restoration, which can commit outside React ViewTransition. */
 export function goBackWithTransition(navigation: Navigation, entry: NavigationHistoryEntry) {
   const active = document.activeViewTransition;
-  if (active?.types.has(historyBackType)) return true;
-  if (active || !entry.url || !supportsHistorySnapshots()) return false;
+  if (active) {
+    const target = historyTargets.get(active);
+    if (target && active.types.has(historyBackType)) {
+      if (target.key === entry.key && target.url === entry.url) return true;
+      active.skipTransition();
+    }
+    return false;
+  }
+  if (!entry.url || !supportsHistorySnapshots()) return false;
   const content = document.querySelector<HTMLElement>('[data-route-capture]');
   if (!content) return false;
   const destination = { url: entry.url, key: entry.key };
@@ -177,6 +187,7 @@ export function goBackWithTransition(navigation: Navigation, entry: NavigationHi
       return route.promise;
     },
   });
+  historyTargets.set(transition, destination);
   void transition.ready.catch(() => {});
   return true;
 }

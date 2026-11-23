@@ -12,6 +12,23 @@ import type { ModelLoaderFunctions } from '@/hooks/useModelLoader';
 import type { Classifier, FeatureExtractor } from '@/types/ml-models';
 
 const { loadMobileNetEmbedding } = vi.hoisted(() => ({ loadMobileNetEmbedding: vi.fn() }));
+const webGl = vi.hoisted(() => ({
+  factory: () => ({}),
+  registered: true,
+  remove: vi.fn(() => {
+    webGl.registered = false;
+  }),
+}));
+vi.mock('@tensorflow/tfjs-core', () => ({
+  findBackendFactory: () => (webGl.registered ? webGl.factory : null),
+  registerBackend: () => {
+    webGl.registered = true;
+  },
+  setBackend: async () => webGl.registered,
+  ready: async () => {},
+  removeBackend: webGl.remove,
+}));
+vi.mock('@tensorflow/tfjs-backend-webgl', () => ({}));
 vi.mock('@/lib/mobilenet-embedding', () => ({ loadMobileNetEmbedding }));
 
 // ─── Mock Factories ──────────────────────────────────────────────────────────
@@ -255,6 +272,31 @@ describe('useModelLoader', () => {
   });
 
   describe('Abort bei Unmount', () => {
+    it('releases WebGL only after a cancelled shader warmup disposes its graph', async () => {
+      webGl.registered = true;
+      webGl.remove.mockClear();
+      const classifier = makeClassifier();
+      const model = makeFeatureExtractor();
+      const warmup = Promise.withResolvers<void>();
+      const { unmount } = renderHook(() =>
+        useModelLoader(true, onError, {
+          createClassifier: async () => classifier,
+          loadFeatureExtractor: async () => model,
+          warmup: () => warmup.promise,
+        }),
+      );
+      await act(async () => vi.dynamicImportSettled());
+      unmount();
+      await act(async () => {});
+      expect(webGl.remove).not.toHaveBeenCalled();
+      expect(model.dispose).not.toHaveBeenCalled();
+
+      await act(async () => warmup.resolve());
+      expect(model.dispose).toHaveBeenCalledBefore(webGl.remove);
+      expect(classifier.dispose).toHaveBeenCalledBefore(webGl.remove);
+      expect(webGl.remove).toHaveBeenCalledExactlyOnceWith('webgl');
+    });
+
     it('aborts the previous model request and waits for its late GPU work before reentry', async () => {
       const pending = Promise.withResolvers<FeatureExtractor>();
       const oldModel = makeFeatureExtractor();

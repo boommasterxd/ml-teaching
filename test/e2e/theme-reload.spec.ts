@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { observeViewTransitions } from './browser-checks';
 
 test('the browser canvas follows the dark system preference during a reload with pending CSS', async ({
   page,
@@ -41,4 +42,19 @@ test('the browser canvas follows the dark system preference during a reload with
     releaseStyles();
   }
   await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+});
+
+test('changing the motion preference disables the theme wipe without losing the selected theme', async ({
+  page,
+}) => {
+  const transitions = await observeViewTransitions(page);
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+  await page.goto('/lernen');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const theme = page.getByRole('switch', { name: 'Dunkle Darstellung' });
+  await theme.press('Space');
+  await expect(theme).toBeChecked();
+  await expect(theme).toBeFocused();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  expect(await transitions()).toEqual([]);
 });

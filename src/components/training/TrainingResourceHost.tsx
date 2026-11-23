@@ -3,9 +3,14 @@
 import { memo, useLayoutEffect, useSyncExternalStore } from 'react';
 import { useCameraStream } from '@/hooks/useCameraStream';
 import { useModelLoader } from '@/hooks/useModelLoader';
-import type { TrainingResources } from '@/hooks/useTrainingEngine';
+import { subscribeToVisibility } from '@/lib/document-visibility';
 import type { ErrorCategory } from '@/types/errors';
-import { subscribeToVisibility } from './TrainingEntryContext';
+
+export interface TrainingResources {
+  visible: boolean;
+  models: ReturnType<typeof useModelLoader>;
+  camera: ReturnType<typeof useCameraStream>;
+}
 
 interface TrainingResourceHostProps {
   cameraConsent: boolean;

@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
+import type { LegalPage } from '@/content/site-navigation';
 import { isLargeViewport, subscribeToLargeViewport } from '@/lib/media-queries';
 import { useMenuModule } from './use-menu-module';
-import type { LegalPage } from './LegalNavigationLinks';
 
 let pending: Promise<typeof import('./LegalNavigationLinks')> | undefined;
 

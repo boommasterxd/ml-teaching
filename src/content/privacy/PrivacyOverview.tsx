@@ -39,10 +39,10 @@ export const PrivacyOverview = (
     <h3>Datenerfassung auf dieser Website</h3>
     <h4>Wer ist verantwortlich für die Datenerfassung auf dieser Website?</h4>
     <p>
-      Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen
-      Kontaktdaten können Sie dem Abschnitt „
+      Yannick Schäfer ist für die Datenverarbeitung auf dieser Website verantwortlich. Seine
+      Kontaktdaten finden Sie im Abschnitt „
       <a href="#verantwortliche-stelle">Hinweis zur verantwortlichen Stelle</a>“ in dieser
-      Datenschutzerklärung entnehmen.
+      Datenschutzerklärung.
     </p>
     <h4>Wie erfassen wir Ihre Daten?</h4>
     <p>

@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { Shine } from '@animate-ui/react/primitives/effects/shine';
-import { motionTokens, useShouldReduceMotion } from '@animate-ui/react/utils/motion';
+import {
+  motionTokens,
+  ReducedMotionContext,
+  useReducedMotionSetting,
+  useShouldReduceMotion,
+} from '@animate-ui/react/utils/motion';
 import { NetworkLoadAlert } from './NeuralNetFrame';
 import ResultFeedback from './network/ResultFeedback';
 import { Progress } from './ui/progress';
@@ -32,7 +37,7 @@ function SignalFlow({ active, sequence }: { active: boolean; sequence: number })
         <Effect
           asChild
           key={`${sequence}-${index}`}
-          initial={{ pathLength: 0 }}
+          initial={reduce ? false : { pathLength: 0 }}
           animate={{ pathLength: active ? 1 : 0 }}
           transition={{
             duration: duration * 0.7,
@@ -46,7 +51,7 @@ function SignalFlow({ active, sequence }: { active: boolean; sequence: number })
         <Effect
           asChild
           key={`${sequence}-head-${index}`}
-          initial={{ pathLength: 0 }}
+          initial={reduce ? false : { pathLength: 0 }}
           animate={{ pathLength: active ? 1 : 0 }}
           transition={{
             duration: duration * 0.3,
@@ -110,11 +115,13 @@ export function NetworkDiagram({
   animating,
   result,
   sequence,
+  visible,
   onReady,
   preparing = false,
   failed = false,
   requestedSignal,
 }: Omit<NetworkState, 'triggerAnimation'> & {
+  visible: boolean;
   onReady?: () => void;
   preparing?: boolean;
   failed?: boolean;
@@ -123,9 +130,14 @@ export function NetworkDiagram({
   useEffect(() => {
     onReady?.();
   }, [onReady]);
+  const motion = useReducedMotionSetting();
+  const [interruptedSequence, setInterruptedSequence] = useState(0);
+  const holdEffects = !visible || interruptedSequence === sequence;
+  // Finish the current decorative effects without replaying them when playback resumes.
+  if (!visible && sequence !== interruptedSequence) setInterruptedSequence(sequence);
   const signal = activeSignal ?? requestedSignal ?? 'dog';
   return (
-    <>
+    <ReducedMotionContext value={holdEffects ? 'always' : motion}>
       <NetworkScene
         signal={activeSignal ?? requestedSignal ?? null}
         effects={{
@@ -163,6 +175,6 @@ export function NetworkDiagram({
           )}
         </div>
       )}
-    </>
+    </ReducedMotionContext>
   );
 }

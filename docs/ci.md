@@ -10,19 +10,24 @@ The dependency-free planner reads the complete merge-base-to-head Git diff. Rena
 include both endpoints, and deletions remain part of the scope. Its plan records the
 base, head and merge revisions. Consumers reject a different checked-out revision.
 
-| Complete changed scope                                                                         | Selected work                                                          |
-| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Nonempty root `docs/` files only                                                               | Real successful final gate; no dependency installation, tests or build |
-| Unit test files under `test/unit/` only                                                        | Static quality, dependency audit and full unit coverage                |
-| Application, browser tests, shared assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and browser suite          |
-| Empty diff or unavailable Git history                                                          | All checks                                                             |
+| Complete changed scope                                                                                 | Selected work                                                          |
+| ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| Nonempty root `docs/` files only                                                                       | Real successful final gate; no dependency installation, tests or build |
+| Only `*.test.ts`, `*.test.tsx` or `*.test.mjs` files under `test/unit/`                                | Static quality, production dependency audit and full unit coverage     |
+| Application, test fixtures, browser tests, assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and browser suite          |
+| Empty diff or unavailable Git history                                                                  | All checks                                                             |
 
 Selection and the final result gate use `ubuntu-slim`. Selected quality and browser
 jobs use regular runners; job-level conditions prevent allocation of unselected
-substantive jobs. Runs for source or base changes cancel superseded runs in the
-same group. Edits without a base change have separate concurrency groups. The unconditional
-final `CI` check accepts successful selected jobs and explicitly excluded skipped
-jobs only. Invalid plans, planning failures, cancellations and unexpected skips fail.
+substantive jobs. CI and Gitleaks each group PR runs by PR number and the exact
+base, head and simulated merge revisions. Each group allows one running and one
+pending run. A new run can replace a pending run for the same revision. Different
+revisions can overlap, so an older run can finish while the newer revision gets
+its own checks. Manual Gitleaks scans use a separate group per ref and supersede
+earlier manual scans on that ref.
+The unconditional final `CI` check accepts successful selected jobs and explicitly
+excluded skipped jobs only. Invalid plans, planning failures, cancellations and
+unexpected skips fail.
 The workflow, planner and final validation run from the simulated PR merge checkout.
 After a title or description edit, CI and Gitleaks can reuse a successful result
 from the same workflow for the exact base, head and simulated merge revisions.
@@ -62,7 +67,9 @@ cache producer, closed pull requests or declared workflow completion. It verifie
 replacement receipts and active runs before deleting eligible obsolete caches,
 rechecks the trusted branch identity and bounds deletion to 100 entries per run.
 Workflow completions and PR closures can both resume deferred main rotation using
-a verified producer receipt. For main rotation, the active lifecycle workflow
+a verified producer receipt. An expired npm receipt leaves the npm generations in
+place while independently verified closed-PR and CodeQL cleanup can proceed.
+For main rotation, the active lifecycle workflow
 can proceed past queued or pending runs with the same verified GitHub workflow
 identity because the shared concurrency group serializes them. Other active runs
 still block main rotation. PR cache checks consider all associated active runs.
@@ -97,8 +104,9 @@ source boundaries, file limits, Knip, duplication, the production dependency aud
 and unit coverage. These commands also remain available individually in
 `package.json`. The production audit blocks high/critical production vulnerabilities
 and audit execution failures; development dependencies remain installed. Before an
-authorized integration, run the separate full local `npm audit --include=dev` and
-review development-only findings.
+authorized integration, run the separate local `npm run audit`. It includes
+development dependencies and reports findings at all severities. High and critical
+findings cause a nonzero exit status. Review development-only findings as well.
 The blocking typecheck also checks the Next.js configuration and hash-CSP build
 tooling as JavaScript through `tsconfig.build-tooling.json`.
 The [minimatch decision](decisions/minimatch-development-advisory.md) records the
