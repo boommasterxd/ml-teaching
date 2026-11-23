@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
 import DeferredKnnQuiz from '@/components/knn-quiz/DeferredKnnQuiz';
 import {
   installBrowserHost,
@@ -17,20 +17,12 @@ afterEach(() => {
 });
 
 describe('deferred KNN exercise', () => {
-  it('prepares on keyboard intent without opening and opens through the explicit control', async () => {
+  it('starts automatically when the exercise is near the viewport', async () => {
     render(<DeferredKnnQuiz />);
-    const open = screen.getByRole('button', { name: 'Übung öffnen' });
-    await act(async () => {
-      open.focus();
-      await vi.dynamicImportSettled();
-    });
+    expect(screen.getByRole('status').textContent).toBe('Die Übung wird geladen …');
     expect(screen.queryByRole('slider')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Übung öffnen' })).toBe(open);
-    expect(document.activeElement).toBe(open);
-    fireEvent.click(open);
-    const title = await screen.findByRole('heading', { name: 'Hund oder Katze?' });
-    expect(document.activeElement).toBe(title);
+    expect(await screen.findByRole('slider')).toBeTruthy();
     expect(screen.getByText('K = 3 · 0 von 3 gefunden')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Übung öffnen' })).toBeNull();
+    expect(document.activeElement).toBe(document.body);
   });
 });

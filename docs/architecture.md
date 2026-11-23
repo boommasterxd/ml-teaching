@@ -161,9 +161,9 @@ mount only after an answer. It does not invoke ML, request a camera, send answer
 persist state or create a learning profile. Reset and document reload discard the
 quiz state independently of model consent, theme preferences and the learning lab.
 
-The KNN exercise opens on explicit activation. Pointer, focus and touch intent warm
-the same retryable module. Its twelve synthetic points and query use a bounded random
-construction with separated targets. The round ranks its points once. Changing
+The KNN exercise opens automatically near the viewport. Pointer, focus and touch
+intent can start the same retryable import. Each round generates twelve separated
+synthetic points with a bounded random construction and ranks them once. Changing
 K clears the previous answer and selection within that round. The explanatory
 animation and exercise share ranking and voting in `src/lib/knn.ts` and point
 glyphs. Children select the nearest 1 to 10 points before choosing the majority
