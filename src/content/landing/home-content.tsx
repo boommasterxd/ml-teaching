@@ -89,19 +89,8 @@ const perspectives = [
   },
   {
     title: 'Entscheidungen unterstützen',
-    opportunity: (
-      <>
-        Beim Reinforcement Learning probiert eine Spielfigur verschiedene Aktionen aus. Aus den
-        Belohnungen lernt sie, welche Entscheidungen sich auf Dauer lohnen.{' '}
-        <a
-          className="underline"
-          href="https://mitpress.mit.edu/9780262039246/reinforcement-learning/"
-          rel="noreferrer"
-        >
-          Fachbuch von Sutton und Barto
-        </a>
-      </>
-    ),
+    opportunity:
+      'Beim Reinforcement Learning probiert eine Spielfigur verschiedene Aktionen aus. Aus den Belohnungen lernt sie, welche Entscheidungen sich auf Dauer lohnen.',
     limit:
       'Menschen legen Ziele und Belohnungen fest. Eine gute Punktzahl bedeutet noch nicht, dass eine Entscheidung für alle Menschen gut oder fair ist.',
   },

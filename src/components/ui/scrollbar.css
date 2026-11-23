@@ -1,0 +1,82 @@
+.gallery-region {
+  /* The toolbar already places the start below the upper corners. */
+  --scrollbar-inset-end: var(--radius-2xl);
+}
+
+:is(.header-menu-panel-mobile .header-menu-viewport, .header-menu-desktop .header-menu-content) {
+  --scrollbar-inset-start: var(--navigation-surface-radius);
+  --scrollbar-inset-end: var(--navigation-surface-radius);
+}
+
+[data-slot='dropdown-menu-content'] > [data-scroll-fade] {
+  --scrollbar-inset-start: var(--radius-md);
+  --scrollbar-inset-end: var(--radius-md);
+}
+
+/* Inset an unstyleable track inside the same outer box. */
+:where(
+  .gallery-region,
+  .header-menu-panel-mobile .header-menu-viewport,
+  .header-menu-desktop .header-menu-content,
+  [data-slot='dropdown-menu-content'] > [data-scroll-fade]
+) {
+  border-block-style: solid;
+  border-block-color: transparent;
+  border-block-width: calc(var(--scrollbar-inset-start, 0px) * var(--scrollbar-viewport-inset, 1))
+    calc(var(--scrollbar-inset-end, 0px) * var(--scrollbar-viewport-inset, 1));
+  mask-origin: padding-box;
+
+  @media (forced-colors: active) {
+    /* Keep the geometry without painting system-colored bands. */
+    border-image: linear-gradient(transparent, transparent) 1;
+  }
+}
+
+@media (forced-colors: none) {
+  @supports selector(::-webkit-scrollbar) {
+    :root {
+      --scrollbar-viewport-inset: 0;
+    }
+
+    ::-webkit-scrollbar {
+      width: 14px;
+      height: 14px;
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      min-width: 24px;
+      min-height: 24px;
+      border: 2px solid transparent;
+      border-radius: 9999px;
+      background: var(--control) padding-box;
+    }
+
+    ::-webkit-scrollbar-button {
+      display: none;
+    }
+
+    ::-webkit-scrollbar-track,
+    ::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-track-piece:vertical:start {
+      margin-top: var(--scrollbar-inset-start, 0px);
+    }
+
+    ::-webkit-scrollbar-track-piece:vertical:end {
+      margin-bottom: var(--scrollbar-inset-end, 0px);
+    }
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    :root {
+      scrollbar-color: var(--control) transparent;
+    }
+
+    * {
+      scrollbar-width: thin;
+    }
+  }
+}
