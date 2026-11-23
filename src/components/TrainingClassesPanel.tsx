@@ -240,7 +240,7 @@ export default function TrainingClassesPanel({
         Mindestens {ML.MIN_CLASSES} Klassen, eindeutige Namen und je {ML.MIN_IMAGES_PER_CLASS}{' '}
         Bilder.
       </Text>
-      <EntryReveal kind="text" className="mt-4 sm:mt-5" active={entryReady} scrollOnly>
+      <EntryReveal kind="text" className="mt-4 sm:mt-5" active={entryReady}>
         <AnimatedList className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {classes.length === 0 ? (
             <Empty key="empty" className="col-span-full">

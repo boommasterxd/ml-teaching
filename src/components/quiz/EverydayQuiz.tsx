@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
 import {
   QUIZ_CORRECT_COUNT,
@@ -54,16 +54,10 @@ interface QuizState {
   round?: readonly QuizExample[];
 }
 
-const visitRound = typeof window === 'undefined' ? INITIAL_QUIZ_ROUND : createQuizRound();
-const subscribe = () => () => {};
-const clientSnapshot = () => visitRound;
-const serverSnapshot = () => INITIAL_QUIZ_ROUND;
-
 export default function EverydayQuiz() {
-  const initialRound = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
   const [state, setState] = useState<QuizState>({ answers: [], announcement: '' });
   const { feedback, failed, prepare } = useQuizFeedback();
-  const round = state.round ?? initialRound;
+  const round = state.round ?? INITIAL_QUIZ_ROUND;
   const choices = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (state.round)

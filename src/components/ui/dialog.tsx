@@ -105,31 +105,36 @@ export function InitialDialog({
   const reduceMotion = useShouldReduceMotion();
   const exitTransition = useTempoTransition(motionTokens.transition.overlay);
   useLayoutEffect(() => {
-    const dialog = ref.current;
-    if (!dialog?.showModal) return;
+    const initialLabel = ref.current?.getAttribute('aria-labelledby');
     let attached = true;
+    let promoted: HTMLDialogElement | undefined;
     function promote() {
-      if (!attached || !dialog?.isConnected) return;
+      const dialog = ref.current;
+      if (!attached || !dialog?.isConnected || !dialog.showModal) return;
       const focused = document.activeElement;
+      const label = dialog.getAttribute('aria-labelledby');
+      const activeTitle = label && label !== initialLabel ? document.getElementById(label) : null;
       const initialFocus =
-        focused instanceof HTMLElement && dialog.contains(focused)
+        activeTitle ??
+        (focused instanceof HTMLElement && dialog.contains(focused)
           ? focused
-          : getDialogTabStops(dialog)[0];
+          : getDialogTabStops(dialog)[0]);
       // Upgrade the server-rendered open dialog without replacing its controls.
       dialog.removeAttribute('open');
       dialog.showModal();
+      promoted = dialog;
       initialFocus?.focus({ preventScroll: true });
     }
     if (
       suppressForRememberedTrainingConsent &&
       document.documentElement.dataset.trainingConsent === 'remembered'
     ) {
-      // If restore drops an expired record, the inline dialog still needs modality.
+      // Let restored consent select the current step before promoting the live dialog.
       queueMicrotask(promote);
     } else promote();
     return () => {
       attached = false;
-      dialog.close();
+      promoted?.close();
     };
   }, [suppressForRememberedTrainingConsent]);
 

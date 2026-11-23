@@ -192,7 +192,7 @@ function getSetupStep({
   showCameraPrompt,
 }: ReturnType<typeof useTrainingWorkspace>['resources']) {
   if (consent.showConsentModal) return 'consent';
-  if (!consent.wasRestored && models.isModelLoading) return 'loading';
+  if (models.isModelLoading) return 'loading';
   return showCameraPrompt ? 'camera' : null;
 }
 
@@ -214,33 +214,33 @@ function useTrainingArrival(ready: boolean, heading: React.RefObject<HTMLHeading
 function useSetupPresentation(
   step: SetupStep | null,
   canShow: boolean,
-  wasRestored: boolean,
   heading: React.RefObject<HTMLHeadingElement | null>,
 ) {
   const requested = canShow ? step : null;
   const [lastStep, setLastStep] = useState(requested);
   const [initialSetup, setInitialSetup] = useState(step === 'consent');
-  const [focusHeading, setFocusHeading] = useState(false);
-  const skipped = !canShow || (wasRestored && lastStep === 'consent' && requested === null);
+  const focusOnExit = useRef(false);
   if (requested && requested !== lastStep) setLastStep(requested);
-  if (skipped && lastStep !== null) {
+  if (!canShow && lastStep !== null) {
     setLastStep(null);
     setInitialSetup(false);
   }
 
   useLayoutEffect(() => {
-    if (focusHeading) heading.current?.focus({ preventScroll: true });
-  }, [focusHeading, heading]);
+    if (lastStep !== null || !focusOnExit.current) return;
+    focusOnExit.current = false;
+    heading.current?.focus({ preventScroll: true });
+  }, [lastStep, heading]);
 
   function onExited() {
     if (requested !== null || lastStep === null) return;
+    focusOnExit.current = lastStep === 'camera' || lastStep === 'loading';
     setLastStep(null);
     setInitialSetup(false);
-    if (lastStep === 'camera') setFocusHeading(true);
   }
 
   return {
-    step: skipped ? requested : (requested ?? lastStep),
+    step: canShow ? (requested ?? lastStep) : null,
     open: requested !== null,
     initialSetup,
     onExited,
@@ -276,7 +276,6 @@ function TrainingWorkspace({ initialWorkspace }: { initialWorkspace: boolean }) 
   const { initialSetup, ...setup } = useSetupPresentation(
     setupStep,
     !setupSuppressed && (initialDocument || entryViewportReady),
-    consent.wasRestored,
     resources.mainHeadingRef,
   );
   const ready = !initialSetup && Boolean(models.mobilenetModel) && !models.isModelLoading;
@@ -288,7 +287,7 @@ function TrainingWorkspace({ initialWorkspace }: { initialWorkspace: boolean }) 
   const declineConsent = () => router.push(learningPaths.images, { transitionTypes: ['nav-back'] });
   return (
     <div className="bg-background text-foreground pb-10 sm:pb-16">
-      <div className="training-workspace" inert={setupStep !== null}>
+      <div className="training-workspace" inert={setupStep !== null || setup.step !== null}>
         <PageHeader
           title="Dein Bildmodell"
           description="Welche Motive soll dein Modell unterscheiden? Benenne die Klassen zum Beispiel „Tasse“ und „Stift“."
@@ -303,11 +302,6 @@ function TrainingWorkspace({ initialWorkspace }: { initialWorkspace: boolean }) 
             />
           }
         />
-        {consent.wasRestored && models.isModelLoading && (
-          <p role="status" className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
-            <Spinner aria-hidden="true" /> Bildtraining wird geladen …
-          </p>
-        )}
         {error?.category === 'model' && setup.step === null && (
           <TrainingError
             message={error.message}

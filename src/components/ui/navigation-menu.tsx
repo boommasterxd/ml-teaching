@@ -10,7 +10,7 @@ import { MenuHighlight } from './menu-highlight';
 import { ScrollFadeViewport } from './scroll-fade-viewport';
 
 export const navigationMenuTriggerStyle =
-  'control-focus header-menu-trigger group relative inline-flex min-h-8 w-max items-center justify-center rounded-full px-2.5 py-1 text-sm font-medium';
+  'control-focus header-menu-trigger group relative inline-flex min-h-8 w-max items-center justify-center rounded-full px-2.5 py-1 text-sm font-medium aria-[current=page]:font-semibold';
 export const navigationMenuListStyle = 'group flex list-none items-center justify-center gap-1';
 
 export function NavigationMenu({

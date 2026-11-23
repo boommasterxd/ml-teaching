@@ -12,7 +12,6 @@ interface ConsentState {
   camera: CameraDecision;
   expiresAt: number | null;
   restored: RememberedTrainingConsent | null;
-  wasRestored: boolean;
 }
 
 const initialConsent: ConsentState = {
@@ -20,7 +19,6 @@ const initialConsent: ConsentState = {
   camera: 'pending',
   expiresAt: null,
   restored: null,
-  wasRestored: false,
 };
 
 export function useConsentFlow() {
@@ -39,7 +37,6 @@ export function useConsentFlow() {
       camera: 'declined',
       expiresAt: record.expiresAt,
       restored: record,
-      wasRestored: true,
     });
   }, []);
   const reset = useCallback(() => setState(initialConsent), []);
@@ -63,7 +60,6 @@ export function useConsentFlow() {
     cameraConsent: camera === 'granted',
     cameraDeclined: camera === 'declined',
     restored,
-    wasRestored: state.wasRestored,
     grantConsent,
     grantCameraConsent,
     saveCameraPermission,

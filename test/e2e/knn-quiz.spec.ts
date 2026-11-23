@@ -200,7 +200,14 @@ for (const [width, colorScheme] of [
     });
     await page.goto(learningPaths.images);
     const exercise = page.locator('section[aria-labelledby="section-knn-quiz"]');
-    await exercise.scrollIntoViewIfNeeded();
+    const open = exercise.getByRole('button', { name: 'Übung öffnen' });
+    if (width === 1280) {
+      await open.scrollIntoViewIfNeeded();
+      await page.reload();
+      await expect(open).toBeInViewport();
+      await expect(exercise.getByRole('slider')).toHaveCount(0);
+    }
+    await open.click();
     const slider = exercise.getByRole('slider');
     await expect(slider).toHaveAttribute('aria-valuenow', '3');
     await expectAnswerRows(exercise, width === 320 ? 2 : 1);
@@ -235,7 +242,7 @@ test('KNN exercise supports retries, voting limits, and new rounds', async ({ pa
   await page.setViewportSize({ width, height: 1000 });
   await page.goto(learningPaths.images);
   const exercise = page.getByRole('region', { name: 'Welche Nachbarn zählen?' });
-  await exercise.scrollIntoViewIfNeeded();
+  await exercise.getByRole('button', { name: 'Übung öffnen' }).click();
   const slider = exercise.getByRole('slider');
   await expect(slider).toHaveAttribute('aria-valuenow', '3');
   const points = await rankedTargets(exercise);

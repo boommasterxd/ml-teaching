@@ -228,7 +228,7 @@ export default function CameraPreview(props: CameraPreviewProps) {
         )}
       >
         <Button
-          variant={stream ? 'outline' : 'default'}
+          variant="outline"
           className="h-auto min-h-11 px-2 py-1.5 has-[>svg]:px-2"
           onPointerEnter={onCaptureIntent}
           onFocus={onCaptureIntent}

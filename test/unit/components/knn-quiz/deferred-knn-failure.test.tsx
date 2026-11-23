@@ -16,6 +16,7 @@ afterEach(() => {
 describe('KNN chunk failure', () => {
   it('explains a failed download and permits an explicit retry', async () => {
     render(<DeferredKnnQuiz />);
+    fireEvent.click(screen.getByRole('button', { name: 'Übung öffnen' }));
     expect(await screen.findByText('Die Übung konnte nicht geladen werden.')).toBeTruthy();
     const retry = screen.getByRole('button', { name: 'Erneut versuchen' });
     fireEvent.click(retry);

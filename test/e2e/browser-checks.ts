@@ -1,6 +1,59 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+export async function holdApplicationScripts(page: Page) {
+  let held = 0;
+  let delivered = 0;
+  const pending = Promise.withResolvers<void>();
+  await page.route('**/_next/static/**/*.js', async (route) => {
+    held++;
+    await pending.promise;
+    delivered++;
+    await route.continue();
+  });
+  return {
+    release: pending.resolve,
+    async expectHeld() {
+      await expect.poll(() => held).toBeGreaterThan(0);
+      expect(delivered).toBe(0);
+    },
+  };
+}
+
+export async function observePositionShift(target: Locator, selector?: string) {
+  const movement = await target.evaluateHandle((root, selector) => {
+    const elements = selector ? [...root.querySelectorAll(selector)] : [root];
+    const initial = elements.flatMap((element) => {
+      const { x, y, top, bottom, width } = element.getBoundingClientRect();
+      return width > 0 && bottom > 0 && top < innerHeight ? [{ element, x, y: y + scrollY }] : [];
+    });
+    let largestShift = 0;
+    let frame = requestAnimationFrame(sample);
+    function sample() {
+      for (const { element, x, y } of initial) {
+        if (!element.isConnected) continue;
+        const rect = element.getBoundingClientRect();
+        largestShift = Math.max(largestShift, Math.abs(rect.x - x), Math.abs(rect.y + scrollY - y));
+      }
+      frame = requestAnimationFrame(sample);
+    }
+    return {
+      finish() {
+        cancelAnimationFrame(frame);
+        return largestShift;
+      },
+    };
+  }, selector);
+
+  return async () => {
+    try {
+      return await movement.evaluate(({ finish }) => finish());
+    } finally {
+      await movement.dispose();
+    }
+  };
+}
+
 export async function settleEntryAnimations(page: Page) {
   await page.evaluate(async () => {
     const transition = (document as Document & { activeViewTransition?: ViewTransition })

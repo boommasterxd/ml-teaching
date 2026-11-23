@@ -47,10 +47,12 @@ describe('everyday recognition quiz', () => {
     ).toBe(true);
   });
 
-  it('hydrates the static choices without mismatches and then shows a balanced browser round', async () => {
+  it('keeps the visible choices and focus through hydration', async () => {
     const container = document.createElement('div');
     container.innerHTML = renderToString(<EverydayQuiz />);
     document.body.append(container);
+    const buttons = screen.getAllByRole('button', { name: /^Auswählen:/ });
+    buttons[0]!.focus();
     const failures: unknown[] = [];
     let root: ReturnType<typeof hydrateRoot>;
     await act(async () => {
@@ -59,9 +61,9 @@ describe('everyday recognition quiz', () => {
       });
     });
     try {
-      const examples = currentExamples();
-      expect(examples).toHaveLength(6);
-      expect(examples.filter((example) => example.correct)).toHaveLength(3);
+      expect(currentExamples()).toEqual(INITIAL_QUIZ_ROUND);
+      expect(screen.getAllByRole('button', { name: /^Auswählen:/ })).toEqual(buttons);
+      expect(document.activeElement).toBe(buttons[0]);
       expect(failures).toEqual([]);
       expect(screen.getByText('0 von 3 gefunden')).toBeTruthy();
     } finally {

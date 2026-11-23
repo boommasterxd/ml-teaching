@@ -79,6 +79,7 @@
   line-height: 1.35;
   letter-spacing: -0.025em;
   text-wrap: balance;
+  hyphens: auto;
   scroll-margin-top: calc(var(--header-height) + 2rem);
 }
 .legal-content h2 {

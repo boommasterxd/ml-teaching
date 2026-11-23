@@ -7,28 +7,9 @@ import {
   restoreBrowserHost,
 } from '../../helpers/browser-host';
 
-let updateViewport: (visible: boolean) => void;
-let disconnect: ReturnType<typeof vi.fn>;
-
 beforeEach(() => {
   installBrowserHost();
   installSliderLayout();
-  vi.stubGlobal(
-    'IntersectionObserver',
-    class {
-      constructor(private callback: IntersectionObserverCallback) {}
-      observe(target: Element) {
-        if (!target.textContent?.includes('KNN selbst ausprobieren')) return;
-        disconnect = this.disconnect;
-        updateViewport = (isIntersecting) =>
-          this.callback(
-            [{ isIntersecting }] as IntersectionObserverEntry[],
-            this as unknown as IntersectionObserver,
-          );
-      }
-      disconnect = vi.fn();
-    },
-  );
 });
 afterEach(() => {
   cleanup();
@@ -51,16 +32,5 @@ describe('deferred KNN exercise', () => {
     expect(document.activeElement).toBe(title);
     expect(screen.getByText('K = 3 · 0 von 3 gefunden')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Übung öffnen' })).toBeNull();
-  });
-
-  it('opens when approaching the viewport and disconnects its observer on cleanup', async () => {
-    const { unmount } = render(<DeferredKnnQuiz />);
-    act(() => updateViewport(false));
-    expect(screen.queryByRole('slider')).toBeNull();
-    await act(async () => updateViewport(true));
-    expect(await screen.findByRole('slider')).toBeTruthy();
-    expect(disconnect).toHaveBeenCalledOnce();
-    unmount();
-    expect(disconnect).toHaveBeenCalledTimes(2);
   });
 });
