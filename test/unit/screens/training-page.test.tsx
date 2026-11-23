@@ -474,12 +474,13 @@ describe('training page integration', () => {
 
   it('returns to the image explanation when the general processing choice is declined', () => {
     render(<TrainingFixture />);
-    const decline = screen.getByRole('button', { name: 'Abbrechen' });
+    const decline = screen.getByRole('link', { name: 'Abbrechen' });
+    expect(decline.getAttribute('href')).toBe(learningPaths.images);
     expect(boundary.prefetch).not.toHaveBeenCalled();
     fireEvent.pointerDown(decline, { pointerType: 'touch' });
     expect(boundary.prefetch).toHaveBeenCalledWith(learningPaths.images);
     expect(boundary.push).not.toHaveBeenCalled();
-    fireEvent.click(decline);
+    fireEvent(decline.closest('dialog')!, new Event('cancel', { cancelable: true }));
     expect(boundary.push).toHaveBeenCalledWith(learningPaths.images, {
       transitionTypes: ['nav-back'],
     });

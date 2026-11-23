@@ -11,6 +11,7 @@ import { usePredictionLoop } from './usePredictionLoop';
 import { useModelTraining } from './useModelTraining';
 import { useClassManagement } from './useClassManagement';
 import { useImageActivity } from './useImageActivity';
+import type { CaptureActions, CaptureTarget } from './useClassCapture';
 
 function notifyError(message: string) {
   toast.error(message);
@@ -115,40 +116,56 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
   };
 }
 
-function useTrainingData(resources: ReturnType<typeof useTrainingResources>) {
-  const { models, prediction, invalidateModel, setHasTrainedModel, camera } = resources;
-  const classes = useClassManagement(invalidateModel, notifyError);
-  const duplicateClassNames = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const cls of classes.classes) {
-      const name = cls.name.trim();
-      counts.set(name, (counts.get(name) ?? 0) + 1);
-    }
-    return new Set([...counts].filter(([, count]) => count > 1).map(([name]) => name));
-  }, [classes.classes]);
-  const hasDuplicateNames = duplicateClassNames.size > 0;
-  const training = useModelTraining(
-    classes.classes,
-    {
-      setClassifier: models.setClassifier,
-      setHasTrainedModel,
-      onError: reportOperationError,
-    },
-    hasDuplicateNames,
-  );
+function isCurrentCameraStream(
+  expected: HTMLVideoElement['srcObject'],
+  current: MediaStream | null,
+) {
+  return Boolean(expected) && expected === current && !document.hidden;
+}
+
+function useTrainingImages(
+  { models, camera, invalidateModel }: ReturnType<typeof useTrainingResources>,
+  classes: ReturnType<typeof useClassManagement>,
+  { beginImage, endImage }: ReturnType<typeof useImageActivity>,
+  isTrainingActive: () => boolean,
+) {
   const { extractFeatures } = useImageFeatureExtraction(models.mobilenetModel);
-  const activity = useImageActivity(training.isTrainingActive, notifyError);
-  const { beginImage, endImage } = activity;
-  const { isTrainingActive } = training;
-  const { classes: classData, addImage: appendImage } = classes;
+  const { classes: classData, addImage: appendImage, addImages: appendImages } = classes;
   const currentClasses = useRef(classData);
   useLayoutEffect(() => {
     currentClasses.current = classData;
   }, [classData]);
-  const addImage = useCallback(
-    async (classId: string, source: HTMLVideoElement | HTMLImageElement, mirror: boolean) => {
+  const commitCapture = useCallback<CaptureActions['onCommitCapture']>(
+    (classId, { images, version, stream }) => {
       const targetClass = currentClasses.current.find((cls) => cls.id === classId);
-      if (!targetClass || targetClass.images.length >= ML.MAX_IMAGES_PER_CLASS) return;
+      if (
+        !images.length ||
+        !isCurrentCameraStream(stream, camera.streamRef.current) ||
+        isTrainingActive() ||
+        !targetClass ||
+        (targetClass.captureVersion ?? 0) !== version ||
+        targetClass.images.length >= ML.MAX_IMAGES_PER_CLASS
+      )
+        return;
+      appendImages(classId, images, version);
+      invalidateModel();
+    },
+    [appendImages, camera.streamRef, invalidateModel, isTrainingActive],
+  );
+  const addImage = useCallback(
+    async (
+      classId: string,
+      source: HTMLVideoElement | HTMLImageElement,
+      mirror: boolean,
+      target?: CaptureTarget,
+    ) => {
+      const targetClass = currentClasses.current.find((cls) => cls.id === classId);
+      if (
+        target?.signal.aborted ||
+        !targetClass ||
+        targetClass.images.length >= ML.MAX_IMAGES_PER_CLASS
+      )
+        return;
       const sourceStream = source instanceof HTMLVideoElement ? camera.streamRef.current : null;
       if (source instanceof HTMLVideoElement && (!sourceStream || document.hidden)) return;
       if (isTrainingActive()) {
@@ -161,12 +178,16 @@ function useTrainingData(resources: ReturnType<typeof useTrainingResources>) {
         const currentClass = currentClasses.current.find((cls) => cls.id === classId);
         if (
           image &&
-          (!sourceStream || (sourceStream === camera.streamRef.current && !document.hidden)) &&
+          !target?.signal.aborted &&
+          (!sourceStream || isCurrentCameraStream(sourceStream, camera.streamRef.current)) &&
           currentClass &&
           currentClass.captureVersion === targetClass.captureVersion
         ) {
-          appendImage(classId, image, targetClass.captureVersion ?? 0);
-          invalidateModel();
+          if (target) target.receive(image);
+          else {
+            appendImage(classId, image, targetClass.captureVersion ?? 0);
+            invalidateModel();
+          }
         }
       } catch {
         throw new Error('Das Bild konnte nicht verarbeitet werden. Bitte versuche es erneut.');
@@ -184,6 +205,23 @@ function useTrainingData(resources: ReturnType<typeof useTrainingResources>) {
       endImage,
     ],
   );
+  return { addImage, commitCapture };
+}
+
+function useTrainingData(resources: ReturnType<typeof useTrainingResources>) {
+  const { models, prediction, invalidateModel, setHasTrainedModel, camera } = resources;
+  const classes = useClassManagement(invalidateModel, notifyError);
+  const training = useModelTraining(
+    classes.classes,
+    {
+      setClassifier: models.setClassifier,
+      setHasTrainedModel,
+      onError: reportOperationError,
+    },
+    classes.names,
+  );
+  const activity = useImageActivity(training.isTrainingActive, notifyError);
+  const images = useTrainingImages(resources, classes, activity, training.isTrainingActive);
   const trainModel = (completionFeedbackMs?: number) => {
     if (activity.isBusy()) {
       notifyError('Bitte warte, bis alle Bilder vollständig verarbeitet sind.');
@@ -194,12 +232,11 @@ function useTrainingData(resources: ReturnType<typeof useTrainingResources>) {
   };
   return {
     classes,
-    duplicateClassNames,
-    hasDuplicateNames,
+    hasDuplicateNames: training.hasDuplicateNames,
     training,
     activity,
     canTrain: training.canTrain && !activity.hasUploads,
-    addImage,
+    ...images,
     trainModel,
     facingMode: camera.facingMode,
   };
@@ -228,13 +265,14 @@ export function useTrainingWorkspace(step: TrainingStep, engine: TrainingEngine)
     },
     [removeImages, closeModal],
   );
-  const { addImage, facingMode } = data;
+  const { addImage, commitCapture, facingMode } = data;
   const { beginUpload, endUpload } = data.activity;
   const captureDisabled = data.training.isTraining;
   const cardActions = useMemo(
     () => ({
-      onAddExample: (id: string, video: HTMLVideoElement) =>
-        addImage(id, video, facingMode === 'user'),
+      onAddExample: (id: string, video: HTMLVideoElement, target?: CaptureTarget) =>
+        addImage(id, video, facingMode === 'user', target),
+      onCommitCapture: commitCapture,
       onAddImageExample: (id: string, image: HTMLImageElement) => addImage(id, image, false),
       onRemove: showRemoveClass,
       onClear: showClearClass,
@@ -248,6 +286,7 @@ export function useTrainingWorkspace(step: TrainingStep, engine: TrainingEngine)
     }),
     [
       addImage,
+      commitCapture,
       facingMode,
       showRemoveClass,
       showClearClass,

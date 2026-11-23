@@ -103,9 +103,10 @@ homepage. Outside the workspace, the action dismisses the confirmation and keeps
 current page. A separate training entry starts fresh consent.
 The Pages Router's static 500 document uses build-rendered Speculation Rules
 covered by its hash CSP. Pointer entry, focus or pointer down selects at most
-one eligible same-origin link. A browser with Speculation Rules support can
-prerender the homepage or prefetch another selected document. Activation uses
-normal browser navigation, including when preparation is unsupported or incomplete.
+one canonical same-origin homepage, learning or legal link. A supporting
+browser can prerender the selected document. The image practice page renders
+its initial consent without starting model downloads or camera access.
+Activation uses normal browser navigation when preparation is unsupported or incomplete.
 App Router recovery renders its text and actions immediately and uses the shared
 visibility-gated artwork lifecycle.
 
@@ -193,10 +194,14 @@ does not affect inclusion or ranking in Google Search.
 
 ## Browser ML flow
 
+The [children's consent decision](decisions/children-training-consent.md) records
+how Article 8 GDPR applies to the current private educational offer.
+
 1. Pointer entry, keyboard focus or pointer down on a training link prepares the
-   setup dialog and browser resource host in parallel. The provider mounts the host
-   only during active source-page setup or on the training route. The direct route
-   renders its initial consent in static HTML while the host loads separately.
+   setup dialog and browser resource host in parallel. The direct route renders
+   its initial consent in static HTML. When both required choices are selected,
+   intent on the consent action prepares the same host. The provider mounts it
+   after model consent is granted or valid remembered consent is restored.
    Opt-in remembering keeps the choices in the current document's memory for up
    to 30 minutes. The deadline governs reentry
    through same-document navigation. Leaving the document clears consent and
@@ -267,6 +272,10 @@ Play then opens the camera choice while retaining the local training workspace.
 The browser enforces its own camera permission when a stream opens. A superseded
 camera request stops any tracks it receives late. A capture finishing after its
 stream becomes inactive or its class is reset is discarded.
+Touch-and-hold capture buffers completed images locally until the user releases
+on the capture button. Cancellation discards the batch. An ended gesture cannot
+publish late frames. Normal release checks the current class, stream and capacity
+before adding the ready images together.
 
 Training and prediction panels prepare on user intent. Failed panel loads offer a
 retry. A failed chunk that requires a document reload warns that in-memory training
@@ -276,8 +285,8 @@ feature projection in parallel with the panel. The workspace shares one preparat
 across intent and opening, reuses it after class renames, and discards it when the
 trained image set changes or the workspace ends.
 There are no shared server entities, reactive joins or SQL operations
-that justify TanStack DB, Table, Drizzle or Turso. Class-name editing remains a
-small local field without a separate form submission or validation schema.
+that justify TanStack DB, Table, Drizzle or Turso. React Hook Form keeps the
+class-name fields in memory, and a shared Zod schema validates them before training.
 
 ## Delivery
 

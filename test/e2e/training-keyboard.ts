@@ -264,23 +264,6 @@ export async function expectThemeControlAlignment(page: Page) {
     .toEqual({ aligned: true, fullTrackHeight: true });
 }
 
-/** The current control must remain visible above the old page while the theme wipe runs. */
-export async function expectImmediateThemeFeedback(page: Page) {
-  await expect
-    .poll(() =>
-      page.getByRole('switch', { name: 'Dunkle Darstellung' }).evaluate((control) => {
-        const name = getComputedStyle(control).viewTransitionName;
-        if (name === 'none') return false;
-        const root = document.documentElement;
-        return (
-          getComputedStyle(root, `::view-transition-old(${name})`).opacity === '0' &&
-          getComputedStyle(root, `::view-transition-new(${name})`).opacity === '1'
-        );
-      }),
-    )
-    .toBe(true);
-}
-
 export async function settleLandingReveals(page: Page) {
   const position = await page.evaluate(() => ({ x: scrollX, y: scrollY }));
   for (const card of await page.locator('[data-scroll-reveal]').all()) {

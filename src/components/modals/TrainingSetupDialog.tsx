@@ -1,6 +1,7 @@
 'use client';
 
 import Button from '../Button';
+import AnimatedLink from '../AnimatedLink';
 import Dialog from '../Dialog';
 import ModalContent from '../ModalContent';
 import { DialogBody, DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
@@ -19,7 +20,8 @@ interface TrainingSetupDialogProps {
   onWithdrawLoading: () => void;
   onWithdrawIntent?: () => void;
   onDeclineConsent: () => void;
-  onDeclineConsentIntent?: () => void;
+  declineConsentHref?: string;
+  onConfirmConsentIntent?: () => void;
   onConfirmConsent: (remember: boolean) => void;
   onDeclineCamera: () => void;
   onConfirmCamera: () => void;
@@ -39,7 +41,8 @@ export default function TrainingSetupDialog({
   onWithdrawLoading,
   onWithdrawIntent,
   onDeclineConsent,
-  onDeclineConsentIntent,
+  declineConsentHref,
+  onConfirmConsentIntent,
   onConfirmConsent,
   onDeclineCamera,
   onConfirmCamera,
@@ -54,6 +57,15 @@ export default function TrainingSetupDialog({
     loading: undefined,
     error: onDeclineConsent,
   };
+  const declineAction = declineConsentHref ? (
+    <AnimatedLink href={declineConsentHref} variant="secondary" transitionTypes={['nav-back']}>
+      Abbrechen
+    </AnimatedLink>
+  ) : (
+    <Button variant="secondary" onClick={onDeclineConsent}>
+      Abbrechen
+    </Button>
+  );
 
   return (
     <Dialog
@@ -70,8 +82,8 @@ export default function TrainingSetupDialog({
           <SetupStepTransition step={step}>
             {step === 'consent' && (
               <ConsentStep
-                onDecline={onDeclineConsent}
-                onDeclineIntent={onDeclineConsentIntent}
+                declineAction={declineAction}
+                onConfirmIntent={onConfirmConsentIntent}
                 onConfirm={onConfirmConsent}
               />
             )}
@@ -102,9 +114,7 @@ export default function TrainingSetupDialog({
                   </DialogDescription>
                 </DialogBody>
                 <DialogFooter>
-                  <Button variant="secondary" onClick={onDeclineConsent}>
-                    Abbrechen
-                  </Button>
+                  {declineAction}
                   <Button onClick={onRetryModel}>Erneut versuchen</Button>
                 </DialogFooter>
               </>

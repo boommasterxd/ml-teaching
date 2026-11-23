@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode, type Ref } from 'react';
 import { scroll } from 'motion';
 import { motion, useMotionValue } from 'motion/react';
 import { ReducedMotionConfig } from '@animate-ui/react/utils/motion';
@@ -22,19 +22,25 @@ function PlaybackControl({
   paused,
   onToggle,
   onIntent,
+  controlRef,
 }: {
   reduce: boolean;
   paused: boolean;
   onToggle: () => void;
   onIntent: () => void;
+  controlRef: Ref<HTMLButtonElement>;
 }) {
   const Icon = paused || reduce ? Play : Pause;
   return (
     <div className="hero-field-controls" onPointerEnter={onIntent} onFocus={onIntent}>
       <Button
+        ref={controlRef}
         variant="outline"
         size="sm"
+        className="aria-disabled:cursor-default"
         disabled={reduce}
+        focusableWhenDisabled
+        tabIndex={reduce ? -1 : undefined}
         aria-controls="home-hero-art lernbereiche"
         onClick={onToggle}
       >
@@ -57,6 +63,8 @@ function Scene({ children, sources }: HeroSceneProps) {
   const {
     artwork,
     Field,
+    fieldRef,
+    playbackControl,
     available,
     inView,
     failed,
@@ -99,14 +107,16 @@ function Scene({ children, sources }: HeroSceneProps) {
             style={parallaxVisible ? { y: fieldY } : undefined}
           >
             <GlassArtworkPlaceholder sources={sources} fallback={failed} pending={pending} />
-            {viewportReady && available && Field && (
-              <Field
-                sharpDesktopStart
-                paused={paused}
-                inView={inView}
-                onUnavailable={onUnavailable}
-                onRendered={onRendered}
-              />
+            {Field && (
+              <div ref={fieldRef} className="contents">
+                <Field
+                  sharpDesktopStart
+                  paused={paused}
+                  inView={inView}
+                  onUnavailable={onUnavailable}
+                  onRendered={onRendered}
+                />
+              </div>
             )}
           </motion.div>
         </div>
@@ -115,6 +125,7 @@ function Scene({ children, sources }: HeroSceneProps) {
           paused={paused}
           onIntent={prepare}
           onToggle={togglePause}
+          controlRef={playbackControl}
         />
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { AlertCircle } from '../icons/alert-circle';
 import { Camera } from '../icons/camera';
 import Button from '../Button';
+import { Alert, AlertDescription } from '../ui/alert';
 import { DialogBody, DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
 import { Spinner } from '../ui/spinner';
 
@@ -42,10 +43,10 @@ export default function CameraStep({
           {pending ? 'Warte auf die Kamerafreigabe im Browser …' : null}
         </p>
         {error && !pending && (
-          <p role="alert" className="mt-5 flex items-start gap-2">
-            <AlertCircle aria-hidden="true" className="mt-1 size-4 shrink-0 text-destructive" />
-            {error}
-          </p>
+          <Alert variant="destructive" className="mt-5">
+            <AlertCircle aria-hidden="true" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
       </DialogBody>
       <DialogFooter className="[&>button]:h-auto [&>button]:min-h-9 [&>button]:whitespace-normal">

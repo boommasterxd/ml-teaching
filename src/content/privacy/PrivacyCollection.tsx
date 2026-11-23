@@ -177,9 +177,14 @@ export const PrivacyCollection = (
       übermittelt diese Auswahl nicht an Server. Grundlage für das Merken ist Ihre Einwilligung nach
       § 25 Abs. 1 TDDDG und, soweit dabei personenbezogene Daten verarbeitet werden, nach Art. 6
       Abs. 1 lit. a DSGVO. Eine bereits laufende Nutzung kann nach Ablauf der 30 Minuten fortgesetzt
-      werden. Wenn Sie die Kameranutzung erlaubt haben und Ihr Browser den Zugriff weiterhin
-      erlaubt, kann die Kamera beim erneuten Trainingsstart innerhalb dieser Zeit automatisch
-      angehen. Sie können die Auswahl jederzeit über „Einwilligung widerrufen“ löschen.
+      werden.
+    </p>
+    <p>
+      Wenn Sie die Kameranutzung erlaubt haben und Ihr Browser den Zugriff weiterhin erlaubt, kann
+      die Kamera beim erneuten Trainingsstart innerhalb dieser Zeit automatisch angehen. Sie können
+      die Auswahl jederzeit über „Einwilligung widerrufen“ löschen.
+    </p>
+    <p>
       Heruntergeladene Programm- und Modelldateien können im üblichen Browsercache verbleiben.
       Dieser Cache enthält keine von der Anwendung dorthin geschriebenen Trainingsbilder; seine
       Löschung können Sie über die Browsereinstellungen steuern.

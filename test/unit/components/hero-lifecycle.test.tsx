@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import ErrorGlassArtwork from '@/components/hero/ErrorGlassArtwork';
 import HeroScene from '@/components/hero/HeroScene';
-import { heroPosterImages } from '@/components/hero/poster-assets';
+import { errorRingPosterImages, heroPosterImages } from '@/components/hero/poster-assets';
 import { EntryViewportReadyContext } from '@/components/ui/entry-policy';
 import { HomePlaybackProvider, useHomePlayback } from '@/components/home/HomePlaybackProvider';
+import { ReducedMotionContext } from '@animate-ui/react/utils/motion';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
 const lifecycle = vi.hoisted(() => ({
@@ -33,7 +35,12 @@ vi.mock('@/components/hero/TopographyField', () => ({
         onRendered(false);
       };
     }, [onRendered, onUnavailable]);
-    return lifecycle.available ? <canvas aria-hidden="true" /> : null;
+    return lifecycle.available ? (
+      <>
+        <canvas aria-hidden="true" />
+        <button type="button">Lichtimpuls auslösen</button>
+      </>
+    ) : null;
   },
 }));
 beforeEach(() => {
@@ -53,6 +60,24 @@ function PlaybackReadout() {
 }
 
 describe('decorative hero lifetime', () => {
+  it('keeps deferred error artwork idle until load while honoring early keyboard intent', async () => {
+    vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+    render(<ErrorGlassArtwork deferStartup sources={errorRingPosterImages} />);
+
+    await act(
+      () =>
+        new Promise<void>((painted) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => painted()));
+        }),
+    );
+    expect(lifecycle.created).not.toHaveBeenCalled();
+    const playback = screen.getByRole('button', { name: 'Animation pausieren' });
+    act(() => playback.focus());
+
+    await waitFor(() => expect(lifecycle.created).toHaveBeenCalledTimes(1));
+    expect(document.activeElement).toBe(playback);
+  });
+
   it('waits for navigation snapshots to finish before starting the GPU field', async () => {
     const hero = (ready: boolean) => (
       <EntryViewportReadyContext value={ready}>
@@ -89,6 +114,30 @@ describe('decorative hero lifetime', () => {
     expect(container.querySelector('canvas')).toBeNull();
     expect(lifecycle.disposed).toHaveBeenCalledTimes(1);
     expect(lifecycle.created).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns focus to playback when reduced motion removes the focused light impulse', async () => {
+    const hero = (reduce: boolean) => (
+      <ReducedMotionContext value={reduce ? 'always' : 'never'}>
+        <HomePlaybackProvider>
+          <HeroScene sources={heroPosterImages} />
+        </HomePlaybackProvider>
+      </ReducedMotionContext>
+    );
+    const { container, rerender } = render(hero(false));
+    const impulse = await screen.findByRole('button', { name: 'Lichtimpuls auslösen' });
+    act(() => impulse.focus());
+
+    rerender(hero(true));
+    const playback = screen.getByRole('button', { name: 'Bewegung reduziert' });
+    expect(document.activeElement).toBe(playback);
+    expect(playback.getAttribute('aria-disabled')).toBe('true');
+    expect(playback.tabIndex).toBe(-1);
+    expect(container.querySelector('canvas')).toBeNull();
+
+    rerender(hero(false));
+    await screen.findByRole('button', { name: 'Lichtimpuls auslösen' });
+    expect(document.activeElement).toBe(playback);
   });
 
   it('keeps the shared playback control usable when the GPU field fails', async () => {

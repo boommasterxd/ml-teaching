@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from '../IntentLink';
 import Button from '../Button';
 import { Checkbox } from '../ui/checkbox';
@@ -13,12 +13,43 @@ import {
 } from '../ui/field';
 
 interface ConsentStepProps {
-  onDecline: () => void;
-  onDeclineIntent?: () => void;
+  declineAction: ReactNode;
+  onConfirmIntent?: () => void;
   onConfirm: (remember: boolean) => void;
 }
 
-export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: ConsentStepProps) {
+function ConsentActions({
+  declineAction,
+  onConfirmIntent,
+  onConfirm,
+  canConfirm,
+}: Pick<ConsentStepProps, 'declineAction' | 'onConfirmIntent'> & {
+  canConfirm: boolean;
+  onConfirm: () => void;
+}) {
+  const prepare = canConfirm ? onConfirmIntent : undefined;
+  return (
+    <DialogFooter layout="auto-fit">
+      {declineAction}
+      <Button
+        variant="default"
+        onPointerEnter={prepare}
+        onFocus={prepare}
+        onPointerDown={prepare}
+        onClick={onConfirm}
+        disabled={!canConfirm}
+      >
+        Zustimmen
+      </Button>
+    </DialogFooter>
+  );
+}
+
+export default function ConsentStep({
+  declineAction,
+  onConfirmIntent,
+  onConfirm,
+}: ConsentStepProps) {
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [modelChecked, setModelChecked] = useState(false);
   const [remember, setRemember] = useState(false);
@@ -106,20 +137,12 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
         </FieldDescription>
       </DialogBody>
 
-      <DialogFooter layout="auto-fit">
-        <Button
-          variant="secondary"
-          onPointerEnter={onDeclineIntent}
-          onFocus={onDeclineIntent}
-          onPointerDown={onDeclineIntent}
-          onClick={onDecline}
-        >
-          Abbrechen
-        </Button>
-        <Button variant="default" onClick={() => onConfirm(remember)} disabled={!canConfirm}>
-          Zustimmen
-        </Button>
-      </DialogFooter>
+      <ConsentActions
+        declineAction={declineAction}
+        canConfirm={canConfirm}
+        onConfirmIntent={onConfirmIntent}
+        onConfirm={() => onConfirm(remember)}
+      />
     </>
   );
 }

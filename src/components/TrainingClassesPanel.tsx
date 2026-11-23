@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useFormState, type Control } from 'react-hook-form';
 import { Fade } from '@animate-ui/react/primitives/effects/fade';
 import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
 import { ArrowRight } from './icons/arrow-right';
@@ -16,6 +17,7 @@ import { Heading, Text } from './ui/typography';
 import { EntryReveal } from './ui/entry-reveal';
 import { useMotionPreference } from './ui/use-motion-preference';
 import { cn } from '@/lib/utils';
+import type { TrainingClassNames } from '@/lib/training-class-names';
 
 /**
  * Props for the TrainingClassesPanel component.
@@ -24,8 +26,7 @@ interface TrainingClassesPanelProps {
   entryReady?: boolean;
   /** List of ML classes to display. */
   classes: MLClass[];
-  /** Set of class names that appear more than once (used to show duplicate warnings). */
-  duplicateClassNames: Set<string>;
+  nameControl: Control<TrainingClassNames>;
   camera: CameraView;
   /** Ref to the main heading element for programmatic focus management. */
   mainHeadingRef: React.RefObject<HTMLHeadingElement | null>;
@@ -209,7 +210,7 @@ function CollectionActions({
 
 export default function TrainingClassesPanel({
   classes,
-  duplicateClassNames,
+  nameControl,
   camera,
   mainHeadingRef,
   cardActions,
@@ -220,6 +221,7 @@ export default function TrainingClassesPanel({
   canContinue,
 }: TrainingClassesPanelProps) {
   const continueRef = useRef<HTMLButtonElement>(null);
+  const { errors } = useFormState({ control: nameControl, name: 'names' });
   return (
     <section aria-labelledby="training-images" className="flex min-w-0 flex-col">
       <CollectionHeader
@@ -256,7 +258,7 @@ export default function TrainingClassesPanel({
                 <ClassCard
                   cls={cls}
                   position={index + 1}
-                  isDuplicate={duplicateClassNames.has(cls.name.trim())}
+                  nameError={errors.names?.[index]?.name?.message}
                   camera={camera}
                   actions={cardActions}
                 />

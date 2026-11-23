@@ -1,14 +1,30 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { CAMERA, ML } from '../constants';
 import { processImageFiles } from '../lib/image-upload';
-import type { MLClass } from '../types/ml';
+import type { MLClass, MLImage } from '../types/ml';
 import type React from 'react';
+
+export interface CaptureTarget {
+  signal: AbortSignal;
+  receive: (image: MLImage) => void;
+}
+
+interface CapturedFrames {
+  images: readonly MLImage[];
+  version: number;
+  stream: HTMLVideoElement['srcObject'];
+}
 
 export interface CaptureActions {
   captureDisabled: boolean;
   onUploadStart: () => boolean;
   onUploadEnd: () => void;
-  onAddExample: (classId: string, video: HTMLVideoElement) => void | Promise<void>;
+  onAddExample: (
+    classId: string,
+    video: HTMLVideoElement,
+    target?: CaptureTarget,
+  ) => void | Promise<void>;
+  onCommitCapture: (classId: string, frames: CapturedFrames) => void;
   onAddImageExample: (classId: string, image: HTMLImageElement) => void | Promise<void>;
   onError: (message: string) => void;
 }
@@ -18,63 +34,126 @@ interface UploadBatch {
   finish: () => void;
 }
 
+interface CameraRecording {
+  interval: ReturnType<typeof setInterval>;
+  held: (CapturedFrames & { controller: AbortController; images: MLImage[] }) | null;
+}
+
+type CaptureState = React.RefObject<{ cls: MLClass; actions: CaptureActions }>;
+
 function cancelUpload(batch: UploadBatch | null) {
   batch?.controller.abort();
   batch?.finish();
 }
 
-/** Bounded capture/upload lifecycle for one class; callbacks use current workspace state. */
-export function useClassCapture(cls: MLClass, actions: CaptureActions) {
+function endRecording(recording: CameraRecording | null) {
+  if (!recording) return;
+  clearInterval(recording.interval);
+  recording.held?.controller.abort();
+}
+
+function useCameraCapture(latest: CaptureState, captureVersion: number) {
   const [recordingVersion, setRecordingVersion] = useState<number | null>(null);
-  const captureVersion = cls.captureVersion ?? 0;
   const isRecording = recordingVersion !== null && recordingVersion === captureVersion;
   const videoRef = useRef<HTMLVideoElement>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const uploadRef = useRef<UploadBatch | null>(null);
+  const recordingRef = useRef<CameraRecording | null>(null);
+
+  const stopRecording = useCallback(
+    (commitHold = false) => {
+      const recording = recordingRef.current;
+      recordingRef.current = null;
+      endRecording(recording);
+      setRecordingVersion(null);
+      const held = recording?.held;
+      if (commitHold && held?.images.length && held.stream === videoRef.current?.srcObject) {
+        const { cls, actions } = latest.current;
+        actions.onCommitCapture(cls.id, {
+          images: held.images,
+          stream: held.stream,
+          version: held.version,
+        });
+      }
+    },
+    [latest],
+  );
+  const startRecording = useCallback(
+    (hold = false) => {
+      const { cls, actions } = latest.current;
+      if (
+        !videoRef.current ||
+        actions.captureDisabled ||
+        recordingRef.current ||
+        cls.images.length >= ML.MAX_IMAGES_PER_CLASS
+      )
+        return;
+      const held: CameraRecording['held'] = hold
+        ? { controller: new AbortController(), images: [], stream: null, version: captureVersion }
+        : null;
+      const target = held && {
+        signal: held.controller.signal,
+        receive: (image: MLImage) => {
+          if (!held.controller.signal.aborted) held.images.push(image);
+        },
+      };
+      async function capture() {
+        const current = latest.current;
+        const video = videoRef.current;
+        const stream = video?.srcObject;
+        if (current.actions.captureDisabled || (held?.stream && held.stream !== stream)) {
+          stopRecording();
+          return;
+        }
+        if (current.cls.images.length + (held?.images.length ?? 0) >= ML.MAX_IMAGES_PER_CLASS) {
+          if (held) clearInterval(recording.interval);
+          else stopRecording();
+          return;
+        }
+        if (!video || !stream) return;
+        if (held) {
+          // Keep the first attached stream, even while waiting for its first frame.
+          held.stream ??= stream;
+          if (video.readyState < video.HAVE_CURRENT_DATA) return;
+        }
+        try {
+          if (target) await current.actions.onAddExample(cls.id, video, target);
+          else await current.actions.onAddExample(cls.id, video);
+        } catch {
+          if (recordingRef.current !== recording) return;
+          stopRecording();
+          latest.current.actions.onError(
+            'Das Kamerabild konnte nicht verarbeitet werden. Bitte starte die Aufnahme erneut.',
+          );
+        }
+      }
+      const recording = {
+        held,
+        interval: setInterval(() => void capture(), CAMERA.CAPTURE_INTERVAL_MS),
+      };
+      recordingRef.current = recording;
+      setRecordingVersion(captureVersion);
+      void capture();
+    },
+    [latest, captureVersion, stopRecording],
+  );
+  useEffect(
+    () => () => {
+      endRecording(recordingRef.current);
+      recordingRef.current = null;
+    },
+    [captureVersion],
+  );
+  return { videoRef, isRecording, startRecording, stopRecording };
+}
+
+/** Bounded capture/upload lifecycle for one class; callbacks use current workspace state. */
+export function useClassCapture(cls: MLClass, actions: CaptureActions) {
   const latest = useRef({ cls, actions });
   useEffect(() => {
     latest.current = { cls, actions };
   }, [cls, actions]);
-
-  const stopRecording = useCallback(() => {
-    if (intervalRef.current !== null) clearInterval(intervalRef.current);
-    intervalRef.current = null;
-    setRecordingVersion(null);
-  }, []);
-  const startRecording = useCallback(() => {
-    if (
-      !videoRef.current ||
-      latest.current.actions.captureDisabled ||
-      intervalRef.current !== null ||
-      latest.current.cls.images.length >= ML.MAX_IMAGES_PER_CLASS
-    )
-      return;
-    setRecordingVersion(latest.current.cls.captureVersion ?? 0);
-    async function capture() {
-      if (
-        latest.current.actions.captureDisabled ||
-        latest.current.cls.images.length >= ML.MAX_IMAGES_PER_CLASS
-      ) {
-        stopRecording();
-        return;
-      }
-      const video = videoRef.current;
-      if (!video?.srcObject) return;
-      try {
-        await latest.current.actions.onAddExample(latest.current.cls.id, video);
-      } catch {
-        if (intervalRef.current !== interval) return;
-        stopRecording();
-        latest.current.actions.onError(
-          'Das Kamerabild konnte nicht verarbeitet werden. Bitte starte die Aufnahme erneut.',
-        );
-      }
-    }
-    const interval = setInterval(() => void capture(), CAMERA.CAPTURE_INTERVAL_MS);
-    intervalRef.current = interval;
-    void capture();
-  }, [stopRecording]);
-
+  const captureVersion = cls.captureVersion ?? 0;
+  const recording = useCameraCapture(latest, captureVersion);
+  const uploadRef = useRef<UploadBatch | null>(null);
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { cls: current } = latest.current;
     const files = Array.from(event.target.files ?? []).slice(
@@ -104,15 +183,6 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
       })
       .finally(finish);
   }, []);
-
-  useEffect(
-    () => () => {
-      if (intervalRef.current !== null) clearInterval(intervalRef.current);
-      intervalRef.current = null;
-      cancelUpload(uploadRef.current);
-    },
-    [captureVersion],
-  );
-
-  return { videoRef, isRecording, startRecording, stopRecording, handleFileUpload };
+  useEffect(() => () => cancelUpload(uploadRef.current), [captureVersion]);
+  return { ...recording, handleFileUpload };
 }

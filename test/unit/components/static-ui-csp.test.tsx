@@ -44,7 +44,9 @@ describe('strict-CSP static UI', () => {
   });
 
   it('ships the real initial consent content and choices without inline styles or client-only portals', () => {
-    const markup = renderToStaticMarkup(<SetupDialogFixture />);
+    const markup = renderToStaticMarkup(
+      <SetupDialogFixture declineConsentHref={learningPaths.images} />,
+    );
     const document = new DOMParser().parseFromString(markup, 'text/html');
     expect(document.querySelector('[style], style, script')).toBeNull();
     const dialog = document.querySelector('[role="dialog"]');
@@ -57,6 +59,9 @@ describe('strict-CSP static UI', () => {
     expect(modelConsent?.textContent).toContain('Google und Kaggle meine IP-Adresse');
     expect(modelConsent?.querySelector('a[href="/datenschutz"]')).not.toBeNull();
     expect(dialog?.querySelector('a[href="/datenschutz"]')).not.toBeNull();
+    expect(dialog?.querySelector(`a[href="${learningPaths.images}"]`)?.textContent).toBe(
+      'Abbrechen',
+    );
     expect(dialog?.querySelectorAll('button[disabled]')).toHaveLength(1);
   });
 

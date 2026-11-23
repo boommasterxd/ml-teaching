@@ -62,7 +62,7 @@ function TrainingPipeline({
               id={`training-step-${step}`}
               variant="ghost"
               size="sm"
-              className="training-step hover:bg-transparent dark:hover:bg-transparent"
+              className="training-step transition-none hover:bg-transparent dark:hover:bg-transparent"
               aria-current={step === currentStep ? 'step' : undefined}
               disabled={step === 'training' ? !canTrain : step === 'prediction' && !canPredict}
               onClick={() => onSelect(step)}
@@ -70,7 +70,7 @@ function TrainingPipeline({
               onFocus={() => onPrepare(step)}
               onPointerDown={() => onPrepare(step)}
             >
-              <span className="training-step-content transition-colors">
+              <span className="training-step-content">
                 <Badge
                   variant={step === currentStep ? 'default' : 'secondary'}
                   className="training-step-number p-0 tabular-nums max-sm:pt-px max-sm:leading-none"
@@ -340,7 +340,8 @@ function TrainingWorkspace({ initialWorkspace }: { initialWorkspace: boolean }) 
         {...setup}
         loadingText={models.loadingText}
         onDeclineConsent={declineConsent}
-        onDeclineConsentIntent={prepareReturn}
+        declineConsentHref={learningPaths.images}
+        onConfirmConsentIntent={engine.prepareResources}
         onConfirmConsent={grantConsent}
         onWithdrawLoading={revokeConsent}
         onWithdrawIntent={prepareWithdrawal}

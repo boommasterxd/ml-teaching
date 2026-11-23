@@ -45,7 +45,7 @@ export default function HomePage() {
         url: siteConfig.url,
         description: siteConfig.description,
         applicationCategory: 'EducationalApplication',
-        operatingSystem: 'Web browser',
+        browserRequirements: 'Webbrowser erforderlich',
         inLanguage: siteConfig.language,
         isAccessibleForFree: true,
         isPartOf: { '@id': webSiteId },

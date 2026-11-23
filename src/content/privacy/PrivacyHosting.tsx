@@ -17,10 +17,8 @@ export const PrivacyHosting = (
       der sicheren und zuverlässigen Erreichbarkeit unseres Online-Angebots.
     </p>
     <p>
-      Für die Serverfunktionen dieser Website ist Frankfurt am Main (Deutschland) als
-      Ausführungsregion eingestellt. Vercel nennt die USA als primären Verarbeitungsstandort.
-      Weitere Verarbeitungen können an Standorten von Vercel und seinen Unterauftragnehmern
-      erfolgen.
+      Vercel nennt die USA als primären Verarbeitungsstandort. Weitere Verarbeitungen können an
+      Standorten von Vercel und seinen Unterauftragnehmern erfolgen.
     </p>
     <p>
       Die für die Anzeige der angeforderten Seiten benötigten Dateien werden an Ihren Browser

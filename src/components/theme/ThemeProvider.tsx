@@ -1,9 +1,10 @@
 'use client';
 
 import { createContext, useContext, type ReactNode } from 'react';
-import { ThemeToggler } from '@animate-ui/react/primitives/effects/theme-toggler';
+import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
+import { motion } from 'motion/react';
 import { useThemePreference } from './useThemePreference';
-import { ThemeRequest, useThemeWipe } from './useThemeWipe';
+import { useThemeWipe } from './useThemeWipe';
 
 type ThemeContextValue = Pick<
   ReturnType<typeof useThemePreference>,
@@ -17,29 +18,30 @@ export function useTheme() {
   return value;
 }
 
-/** Always render the upstream wipe style during SSG so its exact bytes receive a CSP hash. */
+function ThemeWipe({ revision, animate }: { revision: number; animate: boolean }) {
+  const { visible, finish } = useThemeWipe(revision, animate);
+  const transition = useTempoTransition({ duration: 0.7, ease: motionTokens.ease.soft });
+  if (!visible) return null;
+  return (
+    <motion.div
+      key={revision}
+      aria-hidden="true"
+      className="theme-wipe"
+      data-theme-wipe=""
+      initial={{ clipPath: 'inset(0% 100% 0% 0%)', opacity: 1 }}
+      animate={{ clipPath: 'inset(0% 0% 0% 0%)', opacity: 0 }}
+      transition={transition}
+      onAnimationComplete={finish}
+    />
+  );
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const { current, animationFailed, captureAppearance, ...value } = useThemePreference();
-  const wipe = useThemeWipe(current, animationFailed, captureAppearance);
+  const value = useThemePreference();
   return (
     <ThemeContext value={value}>
-      <ThemeToggler
-        theme={value.preference.selection}
-        resolvedTheme={value.preference.applied}
-        setTheme={wipe.complete}
-      >
-        {({ toggleTheme }) => (
-          <>
-            <ThemeRequest
-              revision={value.preference.revision}
-              epoch={wipe.epoch}
-              start={wipe.start}
-              toggleTheme={toggleTheme}
-            />
-            {children}
-          </>
-        )}
-      </ThemeToggler>
+      {children}
+      <ThemeWipe revision={value.preference.revision} animate={value.preference.animate} />
     </ThemeContext>
   );
 }

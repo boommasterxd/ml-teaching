@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefCallback } from 'react';
 import { useInView } from 'motion/react';
 import { usePageVisible } from '@animate-ui/react/utils/use-page-visible';
 import { deferDecorativeMotion } from '@/lib/experimental-motion';
@@ -27,12 +27,16 @@ function afterFirstPaint(prepare: () => void) {
   return () => cancelAnimationFrame(frame);
 }
 
-export function useGlassField(paused: boolean, viewportReady: boolean) {
+export function useGlassField(
+  paused: boolean,
+  viewportReady: boolean,
+  deferStartup = deferDecorativeMotion,
+) {
   const artwork = useRef<HTMLDivElement>(null);
   const inView = useInView(artwork);
   const visible = usePageVisible();
   const { reduce } = useMotionPreference();
-  const motionReady = useMotionStart();
+  const motionReady = useMotionStart(deferStartup);
   const [interested, setInterested] = useState(false);
   const [Field, setField] = useState<FieldComponent | null>(null);
   const [failed, setFailed] = useState(false);
@@ -41,6 +45,24 @@ export function useGlassField(paused: boolean, viewportReady: boolean) {
   const available = visible && !reduce && !failed && (inView || rendered) && (!paused || rendered);
   const active = inView && available && !paused && viewportReady && (motionReady || interested);
   const pending = active && !rendered;
+  const showField = viewportReady && available;
+  const playbackControl = useRef<HTMLButtonElement>(null);
+  const restoreFocus = useRef(false);
+  const fieldRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
+    if (!node) return;
+    return () => {
+      // React detaches this ref before removing the focused field.
+      restoreFocus.current = node.contains(node.ownerDocument.activeElement);
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (showField || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    const control = playbackControl.current;
+    if (control && control.ownerDocument.activeElement === control.ownerDocument.body)
+      control.focus({ preventScroll: true });
+  }, [showField]);
 
   useEffect(() => {
     if (!active) return;
@@ -69,12 +91,14 @@ export function useGlassField(paused: boolean, viewportReady: boolean) {
 
   const prepare = () => {
     if (reduce || failed) return;
-    if (deferDecorativeMotion) setInterested(true);
+    if (deferStartup) setInterested(true);
     void prepareField().catch(() => {});
   };
   return {
     artwork,
-    Field,
+    Field: showField ? Field : null,
+    fieldRef,
+    playbackControl,
     available,
     inView,
     failed,

@@ -46,9 +46,10 @@ export function useTrainingEngine(active: boolean, canRestoreCamera: boolean) {
   const [modelAttempt, setModelAttempt] = useState(0);
   const [resources, setResources] = useState(initialResources);
   const { module, failed, prepare } = useMenuModule(loadResourceHost);
+  const resourcesActive = active && consent.hasConsented;
   useEffect(() => {
-    if (active) prepare();
-  }, [active, prepare]);
+    if (resourcesActive) prepare();
+  }, [resourcesActive, prepare]);
 
   const { saveCameraPermission, revokeCameraConsent } = consent;
   const cameraHasError = error?.category === 'camera';
@@ -58,10 +59,9 @@ export function useTrainingEngine(active: boolean, canRestoreCamera: boolean) {
   }, [cameraHasError, clearError, saveCameraPermission]);
   const clearResources = useCallback(() => setResources(initialResources), []);
 
-  const { models, camera, visible } = active ? resources : initialResources;
-  const resourceLoadFailed = failed && !module;
-  const canUseModels =
-    consent.hasConsented && !models.isModelLoading && models.mobilenetModel !== null;
+  const { models, camera, visible } = resourcesActive ? resources : initialResources;
+  const resourceLoadFailed = resourcesActive && failed && !module;
+  const canUseModels = resourcesActive && !models.isModelLoading && models.mobilenetModel !== null;
   const engine = {
     consent,
     models,
@@ -72,6 +72,7 @@ export function useTrainingEngine(active: boolean, canRestoreCamera: boolean) {
     canUseModels,
     setCameraNeeded,
     resourceLoadFailed,
+    prepareResources: prepare,
     retryModels: () => {
       if (resourceLoadFailed) {
         prepare();
@@ -88,8 +89,7 @@ export function useTrainingEngine(active: boolean, canRestoreCamera: boolean) {
 
   return {
     engine,
-    prepare,
-    ResourceHost: active ? module?.default : undefined,
+    ResourceHost: resourcesActive ? module?.default : undefined,
     resourceProps: {
       cameraConsent: consent.cameraConsent,
       cameraSignal: consent.cameraSignal,

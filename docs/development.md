@@ -71,7 +71,7 @@ prefetched before consent. See the [design system](design-system.md) for ownersh
 | --------------------------- | ------------------------------------------------------------------------- |
 | `npm run format:check`      | Prettier for maintained source and documentation.                         |
 | `npm run lint`              | ESLint, React and enforceable complexity limits.                          |
-| `npm run typecheck`         | Generate route types and check TypeScript and the CommonJS cache runtime. |
+| `npm run typecheck`         | Generate route types and check application, build and cache tooling code. |
 | `npm run check:boundaries`  | Parse server/client route and transitive import boundaries.               |
 | `npm run check:quality`     | Enforce the source file-size limit.                                       |
 | `npm run check:dead-code`   | Discover unused files, dependencies and public exports.                   |
@@ -96,13 +96,14 @@ Use focused Vitest paths for local changes. `npm run ci` runs the combined quali
 and unit-coverage gates; native builds and browser checks remain explicit. Do not
 run tests or source refactors to satisfy a counter without a real behavioral risk.
 
-Browser tests use the version-matched Chromium Headless Shell. Install it with
-`npx playwright install --only-shell chromium`; OS dependency setup is separate and
-must respond to actual missing requirements. Playwright starts `npm start` on
+Browser tests use the version-matched Chromium Headless Shell. The back-forward
+cache test uses the full Chromium browser. Install both with `npx playwright install chromium`.
+OS dependency setup is separate and must respond to actual missing requirements.
+Playwright starts `npm start` on
 127.0.0.1:3100 and refuses to reuse an unrelated server. Build once first.
 
-The Lighthouse command expects a separately started native production server on
-that same port. It resolves Lighthouse through the active npm's global package
+The local Lighthouse command expects a separately started native production server
+on that same port. It resolves Lighthouse through the active npm's global package
 root, verifies the package, Node.js engine compatibility and native CLI version,
 and reuses that absolute CLI for both mobile and desktop profiles. A present but
 invalid or incompatible global installation fails without a silent fallback.
@@ -111,9 +112,9 @@ stable version and accepts the existing project-local Lighthouse only when its
 version matches. A missing, outdated or incompatible fallback fails with an error;
 the command does not install or update tools. Prepare any required local fallback
 separately under the repository's installation controls.
-CI passes `--locked` so that when no global installation exists, the runner verifies
-the installed package against `package-lock.json` instead of querying the registry.
-The flag retains global-first selection and the Node.js and native CLI checks.
+With `--locked`, the fallback verifies the installed package against
+`package-lock.json` without querying the registry. The flag retains global-first
+selection and the Node.js and native CLI checks.
 The default run measures the homepage and saves reports under
 `test-results/lighthouse/`. With `--all`, the command reads the route list from the
 static CSP configuration and checks each HTML status, including the native 404
@@ -121,6 +122,9 @@ and 500. It runs each device profile sequentially and stores per-route reports
 under `test-results/lighthouse/routes/`. Both modes require a Lighthouse
 Performance score strictly above 95 points for each measured route on mobile and
 desktop. A score of exactly 95 causes the command to exit unsuccessfully.
+The report output includes the browser version, throttling profile, CPU benchmark,
+Largest Contentful Paint and Total Blocking Time. A missed budget also prints the
+available LCP phases and up to five long tasks.
 
 For a local comparison, build with `NEXT_PUBLIC_DEFER_DECORATIVE_MOTION=1 npm run build`.
 Then use the same `npm start` command. The headline and static icons stay visible
@@ -142,10 +146,12 @@ and verifies the resulting manifest. The production build uses
 `tsconfig.build.json` for application code, build configuration, CSP declarations
 and generated Next.js types. It inherits the project compiler options. The
 blocking `npm run typecheck` uses `tsconfig.json` for application code, tests and
-TypeScript tooling, and `tsconfig.cache-lifecycle.json` for the CommonJS cache
-runtime. `npm start` verifies the manifest again before native
-`next start`. A failed or modified build cannot reuse a previous manifest. Rebuild
-from source after changing the content, runtime, lockfile or configuration.
+TypeScript tooling. It uses `tsconfig.build-tooling.json` to check the JavaScript
+types in the Next.js configuration and hash-CSP build tooling, and
+`tsconfig.cache-lifecycle.json` for the CommonJS cache runtime. `npm start` verifies
+the manifest again before native `next start`. A failed or modified build cannot
+reuse a previous manifest. Rebuild from source after changing the content,
+runtime, lockfile or configuration.
 
 Do not deploy generated `.next/` files separately from their matching source,
 headers and assets. Rollbacks must keep that set together. Browser HTML freshness

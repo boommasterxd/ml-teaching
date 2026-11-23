@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TrainingEntryProvider from '@/components/training/TrainingEntryProvider';
 import { useTrainingEntry, useTrainingSession } from '@/components/training/TrainingEntryContext';
 import { learningPaths } from '@/lib/learning-paths';
+import TrainingPage from '@/screens/TrainingPage';
 import {
   clearRememberedTrainingConsent,
   readRememberedTrainingConsent,
@@ -14,6 +15,7 @@ import { AppRouterHost, testRouter } from '../helpers/app-router-host';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
 const browser = vi.hoisted(() => ({
+  loadResourceHost: vi.fn(),
   model: vi.fn(),
   disposeModel: vi.fn(),
   getUserMedia: vi.fn(),
@@ -22,6 +24,10 @@ const browser = vi.hoisted(() => ({
   tensor: () => ({ dispose: vi.fn() }),
 }));
 
+vi.mock(import('@/components/training/TrainingResourceHost'), async (original) => {
+  browser.loadResourceHost();
+  return original();
+});
 vi.mock('@/lib/mobilenet-embedding', () => ({ loadMobileNetEmbedding: browser.model }));
 vi.mock('@tensorflow/tfjs-core', () => ({
   setBackend: vi.fn(async () => true),
@@ -158,6 +164,35 @@ async function openSettings() {
 }
 
 describe('training entry across routes', () => {
+  it('keeps the resource host out of a cold direct entry until consent intent', async () => {
+    render(
+      <PathnameContext.Provider value={learningPaths.imagePractice}>
+        <TrainingEntryProvider>
+          <TrainingPage />
+        </TrainingEntryProvider>
+      </PathnameContext.Provider>,
+      { wrapper: AppRouterHost },
+    );
+    await act(() => vi.dynamicImportSettled());
+    expect(browser.loadResourceHost).not.toHaveBeenCalled();
+
+    const consent = within(screen.getByRole('dialog', { name: consentName }));
+    const confirm = consent.getByRole('button', { name: 'Zustimmen' });
+    for (const choice of consent.getAllByRole('checkbox', { name: /^Ich stimme zu/ })) {
+      fireEvent.click(choice);
+    }
+    act(() => confirm.focus());
+    await act(() => vi.dynamicImportSettled());
+    expect(browser.loadResourceHost).toHaveBeenCalledOnce();
+    expect(browser.model).not.toHaveBeenCalled();
+    expect(browser.getUserMedia).not.toHaveBeenCalled();
+
+    fireEvent.click(confirm);
+    await screen.findByRole('dialog', { name: cameraName });
+    expect(browser.model).toHaveBeenCalledOnce();
+    expect(browser.getUserMedia).not.toHaveBeenCalled();
+  });
+
   it('prepares the training host on focus without starting its subscriptions before activation', async () => {
     const subscribe = vi.spyOn(document, 'addEventListener');
     const visibilitySubscriptions = () =>
@@ -173,9 +208,13 @@ describe('training entry across routes', () => {
 
     fireEvent.click(opener);
     await screen.findByRole('dialog', { name: consentName });
-    expect(visibilitySubscriptions()).toHaveLength(1);
+    expect(visibilitySubscriptions()).toHaveLength(0);
     expect(browser.model).not.toHaveBeenCalled();
     expect(browser.getUserMedia).not.toHaveBeenCalled();
+
+    await agreeToTraining();
+    await screen.findByRole('dialog', { name: cameraName });
+    expect(visibilitySubscriptions()).toHaveLength(1);
   });
 
   it('closes the source-page dialog with Escape and returns focus without starting any resources', async () => {
