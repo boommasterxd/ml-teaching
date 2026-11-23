@@ -1,4 +1,5 @@
 import { Activity, useMemo, ViewTransition } from 'react';
+import { usePredictionSpacePreparation } from '@/hooks/usePredictionSpacePreparation';
 import type { useTrainingWorkspace } from '@/hooks/useTrainingWorkspace';
 import type { CameraView } from './CameraControls';
 import TrainingClassesPanel from './TrainingClassesPanel';
@@ -20,6 +21,7 @@ export default function TrainingPanels({
   step,
   modules,
   prepared,
+  openingPrediction,
   onSelect,
   onPrepare,
 }: {
@@ -28,6 +30,7 @@ export default function TrainingPanels({
   step: TrainingStep;
   modules: TrainingPanelModules;
   prepared: TrainingStep | null;
+  openingPrediction: boolean;
   onSelect: (step: TrainingStep) => void;
   onPrepare: (step: TrainingStep) => void;
 }) {
@@ -35,6 +38,11 @@ export default function TrainingPanels({
   const { resources, data, cardActions } = workspace;
   const { camera, prediction } = resources;
   const { classes } = data;
+  const space = usePredictionSpacePreparation(
+    resources.hasTrainedModel ? classes.classes : undefined,
+    resources.canAutoStartPrediction &&
+      (step === 'prediction' || prepared === 'prediction' || openingPrediction),
+  );
   const { stream, facingMode, active, isPending, hasFailed, start, pause, toggleCamera } = camera;
   const cameraView = useMemo<CameraView>(
     () => ({
@@ -99,6 +107,7 @@ export default function TrainingPanels({
               hasTrainedModel={resources.hasTrainedModel}
               predictVideoRef={resources.predictVideoRef}
               subscribeToFeatures={prediction.subscribeToFeatures}
+              space={space}
             />
           </Activity>
         )}

@@ -16,8 +16,9 @@ export const PrivacyOverview = (
     <p>
       Wenn du „Für 30 Minuten in diesem Tab merken“ auswählst, speichert dein Browser deine
       Einwilligungen und die Kamerawahl vorübergehend. So kannst du im selben Tab innerhalb dieser
-      Zeit erneut starten, ohne die Einwilligungen wiederholen zu müssen. Dein Trainingsstand wird
-      dabei nicht gespeichert.
+      Zeit erneut starten, ohne die Einwilligungen wiederholen zu müssen. Wenn du die Kamera erlaubt
+      hast und dein Browser sie weiterhin freigibt, kann sie beim erneuten Start automatisch
+      angehen. Dein Trainingsstand wird dabei nicht gespeichert.
     </p>
     <p>
       Mit „Kamera ausschalten“ beendest du die Kameranutzung. Deine bereits gesammelten Bilder und

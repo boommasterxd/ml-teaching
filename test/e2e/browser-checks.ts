@@ -151,10 +151,10 @@ export function diagnostics(page: Page, expectedMissingDocument?: string) {
   return failures;
 }
 
-export async function expectMenuHighlight(row: Locator, background: string) {
+export async function expectMenuHighlight(row: Locator, background?: string) {
   await expect
     .poll(() =>
-      row.evaluate((item) => {
+      row.evaluate((item, checkBackground) => {
         const container = item.closest('[data-slot="motion-highlight-container"]');
         if (!container) throw new Error('The item has no menu highlight container.');
         const rowBounds = item.getBoundingClientRect();
@@ -164,7 +164,7 @@ export async function expectMenuHighlight(row: Locator, background: string) {
             const bounds = surface.getBoundingClientRect();
             const style = getComputedStyle(surface);
             return {
-              background: style.backgroundColor,
+              ...(checkBackground && { background: style.backgroundColor }),
               opacity: style.opacity,
               onRow:
                 Math.abs(bounds.left - rowBounds.left) <= 2 &&
@@ -174,9 +174,23 @@ export async function expectMenuHighlight(row: Locator, background: string) {
             };
           },
         );
-      }),
+      }, background !== undefined),
     )
-    .toEqual([{ background, opacity: '1', onRow: true }]);
+    .toEqual([{ ...(background !== undefined && { background }), opacity: '1', onRow: true }]);
+}
+
+export async function expectLiveSystemThemeChanges(page: Page, theme: Locator) {
+  await theme.focus();
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(theme).toBeChecked();
+  await expect(theme).toBeFocused();
+  await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(theme).not.toBeChecked();
+  await expect(theme).toBeFocused();
+  await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'system');
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
 }
 
 type TransitionSnapshot = {

@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
 import type { SubscribePredictionFeatures } from '@/hooks/usePredictionLoop';
+import type { usePredictionSpacePreparation } from '@/hooks/usePredictionSpacePreparation';
 import { Camera } from './icons/camera';
 import CameraControls, { type CameraView } from './CameraControls';
 import { cn } from '../lib/utils';
@@ -12,7 +13,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from './ui/empty';
 import { Progress } from './ui/progress';
 import { MessageSlot } from './ui/message-slot';
 import { Heading, Text } from './ui/typography';
-import { DeferredPredictionSpace, useDeferredPredictionSpace } from './DeferredPredictionSpace';
+import { DeferredPredictionSpace } from './DeferredPredictionSpace';
 import PredictionDiagram from './PredictionDiagram';
 
 interface PredictionPanelProps {
@@ -24,6 +25,7 @@ interface PredictionPanelProps {
   hasTrainedModel: boolean;
   predictVideoRef: React.RefObject<HTMLVideoElement | null>;
   subscribeToFeatures: SubscribePredictionFeatures;
+  space: ReturnType<typeof usePredictionSpacePreparation>;
 }
 
 const pendingPrediction = 'Die Vorhersage wird vorbereitet.';
@@ -135,7 +137,16 @@ function PredictionCamera({
       {isPredicting && camera.stream && (
         <CameraFeed camera={camera} predictVideoRef={predictVideoRef} />
       )}
-      <CameraControls camera={camera} onStartIntent={onStartIntent} />
+      <CameraControls
+        camera={{
+          ...camera,
+          onToggle: () => {
+            if (!camera.active) onStartIntent();
+            camera.onToggle();
+          },
+        }}
+        onStartIntent={onStartIntent}
+      />
     </div>
   );
 }
@@ -144,11 +155,11 @@ function PredictionWorkspace({
   classes,
   prediction,
   subscribeToFeatures,
+  space,
   ...preview
 }: Omit<PredictionPanelProps, 'entryReady' | 'hasTrainedModel'>) {
   const { isPredicting, camera } = preview;
   const live = isPredicting && Boolean(camera.stream);
-  const space = useDeferredPredictionSpace(classes, camera.active);
   return (
     <div className="grid items-start gap-4 @lg/prediction:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
       <PredictionCamera {...preview} onStartIntent={space.prepare} />
@@ -166,7 +177,7 @@ function PredictionWorkspace({
           isPredicting={isPredicting}
         />
         <PredictionDiagram classes={classes}>
-          {space.visible && (
+          {camera.active && (
             <DeferredPredictionSpace
               result={space.result}
               classes={classes}

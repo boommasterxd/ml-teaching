@@ -37,6 +37,8 @@ export default defineConfig([
     'test-results/**',
     'next-env.d.ts',
     '.agents/**',
+    '.codex-attachments/**',
+    '.vercel/**',
   ]),
   { linterOptions: { noInlineConfig: true, reportUnusedDisableDirectives: 'error' } },
   {

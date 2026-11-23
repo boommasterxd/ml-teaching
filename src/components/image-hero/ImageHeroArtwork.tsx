@@ -131,7 +131,6 @@ export default function ImageHeroArtwork() {
           variant="ghost"
           size="sm"
           disabled={reduce}
-          aria-pressed={paused}
           onClick={() => setPaused((value) => !value)}
         >
           {paused || reduce ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}

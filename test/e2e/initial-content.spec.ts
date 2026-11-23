@@ -11,24 +11,11 @@ import { learningPaths } from '../../src/lib/learning-paths';
 import { headerLegalLinks } from '../../src/content/site-navigation';
 import { routeSyntheticModel } from './synthetic-model';
 import { grantModelConsent } from './training-keyboard';
-
-async function expectReadable(content: Locator) {
-  await content.scrollIntoViewIfNeeded();
-  await expect(content).toBeVisible();
-  expect(
-    await content.evaluate((element) => {
-      for (let node: Element | null = element; node; node = node.parentElement) {
-        if (Number(getComputedStyle(node).opacity) === 0) return false;
-      }
-      return element.getClientRects().length > 0;
-    }),
-  ).toBe(true);
-}
-
-async function expectReadableLink(link: Locator, href: string) {
-  await expectReadable(link);
-  await expect(link).toHaveAttribute('href', href);
-}
+import {
+  expectHomeLearningAreas,
+  expectReadable,
+  expectReadableLink,
+} from './initial-content-checks';
 
 async function expectLearningHub(main: Locator) {
   await expectReadableLink(
@@ -115,6 +102,7 @@ for (const path of publicRoutes) {
       }
       const main = page.getByRole('main');
       await expectReadable(main.getByRole('heading', { level: 1 }));
+      if (path === '/') await expectHomeLearningAreas(main);
       if (path === learningPaths.qLearning) {
         await expect(main).toHaveText('Coming Soon');
         await expect(main.getByRole('heading', { level: 1 })).toHaveText('Coming Soon');

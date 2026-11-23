@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import JsonLd from '@/components/JsonLd';
 import LandingPage from '@/screens/LandingPage';
-import { siteConfig, webApplicationId, webSiteId } from '@/lib/site';
+import { siteConfig, sitePublisherName, webApplicationId, webSiteId } from '@/lib/site';
 
 export const dynamic = 'error';
 export const metadata: Metadata = {
@@ -25,6 +25,8 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
+  const publisherUrl = `${siteConfig.url}/impressum`;
+  const publisherId = `${publisherUrl}#publisher`;
   const structuredData = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -34,6 +36,7 @@ export default function HomePage() {
         name: siteConfig.name,
         url: siteConfig.url,
         inLanguage: siteConfig.language,
+        publisher: { '@id': publisherId },
       },
       {
         '@type': 'WebApplication',
@@ -46,6 +49,12 @@ export default function HomePage() {
         inLanguage: siteConfig.language,
         isAccessibleForFree: true,
         isPartOf: { '@id': webSiteId },
+      },
+      {
+        '@type': 'Person',
+        '@id': publisherId,
+        name: sitePublisherName,
+        url: publisherUrl,
       },
     ],
   };

@@ -12,46 +12,73 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: update-gitleaks
+  cancel-in-progress: false
+
 jobs:
   update:
+    if: github.ref_type == 'branch' && github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Check for new release and open PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
           latest=$(curl -sSfL --max-time 60 https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r '.tag_name' | sed 's/^v//')
           [[ "$latest" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid upstream version"; exit 1; }
-          current=$(jq -r '.version' .github/gitleaks-version.json)
-          echo "Current: $current | Latest: $latest"
-          if [ -z "$latest" ] || [ "$latest" = "$current" ]; then echo "Up to date."; exit 0; fi
+          manifest=.github/gitleaks-version.json
+          current=$(jq -er '.version' "$manifest")
+          if [[ "$latest" == "$current" ]]; then echo 'Up to date.'; exit 0; fi
           branch="chore/gitleaks-${latest}"
-          gh auth setup-git
-          if timeout 30s git ls-remote --exit-code --heads origin "refs/heads/$branch" >/dev/null; then
-            echo "Branch exists."
+          ref="refs/heads/$branch"
+          open_prs=$(timeout 30s gh api --method GET "repos/$GITHUB_REPOSITORY/pulls" \
+            -f state=open -f "head=${GITHUB_REPOSITORY%%/*}:$branch" -f "base=$DEFAULT_BRANCH" \
+            | jq -er 'if type == "array" then length else error("Invalid PR list") end')
+          if [[ "$open_prs" != 0 ]]; then
+            echo 'An update PR is already open.'
             exit 0
+          fi
+          checksum=$(curl -sSfL --max-time 60 "https://github.com/gitleaks/gitleaks/releases/download/v${latest}/gitleaks_${latest}_checksums.txt" |
+            awk -v file="gitleaks_${latest}_linux_x64.tar.gz" '$2 == file { print $1 }')
+          [[ "$checksum" =~ ^[a-f0-9]{64}$ ]] || { echo "Invalid upstream checksum"; exit 1; }
+          expected="$RUNNER_TEMP/gitleaks-version.json"
+          jq --arg v "$latest" --arg s "$checksum" '.version=$v | .sha256=$s' "$manifest" > "$expected"
+          gh auth setup-git
+          if timeout 30s git ls-remote --exit-code --heads origin "$ref" >/dev/null; then
+            timeout 30s git fetch --no-tags origin "$ref"
+            tip=$(git rev-parse FETCH_HEAD)
+            ancestor=$(git merge-base HEAD "$tip")
+            expected_entry="100644 blob $(git hash-object "$expected")"
+            if [[ "$(git rev-list --parents -n 1 "$tip")" != "$tip $ancestor" ||
+                  "$(git ls-tree --format='%(objectmode) %(objecttype) %(objectname)' "$tip" -- "$manifest")" != "$expected_entry" ||
+                  "$(git diff --name-only --no-renames "$ancestor" "$tip" --)" != "$manifest" ]]; then
+              echo 'Existing update branch does not match the expected manifest-only change.' >&2
+              exit 1
+            fi
+            remote_tip=$(timeout 30s git ls-remote --exit-code --heads origin "$ref")
+            [[ "$remote_tip" == "$tip"$'\t'"$ref" ]]
           else
             lookup_status=$?
             if [[ "$lookup_status" != 2 ]]; then
               echo "Could not check the remote update branch (exit $lookup_status)." >&2
               exit "$lookup_status"
             fi
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git checkout -b "$branch"
+            mv "$expected" "$manifest"
+            git add "$manifest"
+            git commit -m "ci: bump gitleaks ${current} -> ${latest}"
+            timeout 30s git push --force-with-lease="$ref:" origin "HEAD:$ref"
           fi
-          checksum=$(curl -sSfL --max-time 60 "https://github.com/gitleaks/gitleaks/releases/download/v${latest}/gitleaks_${latest}_checksums.txt" | grep "linux_x64.tar.gz" | awk '{print $1}')
-          [[ "$checksum" =~ ^[a-f0-9]{64}$ ]] || { echo "Invalid upstream checksum"; exit 1; }
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$branch"
-          jq --arg v "$latest" --arg s "$checksum" '.version=$v | .sha256=$s' .github/gitleaks-version.json > "$RUNNER_TEMP/gitleaks-version.json"
-          mv "$RUNNER_TEMP/gitleaks-version.json" .github/gitleaks-version.json
-          git add .github/gitleaks-version.json
-          git commit -m "ci: bump gitleaks ${current} -> ${latest}"
-          git push -u origin "$branch"
           cat > "$RUNNER_TEMP/pr-body.md" <<'BODY'
           ## Problem
 
@@ -65,7 +92,8 @@ jobs:
 
           The updater validated the version and checksum format. The PR must pass the normal scanner and CI checks.
           BODY
-          gh pr create --title "ci: bump gitleaks ${current} -> ${latest}" \
+          timeout 30s gh pr create --repo "$GITHUB_REPOSITORY" \
+            --title "ci: bump gitleaks ${current} -> ${latest}" \
             --body-file "$RUNNER_TEMP/pr-body.md" \
             --label dependencies \
-            --base "$(gh api /repos/${GITHUB_REPOSITORY} --jq .default_branch)" --head "$branch"
+            --base "$DEFAULT_BRANCH" --head "$branch"

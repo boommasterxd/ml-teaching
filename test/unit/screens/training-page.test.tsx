@@ -4,6 +4,7 @@ import TrainingPage from '@/screens/TrainingPage';
 import TrainingEntryProvider from '@/components/training/TrainingEntryProvider';
 import { learningPaths } from '@/lib/learning-paths';
 import { readRememberedTrainingConsent } from '@/lib/training-consent-storage';
+import { fitFeatureProjection } from '@/lib/feature-projection';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
 const boundary = vi.hoisted(() => {
@@ -40,6 +41,10 @@ vi.mock('@tensorflow/tfjs-core', () => ({
 }));
 vi.mock('@tensorflow/tfjs-backend-webgl', () => ({}));
 vi.mock('@/lib/mobilenet-embedding', () => ({ loadMobileNetEmbedding: boundary.load }));
+vi.mock('@/lib/feature-projection', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/feature-projection')>();
+  return { ...actual, fitFeatureProjection: vi.fn(actual.fitFeatureProjection) };
+});
 vi.mock('@tensorflow-models/knn-classifier', () => ({
   create: () => {
     const labels = new Set<string>();
@@ -185,6 +190,18 @@ async function collectCupAndBookImages(container: HTMLElement) {
   await waitFor(() => expect(screen.getAllByText('10 Bilder')).toHaveLength(2), { timeout: 3000 });
 }
 
+async function prepareAutomaticPrediction(container: HTMLElement) {
+  confirmGeneralConsent();
+  const dialog = await screen.findByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Erlauben' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  await collectCupAndBookImages(container);
+  fireEvent.click(screen.getByRole('button', { name: 'Weiter zum Training' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Modell trainieren' }));
+  await waitFor(() => expect(boundary.stopTrack).toHaveBeenCalledOnce());
+  return screen.findByRole('button', { name: 'Weiter zur Vorhersage' }, { timeout: 3000 });
+}
+
 async function expectPredictionCameraLifecycle(steps: ReturnType<typeof within>) {
   const confidence = { name: 'Konfidenz für Tasse' };
   expect(boundary.getUserMedia).not.toHaveBeenCalled();
@@ -241,6 +258,33 @@ function TrainingFixture() {
 }
 
 describe('training page integration', () => {
+  it('starts one projection before opening automatic prediction and waits to start the camera', async () => {
+    const { container } = render(<TrainingFixture />);
+    const next = await prepareAutomaticPrediction(container);
+    const compute = vi.mocked(fitFeatureProjection);
+    const original = compute.getMockImplementation()!;
+    const pending = Promise.withResolvers<Awaited<ReturnType<typeof fitFeatureProjection>>>();
+    compute.mockReturnValueOnce(pending.promise);
+
+    expect(compute).not.toHaveBeenCalled();
+    act(() => next.focus());
+    fireEvent.pointerEnter(next);
+    await waitFor(() => expect(compute).toHaveBeenCalledOnce());
+    expect(boundary.getUserMedia).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('heading', { name: 'Vorhersage' })).toBeNull();
+
+    fireEvent.click(next);
+    await screen.findByText('Merkmalsraum wird vorbereitet …');
+    expect(compute).toHaveBeenCalledOnce();
+    expect(boundary.getUserMedia).toHaveBeenCalledTimes(2);
+
+    const [classes, signal] = compute.mock.calls[0];
+    await act(async () => pending.resolve(await original(classes, signal)));
+    await waitFor(() =>
+      expect(container.querySelector('[data-slot="prediction-training-points"]')).not.toBeNull(),
+    );
+  }, 15_000);
+
   it('keeps processing opt-in, supports local training, enables camera later and confirms destructive changes', async () => {
     const { container, unmount } = render(
       <main id="main-content" tabIndex={-1}>

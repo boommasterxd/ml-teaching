@@ -18,6 +18,10 @@ const techniques = [
   {
     title: 'MobileNet',
     Icon: Brain,
+    source: {
+      href: 'https://arxiv.org/abs/1801.04381',
+      label: 'Originalarbeit zur MobileNetV2-Architektur',
+    },
     descriptions: [
       'Ein Foto besteht für den Computer aus vielen farbigen Bildpunkten. MobileNet verarbeitet sie in mehreren Schritten: Zuerst erfasst es einfache Merkmale wie helle und dunkle Kanten. Spätere Schichten verbinden solche Merkmale zu komplizierteren Mustern. Die Kästchen bei „Kanten“ und „Muster“ zeigen das vereinfacht.',
       'Am Ende entsteht eine Liste von Zahlen, der sogenannte Merkmalsvektor. Er beschreibt die gefundenen Bildmerkmale. Dafür stehen die kleinen Balken bei „Zahlen“. MobileNet berechnet diese Liste direkt in deinem Browser. Ob dein Bild zu „Hund“ oder „Katze“ gehört, entscheidet anschließend KNN.',
@@ -26,6 +30,10 @@ const techniques = [
   {
     title: 'KNN',
     Icon: Users,
+    source: {
+      href: 'https://github.com/tensorflow/tfjs-models/tree/master/knn-classifier#making-a-prediction',
+      label: 'KNN-Klassifikation in TensorFlow.js',
+    },
     descriptions: [
       'KNN heißt „K-Nearest Neighbors“, auf Deutsch etwa „die K nächsten Nachbarn“. Hier ist K gleich drei: KNN sucht die drei Trainingsbilder, deren Zahlenlisten dem neuen Bild am ähnlichsten sind. Jedes dieser Beispiele hat von dir bereits einen Namen bekommen, etwa „Hund“ oder „Katze“.',
       'Im Diagramm stehen die Kreise und Quadrate für solche Beispiele. Die Raute ist das neue Bild. Die Linien verbinden es mit seinen drei nächsten Nachbarn. Sind zwei davon Hunde und einer eine Katze, gewinnt „Hund“ mit zwei Stimmen. Genau das zeigen die Balken bei „Ausgabe“. Die Lage der Punkte ist ein vereinfachtes Beispiel, keine echte Messung von MobileNet.',
@@ -98,7 +106,7 @@ export function ImageTechniqueSection() {
       </div>
       <Card className="py-0">
         <ItemGroup aria-label="Bausteine des Modells" className="landing-technique-items">
-          {techniques.map(({ title, Icon, descriptions }, index) => (
+          {techniques.map(({ title, Icon, descriptions, source }, index) => (
             <ScrollReveal key={title} kind="reading" index={index} asChild>
               <div role="listitem" className="landing-technique-item">
                 <Item className="p-0">
@@ -114,6 +122,11 @@ export function ImageTechniqueSection() {
                         {description}
                       </ItemDescription>
                     ))}
+                    <ItemDescription className="line-clamp-none">
+                      <a href={source.href} rel="noreferrer">
+                        {source.label}
+                      </a>
+                    </ItemDescription>
                   </ItemContent>
                 </Item>
               </div>

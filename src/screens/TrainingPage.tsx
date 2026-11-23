@@ -322,6 +322,7 @@ function TrainingWorkspace({ initialWorkspace }: { initialWorkspace: boolean }) 
           step={flow.current}
           modules={flow.modules}
           prepared={flow.prepared}
+          openingPrediction={flow.status?.state === 'loading' && flow.status.step === 'prediction'}
           onSelect={flow.select}
           onPrepare={flow.onPrepare}
         />

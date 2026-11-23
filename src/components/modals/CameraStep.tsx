@@ -52,7 +52,13 @@ export default function CameraStep({
         <Button variant="secondary" onClick={onDecline}>
           Ohne Kamera fortfahren
         </Button>
-        <Button variant="default" onClick={error ? onRetry : onConfirm} disabled={pending}>
+        <Button
+          variant="default"
+          onClick={error ? onRetry : onConfirm}
+          disabled={pending}
+          focusableWhenDisabled
+          className="aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:hover:bg-primary aria-disabled:focus-visible:opacity-100"
+        >
           {pending ? (
             <Spinner data-icon="inline-start" aria-hidden="true" />
           ) : (

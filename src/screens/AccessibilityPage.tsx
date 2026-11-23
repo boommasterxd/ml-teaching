@@ -39,6 +39,10 @@ export default function AccessibilityPage() {
             Die Lage der Punkte im Merkmalsraum der Live-Vorhersage ist nur visuell erkennbar. Die
             vorhergesagte Klasse und die Konfidenzwerte sind als Text verfügbar.
           </li>
+          <li>
+            Für Trainingsbilder und ihre Vorschauen fehlen Beschreibungen des Bildinhalts. In der
+            Galerie lassen sich die Bilder über ihre Nummer zuordnen.
+          </li>
         </ul>
         <p>Bei Schwierigkeiten nutzen Sie bitte den unten angegebenen Kontakt.</p>
         <h2>Feedback</h2>
@@ -54,7 +58,7 @@ export default function AccessibilityPage() {
         </p>
         <h2>Stand</h2>
         <p>
-          Diese Seite wurde zuletzt im <time dateTime="2026-11-22">November 2026</time>{' '}
+          Diese Seite wurde zuletzt im <time dateTime="2026-11-23">November 2026</time>{' '}
           aktualisiert.
         </p>
         <p>

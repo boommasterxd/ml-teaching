@@ -8,8 +8,9 @@ confirmed periods. Messages can remain in the trash for up to 30 days. Hostinger
 can restore a deleted mailbox's messages for up to 30 days before permanently
 deleting its data.
 
-The retention period or deletion criterion for backup copies of individual
-messages deleted from an active mailbox remains open. Hostinger's
+**PRIVACY-02 (individual-message backups), accepted.** The maintainer omits
+the retention period or deletion criterion for backup copies of individual
+messages deleted from an active mailbox. The maintainer has no confirmed
+information for this scenario. Hostinger's
 [backup documentation](https://www.hostinger.com/support/hostinger-mail-data-location-backups-and-subprocessors/)
-describes backup locations. The disclosure for individual-message backups needs
-a provider confirmation specific to that scenario.
+describes backup locations. The confirmed periods above remain disclosed.

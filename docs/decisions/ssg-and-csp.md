@@ -36,7 +36,9 @@ SRI, inline trusted scripts/styles receive exact hashes, and the manifest binds
 content, configuration, build ID and actual framework version. Unsupported or stale
 artifacts fail closed. No framework version allowlist blocks normal compatible
 updates. The project uses Next.js 16.4.6 and React 19.3.1; a provider adapter is
-selected only from the actual deployment environment.
+selected only from the actual deployment environment. The local adapter requires
+the configured provider module to export an adapter with a callable
+`onBuildComplete` hook. The provider's `modifyConfig` hook is optional.
 
 Project adaptations include the public route selections, static error UI,
 app-specific image and model origins, local data-image sources and central security

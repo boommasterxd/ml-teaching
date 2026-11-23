@@ -2,6 +2,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 import {
   diagnostics,
   expectAccessible,
+  expectLiveSystemThemeChanges,
   expectNoStoredTrainingData,
   settleEntryAnimations,
 } from './browser-checks';
@@ -323,6 +324,7 @@ test('theme changes preserve navigation and require explicit remembering across 
   await page.reload();
   await expect(theme).not.toBeChecked();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'system');
+  await expectLiveSystemThemeChanges(page, theme);
 
   await theme.focus();
   await page.keyboard.press('Space');
@@ -407,7 +409,7 @@ test('local images train a real browser classifier, predict and reset without up
   const network = await routeSyntheticModel(page, baseURL!);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(learningPaths.imagePractice);
-  const expectCamera = await observeWorkspaceCamera(page);
+  const expectCamera = await observeWorkspaceCamera(page, 'class-colors');
   await expectNoStoredTrainingData(page);
   const { expectSameDialog, expectStableWorkspace } = await captureSetupDialog(page);
   await grantModelConsent(page);

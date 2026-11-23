@@ -69,10 +69,11 @@ pending workload evidence, without a separate keepalive job or a paid increase.
 
 The lifecycle engine in `.github/scripts/cache-lifecycle/` uses the canonical
 GitHub plugin template with its upstream type declarations. The core and planner
-modules use the template from version 1.5.6. CodeQL cache proof requires nonempty
-caches from the default branch, and separate cache versions are evaluated
-independently. The repository currently manages only npm caches. The local
-`.github/scripts/cache.ts` adapter uses TypeScript and the strict project
+modules use the template from version 1.5.6. Cleanup manages npm caches and
+superseded CodeQL overlay database caches. A CodeQL replacement must be nonempty
+and tied to a successful default-setup `Push on main` run at the current `main`
+revision. Cleanup compares only caches in the same family, branch and cache
+version. The local `.github/scripts/cache.ts` adapter uses TypeScript and the strict project
 typecheck. The runtime and adapter retain the same file, function, complexity and
 duplication gates.
 
@@ -152,8 +153,22 @@ The required `gitleaks` check scans the checked-out tree and the complete introd
 Git range for PRs. A manual scan additionally covers all available history. Its exact
 version and archive checksum live in `.github/gitleaks-version.json`. PR scans use
 the base revision's manifest and policy, preserve default scanner rules and do not
-accept PR-controlled ignore fingerprints. The monthly updater proposes a normal PR
-changing the scanner manifest.
+accept PR-controlled ignore fingerprints.
+
+`Update gitleaks version` checks for a new release monthly on the default branch
+and proposes a manifest-only PR from `chore/gitleaks-<version>`. If the update
+fails after pushing the branch, run the updater again on `main`. It leaves an open
+matching PR in place and reuses an existing branch only after verifying that its
+single change matches the expected version and upstream Linux archive checksum.
+If the rerun still fails, inspect the PR and branch before taking manual action.
+Open a missing PR from the existing branch only after verifying that its diff is
+limited to the manifest and that the version and checksum match the upstream
+release. If the branch differs, resolve the discrepancy before using it.
+
+The regular `pull_request` trigger continues to run the required scanner check.
+For PRs opened by the updater, GitHub places the resulting workflow runs in an
+approval-required state because the updater uses `GITHUB_TOKEN`. The required
+checks still gate the merge. [GitHub token behavior](https://docs.github.com/en/actions/concepts/security/github_token#when-github_token-triggers-workflow-runs)
 
 GitHub Secret Scanning, repository push protection and CodeQL default setup are
 enabled alongside the required Gitleaks check. The
