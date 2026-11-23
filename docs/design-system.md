@@ -302,8 +302,9 @@ the full row. The sidebar and header dropdown share the same panel radius and
 inner padding. The links' hit areas meet between rows so crossing the spacing
 keeps the highlight moving directly between destinations. Base UI's `render`
 prop composes the links with native anchors and their current-page semantics.
-The desktop links and highlight items share a client boundary so Animate UI can
-attach its row refs during hydration. The surrounding layout renders on the server.
+The server renders usable desktop links before hydration. Only at `lg` or wider
+does the browser load the moving highlight and its interactive rows. The
+server-rendered links stay in place while the pointer or focus is in the list.
 Below `lg`, the toolbar pairs the back action with the Informationen dropdown.
 Back traverses the previous browser entry when available and uses the homepage for a direct entry.
 The dropdown's three native links use the shared Animate UI menu, including
@@ -326,7 +327,9 @@ The static 404 and 500 documents and the App Router recovery screen share
 render. The 404 uses three separately modeled glass digits in the shared
 Topography renderer. The 500 and recovery screen use its ring. Like the homepage,
 all three recovery views reserve the artwork area and start playback automatically
-when the artwork is visible. The shared Spinner appears after 500 ms of active
+when the artwork is visible. On the native 500 page, automatic WebGL startup waits
+until after document load, paint and an idle opportunity. Pointer or keyboard
+intent can start it sooner. The shared Spinner appears after 500 ms of active
 waiting and clears when the first frame is ready or loading stops. A two-second
 active first-frame deadline switches to the optimized responsive poster.
 Pointer and keyboard intent prepare the shared renderer. The poster covers

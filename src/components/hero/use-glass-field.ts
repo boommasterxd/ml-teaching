@@ -27,12 +27,16 @@ function afterFirstPaint(prepare: () => void) {
   return () => cancelAnimationFrame(frame);
 }
 
-export function useGlassField(paused: boolean, viewportReady: boolean) {
+export function useGlassField(
+  paused: boolean,
+  viewportReady: boolean,
+  deferStartup = deferDecorativeMotion,
+) {
   const artwork = useRef<HTMLDivElement>(null);
   const inView = useInView(artwork);
   const visible = usePageVisible();
   const { reduce } = useMotionPreference();
-  const motionReady = useMotionStart();
+  const motionReady = useMotionStart(deferStartup);
   const [interested, setInterested] = useState(false);
   const [Field, setField] = useState<FieldComponent | null>(null);
   const [failed, setFailed] = useState(false);
@@ -87,7 +91,7 @@ export function useGlassField(paused: boolean, viewportReady: boolean) {
 
   const prepare = () => {
     if (reduce || failed) return;
-    if (deferDecorativeMotion) setInterested(true);
+    if (deferStartup) setInterested(true);
     void prepareField().catch(() => {});
   };
   return {

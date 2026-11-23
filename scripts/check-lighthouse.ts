@@ -100,6 +100,15 @@ function lcpPhases(report: Result) {
   );
 }
 
+function longTasks(report: Result) {
+  const details = report.audits['long-tasks']?.details;
+  if (details?.type !== 'table') return;
+  return details.items.slice(0, 5).map(({ url, duration }) => ({
+    source: typeof url === 'string' && url.startsWith(`${origin}/`) ? new URL(url).pathname : null,
+    durationMs: duration,
+  }));
+}
+
 function reportScores(report: Result, categories: string[], profile: Profile, reportPath: string) {
   const label = `${report.finalDisplayedUrl} ${profile} ${report.fetchTime}`;
   const scores = Object.fromEntries(
@@ -125,6 +134,7 @@ function reportScores(report: Result, categories: string[], profile: Profile, re
   } else if (typeof scores.performance === 'number' && scores.performance <= performanceThreshold) {
     console.error(`${label}: Performance must exceed ${performanceThreshold * 100} points.`, {
       lcpPhases: lcpPhases(report),
+      longTasks: longTasks(report),
     });
     process.exitCode = 1;
   }

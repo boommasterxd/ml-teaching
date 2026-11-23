@@ -4,9 +4,10 @@
 
 The homepage, static 404 and 500 pages and App Router recovery screen share the
 WebGL renderer and playback lifecycle. Playback starts after the initial paint when the artwork
-and document are visible and the visitor allows motion. Pointer and keyboard
-intent can prepare the renderer earlier. The 404 uses glass digits and the 500
-uses the glass ring.
+and document are visible and the visitor allows motion. On the native 500 page,
+automatic startup also waits for document load and an idle opportunity when the
+browser supports it. Pointer and keyboard intent can start it sooner. The 404
+uses glass digits and the 500 uses the glass ring.
 
 Pausing or scrolling the artwork out of view stops drawing and keeps one bounded
 canvas so playback can resume at the same animation time. Page exit, a hidden

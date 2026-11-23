@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import ErrorGlassArtwork from '@/components/hero/ErrorGlassArtwork';
 import HeroScene from '@/components/hero/HeroScene';
-import { heroPosterImages } from '@/components/hero/poster-assets';
+import { errorRingPosterImages, heroPosterImages } from '@/components/hero/poster-assets';
 import { EntryViewportReadyContext } from '@/components/ui/entry-policy';
 import { HomePlaybackProvider, useHomePlayback } from '@/components/home/HomePlaybackProvider';
 import { ReducedMotionContext } from '@animate-ui/react/utils/motion';
@@ -59,6 +60,24 @@ function PlaybackReadout() {
 }
 
 describe('decorative hero lifetime', () => {
+  it('keeps deferred error artwork idle until load while honoring early keyboard intent', async () => {
+    vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+    render(<ErrorGlassArtwork deferStartup sources={errorRingPosterImages} />);
+
+    await act(
+      () =>
+        new Promise<void>((painted) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => painted()));
+        }),
+    );
+    expect(lifecycle.created).not.toHaveBeenCalled();
+    const playback = screen.getByRole('button', { name: 'Animation pausieren' });
+    act(() => playback.focus());
+
+    await waitFor(() => expect(lifecycle.created).toHaveBeenCalledTimes(1));
+    expect(document.activeElement).toBe(playback);
+  });
+
   it('waits for navigation snapshots to finish before starting the GPU field', async () => {
     const hero = (ready: boolean) => (
       <EntryViewportReadyContext value={ready}>
