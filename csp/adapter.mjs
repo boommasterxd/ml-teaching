@@ -20,5 +20,8 @@ if (process.env.VERCEL === '1' && !providerPath) {
 const providerAdapter = providerPath
   ? (await import(pathToFileURL(providerPath).href)).default
   : undefined;
+if (providerPath && !providerAdapter) {
+  throw new Error('The configured provider adapter must have a usable default export');
+}
 
 export default createHashCspAdapter({ ...options, providerAdapter });

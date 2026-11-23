@@ -8,7 +8,7 @@ import {
   settleEntryAnimations,
 } from './browser-checks';
 import { routeSyntheticModel } from './synthetic-model';
-import { observeWorkspaceCamera } from './training-camera';
+import { expectCameraDenialRetainsFocus, observeWorkspaceCamera } from './training-camera';
 import { confirmTrainingWithdrawal, grantModelConsent } from './training-keyboard';
 
 const classAddCases = [
@@ -264,8 +264,16 @@ test('a denied camera request keeps setup on the source page until the user cont
   baseURL,
 }) => {
   await page.addInitScript(() => {
+    let requests = 0;
     navigator.mediaDevices.getUserMedia = () =>
-      Promise.reject(new DOMException('Camera permission denied', 'NotAllowedError'));
+      new Promise<MediaStream>((_, reject) => {
+        document.documentElement.dataset.cameraRequests = String(++requests);
+        window.addEventListener(
+          'test:deny-camera',
+          () => reject(new DOMException('Camera permission denied', 'NotAllowedError')),
+          { once: true },
+        );
+      });
   });
   const network = await routeSyntheticModel(page, baseURL!);
   const transitions = await observeViewTransitions(page, { checkDialogExit: true });
@@ -276,8 +284,9 @@ test('a denied camera request keeps setup on the source page until the user cont
     .click();
   await grantModelConsent(page);
   const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
-  await camera.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
-  await expect(camera.getByText(/Kamerazugriff verweigert/)).toBeVisible();
+  await expectCameraDenialRetainsFocus(camera, 1);
+  await expectCameraDenialRetainsFocus(camera, 2);
+  await expectAccessible(page);
   await expect(page).toHaveURL(learningPaths.images);
   expect(await transitions()).toEqual([]);
   await camera.getByRole('button', { name: 'Ohne Kamera fortfahren' }).press('Enter');

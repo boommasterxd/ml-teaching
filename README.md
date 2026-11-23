@@ -41,8 +41,10 @@ consent. You can supply local image files without enabling the camera.
 ## Data, providers and costs
 
 Training images, class names, features and classifier state stay in browser
-memory. Quiz progress and model consent are also temporary. The appearance
-setting is stored on your device only when you choose to remember it.
+memory, as does quiz progress. If you choose to remember training consent, the
+browser stores that consent and your camera choice for reuse in the same tab
+for up to 30 minutes. The appearance setting is stored on your device only when
+you choose to remember it.
 
 The browser downloads pretrained MobileNet weights after consent. Google and
 Kaggle receive connection metadata during the download, and model files can

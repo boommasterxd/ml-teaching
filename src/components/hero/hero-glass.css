@@ -69,7 +69,7 @@
   padding-inline: 1rem;
 }
 
-.hero-field-controls button[aria-pressed]:disabled {
+.hero-field-controls button:disabled {
   opacity: 1;
 }
 

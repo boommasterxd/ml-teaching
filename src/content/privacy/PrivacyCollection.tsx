@@ -177,7 +177,9 @@ export const PrivacyCollection = (
       Einwilligung nach § 25 Abs. 1 TDDDG und, soweit dabei personenbezogene Daten verarbeitet
       werden, nach Art. 6 Abs. 1 lit. a DSGVO. Die Anwendung übermittelt die Auswahl nicht an
       Server. Nach 30 Minuten wird sie für weitere Aufrufe nicht mehr verwendet. Eine bereits
-      laufende Nutzung kann fortgesetzt werden. Sie können die Auswahl jederzeit über „Einwilligung
+      laufende Nutzung kann fortgesetzt werden. Wenn Sie die Kameranutzung erlaubt haben und Ihr
+      Browser den Zugriff weiterhin erlaubt, kann die Kamera beim erneuten Start in diesem Tab
+      automatisch eingeschaltet werden. Sie können die Auswahl jederzeit über „Einwilligung
       widerrufen“ löschen. Heruntergeladene Programm- und Modelldateien können im üblichen
       Browsercache verbleiben. Dieser Cache enthält keine von der Anwendung dorthin geschriebenen
       Trainingsbilder; seine Löschung können Sie über die Browsereinstellungen steuern.
@@ -228,8 +230,8 @@ export const PrivacyCollection = (
     <p>
       Wir löschen Anfragedaten, sobald sie für die Bearbeitung Ihres Anliegens nicht mehr
       erforderlich sind. Soweit eine gesetzliche Aufbewahrungspflicht besteht, löschen wir die Daten
-      nach Ablauf der maßgeblichen Frist. Gelöschte E-Mails können im Papierkorb des Postfachs für
-      bis zu 30 Tage verbleiben.
+      nach Ablauf der maßgeblichen Frist. Hostinger löscht E-Mails im Spamordner und im Papierkorb
+      automatisch nach 30 Tagen.
     </p>
     <p>
       Bei einer regulären Löschung des gesamten Postfachs kann Hostinger die darin enthaltenen

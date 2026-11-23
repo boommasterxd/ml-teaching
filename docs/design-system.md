@@ -540,8 +540,10 @@ setup uses one dialog for consent, model loading and the camera decision. Intent
 prepares one shared module. The workspace mounts one active dialog at a time and
 supports cancelling a pending first opening with Escape. Upload and capture
 intent warm the thumbnail module. Its virtualizer mounts when there are images
-to display. Play intent can prepare the local prediction space. The video attaches
-when the trained prediction step is active and the authorized stream is ready.
+to display. Prediction intent prepares the local feature projection when the camera
+can start automatically. Play intent can prepare or retry the same projection. The
+video attaches when the trained prediction step is active and the authorized stream
+is ready.
 TensorFlow and model imports remain consent-gated and are never prepared on intent.
 
 ## Motion ownership

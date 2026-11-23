@@ -16,11 +16,15 @@ Function defaults use Fluid Compute in Frankfurt (`fra1`) with
 Standard resources and a 20-second timeout. The public pages are prerendered at
 build time.
 
-The CSP adapter composes the installed native provider adapter through an explicit
-absolute `NEXT_ADAPTER_PATH` or `CSP_PROVIDER_ADAPTER`. A Vercel build without a
-provider adapter fails closed. Never hardcode a global CLI installation or bypass
-`npm run build` with direct `next build`. Verify actual provider hooks and output
-before publication; local native output does not prove hosted adaptation.
+The CSP adapter reads `CSP_PROVIDER_ADAPTER` first and uses `NEXT_ADAPTER_PATH`
+if the first variable is unset or empty. The selected value must be an absolute
+path to the installed native provider adapter. The module must default-export an
+adapter with a callable `onBuildComplete` hook. The `modifyConfig` hook is optional.
+A missing or invalid adapter stops the Vercel build. Correct an invalid
+`CSP_PROVIDER_ADAPTER` value or unset it to use `NEXT_ADAPTER_PATH`.
+Never hardcode a global CLI installation or bypass `npm run build` with direct
+`next build`. Verify provider hooks and output on the hosted deployment before
+publication.
 
 Vercel evaluates commits from protected squash merges into `main` for native
 Production builds. Its Production Git policy allows the connected repository.

@@ -17,8 +17,10 @@ export const PrivacyHosting = (
       der sicheren und zuverlässigen Erreichbarkeit unseres Online-Angebots.
     </p>
     <p>
-      Vercel nennt die USA als primären Verarbeitungsstandort. Weitere Verarbeitungen können an
-      Standorten von Vercel und seinen Unterauftragnehmern erfolgen.
+      Für die Serverfunktionen dieser Website ist Frankfurt am Main (Deutschland) als
+      Ausführungsregion eingestellt. Vercel nennt die USA als primären Verarbeitungsstandort.
+      Weitere Verarbeitungen können an Standorten von Vercel und seinen Unterauftragnehmern
+      erfolgen.
     </p>
     <p>
       Die für die Anzeige der angeforderten Seiten benötigten Dateien werden an Ihren Browser
@@ -29,11 +31,10 @@ export const PrivacyHosting = (
     <h4>Schutz vor automatisierten Zugriffen</h4>
     <p>
       Bei Anfragen, die auf automatisierte Zugriffe hindeuten, kann Vercel vor dem Zugriff auf die
-      Website eine Browserprüfung durchführen. Dabei führt Ihr Browser JavaScript aus und
-      übermittelt das Prüfergebnis an Vercel. Vercel bewertet technische Browsermerkmale. Nach
-      erfolgreicher Prüfung wird im Browser eine an diesen Browser gebundene Prüfsitzung gespeichert
-      und bei weiteren Anfragen berücksichtigt. Diese Sitzung ist nach Angaben von Vercel eine
-      Stunde gültig. Scheitert die Prüfung, wird die Anfrage abgewiesen.
+      Website eine Browserprüfung durchführen. Vercel wertet technische Merkmale Ihres Browsers und
+      das übermittelte Prüfergebnis aus. Nach erfolgreicher Prüfung speichert Ihr Browser einen an
+      diesen Browser gebundenen Nachweis, der bei weiteren Anfragen berücksichtigt wird. Er ist nach
+      Angaben von Vercel eine Stunde gültig. Scheitert die Prüfung, wird die Anfrage abgewiesen.
     </p>
     <p>
       Soweit die Speicherung oder das Auslesen auf Ihrem Gerät zur sicheren Bereitstellung der von

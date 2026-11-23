@@ -1,5 +1,6 @@
 import PageLayout from '../components/PageLayout';
 import PageContent from '../components/PageContent';
+import { sitePublisherName } from '@/lib/site';
 
 export default function ImprintPage() {
   return (
@@ -7,7 +8,7 @@ export default function ImprintPage() {
       <PageContent labelledBy="imprint-title" title="Impressum">
         <h2>Adresse</h2>
         <div className="legal-contact-details">
-          <p>Yannick Schäfer</p>
+          <p>{sitePublisherName}</p>
           <p>Am Mäuerchen 12</p>
           <p>67591 Mölsheim</p>
         </div>

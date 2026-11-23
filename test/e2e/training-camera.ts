@@ -8,8 +8,39 @@ type ExpectCameraActivity = (
   requestPath?: string,
 ) => Promise<void>;
 
-export async function observeWorkspaceCamera(page: Page): Promise<ExpectCameraActivity> {
-  const activity = await page.evaluateHandle(() => {
+export async function expectCameraDenialRetainsFocus(camera: Locator, requestNumber: number) {
+  const page = camera.page();
+  const action = camera.getByRole('button', { name: /^(Erlauben|Erneut versuchen)$/ });
+  const requests = page.locator('html');
+  await action.press('Enter');
+  await expect(requests).toHaveAttribute('data-camera-requests', String(requestNumber));
+  await expect(action).toBeDisabled();
+  await expect(action).toBeFocused();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Space');
+  await expect
+    .poll(() =>
+      action.evaluate((button) => {
+        const { x, y, width, height } = button.getBoundingClientRect();
+        return button.contains(document.elementFromPoint(x + width / 2, y + height / 2));
+      }),
+    )
+    .toBe(true);
+  await action.click({ force: true });
+  await expect(action).toBeFocused();
+  await page.evaluate(() => window.dispatchEvent(new Event('test:deny-camera')));
+  await expect(camera.getByRole('alert')).toContainText('Kamerazugriff verweigert');
+  const retry = camera.getByRole('button', { name: 'Erneut versuchen', exact: true });
+  await expect(retry).toBeEnabled();
+  await expect(retry).toBeFocused();
+  await expect(requests).toHaveAttribute('data-camera-requests', String(requestNumber));
+}
+
+export async function observeWorkspaceCamera(
+  page: Page,
+  input: 'browser' | 'class-colors' = 'browser',
+): Promise<ExpectCameraActivity> {
+  const activity = await page.evaluateHandle((input) => {
     const state = {
       requests: 0,
       tracks: [] as MediaStreamTrack[],
@@ -18,16 +49,30 @@ export async function observeWorkspaceCamera(page: Page): Promise<ExpectCameraAc
     };
     const devices = navigator.mediaDevices;
     const getUserMedia = devices.getUserMedia.bind(devices);
+    function classColorStream(facingMode: MediaTrackConstraints['facingMode']) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 224;
+      const pixels = canvas.getContext('2d');
+      if (!pixels) throw new Error('Cannot create the synthetic camera frame.');
+      const stream = canvas.captureStream();
+      // Red and blue match the two uploaded training classes.
+      pixels.fillStyle = facingMode === 'environment' ? '#0000ff' : '#ff0000';
+      pixels.fillRect(0, 0, canvas.width, canvas.height);
+      return stream;
+    }
     devices.getUserMedia = async (constraints) => {
       state.requests++;
       state.requestPath = location.pathname;
       if (typeof constraints?.video === 'object') state.facingMode = constraints.video.facingMode;
-      const stream = await getUserMedia(constraints);
+      const stream =
+        input === 'class-colors'
+          ? classColorStream(state.facingMode)
+          : await getUserMedia(constraints);
       state.tracks.push(...stream.getVideoTracks());
       return stream;
     };
     return state;
-  });
+  }, input);
   return async (requests, live, facingMode, requestPath) => {
     const snapshot = () =>
       activity.evaluate(({ requests, tracks, facingMode, requestPath }) => ({
@@ -121,6 +166,7 @@ export async function expectLivePredictionControls(page: Page, expectCamera: Exp
   await expect(preview).toBeVisible();
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 2' })).toBeVisible();
+  await expectWinningClass(page, 'Klasse 1', 'Klasse 2');
   await expect(legendItems).toHaveText(['Kamerabild', 'Klasse 1', 'Klasse 2']);
   await space.scrollIntoViewIfNeeded();
   await expect(marker).toBeVisible();
@@ -130,6 +176,7 @@ export async function expectLivePredictionControls(page: Page, expectCamera: Exp
   await expectCamera(4, 1, 'environment');
   await expect(switchCamera).toBeFocused();
   await expect(page.getByRole('progressbar', { name: 'Konfidenz für Klasse 1' })).toBeVisible();
+  await expectWinningClass(page, 'Klasse 2', 'Klasse 1');
   await expectAccessible(page);
 
   await page.setViewportSize({ width: 320, height: viewport.height });
@@ -161,6 +208,19 @@ export async function expectLivePredictionControls(page: Page, expectCamera: Exp
   await recordSizes();
   await expectAccessible(page);
   await page.setViewportSize(viewport);
+}
+
+async function expectWinningClass(page: Page, winner: string, runnerUp: string) {
+  await expect(page.getByRole('heading', { name: winner, exact: true })).toBeVisible();
+  const confidence = async (name: string) =>
+    Number.parseFloat(
+      (await page
+        .getByRole('progressbar', { name: `Konfidenz für ${name}`, exact: true })
+        .getAttribute('aria-valuenow')) ?? '',
+    );
+  await expect
+    .poll(async () => (await confidence(winner)) - (await confidence(runnerUp)))
+    .toBeGreaterThan(0);
 }
 
 async function observePredictionSizes(frame: Locator) {

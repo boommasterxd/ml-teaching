@@ -78,19 +78,23 @@ export default function ConsentStep({ onDecline, onDeclineIntent, onConfirm }: C
                 </span>
               </FieldLabel>
             </Field>
-            <Field orientation="horizontal" className="gap-2.5 py-2 sm:gap-3 sm:py-4">
+            <Field orientation="horizontal" className="items-start gap-2.5 py-2 sm:gap-3 sm:py-4">
               <Checkbox
                 id="remember-training-consent"
+                aria-describedby="remember-training-consent-description"
                 checked={remember}
                 onCheckedChange={(checked) => setRemember(checked === true)}
-                className="size-5"
+                className="mt-0.5 size-5"
               />
-              <FieldLabel
-                htmlFor="remember-training-consent"
-                className="relative top-[0.75px] min-w-0 font-normal"
-              >
-                Für 30 Minuten in diesem Tab merken
-              </FieldLabel>
+              <div className="grid min-w-0 gap-1">
+                <FieldLabel htmlFor="remember-training-consent" className="font-normal">
+                  Für 30 Minuten in diesem Tab merken
+                </FieldLabel>
+                <FieldDescription id="remember-training-consent-description">
+                  Wenn du die Kamera erlaubst und dein Browser sie weiterhin freigibt, kann sie beim
+                  nächsten Trainingsstart in diesem Tab automatisch angehen.
+                </FieldDescription>
+              </div>
             </Field>
           </FieldGroup>
         </FieldSet>

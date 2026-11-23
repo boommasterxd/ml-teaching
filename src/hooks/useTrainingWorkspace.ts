@@ -104,6 +104,8 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
       toggleCamera: switchCamera,
     },
     prediction,
+    canAutoStartPrediction:
+      visible && cameraConsent && !cameraPaused && !camera.hasFailed && !predictionFailed,
     invalidateModel,
     hasTrainedModel,
     setHasTrainedModel,

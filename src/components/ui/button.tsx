@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { buttonVariants } from '../button-variants';
 
 interface ButtonProps extends ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
+  focusableWhenDisabled?: boolean;
   render?: ReactElement;
   tapScale?: number;
 }
@@ -18,6 +19,7 @@ export function Button({
   className,
   children,
   disabled,
+  focusableWhenDisabled,
   render,
   role,
   tapScale,
@@ -32,6 +34,7 @@ export function Button({
         data-variant={variant}
         data-size={size}
         disabled={disabled}
+        focusableWhenDisabled={focusableWhenDisabled}
         aria-disabled={disabled}
         role={role}
         className={cn(buttonVariants({ variant, size }), className)}

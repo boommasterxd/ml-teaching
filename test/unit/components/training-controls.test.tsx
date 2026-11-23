@@ -94,6 +94,7 @@ describe('training and prediction controls', () => {
       camera,
       predictVideoRef: { current: null },
       subscribeToFeatures: () => () => {},
+      space: { result: undefined, prepare: vi.fn() },
     };
     const { rerender } = render(
       <PredictionPanel {...base} hasTrainedModel={false} camera={liveCamera} />,
@@ -109,6 +110,7 @@ describe('training and prediction controls', () => {
     ).toBe('true');
     fireEvent.click(start);
     expect(onToggle).toHaveBeenCalledOnce();
+    expect(base.space.prepare).toHaveBeenCalledOnce();
     rerender(<PredictionPanel {...base} camera={{ ...camera, active: true, pending: true }} />);
     expect(screen.getByText('Kamera wird verbunden …')).toBeTruthy();
     expect(base.predictVideoRef.current).toBeNull();
@@ -138,6 +140,7 @@ describe('training and prediction controls', () => {
     ).toBe('15');
     fireEvent.click(screen.getByRole('button', { name: 'Kamera pausieren' }));
     expect(onToggle).toHaveBeenCalledTimes(2);
+    expect(base.space.prepare).toHaveBeenCalledOnce();
     rerender(<PredictionPanel {...base} />);
     expect(preview.isConnected).toBe(false);
     expect(screen.getByRole('button', { name: 'Kamera aktivieren' })).toBe(start);

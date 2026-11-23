@@ -17,6 +17,7 @@ on:
       - Copilot code review
       - Copilot cloud agent
       - Dependabot Updates
+      - CodeQL
     types: [completed]
 
 permissions:

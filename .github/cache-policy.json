@@ -21,6 +21,6 @@
     ".github/cache-policy.json"
   ],
   "families": { "npm": "mlteaching-npm-v1-" },
-  "codeqlWorkflows": [],
+  "codeqlWorkflows": [{ "name": "Push on main", "path": "dynamic/github-code-scanning/codeql" }],
   "retiredPrefixes": []
 }

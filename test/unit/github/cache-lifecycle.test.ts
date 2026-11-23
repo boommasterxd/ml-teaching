@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import cachePolicy from '../../../.github/cache-policy.json';
 import { runLifecycle } from '../../../.github/scripts/cache-lifecycle/core.cjs';
 import {
   cache,
@@ -10,7 +11,7 @@ import {
   run,
 } from './cache-fixtures';
 
-const codeqlWorkflow = { name: 'CodeQL', path: '.github/workflows/codeql.yml' };
+const codeqlWorkflow = { name: 'Push on main', path: 'dynamic/github-code-scanning/codeql' };
 const codeqlKey = (sha: string, runId = 20) =>
   `codeql-overlay-base-database-1-js-${sha}-${runId}-1`;
 
@@ -88,20 +89,41 @@ describe('cache lifecycle', () => {
   it('retires older CodeQL snapshots separately for each cache version', () => {
     const api = new FixtureApi();
     const opts = options(api, 'workflow_run');
-    opts.policy.codeqlWorkflows = [codeqlWorkflow];
+    opts.policy.codeqlWorkflows = cachePolicy.codeqlWorkflows;
     api.triggering = run({
       id: 20,
       ...codeqlWorkflow,
-      event: 'schedule',
+      event: 'dynamic',
     });
     api.caches = [
       cache(1, codeqlKey(previousHead)),
       { ...cache(2, codeqlKey(previousHead)), version: 'v2' },
       cache(3, codeqlKey(opts.sha), 'refs/heads/main', true),
       { ...cache(4, codeqlKey(opts.sha), 'refs/heads/main', true), version: 'v2' },
+      { ...cache(5, codeqlKey(previousHead)), version: 'v3' },
     ];
+    api.runs = [run({ id: 30, status: 'queued', name: 'CI' })];
+    expect(runLifecycle(opts)).toMatchObject({ deleted: [], deferred: 2 });
+    api.runs = [];
     expect(runLifecycle(opts).deleted.map(({ id }) => id)).toEqual([1, 2]);
-    expect(api.caches.map(({ id }) => id)).toEqual([3, 4]);
+    expect(api.caches.map(({ id }) => id)).toEqual([3, 4, 5]);
+  });
+
+  it.each([
+    { path: '.github/workflows/codeql.yml' },
+    { run_attempt: 2 },
+    { conclusion: 'failure' },
+  ])('preserves predecessors when managed CodeQL provenance differs: %j', (override) => {
+    const api = new FixtureApi();
+    const opts = options(api, 'workflow_run');
+    opts.policy.codeqlWorkflows = cachePolicy.codeqlWorkflows;
+    api.triggering = run({ id: 20, ...codeqlWorkflow, event: 'dynamic', ...override });
+    api.caches = [
+      cache(1, codeqlKey(previousHead)),
+      cache(2, codeqlKey(opts.sha), 'refs/heads/main', true),
+    ];
+    expect(runLifecycle(opts).deleted).toEqual([]);
+    expect(api.caches.map(({ id }) => id)).toEqual([1, 2]);
   });
 
   it('fails without deleting anything if main moves during planning', () => {

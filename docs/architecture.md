@@ -174,7 +174,9 @@ and keeps selections in memory.
 
 ML Teaching is a free, ad-free learning site. The learning hub publishes
 `CollectionPage` structured data that references the available image recognition
-lesson and practice by their canonical `LearningResource` identifiers.
+lesson and practice by their canonical `LearningResource` identifiers. The
+homepage's JSON-LD graph identifies the publisher by name and links to the
+canonical imprint.
 
 The generated `robots.txt` allows all user agents on all paths and identifies the
 sitemap. It has no separate rules for search, model training or user-initiated
@@ -255,6 +257,10 @@ stream becomes inactive or its class is reset is discarded.
 Training and prediction panels prepare on user intent. Failed panel loads offer a
 retry. A failed chunk that requires a document reload warns that in-memory training
 data will be lost.
+When the camera can start automatically, prediction intent also prepares the local
+feature projection in parallel with the panel. The workspace shares one preparation
+across intent and opening, reuses it after class renames, and discards it when the
+trained image set changes or the workspace ends.
 There are no shared server entities, reactive joins or SQL operations
 that justify TanStack DB, Table, Drizzle or Turso. Class-name editing remains a
 small local field without a separate form submission or validation schema.

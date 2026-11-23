@@ -10,6 +10,9 @@ supported secrets in GitHub and blocking supported secrets during pushes.
   can therefore change the code that decides whether its checks passed. GitHub
   Secret Scanning detects supported secrets. Independent CI provenance would
   require a separate control.
-- **GH-01 (Gitleaks updater recovery), open.** If PR creation fails after the
-  update branch is pushed, the updater skips that version until manual
-  intervention or a new upstream release.
+- **SEC-02 (Gitleaks provenance), accepted.** The maintainer keeps the current
+  automatic pull request check and accepts its PR-supplied workflow definition.
+  An independent check on this personal repository would require a dedicated
+  GitHub App and a separate scanner. The base revision still supplies the
+  scanner version and policy. GitHub applies its existing workflow approval
+  policy to fork and updater PRs.

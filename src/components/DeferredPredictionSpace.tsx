@@ -1,66 +1,16 @@
-import { useEffect, useState } from 'react';
 import type { SubscribePredictionFeatures } from '@/hooks/usePredictionLoop';
+import type { PredictionSpaceResult } from '@/hooks/usePredictionSpacePreparation';
 import type { MLClass } from '@/types/ml';
 import { PredictionPlotPlaceholder } from './PredictionDiagram';
 import { Spinner } from './ui/spinner';
 import { Text } from './ui/typography';
-
-type SpaceModule = typeof import('./PredictionSpace');
-type SpaceState =
-  | {
-      source: readonly MLClass[];
-      module: SpaceModule;
-      model: Awaited<ReturnType<SpaceModule['prepareSpace']>>;
-    }
-  | { source: readonly MLClass[]; failed: true };
-
-let pending: Promise<SpaceModule> | undefined;
-
-function loadSpace() {
-  pending ??= import('./PredictionSpace').catch((error: unknown) => {
-    pending = undefined;
-    throw error;
-  });
-  return pending;
-}
-
-export function useDeferredPredictionSpace(classes: readonly MLClass[], active: boolean) {
-  const [intent, setIntent] = useState<readonly MLClass[]>();
-  const [state, setState] = useState<SpaceState>();
-  const prepared = state?.source === classes && !('failed' in state);
-  const shouldPrepare = (active || intent === classes) && !prepared;
-
-  useEffect(() => {
-    if (!shouldPrepare) return;
-    const controller = new AbortController();
-    const { signal } = controller;
-    void loadSpace()
-      .then(async (module) => {
-        signal.throwIfAborted();
-        const model = await module.prepareSpace(classes, signal);
-        if (!signal.aborted) setState({ source: classes, module, model });
-      })
-      .catch(() => {
-        if (signal.aborted) return;
-        setIntent(undefined);
-        setState({ source: classes, failed: true });
-      });
-    return () => controller.abort();
-  }, [classes, shouldPrepare]);
-
-  return {
-    visible: active,
-    result: state?.source === classes ? state : undefined,
-    prepare: () => setIntent(classes),
-  };
-}
 
 export function DeferredPredictionSpace({
   result,
   classes,
   subscribeToFeatures,
 }: {
-  result: SpaceState | undefined;
+  result: PredictionSpaceResult | undefined;
   classes: readonly MLClass[];
   subscribeToFeatures: SubscribePredictionFeatures;
 }) {
@@ -87,6 +37,6 @@ export function DeferredPredictionSpace({
       </PredictionPlotPlaceholder>
     );
   }
-  const Space = result.module.default;
+  const { Space } = result;
   return <Space classes={classes} model={result.model} subscribeToFeatures={subscribeToFeatures} />;
 }

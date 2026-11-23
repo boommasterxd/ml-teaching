@@ -2,15 +2,12 @@
 
 import type { ComponentProps, ReactNode } from 'react';
 import { Toggle } from '@base-ui/react/toggle';
-import {
-  ReducedMotionConfig,
-  motionTokens,
-  useTempoTransition,
-} from '@animate-ui/react/utils/motion';
-import { motion } from 'motion/react';
+import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
+import { MotionConfig, motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { ActionFeedback } from './action-feedback';
 import { useControlRef } from './use-control-hydration';
+import { useMotionPreference } from './use-motion-preference';
 
 type ToggleProps = ComponentProps<typeof Toggle>;
 type SwitchProps = Omit<
@@ -29,19 +26,21 @@ const thumbClass =
   'pointer-events-none grid place-items-center rounded-full bg-background ring-0 group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 dark:group-data-[state=checked]/switch:bg-primary-foreground dark:group-data-[state=unchecked]/switch:bg-foreground [&_svg]:size-3';
 
 function AnimatedSwitchThumb({ checked, children }: { checked: boolean; children: ReactNode }) {
+  const { preference, reduce } = useMotionPreference();
   const transition = useTempoTransition(motionTokens.spring.thumb);
   return (
-    <ReducedMotionConfig>
+    // Motion reads the system setting when mounting. Gate projection with the live preference.
+    <MotionConfig reducedMotion="never">
       <motion.span
         data-slot="switch-thumb"
-        layout="position"
+        layout={reduce ? false : 'position'}
         layoutDependency={checked}
         transition={{ layout: transition }}
         className={thumbClass}
       >
-        {children}
+        <MotionConfig reducedMotion={preference}>{children}</MotionConfig>
       </motion.span>
-    </ReducedMotionConfig>
+    </MotionConfig>
   );
 }
 

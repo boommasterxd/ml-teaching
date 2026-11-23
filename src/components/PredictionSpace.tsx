@@ -1,45 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SubscribePredictionFeatures } from '@/hooks/usePredictionLoop';
-import {
-  fitFeatureProjection,
-  type FeatureProjection,
-  type ProjectedPosition,
-} from '@/lib/feature-projection';
-import type { MLClass, MLImage } from '@/types/ml';
+import type { FeatureProjection, ProjectedPosition } from '@/lib/feature-projection';
+import type { MLClass } from '@/types/ml';
 import PredictionPointCloud from './PredictionPointCloud';
 
-type ProjectionInput = Pick<MLClass, 'id' | 'images'>;
-
-const projections = new WeakMap<
-  readonly MLImage[],
-  { inputs: readonly ProjectionInput[]; projection: FeatureProjection }
->();
+export { fitFeatureProjection } from '@/lib/feature-projection';
 const sampleIntervalMs = 125;
-
-/** Reuse the fitted space while this immutable set of training images is current. */
-export async function prepareSpace(classes: readonly MLClass[], signal: AbortSignal) {
-  signal.throwIfAborted();
-  const key = classes.find(({ images }) => images.length)?.images;
-  const cached = key && projections.get(key);
-  if (
-    cached?.inputs.length === classes.length &&
-    classes.every(
-      ({ id, images }, index) =>
-        cached.inputs[index].id === id && cached.inputs[index].images === images,
-    )
-  )
-    return cached.projection;
-
-  const projection = await fitFeatureProjection(classes, signal);
-  signal.throwIfAborted();
-  if (key) {
-    projections.set(key, {
-      inputs: classes.map(({ id, images }) => ({ id, images })),
-      projection,
-    });
-  }
-  return projection;
-}
 
 export default function PredictionSpace({
   classes,

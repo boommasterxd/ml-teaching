@@ -63,7 +63,6 @@ function ErrorGlassScene({ digits, sources, keepInitialPoster }: ErrorGlassArtwo
           variant="outline"
           size="sm"
           aria-controls="error-glass-art"
-          aria-pressed={paused}
           disabled={reduce || failed}
           onPointerEnter={prepare}
           onPointerDown={prepare}

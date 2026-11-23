@@ -11,6 +11,7 @@ export const siteConfig = {
 
 export const webSiteId = `${siteConfig.url}/#website`;
 export const webApplicationId = `${siteConfig.url}/#application`;
+export const sitePublisherName = 'Yannick Schäfer';
 
 export function learningResourceId(path: string) {
   return `${siteConfig.url}${path}#learning-resource`;

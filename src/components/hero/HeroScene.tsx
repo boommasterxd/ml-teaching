@@ -36,7 +36,6 @@ function PlaybackControl({
         size="sm"
         disabled={reduce}
         aria-controls="home-hero-art lernbereiche"
-        aria-pressed={paused}
         onClick={onToggle}
       >
         <Icon data-icon="inline-start" aria-hidden="true" />

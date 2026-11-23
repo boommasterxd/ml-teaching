@@ -1,7 +1,13 @@
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { usePredictionSpacePreparation } from '@/hooks/usePredictionSpacePreparation';
 import { fitFeatureProjection } from '@/lib/feature-projection';
-import { prepareSpace } from '@/components/PredictionSpace';
 import type { MLClass } from '@/types/ml';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/lib/feature-projection', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/feature-projection')>();
+  return { ...actual, fitFeatureProjection: vi.fn(actual.fitFeatureProjection) };
+});
 
 function trainingClass(id: string, vectors: number[][]): MLClass {
   return {
@@ -17,18 +23,6 @@ function trainingClass(id: string, vectors: number[][]): MLClass {
 }
 
 describe('training feature projection', () => {
-  it('reuses the fitted space after a rename and refits when the examples change', async () => {
-    const cat = trainingClass('cat', [[1, 0]]);
-    const dog = trainingClass('dog', [[0, 1]]);
-    const { signal } = new AbortController();
-    const first = await prepareSpace([cat, dog], signal);
-    const renamed = { ...dog, name: 'Hund' };
-    expect(await prepareSpace([cat, renamed], signal)).toBe(first);
-    const changed = { ...renamed, images: [...dog.images, ...cat.images] };
-    const next = await prepareSpace([cat, changed], signal);
-    expect(next).not.toBe(first);
-    expect(next.points.filter(({ classId }) => classId === 'dog')).toHaveLength(2);
-  });
   it('puts each example and its live equivalent in the same normalized feature space', async () => {
     const classes = [
       trainingClass('cat', [
@@ -96,5 +90,64 @@ describe('training feature projection', () => {
     const fitting = fitFeatureProjection(classes, controller.signal);
     setTimeout(() => controller.abort(), 0);
     await expect(fitting).rejects.toHaveProperty('name', 'AbortError');
+  });
+});
+
+describe('workspace projection preparation', () => {
+  const compute = vi.mocked(fitFeatureProjection);
+  const initialClasses = [
+    trainingClass('cat', Array<number[]>(10).fill([1, 0])),
+    trainingClass('dog', Array<number[]>(11).fill([0, 1])),
+  ];
+
+  it('retains a rename, then discards the pending result when another class loses an image', async () => {
+    const [cat, dog] = initialClasses;
+    const oldProjection = await fitFeatureProjection(initialClasses, new AbortController().signal);
+    const oldJob = Promise.withResolvers<typeof oldProjection>();
+    compute.mockClear().mockReturnValueOnce(oldJob.promise);
+    const { result, rerender } = renderHook<
+      ReturnType<typeof usePredictionSpacePreparation>,
+      { classes: MLClass[] | undefined }
+    >(({ classes }) => usePredictionSpacePreparation(classes, true), {
+      initialProps: { classes: initialClasses },
+    });
+    await waitFor(() => expect(compute).toHaveBeenCalledOnce());
+    const oldSignal = compute.mock.calls[0][1];
+
+    rerender({ classes: [cat, { ...dog, name: 'Hund' }] });
+    expect(compute).toHaveBeenCalledOnce();
+    expect(oldSignal.aborted).toBe(false);
+
+    rerender({ classes: undefined });
+    expect(oldSignal.aborted).toBe(true);
+    expect(result.current.result).toBeUndefined();
+    rerender({ classes: [cat, { ...dog, images: dog.images.slice(1) }] });
+    await waitFor(() => expect(result.current.result).toHaveProperty('model.points.length', 20));
+    const replacement = result.current.result;
+    expect(compute).toHaveBeenCalledTimes(2);
+    await act(async () => oldJob.resolve(oldProjection));
+    expect(result.current.result).toBe(replacement);
+  });
+
+  it('can retry a failed preparation once across repeated intent and aborts on workspace exit', async () => {
+    const nextJob = Promise.withResolvers<Awaited<ReturnType<typeof fitFeatureProjection>>>();
+    compute
+      .mockClear()
+      .mockRejectedValueOnce(new Error('Projection failed'))
+      .mockReturnValueOnce(nextJob.promise);
+    const { result, unmount } = renderHook(() =>
+      usePredictionSpacePreparation(initialClasses, true),
+    );
+    await waitFor(() => expect(result.current.result).toEqual({ failed: true }));
+    act(() => {
+      result.current.prepare();
+      result.current.prepare();
+    });
+    await waitFor(() => expect(compute).toHaveBeenCalledTimes(2));
+    const retrySignal = compute.mock.calls[1][1];
+    expect(retrySignal.aborted).toBe(false);
+    unmount();
+    expect(retrySignal.aborted).toBe(true);
+    await act(async () => nextJob.reject(retrySignal.reason));
   });
 });

@@ -11,16 +11,15 @@ describe('image-learning hero animation controls', () => {
     render(<ImageHeroArtwork />);
     const control = screen.getByRole('button', { name: 'Animation pausieren' });
     control.focus();
-    expect(control.getAttribute('aria-pressed')).toBe('false');
+    expect(control.hasAttribute('aria-pressed')).toBe(false);
 
     fireEvent.click(control);
     expect(screen.getByRole('button', { name: 'Animation fortsetzen' })).toBe(control);
-    expect(control.getAttribute('aria-pressed')).toBe('true');
+    expect(control.hasAttribute('aria-pressed')).toBe(false);
     expect(document.activeElement).toBe(control);
 
     fireEvent.click(control);
     expect(screen.getByRole('button', { name: 'Animation pausieren' })).toBe(control);
-    expect(control.getAttribute('aria-pressed')).toBe('false');
     expect(document.activeElement).toBe(control);
   });
 
@@ -34,9 +33,7 @@ describe('image-learning hero animation controls', () => {
     render(<ImageHeroArtwork />);
     const control = screen.getByRole('button', { name: 'Bewegung reduziert' });
     expect(control.hasAttribute('disabled')).toBe(true);
-    expect(control.getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(control);
     expect(screen.getByRole('button', { name: 'Bewegung reduziert' })).toBe(control);
-    expect(control.getAttribute('aria-pressed')).toBe('false');
   });
 });
