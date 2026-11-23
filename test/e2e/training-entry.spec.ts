@@ -469,12 +469,12 @@ test('withdrawing remembered consent from training returns to the homepage', asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
   const network = await routeSyntheticModel(page, baseURL!);
-  const source = '/datenschutz';
-  await page.goto(source);
+  await page.goto('/datenschutz');
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
+  await expect(navigation.locator('.header-menu-desktop')).toHaveCount(0);
   await navigation.getByRole('button', { name: 'Menü', exact: true }).press('Enter');
   await navigation.getByRole('link', { name: 'Bildmodell trainieren', exact: true }).click();
-  await expect(page).toHaveURL(source);
+  await expect(page).toHaveURL('/datenschutz');
   await grantModelConsent(page, true);
   await page.getByRole('button', { name: 'Ohne Kamera fortfahren', exact: true }).press('Enter');
   await expect(page).toHaveURL(learningPaths.imagePractice);
