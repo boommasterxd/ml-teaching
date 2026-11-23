@@ -1,5 +1,6 @@
 :root {
   --menu-highlight-radius: 0.75rem;
+  --navigation-surface-radius: 1.4rem;
 }
 
 .header-menu-desktop {
@@ -19,7 +20,7 @@
 
 .header-menu-panel,
 .legal-navigation {
-  border-radius: 1.4rem;
+  border-radius: var(--navigation-surface-radius);
 }
 
 .header-menu-panel {

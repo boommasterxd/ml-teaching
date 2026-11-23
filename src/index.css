@@ -10,6 +10,7 @@
 /* Keep the small surface and home layout rules in the first stylesheet for static entry. */
 @import './components/ui/alert.css';
 @import './components/ui/card.css';
+@import './components/ui/scrollbar.css';
 @import './content/landing/home-editorial.css';
 @import './content/landing/home-experiment-panels.css';
 @import './site-foundation.css';
