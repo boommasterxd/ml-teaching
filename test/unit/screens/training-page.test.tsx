@@ -385,9 +385,12 @@ describe('training page integration', () => {
   }, 15_000);
 
   it('keeps model failures visible without a camera prompt and returns safely to the image explanation', async () => {
-    boundary.load.mockRejectedValue(new DOMException('Model network timeout', 'TimeoutError'));
+    const download = Promise.withResolvers<never>();
+    boundary.load.mockReturnValueOnce(download.promise);
     render(<TrainingFixture />);
     confirmGeneralConsent();
+    await screen.findByText('Lade MobileNet (Feature Extractor)...');
+    download.reject(new DOMException('Model network timeout', 'TimeoutError'));
     const error = await screen.findByRole('alert');
     expect(error.textContent).toContain('Fehler beim Laden der KI-Modelle');
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
