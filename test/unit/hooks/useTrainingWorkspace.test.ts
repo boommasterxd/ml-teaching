@@ -1,4 +1,5 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { createElement, useLayoutEffect, useState } from 'react';
+import { act, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTrainingWorkspace as useWorkspace } from '@/hooks/useTrainingWorkspace';
 import { useTrainingEngine } from '@/hooks/useTrainingEngine';
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   retryCamera: vi.fn(),
   cameraFailed: false,
   cameraReady: true,
+  refreshCamera: () => {},
   stream: {} as MediaStream,
   streamRef: { current: null as MediaStream | null },
   reportCameraError: undefined as ((category: 'camera', message: string) => void) | undefined,
@@ -43,6 +45,8 @@ vi.mock('@/hooks/useCameraStream', () => ({
     onError: typeof mocks.reportCameraError,
     needed = true,
   ) => {
+    const [, update] = useState(0);
+    mocks.refreshCamera = () => update((version) => version + 1);
     mocks.reportCameraError = onError;
     const active = consented && !isLoading && needed;
     const hasFailed = active && mocks.cameraFailed;
@@ -79,12 +83,40 @@ const image = (id: string): MLImage => ({
   dataUrl: 'data:image/jpeg;base64,a',
 });
 
-function useTrainingWorkspace(step: TrainingStep = 'images') {
-  const engine = useTrainingEngine(true);
-  return useWorkspace(step, engine);
+type Workspace = ReturnType<typeof useWorkspace>;
+
+function WorkspaceHarness({
+  step,
+  publish,
+}: {
+  step: TrainingStep;
+  publish: (value: Workspace) => void;
+}) {
+  const { engine, ResourceHost, resourceProps } = useTrainingEngine(true, true);
+  const workspace = useWorkspace(step, engine);
+  useLayoutEffect(() => publish(workspace), [publish, workspace]);
+  return ResourceHost ? createElement(ResourceHost, resourceProps) : null;
 }
 
-async function collectMinimumImages(result: { current: ReturnType<typeof useTrainingWorkspace> }) {
+async function renderWorkspace(step: TrainingStep = 'images') {
+  let workspace: Workspace;
+  const publish = (value: Workspace) => {
+    workspace = value;
+  };
+  const view = render(createElement(WorkspaceHarness, { step, publish }));
+  await act(() => vi.dynamicImportSettled());
+  return {
+    result: {
+      get current() {
+        return workspace;
+      },
+    },
+    rerender: (next: TrainingStep) =>
+      view.rerender(createElement(WorkspaceHarness, { step: next, publish })),
+  };
+}
+
+async function collectMinimumImages(result: { current: Workspace }) {
   await act(async () => {
     for (const cls of result.current.data.classes.classes) {
       for (let index = 0; index < ML.MIN_IMAGES_PER_CLASS; index++) {
@@ -117,7 +149,7 @@ beforeEach(() => {
 
 describe('local training workspace', () => {
   it('waits for every selected batch, trains all accepted images, and rejects new batches during training', async () => {
-    const { result } = renderHook(() => useTrainingWorkspace());
+    const { result } = await renderWorkspace();
     await collectMinimumImages(result);
     act(() => {
       result.current.cardActions.onUploadStart();
@@ -153,7 +185,7 @@ describe('local training workspace', () => {
   });
 
   it('does not train over an unfinished camera frame', async () => {
-    const { result } = renderHook(() => useTrainingWorkspace());
+    const { result } = await renderWorkspace();
     act(() => {
       result.current.resources.consent.grantConsent();
       result.current.resources.consent.grantCameraConsent();
@@ -184,7 +216,7 @@ describe('local training workspace', () => {
     });
   });
   it('keeps local image uploads usable after declining camera access and can reopen the choice', async () => {
-    const { result } = renderHook(() => useTrainingWorkspace());
+    const { result } = await renderWorkspace();
     act(() => result.current.resources.consent.grantConsent());
     act(() => result.current.resources.consent.declineCameraConsent());
     expect(result.current.resources.consent.cameraConsent).toBe(false);
@@ -198,16 +230,16 @@ describe('local training workspace', () => {
     expect(result.current.resources.showCameraPrompt).toBe(true);
     expect(result.current.resources.consent.cameraConsent).toBe(false);
   });
-  it('never asks for camera access when model loading has failed', () => {
+  it('never asks for camera access when model loading has failed', async () => {
     mocks.modelReady = false;
-    const { result } = renderHook(() => useTrainingWorkspace());
+    const { result } = await renderWorkspace();
     act(() => result.current.resources.consent.grantConsent());
     expect(result.current.resources.models.isModelLoading).toBe(false);
     expect(result.current.resources.models.mobilenetModel).toBeNull();
     expect(result.current.resources.showCameraPrompt).toBe(false);
   });
   it('never restores an in-flight image after clearing a class', async () => {
-    const { result } = renderHook(() => useTrainingWorkspace());
+    const { result } = await renderWorkspace();
     const classId = result.current.data.classes.classes[0].id;
     let finish!: (image: MLImage) => void;
     mocks.extract.mockImplementationOnce(
@@ -231,7 +263,7 @@ describe('local training workspace', () => {
     expect(result.current.data.classes.classes.every((cls) => cls.images.length === 0)).toBe(true);
   });
   it('keeps consent steps ordered and closes a preview when its image is deleted', async () => {
-    const { result } = renderHook(() => useTrainingWorkspace());
+    const { result } = await renderWorkspace();
     expect(result.current.resources.consent.showConsentModal).toBe(true);
     act(() => result.current.resources.consent.grantConsent());
     expect(result.current.resources.consent.showCameraModal).toBe(true);
@@ -251,9 +283,7 @@ describe('local training workspace', () => {
   });
 
   it('starts prediction on a new or reused stream and invalidates it on a data change', async () => {
-    const { result, rerender } = renderHook((step: TrainingStep) => useTrainingWorkspace(step), {
-      initialProps: 'training',
-    });
+    const { result, rerender } = await renderWorkspace('training');
     act(() => {
       result.current.resources.consent.grantConsent();
       result.current.resources.consent.grantCameraConsent();
@@ -273,7 +303,7 @@ describe('local training workspace', () => {
     expect(result.current.resources.camera.stream).toBeNull();
     expect(result.current.resources.prediction.isPredicting).toBe(false);
     mocks.cameraReady = true;
-    rerender('prediction');
+    act(() => mocks.refreshCamera());
     expect(result.current.resources.camera.stream).toBe(mocks.stream);
     expect(result.current.resources.prediction.isPredicting).toBe(true);
 
@@ -291,9 +321,7 @@ describe('local training workspace', () => {
   });
 
   it('stops live prediction on camera loss and resumes only after an explicit successful retry', async () => {
-    const { result, rerender } = renderHook((step: TrainingStep) => useTrainingWorkspace(step), {
-      initialProps: 'training',
-    });
+    const { result, rerender } = await renderWorkspace('training');
     act(() => result.current.resources.consent.grantConsent());
     act(() => result.current.resources.consent.grantCameraConsent());
     await collectMinimumImages(result);
@@ -315,12 +343,12 @@ describe('local training workspace', () => {
     expect(result.current.resources.camera.stream).toBeNull();
     expect(result.current.resources.prediction.isPredicting).toBe(false);
     mocks.cameraReady = true;
-    rerender('prediction');
+    act(() => mocks.refreshCamera());
     expect(result.current.resources.prediction.isPredicting).toBe(true);
   });
 
   it('retains existing images and ignores an unfinished frame after pausing the camera', async () => {
-    const { result } = renderHook(() => useTrainingWorkspace());
+    const { result } = await renderWorkspace();
     act(() => {
       result.current.resources.consent.grantConsent();
       result.current.resources.consent.grantCameraConsent();
@@ -346,7 +374,7 @@ describe('local training workspace', () => {
   });
 
   it('passes extraction failures to the upload batch and still validates class changes', async () => {
-    const { result } = renderHook(() => useTrainingWorkspace());
+    const { result } = await renderWorkspace();
     mocks.extract.mockRejectedValueOnce(new Error('Image unavailable'));
     await act(async () => {
       await expect(
@@ -366,7 +394,7 @@ describe('local training workspace', () => {
   });
 
   it('reports one error per failed training run and retains the examples for retry', async () => {
-    const { result } = renderHook(() => useTrainingWorkspace());
+    const { result } = await renderWorkspace();
     await collectMinimumImages(result);
     for (let attempt = 1; attempt <= 2; attempt++) {
       mocks.classifier.setClassifierDataset.mockImplementationOnce(() => {

@@ -10,7 +10,7 @@
     "src/**/*.{ts,tsx,css}",
     "test/**/*.{ts,tsx,mjs}",
     "scripts/**/*.{ts,mjs}",
-    ".github/scripts/**/*.{ts,mjs}",
+    ".github/scripts/**/*.{ts,mjs,cjs}",
     "csp/**/*.mjs"
   ],
   "ignoreIssues": {

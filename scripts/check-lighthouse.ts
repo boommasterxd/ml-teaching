@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import { setTimeout as wait } from 'node:timers/promises';
@@ -13,6 +13,9 @@ const execute = promisify(execFile);
 const origin = 'http://127.0.0.1:3100';
 const reportDirectory = resolve('test-results/lighthouse');
 const performanceThreshold = 0.95;
+const profiles = ['mobile', 'desktop'] as const;
+type Profile = (typeof profiles)[number];
+type LighthouseRuntime = Awaited<ReturnType<typeof resolveLighthouse>>;
 
 async function readActivePort(path: string) {
   // The browser CDP session can open before Chromium publishes its TCP endpoint.
@@ -69,9 +72,23 @@ async function verifyDocument(url: URL, status: number) {
   }
 }
 
+function verifyReport(report: Result, url: URL, profile: Profile, version: string) {
+  const label = `${url.pathname} ${profile}`;
+  if (report.runtimeError) throw new Error(`${label}: ${report.runtimeError.message}`);
+  if (
+    report.requestedUrl !== url.href ||
+    report.mainDocumentUrl !== url.href ||
+    report.finalDisplayedUrl !== url.href ||
+    report.configSettings.formFactor !== profile ||
+    report.lighthouseVersion !== version
+  ) {
+    throw new Error(`${label}: Lighthouse returned a different URL, device profile or version.`);
+  }
+}
+
 async function audit(
   { path, status }: ReturnType<typeof auditTargets>[number],
-  { all, cli, port }: { all: boolean; cli: string; port: number },
+  { all, runtime, port }: { all: boolean; runtime: LighthouseRuntime; port: number },
 ) {
   const url = new URL(path, origin);
   await verifyDocument(url, status);
@@ -79,33 +96,37 @@ async function audit(
     ? resolve(reportDirectory, 'routes', path.slice(1) || '_home')
     : reportDirectory;
   await mkdir(directory, { recursive: true });
-  const categories = all ? 'performance' : 'performance,accessibility,best-practices,seo';
-  for (const profile of ['mobile', 'desktop']) {
-    const output = resolve(directory, `${profile}.json`);
-    await execute(
+  const categories = all
+    ? ['performance']
+    : ['performance', 'accessibility', 'best-practices', 'seo'];
+  for (const profile of profiles) {
+    const { stdout } = await execute(
       process.execPath,
       [
-        cli,
+        runtime.cli,
         url.href,
         `--port=${port}`,
         '--output=json',
-        `--output-path=${output}`,
-        `--only-categories=${categories}`,
+        '--output-path=stdout',
+        '--no-enable-error-reporting',
+        `--only-categories=${categories.join(',')}`,
         ...(profile === 'desktop' ? ['--preset=desktop'] : []),
         ...(status === 200 ? [] : ['--ignore-status-code']),
       ],
-      { timeout: 120_000, maxBuffer: 1024 * 1024 },
+      { timeout: 120_000, maxBuffer: 24 * 1024 * 1024 },
     );
-    const report = JSON.parse(await readFile(output, 'utf8')) as Result;
-    if (report.runtimeError) throw new Error(`${path} ${profile}: ${report.runtimeError.message}`);
+    const report = JSON.parse(stdout) as Result;
+    verifyReport(report, url, profile, runtime.version);
+    await writeFile(resolve(directory, `${profile}.json`), stdout);
     const scores = Object.fromEntries(
-      Object.entries(report.categories).map(([key, category]) => [key, category.score]),
+      categories.map((category) => [category, report.categories[category]?.score]),
     );
     console.log(path, profile, scores);
     const performance = scores.performance;
-    if (typeof performance !== 'number' || Object.values(scores).includes(null)) {
+    if (Object.values(scores).some((score) => !Number.isFinite(score))) {
+      console.error(`${path} ${profile}: Lighthouse did not return all requested scores.`);
       process.exitCode = 1;
-    } else if (performance <= performanceThreshold) {
+    } else if (typeof performance === 'number' && performance <= performanceThreshold) {
       console.error(
         `${path} ${profile}: Performance must exceed ${performanceThreshold * 100} points.`,
       );
@@ -114,20 +135,25 @@ async function audit(
   }
 }
 
-const [mode, ...extraArgs] = process.argv.slice(2);
-if ((mode !== undefined && mode !== '--all') || extraArgs.length) {
-  throw new Error('Usage: npm run test:lighthouse -- [--all]');
+const argumentsList = process.argv.slice(2);
+const flags = new Set(argumentsList);
+if (
+  flags.size !== argumentsList.length ||
+  argumentsList.some((flag) => !['--all', '--locked'].includes(flag))
+) {
+  throw new Error('Usage: npm run test:lighthouse -- [--all] [--locked]');
 }
-const all = mode === '--all';
-const runtime = await resolveLighthouse();
+const all = flags.has('--all');
+const runtime = await resolveLighthouse({ lockedFallback: flags.has('--locked') });
 console.log('Lighthouse', runtime);
 const browser = await chromium.launch({
+  headless: true,
   args: ['--enable-automation', '--remote-debugging-port=0'],
 });
 try {
   const port = await debuggingPort(browser);
   for (const target of auditTargets(all)) {
-    await audit(target, { all, cli: runtime.cli, port });
+    await audit(target, { all, runtime, port });
   }
 } finally {
   await browser.close();

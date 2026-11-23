@@ -1,8 +1,8 @@
 import { preload } from 'react-dom';
-import { mediumViewport } from '@/lib/media-queries';
+import { belowMediumViewport, mediumViewport } from '@/lib/media-queries';
 
 export const contourMedia = {
-  mobile: '(width < 48rem)',
+  mobile: belowMediumViewport,
   desktop: mediumViewport,
 } as const;
 

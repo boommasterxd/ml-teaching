@@ -34,7 +34,7 @@ export default function GlassArtworkPlaceholder({
   fallback: boolean;
   pending: boolean;
 }) {
-  if (fallback) return <StaticContourPoster sources={sources} preload={false} />;
+  if (fallback) return <StaticContourPoster sources={sources} />;
 
   return (
     <>
@@ -55,7 +55,7 @@ export default function GlassArtworkPlaceholder({
         <img src={emptyImage} alt="" width={sources.mobile.width} height={sources.mobile.height} />
       </picture>
       <noscript>
-        <StaticContourPoster sources={sources} preload={false} />
+        <StaticContourPoster sources={sources} />
       </noscript>
       {pending && <DelayedLoadingIndicator />}
     </>

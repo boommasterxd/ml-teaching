@@ -170,19 +170,19 @@ export const PrivacyCollection = (
       Einwilligung nach § 25 Abs. 1 TDDDG.
     </p>
     <p>
-      Mit „Für 30 Minuten in diesem Tab merken“ können Sie ausdrücklich einwilligen, dass die
-      Zustimmungen, die Kamerawahl und der Ablaufzeitpunkt im Sitzungsspeicher Ihres Browsers
-      (Session Storage) abgelegt werden. Die Anwendung liest diese Auswahl beim Aufruf erneut aus,
-      um Ihre Entscheidung für weitere Aufrufe im selben Tab zu übernehmen. Grundlage dafür ist Ihre
-      Einwilligung nach § 25 Abs. 1 TDDDG und, soweit dabei personenbezogene Daten verarbeitet
-      werden, nach Art. 6 Abs. 1 lit. a DSGVO. Die Anwendung übermittelt die Auswahl nicht an
-      Server. Nach 30 Minuten wird sie für weitere Aufrufe nicht mehr verwendet. Eine bereits
-      laufende Nutzung kann fortgesetzt werden. Wenn Sie die Kameranutzung erlaubt haben und Ihr
-      Browser den Zugriff weiterhin erlaubt, kann die Kamera beim erneuten Start in diesem Tab
-      automatisch eingeschaltet werden. Sie können die Auswahl jederzeit über „Einwilligung
-      widerrufen“ löschen. Heruntergeladene Programm- und Modelldateien können im üblichen
-      Browsercache verbleiben. Dieser Cache enthält keine von der Anwendung dorthin geschriebenen
-      Trainingsbilder; seine Löschung können Sie über die Browsereinstellungen steuern.
+      Mit „Für 30 Minuten in diesem Tab merken“ willigen Sie ein, dass die Anwendung Ihre
+      Zustimmungen, die Kamerawahl und den Ablaufzeitpunkt vorübergehend im Arbeitsspeicher Ihres
+      Browsers hält. Die Auswahl gilt beim Wechsel innerhalb der Website im selben Tab und endet
+      spätestens nach 30 Minuten oder wenn Sie die Seite neu laden oder schließen. Die Anwendung
+      übermittelt diese Auswahl nicht an Server. Grundlage für das Merken ist Ihre Einwilligung nach
+      § 25 Abs. 1 TDDDG und, soweit dabei personenbezogene Daten verarbeitet werden, nach Art. 6
+      Abs. 1 lit. a DSGVO. Eine bereits laufende Nutzung kann nach Ablauf der 30 Minuten fortgesetzt
+      werden. Wenn Sie die Kameranutzung erlaubt haben und Ihr Browser den Zugriff weiterhin
+      erlaubt, kann die Kamera beim erneuten Trainingsstart innerhalb dieser Zeit automatisch
+      angehen. Sie können die Auswahl jederzeit über „Einwilligung widerrufen“ löschen.
+      Heruntergeladene Programm- und Modelldateien können im üblichen Browsercache verbleiben.
+      Dieser Cache enthält keine von der Anwendung dorthin geschriebenen Trainingsbilder; seine
+      Löschung können Sie über die Browsereinstellungen steuern.
     </p>
     <h3>Anfrage per E-Mail oder Telefon</h3>
     <h4>Bearbeitung Ihrer Anfrage</h4>

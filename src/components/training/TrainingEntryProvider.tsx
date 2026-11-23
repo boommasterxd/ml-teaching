@@ -1,9 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import { flushSync } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { learningPaths } from '@/lib/learning-paths';
-import { toast } from '@/lib/toast';
 import {
   clearRememberedTrainingConsent,
   readRememberedTrainingConsent,
@@ -33,7 +41,7 @@ function loadSetup() {
 
 function getStep(engine: TrainingEngine): SetupStep {
   if (!engine.consent.hasConsented) return 'consent';
-  if (engine.error?.category === 'model') return 'error';
+  if (engine.resourceLoadFailed || engine.error?.category === 'model') return 'error';
   if (!engine.canUseModels || engine.consent.restored) return 'loading';
   return 'camera';
 }
@@ -52,10 +60,8 @@ function acceptTrainingConsent(
   setRemembered: (record: RememberedTrainingConsent | null) => void,
 ) {
   prepareToastViewport();
-  const saved = grant(remember);
-  if (!saved)
-    toast.error('Deine Auswahl gilt für dieses Training. Der Browser konnte sie nicht merken.');
-  if (remember && saved) setRemembered(readRememberedTrainingConsent());
+  grant(remember);
+  if (remember) setRemembered(readRememberedTrainingConsent());
 }
 
 function useRememberedConsent(
@@ -68,12 +74,11 @@ function useRememberedConsent(
   useLayoutEffect(() => {
     const saved = readRememberedTrainingConsent();
     if (saved) restore?.(saved);
-    // The training dialog must adopt consent before paint; the settings button can follow.
+    // Same-document navigation can adopt consent before paint.
     let current = true;
     queueMicrotask(() => {
       if (current) setRemembered(saved);
     });
-    delete document.documentElement.dataset.trainingConsent;
     return () => {
       current = false;
     };
@@ -108,12 +113,17 @@ function useTrainingEntryState() {
     handoff: false,
   });
   const activeEntry = entry?.source === pathname ? entry : null;
-  const engine = useTrainingEngine(
+  const {
+    engine,
+    prepare: prepareResources,
+    ResourceHost,
+    resourceProps,
+  } = useTrainingEngine(
     inTraining || Boolean(activeEntry && activeEntry.phase !== 'cancelled' && module),
     inTraining,
   );
   const { consent, clearError } = engine;
-  const { reset, restore } = consent;
+  const { reset, cancel, restore } = consent;
 
   if (visit.pathname !== pathname) {
     const handoff = inTraining && entry?.phase === 'moving';
@@ -130,17 +140,21 @@ function useTrainingEntryState() {
     inTraining && !visit.handoff ? restore : undefined,
   );
 
+  const prepareEntry = useCallback(() => {
+    prepare();
+    prepareResources();
+  }, [prepare, prepareResources]);
   const openEntry = useCallback(
     (opener: HTMLElement | null) => {
       if (!pathname || inTraining || activeEntry) return;
       const saved = readRememberedTrainingConsent();
       if (saved) restore(saved);
       setEntry({ source: pathname, opener, phase: 'setup' });
-      prepare();
+      prepareEntry();
     },
-    [pathname, inTraining, activeEntry, prepare, restore],
+    [pathname, inTraining, activeEntry, prepareEntry, restore],
   );
-  const actions = useMemo(() => ({ openEntry, prepareEntry: prepare }), [openEntry, prepare]);
+  const actions = useMemo(() => ({ openEntry, prepareEntry }), [openEntry, prepareEntry]);
   const withdrawal = useTrainingWithdrawal(pathname, inTraining);
 
   function closeEntry() {
@@ -150,7 +164,7 @@ function useTrainingEntryState() {
       setEntry(null);
       activeEntry.opener?.focus({ preventScroll: true });
     }
-    reset();
+    cancel();
     clearError();
   }
 
@@ -159,6 +173,8 @@ function useTrainingEntryState() {
     inTraining,
     setup,
     engine,
+    ResourceHost,
+    resourceProps,
     visit,
     clearHandoff: () => setVisit((current) => ({ ...current, handoff: false })),
     activeEntry,
@@ -177,6 +193,8 @@ function useTrainingEntryFlow() {
     inTraining,
     setup,
     engine,
+    ResourceHost,
+    resourceProps,
     visit,
     clearHandoff,
     activeEntry,
@@ -187,33 +205,47 @@ function useTrainingEntryFlow() {
     setRemembered,
     closeEntry,
   } = useTrainingEntryState();
-  const { module, failed, prepare } = setup;
+  const { module, failed } = setup;
   const { consent, clearError } = engine;
   const [workspaceVersion, setWorkspaceVersion] = useState(0);
   const complete = activeEntry?.phase === 'setup' && Boolean(module) && finishAllowed(engine);
 
+  const resetForPageHide = useEffectEvent(() => {
+    clearRememberedTrainingConsent();
+    if (!remembered && !consent.hasConsented && !activeEntry) return;
+    // A cached document can return with the same React tree. Clear it before the freeze.
+    flushSync(() => {
+      consent.cancel();
+      clearError();
+      setRemembered(null);
+      setEntry(null);
+      clearHandoff();
+      setWorkspaceVersion((version) => version + 1);
+    });
+  });
+
+  useEffect(() => {
+    const handlePageHide = () => resetForPageHide();
+    window.addEventListener('pagehide', handlePageHide);
+    return () => window.removeEventListener('pagehide', handlePageHide);
+  }, []);
+
   function revokeConsent(waitForSettings = false) {
-    const cleared = clearRememberedTrainingConsent();
+    clearRememberedTrainingConsent();
     setRemembered(null);
     if (activeEntry) closeEntry();
     else {
-      consent.reset();
+      consent.cancel();
       clearError();
       if (inTraining) {
         clearHandoff();
         setWorkspaceVersion((version) => version + 1);
       }
     }
-    if (cleared) {
-      withdrawal.begin(
-        waitForSettings || Boolean(activeEntry && module),
-        activeEntry?.opener ?? null,
-      );
-    } else {
-      toast.error(
-        'Die gespeicherte Auswahl konnte nicht gelöscht werden. Lösche sie in den Website-Einstellungen deines Browsers.',
-      );
-    }
+    withdrawal.begin(
+      waitForSettings || Boolean(activeEntry && module),
+      activeEntry?.opener ?? null,
+    );
   }
 
   function finishClose() {
@@ -231,6 +263,8 @@ function useTrainingEntryFlow() {
   return {
     actions,
     engine,
+    ResourceHost,
+    resourceProps,
     pendingArrival: visit.handoff,
     workspaceVersion,
     revokeConsent,
@@ -242,7 +276,7 @@ function useTrainingEntryFlow() {
     complete,
     Setup: module?.default,
     failed,
-    prepare,
+    prepare: actions.prepareEntry,
     remembered,
     setRemembered,
     closeEntry,
@@ -254,6 +288,7 @@ export default function TrainingEntryProvider({ children }: { children: ReactNod
   const flow = useTrainingEntryFlow();
   const { actions, engine, pendingArrival, workspaceVersion, revokeConsent, grantConsent } = flow;
   const { inTraining, activeEntry, remembered, setRemembered, withdrawal } = flow;
+  const { ResourceHost, resourceProps } = flow;
   const { consent } = engine;
   function revokeCamera() {
     if (inTraining) engine.revokeCamera();
@@ -276,6 +311,7 @@ export default function TrainingEntryProvider({ children }: { children: ReactNod
       >
         {children}
       </TrainingSessionContext>
+      {ResourceHost && <ResourceHost {...resourceProps} />}
       <TrainingEntryOverlay flow={flow} />
       <TrainingConsentControls
         visible={Boolean(remembered || (inTraining && consent.hasConsented))}

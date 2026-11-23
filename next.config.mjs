@@ -6,6 +6,17 @@ const nextConfig = {
   agentRules: false,
   adapterPath: fileURLToPath(new URL('./csp/adapter.mjs', import.meta.url)),
   poweredByHeader: false,
+  skipTrailingSlashRedirect: true,
+  async redirects() {
+    // Keep the public slash redirect after the shared headers in provider routing.
+    return [
+      {
+        source: '/:path((?!_next)[^/]+(?:/[^/]+)*)/',
+        destination: '/:path',
+        permanent: true,
+      },
+    ];
+  },
   images: {
     deviceSizes: [640, 750, 828, 1080, 1200],
     formats: ['image/avif', 'image/webp'],

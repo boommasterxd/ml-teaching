@@ -343,7 +343,28 @@ test('failed preparation keeps the first hover feedback and the link remains key
     await expect.poll(() => arrowOffset(link)).toBeGreaterThan(0);
     await main.getByRole('heading', { level: 1 }).hover();
     await focusByKeyboard(page, link);
-    await expect.poll(() => arrowOffset(link)).toBeGreaterThan(0);
+    await expect.poll(() => arrowOffset(link)).toBeGreaterThan(1);
+    const focusedOffset = await arrowOffset(link);
+    await link.hover();
+    await main.getByRole('heading', { level: 1 }).hover();
+    // Give a spurious return animation time to become visible while focus stays put.
+    await expect(link).toBeFocused();
+    await feedbackArrow(link).evaluate(
+      (arrow, minimumOffset) =>
+        new Promise<void>((resolve, reject) => {
+          const deadline = performance.now() + 350;
+          function check() {
+            const transform = getComputedStyle(arrow).transform;
+            const offset = transform === 'none' ? 0 : new DOMMatrix(transform).m41;
+            if (offset < minimumOffset)
+              reject(new Error('The arrow moved while the link kept focus'));
+            else if (performance.now() >= deadline) resolve();
+            else requestAnimationFrame(check);
+          }
+          requestAnimationFrame(check);
+        }),
+      focusedOffset - 0.1,
+    );
     await page.keyboard.press('Enter');
     await expect(main.getByRole('heading', { name: 'Dein Lernlabor', exact: true })).toBeVisible();
     await expectAccessible(page);

@@ -141,18 +141,23 @@ test('only the visible navigation is active and an open panel closes across the 
   page,
 }) => {
   const failures = diagnostics(page);
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 767, height: 844 });
   await page.goto('/lernen');
   const mobile = page.getByRole('button', { name: 'Menü', exact: true });
   const desktop = page.getByRole('button', { name: 'Rechtliches', exact: true });
   await expect(page.locator('.header-menu-desktop')).toHaveCount(0);
+  await expect(mobile).toBeVisible();
   await mobile.press('Enter');
   await expect(mobile).toHaveAttribute('aria-expanded', 'true');
-  await page.setViewportSize({ width: 1024, height: 844 });
+  await page.setViewportSize({ width: 768, height: 844 });
   await expect(page.locator('.header-menu-mobile')).toHaveCount(0);
+  await expect(desktop).toBeVisible();
   await desktop.press('Enter');
   await expect(desktop).toHaveAttribute('aria-expanded', 'true');
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 769, height: 844 });
+  await expect(desktop).toBeVisible();
+  await expect(desktop).toHaveAttribute('aria-expanded', 'true');
+  await page.setViewportSize({ width: 767, height: 844 });
   await expect(mobile).toBeVisible();
   await expect(mobile).toHaveAttribute('aria-expanded', 'false');
   await expect(page.getByRole('link', { name: 'Lernlabor-Übersicht' })).toHaveCount(0);
@@ -173,6 +178,12 @@ test('the appearance menu opens on first hover and stays open when moving into i
 
   const trigger = page.getByRole('button', { name: 'Darstellung einstellen' });
   const menu = page.getByRole('menu', { name: 'Darstellung einstellen' });
+  const chevronPath = trigger.locator('svg').first().locator('path');
+  const chevronOffset = () =>
+    chevronPath.evaluate((path) => {
+      const transform = getComputedStyle(path).transform;
+      return transform === 'none' ? 0 : new DOMMatrix(transform).m42;
+    });
   const brand = page
     .getByRole('navigation', { name: 'Hauptnavigation' })
     .getByRole('link', { name: 'ML Teaching – Startseite' });
@@ -180,6 +191,7 @@ test('the appearance menu opens on first hover and stays open when moving into i
     await brand.focus();
     await trigger.hover();
     await expect(trigger).toHaveAttribute('aria-busy', 'true');
+    await expect.poll(chevronOffset).toBeGreaterThan(0);
     await expect(menu).toHaveCount(0);
     await expect(trigger).not.toHaveAttribute('aria-controls');
     await page.keyboard.press('Escape');
@@ -189,10 +201,17 @@ test('the appearance menu opens on first hover and stays open when moving into i
     await page.mouse.move(1, 1);
     await trigger.hover();
     await expect(trigger).toHaveAttribute('aria-busy', 'true');
+    await expect.poll(chevronOffset).toBeGreaterThan(0);
+    const pendingChevron = await chevronPath.elementHandle();
     allowScripts.resolve();
     await page.unrouteAll({ behavior: 'wait' });
     await expect(menu).toBeVisible();
     await expect(menu).toHaveCSS('opacity', '1');
+    await expect(trigger).not.toHaveAttribute('aria-busy');
+    expect(await chevronPath.evaluate((path, previous) => path === previous, pendingChevron)).toBe(
+      true,
+    );
+    await expect.poll(chevronOffset).toBeGreaterThan(0);
     await expect(brand).toBeFocused();
 
     const button = (await trigger.boundingBox())!;

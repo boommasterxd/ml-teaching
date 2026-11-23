@@ -81,7 +81,7 @@ export function ThemeControl() {
         <DropdownMenuTrigger
           ref={trigger}
           render={<Button variant="ghost" size="icon-sm" tapScale={1} />}
-          className="size-(--theme-trigger-size)"
+          className="relative size-(--theme-trigger-size)"
           aria-label="Darstellung einstellen"
           aria-busy={pending || undefined}
           {...(!Menu && { 'aria-controls': undefined })}
@@ -92,7 +92,8 @@ export function ThemeControl() {
           onFocus={prepare}
           onPointerDown={prepare}
         >
-          {pending ? <Spinner aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+          <ChevronDown aria-hidden="true" />
+          {pending && <Spinner className="absolute end-0 top-0 size-3" aria-hidden="true" />}
         </DropdownMenuTrigger>
         {Menu && <Menu trigger={trigger} opening={opening} />}
       </DropdownMenu>

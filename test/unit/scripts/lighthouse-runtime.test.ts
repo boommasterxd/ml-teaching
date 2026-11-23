@@ -34,12 +34,14 @@ async function packageFixture(
 async function resolverFixture({
   globalVersion,
   localVersion,
+  lockVersion,
   latest = '13.6.0',
   cliVersion,
   engine,
 }: {
   globalVersion?: string;
   localVersion?: string;
+  lockVersion?: string;
   latest?: string;
   cliVersion?: string;
   engine?: string;
@@ -48,13 +50,25 @@ async function resolverFixture({
   fixtures.push(root);
   const globalRoot = join(root, 'global');
   const npmCli = join(root, 'npm.cjs');
+  const registry =
+    globalVersion || lockVersion
+      ? "throw new Error('A global or locked install must not query the registry');"
+      : `console.log(${JSON.stringify(JSON.stringify(latest))});`;
   await writeFile(
     npmCli,
     `const args = process.argv.slice(2);
     if (args[0] === 'root') console.log(${JSON.stringify(globalRoot)});
-    else if (args[0] === 'view') ${globalVersion ? "throw new Error('A global install must not query the registry');" : `console.log(${JSON.stringify(JSON.stringify(latest))});`}
+    else if (args[0] === 'view') { ${registry} }
     else process.exit(1);`,
   );
+  if (lockVersion) {
+    await writeFile(
+      join(root, 'package-lock.json'),
+      JSON.stringify({
+        packages: { 'node_modules/lighthouse': { version: lockVersion } },
+      }),
+    );
+  }
   if (globalVersion)
     await packageFixture(join(globalRoot, 'lighthouse'), globalVersion, { cliVersion, engine });
   if (localVersion)
@@ -68,7 +82,7 @@ async function resolverFixture({
 describe('Lighthouse runtime selection', () => {
   it('uses and executes the active global native CLI before a different local copy', async () => {
     const options = await resolverFixture({ globalVersion: '13.6.0', localVersion: '12.0.0' });
-    const runtime = await resolveLighthouse(options);
+    const runtime = await resolveLighthouse({ ...options, lockedFallback: true });
     expect(runtime.source).toBe('global');
     expect(runtime.version).toBe('13.6.0');
     expect(runtime.cli).toBe(join(options.projectRoot, 'global/lighthouse/cli/index.js'));
@@ -80,6 +94,18 @@ describe('Lighthouse runtime selection', () => {
     const stale = await resolverFixture({ localVersion: '12.0.0' });
     await expect(resolveLighthouse(stale)).rejects.toThrow('differs from latest stable');
     await expect(resolveLighthouse(await resolverFixture())).rejects.toThrow('missing');
+  });
+
+  it('checks the local CLI against the lock without consulting the registry', async () => {
+    const options = await resolverFixture({ localVersion: '13.6.0', lockVersion: '13.6.0' });
+    await expect(resolveLighthouse({ ...options, lockedFallback: true })).resolves.toMatchObject({
+      source: 'local',
+      version: '13.6.0',
+    });
+    const stale = await resolverFixture({ localVersion: '12.0.0', lockVersion: '13.6.0' });
+    await expect(resolveLighthouse({ ...stale, lockedFallback: true })).rejects.toThrow(
+      'differs from the lockfile version 13.6.0',
+    );
   });
 
   it('rejects package/CLI mismatch without silently using the available local copy', async () => {

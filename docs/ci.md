@@ -10,19 +10,26 @@ The dependency-free planner reads the complete merge-base-to-head Git diff. Rena
 include both endpoints, and deletions remain part of the scope. Its plan records the
 base, head and merge revisions. Consumers reject a different checked-out revision.
 
-| Complete changed scope                                                                         | Selected work                                                          |
-| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Nonempty root `docs/` files only                                                               | Real successful final gate; no dependency installation, tests or build |
-| Unit test files under `test/unit/` only                                                        | Static quality, dependency audit and full unit coverage                |
-| Application, browser tests, shared assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and full browser suite     |
-| Empty diff or unavailable Git history                                                          | All checks                                                             |
+| Complete changed scope                                                                         | Selected work                                                                     |
+| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Nonempty root `docs/` files only                                                               | Real successful final gate; no dependency installation, tests or build            |
+| Unit test files under `test/unit/` only                                                        | Static quality, dependency audit and full unit coverage                           |
+| Application, browser tests, shared assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build, browser suite and Lighthouse budgets |
+| Empty diff or unavailable Git history                                                          | All checks                                                                        |
 
 Selection and the final result gate use `ubuntu-slim`. Selected quality and browser
 jobs use regular runners; job-level conditions prevent allocation of unselected
-substantive jobs. Superseded runs for the same PR are cancelled. The unconditional
+substantive jobs. Runs for source or base changes cancel superseded runs in the
+same group. Edits without a base change have separate concurrency groups. The unconditional
 final `CI` check accepts successful selected jobs and explicitly excluded skipped
 jobs only. Invalid plans, planning failures, cancellations and unexpected skips fail.
 The workflow, planner and final validation run from the simulated PR merge checkout.
+After a title or description edit, CI and Gitleaks can reuse a successful result
+from the same workflow for the exact base, head and simulated merge revisions.
+They look for a fresh verification step in a successful required job. A reused
+step does not extend the seven-day verification window. Missing, failed or
+unavailable evidence falls back to normal check selection or scanning. Base
+changes run the regular checks.
 The [security checks decision](decisions/ci-trust-boundary.md) records the accepted
 CI provenance and the complementary roles of Gitleaks and GitHub Secret Scanning.
 
@@ -73,9 +80,10 @@ modules use the template from version 1.5.6. Cleanup manages npm caches and
 superseded CodeQL overlay database caches. A CodeQL replacement must be nonempty
 and tied to a successful default-setup `Push on main` run at the current `main`
 revision. Cleanup compares only caches in the same family, branch and cache
-version. The local `.github/scripts/cache.ts` adapter uses TypeScript and the strict project
-typecheck. The runtime and adapter retain the same file, function, complexity and
-duplication gates.
+version. The local `.github/scripts/cache.ts` adapter uses the strict TypeScript
+project. `tsconfig.cache-lifecycle.json` typechecks the CommonJS runtime with
+`checkJs`, and Knip includes it in dead-code discovery. The runtime and adapter
+retain the same file, function, complexity and duplication gates.
 
 ## Local interfaces and limits
 
@@ -146,6 +154,10 @@ that Proxy remain forbidden.
 server, including accessibility and keyboard contracts. It remains unfiltered with
 `CI=true`. CI downloads only the lockfile-matched Chromium headless shell; browser
 launch and host dependency validation stay blocking.
+After Playwright stops its server, the browser job starts the same verified build
+with `npm start` and runs `npm run test:lighthouse -- --all --locked`. The job
+cleans up that server and fails if it cannot start or an audited route scores
+95 or below on either profile. Both checks use one native production build.
 
 ## Security automation and release boundary
 

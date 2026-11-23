@@ -213,9 +213,9 @@ All choices in a round share the height of the tallest choice through flexible
 grid rows. The height follows text wrapping and uses equal top and bottom
 padding around the choice content. The animated result overlays the card.
 Inline feedback can reserve extra space when a retry is needed.
-The lightweight local answer state remains with the required triggers; closed
-explanations and their motion mount only on activation. No separate import or
-preparation controller is warranted for six visible choices and a bounded state set.
+The quiz keeps answers in local React state. Pointer entry, keyboard
+focus and pointer down on a choice preload one shared module for the result and
+completion feedback. The explanation tooltip becomes available after an answer.
 The first round keeps the same three matching and three nonmatching examples
 from static HTML through hydration. A replay draws a new selection from the
 40-entry pool and restores focus to the first choice after commit.
@@ -324,15 +324,13 @@ The static 404 and 500 documents and the App Router recovery screen share
 `PublicErrorScene`. Status text and recovery actions remain visible in the initial
 render. The 404 uses three separately modeled glass digits in the shared
 Topography renderer. The 500 and recovery screen use its ring. Like the homepage,
-both static error pages reserve the artwork area and start playback automatically
-when the artwork is visible. The shared Spinner appears only after 500 ms of active
-waiting and clears when the first frame is ready or loading stops.
-Pointer and keyboard intent prepare the shared renderer. An optimized responsive
-poster covers reduced motion, disabled scripting and unavailable WebGL.
-The App Router recovery screen renders the poster immediately and loads the
-playback component when the recovery screen mounts. If playback fails to load,
-the poster and recovery actions stay available. Visible artwork or pointer
-intent prepares the shared renderer.
+all three recovery views reserve the artwork area and start playback automatically
+when the artwork is visible. The shared Spinner appears after 500 ms of active
+waiting and clears when the first frame is ready or loading stops. A two-second
+active first-frame deadline switches to the optimized responsive poster.
+Pointer and keyboard intent prepare the shared renderer. The poster covers
+renderer failure, reduced motion and disabled scripting. Recovery actions remain
+available throughout.
 Visible scenes support pointer, touch and keyboard impulses and a pause control.
 The [playback and menu-loading decisions](decisions/error-artwork-and-menus.md)
 record why these interactions share their implementations.
@@ -390,7 +388,9 @@ retain their larger touch targets on coarse-pointer devices.
 Below `md`, one Menü trigger exposes the same destinations. Unavailable learning items
 show their availability without a navigable URL. Enabled links use native intent preparation.
 Both lightweight trigger lists are delivered in static HTML and CSS selects the
-visible list at the shared breakpoint. The shared navigation control uses a Base
+visible list at the 48rem `md` breakpoint. The runtime viewport query and responsive
+poster selection share the same 48rem source in `src/lib/media-queries.ts`.
+The shared navigation control uses a Base
 UI button for the initial trigger. It shares its label, chevron and styles with
 the trigger inside the interactive menu. Once the browser resolves the viewport,
 it mounts just the matching navigation tree. Focus carries over from the initial triggers.
@@ -502,8 +502,8 @@ loading state and deletion confirmations stay explicit.
 
 The default follows the operating system. Light, dark and system selections remain
 temporary unless the user explicitly enables remembering for future visits. Only
-the enum selection is stored under `ml-teaching-theme`. Training consent has
-its own optional tab-local record. Training data remains in memory. System changes, storage events and invalid values never
+the enum selection is stored under `ml-teaching-theme`. Remembered training consent
+and training data stay in document memory. System changes, storage events and invalid values never
 write defaults. Blocked reads fall back to the system; failed writes or deletion
 produce an honest status message. The trusted build-known bootstrap and the
 upstream ThemeToggler wipe style are rendered in static HTML for exact CSP hashing.
@@ -525,7 +525,8 @@ intent prepares one deduplicated, retryable menu content module. The Base UI
 trigger opens on mouse hover with the same short delay as the desktop navigation.
 Hover leaves keyboard focus in place and allows the pointer to cross into the
 popup. Click, touch and keyboard activation also open it. The portal mounts the
-content on opening. Below `md` the menu matches the glass header's width and aligns
+content on opening. During a pending opening, the chevron stays mounted and a small
+spinner appears beside it. Below `md` the menu matches the glass header's width and aligns
 with its outer edges. From `md` it anchors to the shared button and uses the same
 `13rem` minimum width as the legal dropdown.
 The menu trigger sets the shared Button's Animate UI tap scale to 1 so Base UI
@@ -534,17 +535,23 @@ The toolbar centers the brand mark and appearance trigger in the rounded ends.
 Their inline insets derive from the toolbar radius and each element's size.
 The mobile and desktop menu offsets align the appearance menu with the navigation
 flyouts.
-Direct-entry consent remains part of the static document. Training links prepare
-the shared setup dialog on pointer, focus and touch intent. On activation, source-page
-setup uses one dialog for consent, model loading and the camera decision. Intent on a confirmation or image-preview trigger
-prepares one shared module. The workspace mounts one active dialog at a time and
-supports cancelling a pending first opening with Escape. Upload and capture
+Direct-entry consent remains part of the static document. Pointer entry, keyboard
+focus and pointer down on a training link prepare the shared setup dialog and
+the browser resource host in parallel. The host mounts during active setup or on
+the training route as a sibling of the page, preserving its inline consent dialog.
+It stays mounted during the transition from source-page setup into the workspace.
+Source-page setup uses one dialog for consent, model loading and the camera decision.
+The model error step offers a retry for the host import or model loading. Intent on
+a confirmation or image-preview trigger prepares one shared module. The workspace
+mounts one active dialog at a time and supports cancelling a pending first opening
+with Escape. Upload and capture
 intent warm the thumbnail module. Its virtualizer mounts when there are images
 to display. Prediction intent prepares the local feature projection when the camera
 can start automatically. Play intent can prepare or retry the same projection. The
 video attaches when the trained prediction step is active and the authorized stream
 is ready.
-TensorFlow and model imports remain consent-gated and are never prepared on intent.
+TensorFlow and model imports require model consent. Camera access also requires
+separate camera consent and browser permission.
 
 ## Motion ownership
 
@@ -656,6 +663,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   navigation. A media condition enables it only on the homepage or native 500
   document and when motion is allowed. Initially visible homepage content skips
   the additional component entrance after a 500 recovery.
+  The static 500 document prepares one same-origin destination on intent using
+  its hashed Speculation Rules. Supporting browsers can prerender the homepage
+  or prefetch another selected destination. The link keeps native document navigation.
   During the Animate UI theme wipe, only the theme Switch receives a separate
   named live capture. Its old capture is transparent and its group has no independent
   animation, so the existing Animate UI thumb spring remains visible immediately
@@ -686,9 +696,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   and desktop WebP posters in `src/assets/hero/` show the shader's resting pose.
   They preserve the alpha channel so the themed stage shows through the glass.
   Next.js generates responsive optimizer URLs for the homepage, 404, 500 and
-  in-app recovery posters. The static pages select the still through the browser's
-  reduced-motion media query or the scripting-disabled fallback. The in-app
-  recovery screen preloads the same candidates used by its `<picture>`.
+  in-app recovery posters. The browser selects the still for reduced motion or
+  disabled scripting. With motion enabled, the initial artwork reserves space
+  and requests the optimized still only if playback fails.
   Both themes use the same ruby glass material. The loop turns and the droplets
   drift with moving highlights at up to 30 frames per second during autonomous
   playback. Each droplet follows its own path with a visible gap from the loop.
@@ -700,17 +710,17 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   activations start as slots become free, including repeated taps at the same pixel.
   The artwork itself accepts Enter and Space and keeps
   the normal pointer cursor. The only separate control pauses or resumes playback.
-  A shared Spinner glyph is visible in the initial HTML and Animate UI takes
-  over its motion after hydration. The first successful draw removes it.
+  The initial HTML reserves the artwork area. The shared Spinner mounts after
+  500 ms of active waiting. The first successful draw or the end of waiting removes it.
   Where parallel compilation is available, the renderer checks the readiness of
   both GPU programs on its frame loop.
   Visibility and intent share one renderer import promise. The homepage and the
   static error pages start preparing the renderer after the visible artwork has
   had a chance to paint, even while the document is still loading.
-  The in-app recovery artwork keeps its static poster while playback loads.
   The resolved component mounts directly on the client after any incoming page
   transition.
-  The poster is used for reduced motion, unsupported WebGL or context loss.
+  The poster is used for reduced motion, unsupported WebGL, context loss or expiry
+  of the two-second active first-frame deadline.
   Reduced motion, a hidden tab or a lost context unmounts the enhancement and
   disposes its renderer.
   The homepage and error artwork pause the render loop when the artwork leaves
@@ -726,15 +736,16 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   The headline pairs light type with a red accent. Its full text is visible in
   static HTML.
 - Animate UI owns action presses, dialog entry, checkbox indicators, progress and
-  icon interaction. Shared `ActionFeedback` composes whole-control hover, tap and
-  keyboard-focus icon triggers for Button and native Next.js `AnimatedLink`
-  anchors. Disabled buttons suppress these triggers. Landing calls to action,
+  icon interaction. Shared `ActionFeedback` combines whole-control pointer hover,
+  primary press and keyboard focus into one icon animation state for Button and
+  native Next.js `AnimatedLink` anchors. Ending one interaction preserves the
+  feedback while another remains active. Disabled buttons suppress it. Landing calls to action,
   the not-found action and page-header navigation use the shared link wrapper;
   ordinary footer text links retain native text-link behavior.
   All internal route links compose `IntentLink`: pointer entry, focus and pointer
-  down warm the native route cache without changing the Link's prefetch mode,
-  key or motion owner. The target is not mounted during preparation; modal focus,
-  entry playback and consent-dependent effects remain tied to navigation.
+  down warm the native App Router cache without changing the Link's prefetch mode,
+  key or motion owner. Modal focus, entry playback and consent-dependent effects
+  remain tied to App Router navigation.
 - Training step activation uses the native Flow keyframes from route changes
   with a shorter glide and a crossfade for the workspace. Explicit step changes
   from the step bar or panel actions capture the outgoing and incoming panels
@@ -797,9 +808,7 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
 - The home experiments keep the static SVGs in the initial HTML. The shared
   preview loader prepares playback as the cards approach the viewport or when a
   relevant control receives focus. Intent at the mini-experiments link also
-  prepares the example image. The everyday image-recognition
-  quiz prepares its optional feedback controls on choice intent and mounts the
-  explanation tooltip only after an answer.
+  prepares the example image.
 - The gallery virtualizer owns placement. Scroll admission does not replay entry
   effects. The illustration is bounded to two 6-by-6 feature maps, six vector bars,
   18 synthetic points, three neighbor connections and two readout bars. Finite user-triggered sequences
@@ -865,9 +874,9 @@ unrelated glyphs and animation producers stay out of their route graph. The
 server-neutral `icons.tsx` facade preserves the named import API for compatibility.
 Pure icon factory annotations permit unused producers to be removed without
 changing the mounted components or their motion owners.
-The educational illustration preserves its example image,
-labeled feature maps, neighbor points, connecting paths and class labels before enabling its
-interactive component.
+The static educational illustration shows an Input placeholder, labeled feature
+maps, neighbor points, connecting paths and class labels. Selecting a dog or cat
+replaces the placeholder with the decoded example photo in the interactive diagram.
 These integrations preserve the initial content and the existing CSP with
 the installed Animate UI and Motion components.
 

@@ -10,6 +10,7 @@ import { useMotionPreference } from '../ui/use-motion-preference';
 type FieldComponent = typeof import('./TopographyField').default;
 
 let fieldModule: Promise<typeof import('./TopographyField')> | undefined;
+const firstFrameDeadlineMs = 2_000;
 
 function prepareField() {
   fieldModule ??= import('./TopographyField').catch((error: unknown) => {
@@ -19,26 +20,14 @@ function prepareField() {
   return fieldModule;
 }
 
-function afterFirstPaint(prepare: () => void, waitForDocumentLoad: boolean) {
-  let frame = 0;
-  const schedule = () => {
-    frame = requestAnimationFrame(() => {
-      frame = requestAnimationFrame(prepare);
-    });
-  };
-  if (!waitForDocumentLoad || document.readyState === 'complete') schedule();
-  else window.addEventListener('load', schedule, { once: true });
-  return () => {
-    window.removeEventListener('load', schedule);
-    cancelAnimationFrame(frame);
-  };
+function afterFirstPaint(prepare: () => void) {
+  let frame = requestAnimationFrame(() => {
+    frame = requestAnimationFrame(prepare);
+  });
+  return () => cancelAnimationFrame(frame);
 }
 
-export function useGlassField(
-  paused: boolean,
-  viewportReady: boolean,
-  waitForDocumentLoad = false,
-) {
+export function useGlassField(paused: boolean, viewportReady: boolean) {
   const artwork = useRef<HTMLDivElement>(null);
   const inView = useInView(artwork);
   const visible = usePageVisible();
@@ -49,8 +38,9 @@ export function useGlassField(
   const [failed, setFailed] = useState(false);
   const [rendered, onRendered] = useState(false);
   const onUnavailable = useCallback(() => setFailed(true), []);
-  const available = visible && !reduce && !failed && (inView || rendered);
+  const available = visible && !reduce && !failed && (inView || rendered) && (!paused || rendered);
   const active = inView && available && !paused && viewportReady && (motionReady || interested);
+  const pending = active && !rendered;
 
   useEffect(() => {
     if (!active) return;
@@ -64,12 +54,18 @@ export function useGlassField(
         .catch(() => {
           if (current) setFailed(true);
         });
-    }, waitForDocumentLoad && !deferDecorativeMotion);
+    });
     return () => {
       current = false;
       cancel();
     };
-  }, [active, waitForDocumentLoad]);
+  }, [active]);
+
+  useEffect(() => {
+    if (!pending) return;
+    const deadline = window.setTimeout(onUnavailable, firstFrameDeadlineMs);
+    return () => window.clearTimeout(deadline);
+  }, [onUnavailable, pending]);
 
   const prepare = () => {
     if (reduce || failed) return;
@@ -84,7 +80,7 @@ export function useGlassField(
     failed,
     reduce,
     rendered,
-    pending: active && !rendered,
+    pending,
     onRendered,
     onUnavailable,
     prepare,

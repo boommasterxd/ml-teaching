@@ -11,6 +11,7 @@ const lifecycle = vi.hoisted(() => ({
   created: vi.fn(),
   disposed: vi.fn(),
   available: true,
+  canDraw: true,
 }));
 vi.mock('@/components/hero/TopographyField', () => ({
   default: function SyntheticGpuField({
@@ -26,7 +27,7 @@ vi.mock('@/components/hero/TopographyField', () => ({
         onUnavailable();
         return;
       }
-      onRendered(true);
+      if (lifecycle.canDraw) onRendered(true);
       return () => {
         lifecycle.disposed();
         onRendered(false);
@@ -37,10 +38,14 @@ vi.mock('@/components/hero/TopographyField', () => ({
 }));
 beforeEach(() => {
   lifecycle.available = true;
+  lifecycle.canDraw = true;
   vi.clearAllMocks();
   installBrowserHost();
 });
-afterEach(restoreBrowserHost);
+afterEach(() => {
+  vi.useRealTimers();
+  restoreBrowserHost();
+});
 
 function PlaybackReadout() {
   const { paused } = useHomePlayback();
@@ -103,5 +108,33 @@ describe('decorative hero lifetime', () => {
     expect(document.activeElement).toBe(resume);
     fireEvent.click(resume);
     expect(screen.getByText('Previews playing')).toBeTruthy();
+  });
+
+  it('allows a fresh startup window after pausing and retires a renderer that never draws', async () => {
+    lifecycle.canDraw = false;
+    vi.useFakeTimers();
+    const { container } = render(
+      <HomePlaybackProvider>
+        <HeroScene sources={heroPosterImages} />
+      </HomePlaybackProvider>,
+    );
+    const advance = (milliseconds: number) =>
+      act(async () => {
+        await vi.advanceTimersByTimeAsync(milliseconds);
+      });
+    const artwork = () => container.querySelector('#home-hero-art picture img');
+    await advance(800);
+    fireEvent.click(screen.getByRole('button', { name: 'Animationen pausieren' }));
+    await advance(2_000);
+    expect(artwork()?.getAttribute('src')).toMatch(/^data:/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Animationen fortsetzen' }));
+    await advance(1_999);
+    expect(container.querySelector('canvas')).not.toBeNull();
+    expect(artwork()?.getAttribute('src')).toMatch(/^data:/);
+    await advance(1);
+    expect(container.querySelector('canvas')).toBeNull();
+    expect(artwork()?.getAttribute('src')).toContain('/_next/image');
+    expect(screen.queryByRole('status', { name: 'Grafik wird geladen' })).toBeNull();
   });
 });

@@ -163,6 +163,16 @@ test('the homepage starts without a glass spinner and skips the poster during pl
   await expect(impulse).toBeDisabled();
   await page.getByRole('button', { name: 'Animationen fortsetzen' }).press('Enter');
   await expect(impulse).toBeEnabled();
+
+  await page.locator('#home-hero-art canvas').dispatchEvent('webglcontextlost', {
+    cancelable: true,
+  });
+  await expect(page.locator('#home-hero-art canvas')).toHaveCount(0);
+  const poster = page.locator('#home-hero-art picture img');
+  await expect
+    .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(1);
+  expect(posters).toHaveLength(1);
 });
 
 test('the homepage glass resumes on the same canvas after scrolling it out of view', async ({
@@ -269,13 +279,21 @@ function expectStrictCsp(response: APIResponse) {
   expect(policies[0].value).not.toMatch(/unsafe-inline|unsafe-eval/);
 }
 
+async function expectQLearningPlaceholder(page: Page) {
+  const main = page.getByRole('main');
+  await expect(main.getByText('Die Einführung erscheint demnächst.')).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex,\s*follow/);
+  await main.getByRole('link', { name: 'Zum Lernlabor', exact: true }).press('Enter');
+  await expect(page).toHaveURL(learningPaths.hub);
+}
+
 test('static documents preserve strict CSP and visible content', async ({ page, request }) => {
   const failures = diagnostics(page);
   const routes: [string, string | RegExp][] = [
     ['/', /Du probierst\.\s*Deine KI lernt\./],
     [learningPaths.hub, 'Dein Lernlabor'],
     [learningPaths.images, /Du siehst eine Katze\.\s*Was sieht die KI\?/],
-    [learningPaths.qLearning, 'Coming Soon'],
+    [learningPaths.qLearning, 'Q-Learning verstehen'],
     ['/impressum', 'Impressum'],
     ['/datenschutz', 'Datenschutzerklärung'],
     ['/barrierefreiheit', 'Barrierefreiheit'],
@@ -317,6 +335,7 @@ test('static documents preserve strict CSP and visible content', async ({ page, 
       await settleLandingReveals(page);
     }
     await expectAccessible(page);
+    if (path === learningPaths.qLearning) await expectQLearningPlaceholder(page);
   }
   const sitemap = await request.get('/sitemap.xml');
   expect(sitemap.status()).toBe(200);

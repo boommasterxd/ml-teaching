@@ -65,9 +65,12 @@ the filter.
 The central Next.js header configuration owns HSTS with a one-year lifetime,
 `includeSubDomains` and `preload`, plus MIME, referrer, frame and permissions headers.
 CSP is generated separately from final static output. No Project Routing Rule should
-supply a second HSTS owner. Hosted HTTPS delivery and every covered subdomain must
-be verified before declaring HSTS readiness; this source does not enroll a preload
-list or prove live headers.
+supply a second HSTS owner. A regular Next.js rule permanently redirects
+slash-terminated public paths to their canonical form and excludes internal
+`/_next` paths. Vercel can apply the shared headers before this regular redirect.
+The native Next.js HTTP server omits configured headers on redirects. Verify
+the full HSTS policy on hosted HTTPS redirects and their canonical targets,
+including every covered subdomain.
 
 There are no application mutation endpoints, image-upload API, auth flows or shared
 databases. Native image optimization must remain outside custom restrictive WAF
