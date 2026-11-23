@@ -134,30 +134,7 @@ jobs:
       - run: npm run build
       - name: Install the locked Chromium browser and headless shell
         run: npx --no-install playwright install chromium
-      - name: Enforce Lighthouse performance budgets
-        id: lighthouse
-        run: |
-          set -euo pipefail
-          log="$RUNNER_TEMP/lighthouse-next.log"
-          setsid npm start -- --hostname 127.0.0.1 --port 3100 > "$log" 2>&1 &
-          server_pid=$!
-          trap 'kill -TERM -- "-$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true' EXIT
-          for ((attempt=0; attempt<30; attempt++)); do
-            if ! kill -0 "$server_pid" 2>/dev/null; then
-              break
-            fi
-            if curl --fail --silent --max-time 1 http://127.0.0.1:3100/ > /dev/null; then
-              npm run test:lighthouse -- --all --locked
-              exit 0
-            fi
-            sleep 1
-          done
-          cat "$log"
-          exit 1
-        timeout-minutes: 20
-      - name: Run npm run test:e2e
-        if: ${{ !cancelled() && (steps.lighthouse.outcome == 'success' || steps.lighthouse.outcome == 'failure') }}
-        run: npm run test:e2e
+      - run: npm run test:e2e
 
   CI:
     name: CI

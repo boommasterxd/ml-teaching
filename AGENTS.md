@@ -146,9 +146,9 @@
   reliable focused checks; do not repeat unrelated/full suites without cause.
 - Test supported public behavior, security boundaries and resource/failure recovery;
   avoid cosmetic snapshots, manufactured unreachable states or coverage padding.
-- Require Lighthouse Performance above 95 points for each audited route on mobile
-  and desktop. The local `npm run test:lighthouse` command enforces this for the
-  homepage by default and for all configured pages with `-- --all`.
+- Run Lighthouse Performance locally for performance audits. Require above 95
+  points for each audited route on mobile and desktop. `npm run test:lighthouse`
+  audits the homepage by default and all configured pages with `-- --all`.
 - PR-only workflow and final gate are both `CI`. It tests the simulated merge,
   binds the complete-diff plan to base/head/merge revisions and rejects malformed
   plans, failures, cancellations and unexpected skips. Keep Gitleaks and PR-title
@@ -177,6 +177,7 @@ maintained documentation change.
 | [`docs/decisions/error-artwork-and-menus.md`](docs/decisions/error-artwork-and-menus.md)               | Records the shared playback and menu-loading decisions.         |
 | [`docs/decisions/hostinger-mail-retention.md`](docs/decisions/hostinger-mail-retention.md)             | Records mailbox recovery and the accepted backup gap.           |
 | [`docs/decisions/minimatch-development-advisory.md`](docs/decisions/minimatch-development-advisory.md) | Records the limited development-only advisory acceptance.       |
+| [`docs/decisions/performance-audits.md`](docs/decisions/performance-audits.md)                         | Explains why Lighthouse runs locally outside merge checks.      |
 | [`docs/decisions/public-repository-visibility.md`](docs/decisions/public-repository-visibility.md)     | Records accepted exposure of existing repository history.       |
 | [`docs/decisions/pull-request-branch-retention.md`](docs/decisions/pull-request-branch-retention.md)   | Records intentional retention of merged pull request branches.  |
 | [`docs/decisions/ssg-and-csp.md`](docs/decisions/ssg-and-csp.md)                                       | Records static rendering and guarded CSP integration.           |

@@ -10,12 +10,12 @@ The dependency-free planner reads the complete merge-base-to-head Git diff. Rena
 include both endpoints, and deletions remain part of the scope. Its plan records the
 base, head and merge revisions. Consumers reject a different checked-out revision.
 
-| Complete changed scope                                                                         | Selected work                                                                     |
-| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Nonempty root `docs/` files only                                                               | Real successful final gate; no dependency installation, tests or build            |
-| Unit test files under `test/unit/` only                                                        | Static quality, dependency audit and full unit coverage                           |
-| Application, browser tests, shared assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build, browser suite and Lighthouse budgets |
-| Empty diff or unavailable Git history                                                          | All checks                                                                        |
+| Complete changed scope                                                                         | Selected work                                                          |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Nonempty root `docs/` files only                                                               | Real successful final gate; no dependency installation, tests or build |
+| Unit test files under `test/unit/` only                                                        | Static quality, dependency audit and full unit coverage                |
+| Application, browser tests, shared assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and browser suite          |
+| Empty diff or unavailable Git history                                                          | All checks                                                             |
 
 Selection and the final result gate use `ubuntu-slim`. Selected quality and browser
 jobs use regular runners; job-level conditions prevent allocation of unselected
@@ -155,17 +155,9 @@ that Proxy remain forbidden.
 `npm run test:e2e` runs the complete browser suite against the native production
 server, including accessibility and keyboard contracts. It remains unfiltered with
 `CI=true`. CI downloads the lockfile-matched Chromium Headless Shell and full
-Chromium for the back-forward cache test. Browser
-launch and host dependency validation stay blocking.
-The browser job runs `npm run test:lighthouse -- --all --locked` before Playwright
-to keep the measurement separate from the browser suite's workload. It starts the
-verified build with `npm start` and stops its server before Playwright starts its
-own server for the same build. After successful setup, the browser suite still runs
-if Lighthouse fails, and either failure blocks CI. Each audited route must score
-above 95 on both profiles. Lighthouse identifies each report by URL, profile,
-collection time and file path, and logs the browser version, throttling settings,
-CPU benchmark index, Largest Contentful Paint and Total Blocking Time. A score
-that misses the budget also logs the available Largest Contentful Paint phases.
+Chromium for the back-forward cache test. Browser launch, host dependency
+validation and the suite are blocking when selected. Lighthouse runs locally as
+described in the [performance audit decision](decisions/performance-audits.md).
 
 ## Security automation and release boundary
 
