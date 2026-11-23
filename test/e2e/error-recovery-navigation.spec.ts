@@ -30,7 +30,7 @@ async function observeDocumentTransitions(page: Page) {
   });
 }
 
-async function recoverFrom500(page: Page) {
+async function open500(page: Page) {
   const response = await page.goto('/500');
   expect(response?.status()).toBe(500);
   await expect(
@@ -42,19 +42,12 @@ async function recoverFrom500(page: Page) {
     'media',
     '(prefers-reduced-motion: no-preference)',
   );
-  const action = page.getByRole('main').getByRole('link', { name: 'Zur Startseite' });
-  await action.focus();
-  await expect(action).toBeFocused();
-  const homepage = page.waitForResponse(
-    (response) =>
-      response.request().isNavigationRequest() && new URL(response.url()).pathname === '/',
-  );
-  await page.keyboard.press('Enter');
+  return page.getByRole('main').getByRole('link', { name: 'Zur Startseite' });
+}
+
+async function expectHomepage(page: Page) {
   await expect(page).toHaveURL('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  const html = await (await homepage).text();
-  const head = html.match(/<head>[\s\S]*?<\/head>/)?.[0];
-  expect(head).toMatch(/<style\b[^>]*\bid="error-recovery-transition"[^>]*>/);
   await expect(page.locator(`head ${stylesheet}`)).toHaveAttribute(
     'media',
     '(prefers-reduced-motion: no-preference)',
@@ -67,7 +60,33 @@ test('the HTTP 500 recovery animates only the document crossing to the homepage'
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   const failures = diagnostics(page);
   await observeDocumentTransitions(page);
-  await recoverFrom500(page);
+  const cdp = await page.context().newCDPSession(page);
+  const prerenders: string[] = [];
+  cdp.on('Preload.prerenderStatusUpdated', ({ key, status, prerenderStatus }) => {
+    if (new URL(key.url).pathname === '/') prerenders.push(prerenderStatus ?? status);
+  });
+  await cdp.send('Preload.enable');
+  const action = await open500(page);
+  await expect(page.locator('#error-glass-art')).toHaveAttribute('data-enhanced', 'true');
+  expect(prerenders).toEqual([]);
+  await action.hover();
+  // Playwright's page-target attachment makes Chromium report this refusal.
+  await expect.poll(() => prerenders.at(-1)).toMatch(/^(Ready|PrerenderingDisabledByDevTools)$/);
+  const prerenderReady = prerenders.at(-1) === 'Ready';
+  await expect(page).toHaveURL('/500');
+  await action.focus();
+  await expect(action).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expectHomepage(page);
+  if (prerenderReady) {
+    const activationStart = await page.evaluate(() => {
+      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceEntry & {
+        activationStart?: number;
+      };
+      return navigation.activationStart ?? 0;
+    });
+    expect(activationStart).toBeGreaterThan(0);
+  }
 
   const root = page.locator('html');
   await expect(root).toHaveAttribute('data-recovery-transition', 'finished');
@@ -96,8 +115,35 @@ test('the HTTP 500 recovery animates only the document crossing to the homepage'
 test('the recovery link also works with reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await observeDocumentTransitions(page);
-  await recoverFrom500(page);
+  const action = await open500(page);
+  await action.focus();
+  await expect(action).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expectHomepage(page);
   await expect(page.locator('html')).toHaveAttribute('data-recovery-transition', 'none');
+});
+
+test.describe('the 500 document without JavaScript', () => {
+  test.use({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+
+  test('keeps the recovery link and a responsive optimizer poster', async ({ page }) => {
+    const posterRequests: string[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === '/_next/image') posterRequests.push(request.url());
+    });
+    const poster = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === '/_next/image',
+    );
+    expect((await page.goto('/500'))?.status()).toBe(500);
+    const artwork = page.locator('#error-glass-art');
+    await expect(artwork.locator('canvas')).toHaveCount(0);
+    await expect(
+      page.getByRole('main').getByRole('link', { name: 'Zur Startseite' }),
+    ).toBeVisible();
+    expect((await poster).ok()).toBe(true);
+    await expect.poll(() => posterRequests.length).toBe(1);
+  });
 });
 
 test('the static 500 artwork starts automatically and supports keyboard pause and reduced motion', async ({

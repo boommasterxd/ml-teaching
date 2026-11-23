@@ -160,6 +160,7 @@ describe('useModelLoader', () => {
       expect(loaderFns.initBackend).toHaveBeenCalledOnce();
       expect(loaderFns.createClassifier).toHaveBeenCalledOnce();
       expect(loaderFns.loadFeatureExtractor).toHaveBeenCalledOnce();
+      expect(loaderFns.warmup).toHaveBeenCalledOnce();
     });
 
     it('aktualisiert loadingText während der Ladeschritte', async () => {
@@ -284,7 +285,7 @@ describe('useModelLoader', () => {
       expect(onError).not.toHaveBeenCalled();
     });
 
-    it('retires the loaded graph after an unfinished GPU warmup settles', async () => {
+    it('retires the loaded graph before starting a new load after interrupted GPU warmup', async () => {
       const classifier = makeClassifier();
       const model = makeFeatureExtractor();
       const warmup = Promise.withResolvers<void>();
@@ -297,9 +298,19 @@ describe('useModelLoader', () => {
 
       unmount();
       expect(model.dispose).not.toHaveBeenCalled();
+      const nextModel = makeFeatureExtractor();
+      const nextLoaders = makeSuccessfulLoaderFns(makeClassifier(), nextModel);
+      const next = renderHook(() => useModelLoader(true, onError, nextLoaders));
+      await act(async () => {});
+      expect(nextLoaders.loadFeatureExtractor).not.toHaveBeenCalled();
+
       await act(async () => warmup.resolve());
       expect(model.dispose).toHaveBeenCalledOnce();
       expect(classifier.dispose).toHaveBeenCalledOnce();
+      expect(vi.mocked(model.dispose).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(nextLoaders.loadFeatureExtractor).mock.invocationCallOrder[0],
+      );
+      expect(next.result.current.mobilenetModel).toBe(nextModel);
       expect(onError).not.toHaveBeenCalled();
     });
 

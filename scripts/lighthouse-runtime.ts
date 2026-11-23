@@ -55,6 +55,23 @@ interface ResolveOptions {
   projectRoot?: string;
   npmCommand?: Command;
   nodeVersion?: string;
+  lockedFallback?: boolean;
+}
+
+async function fallbackVersion(npm: Command, projectRoot: string, lockedFallback: boolean) {
+  if (lockedFallback) {
+    const lock = JSON.parse(await readFile(join(projectRoot, 'package-lock.json'), 'utf8'));
+    const version: unknown = lock.packages?.['node_modules/lighthouse']?.version;
+    if (typeof version !== 'string' || !stableVersion.test(version))
+      throw new Error('The lockfile does not specify a stable Lighthouse version.');
+    return version;
+  }
+  const version: unknown = JSON.parse(
+    await run(npm, ['view', 'lighthouse@latest', 'version', '--json']),
+  );
+  if (typeof version !== 'string' || !stableVersion.test(version))
+    throw new Error('The registry did not return a stable Lighthouse version.');
+  return version;
 }
 
 /** Resolve once per run; a broken global installation never silently falls back. */
@@ -62,29 +79,32 @@ export async function resolveLighthouse({
   projectRoot = process.cwd(),
   npmCommand,
   nodeVersion = process.versions.node,
+  lockedFallback = false,
 }: ResolveOptions = {}) {
   const npm = npmCommand ?? (await activeNpm());
   const globalRoot = await run(npm, ['root', '--global']);
   if (!isAbsolute(globalRoot)) throw new Error('npm returned a nonabsolute global package root.');
   let packageRoot = join(globalRoot, 'lighthouse');
   let source = 'global';
-  let latest: string | undefined;
+  let expectedVersion: string | undefined;
   if (!(await exists(packageRoot))) {
-    latest = JSON.parse(await run(npm, ['view', 'lighthouse@latest', 'version', '--json']));
-    if (!latest || !stableVersion.test(latest))
-      throw new Error('The registry did not return a stable Lighthouse version.');
+    expectedVersion = await fallbackVersion(npm, projectRoot, lockedFallback);
     source = 'local';
     packageRoot = join(projectRoot, 'node_modules/lighthouse');
     if (!(await exists(packageRoot)))
       throw new Error(
-        `Lighthouse ${latest} is missing. Prepare an authorized local fallback first.`,
+        `Lighthouse ${expectedVersion} is missing. Prepare an authorized local fallback first.`,
       );
   }
   const metadata = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8'));
   if (metadata.name !== 'lighthouse' || !stableVersion.test(metadata.version))
     throw new Error('Invalid Lighthouse package identity.');
-  if (latest && metadata.version !== latest)
-    throw new Error(`Local Lighthouse ${metadata.version} differs from latest stable ${latest}.`);
+  if (expectedVersion && metadata.version !== expectedVersion) {
+    const origin = lockedFallback ? 'the lockfile version' : 'latest stable';
+    throw new Error(
+      `Local Lighthouse ${metadata.version} differs from ${origin} ${expectedVersion}.`,
+    );
+  }
   assertNodeEngine(metadata.engines?.node, nodeVersion);
   const cli = join(packageRoot, 'cli/index.js');
   const cliVersion = await run([process.execPath], [cli, '--version']);

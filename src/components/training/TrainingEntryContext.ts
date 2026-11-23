@@ -3,6 +3,11 @@
 import { createContext, useContext } from 'react';
 import type { TrainingEngine } from '@/hooks/useTrainingEngine';
 
+export function subscribeToVisibility(notify: () => void) {
+  document.addEventListener('visibilitychange', notify);
+  return () => document.removeEventListener('visibilitychange', notify);
+}
+
 export const TrainingEntryContext = createContext<{
   openEntry: (opener: HTMLElement | null) => void;
   prepareEntry: () => void;

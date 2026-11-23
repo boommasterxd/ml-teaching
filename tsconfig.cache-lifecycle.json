@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "checkJs": true,
+    "incremental": false,
+    "types": ["node"]
+  },
+  "include": [".github/scripts/cache-lifecycle/*.cjs"]
+}

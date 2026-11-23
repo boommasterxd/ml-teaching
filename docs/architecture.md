@@ -40,7 +40,8 @@ consent returns to the image explanation; cancelling source-page setup stays on
 the source page. Full withdrawal clears the saved choice and discards the in-memory
 training workspace.
 `src/lib/learning-paths.ts` centralizes these destinations for navigation.
-`/lernen/q-learning` shows a static availability notice for the upcoming lesson.
+`/lernen/q-learning` shows the German title “Q-Learning verstehen”, an availability
+notice for the upcoming introduction and a link back to the learning hub.
 `/lernen/q-learning/ausprobieren` shows the availability notice and a link
 back to the hub while the exercise is pending. Both pending routes carry
 `noindex, follow` and are omitted from the sitemap and the links in `llms.txt`.
@@ -100,10 +101,13 @@ releases the training resources. The confirmation opens after the preceding
 dialog closes. Its single action returns visitors from the training workspace to the
 homepage. Outside the workspace, the action dismisses the confirmation and keeps the
 current page. A separate training entry starts fresh consent.
-The Pages Router's static 500 recovery action starts an App Router document
-navigation through the browser.
-App Router recovery renders its text, actions and responsive poster immediately.
-It requests the error artwork's playback module only when the recovery screen mounts.
+The Pages Router's static 500 document uses build-rendered Speculation Rules
+covered by its hash CSP. Pointer entry, focus or pointer down selects at most
+one eligible same-origin link. A browser with Speculation Rules support can
+prerender the homepage or prefetch another selected document. Activation uses
+normal browser navigation, including when preparation is unsupported or incomplete.
+App Router recovery renders its text and actions immediately and uses the shared
+visibility-gated artwork lifecycle.
 
 The first stylesheet includes the small shared surface rules and homepage layout
 rules. Bundling them together avoids separate render-blocking requests on the
@@ -116,8 +120,9 @@ The homepage and static error pages deliver their headings, actions and reserved
 artwork area in static HTML. When the artwork and document are visible and motion
 is allowed, the client starts loading the shared WebGL renderer after the initial
 paint. Visibility and intent share the module import. The loading indicator appears
-after 500 ms of active waiting and disappears on the first draw. The resolved
-component mounts directly on the client
+after 500 ms of active waiting and disappears on the first draw or when waiting
+ends. A two-second active first-frame deadline switches to the optimized poster
+if the renderer has yet to draw. The resolved component mounts directly on the client
 without a second Lazy/Suspense reveal that could trigger a page update transition.
 Reduced motion, disabled scripting and renderer failure use a responsive still.
 Static asset imports give the native optimizer versioned poster URLs that the
@@ -178,33 +183,42 @@ lesson and practice by their canonical `LearningResource` identifiers. The
 homepage's JSON-LD graph identifies the publisher by name and links to the
 canonical imprint.
 
-The generated `robots.txt` allows all user agents on all paths and identifies the
-sitemap. It has no separate rules for search, model training or user-initiated
-retrieval; services follow this guidance according to their own crawler behavior.
+The generated `robots.txt` uses a wildcard allow rule for all paths and lists the
+sitemap. Where services honor it, the rule allows search crawlers, model-training
+crawlers and user-initiated fetchers. Search indexing also depends on page-level
+robots metadata. Vercel bot protection and firewall rules apply independently.
 [Google-Extended](https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers#google-extended)
 controls training and grounding for specified Gemini and Vertex AI services. It
 does not affect inclusion or ranking in Google Search.
 
 ## Browser ML flow
 
-1. Training starts with explicit consent, either in source-page setup or directly
-   on the static training route. A versioned, opt-in session storage record holds
-   the choices and a fixed 30-minute deadline in the tab. The deadline governs
-   reload and reentry. The current workspace stays active until withdrawal or exit.
+1. Pointer entry, keyboard focus or pointer down on a training link prepares the
+   setup dialog and browser resource host in parallel. The provider mounts the host
+   only during active source-page setup or on the training route. The direct route
+   renders its initial consent in static HTML while the host loads separately.
+   Opt-in remembering keeps the choices in the current document's memory for up
+   to 30 minutes. The deadline governs reentry
+   through same-document navigation. Leaving the document clears consent and
+   the workspace before the browser can cache the document for history traversal.
+   Reloads, new documents and new tabs ask again. Within the document, the current
+   workspace stays active until withdrawal or exit.
    No TensorFlow runtime, model weights or camera stream is needed for initial HTML.
 2. After model consent, the same dialog shows loading progress while the browser
    initializes TensorFlow.js and loads the KNN module. It downloads the MobileNet v2
    graph, warms it and extracts features in the browser. Loading can be aborted and
    graph resources are disposed when no longer in use. The WebGL backend and compiled
-   kernels are reusable within the document. A reload with valid remembered consent
-   opens directly on the loading step, where consent can still be withdrawn.
+   kernels are reusable within the document. The model error step can retry the
+   resource host import or restart model loading. Same-document reentry with valid
+   remembered consent opens on the loading step, where consent can still be withdrawn.
 3. When the models are ready, the dialog presents the optional camera choice.
    Camera access starts only after separate camera consent and browser permission.
-   Source-page setup hands off the initialized model and live stream to the training
-   route without another request. Reload restores camera use only after the browser
-   reports that permission is still granted. The visible collection step and the
-   trained prediction step request the stream while camera consent is active and
-   the workspace is unpaused.
+   The resource host stays mounted when source-page setup hands off to the training
+   route, carrying over the initialized model and any active stream. Remembered
+   consent restores camera use only after the browser reports that permission is
+   still granted. The visible
+   collection step and the trained prediction step request the stream while camera
+   consent is active and the workspace is unpaused.
    Selected local files and captures are resized for local feature extraction.
 4. Training requires complete selected upload batches and no active image work.
    New capture and file selection are disabled during training. It creates a
@@ -270,13 +284,10 @@ small local field without a separate form submission or validation schema.
 All nine public routes use SSG and fixed hash CSP, including the initially rendered
 learning workspace and complete initial consent. The initial HTML dialog stays
 inline through hydration and becomes modal on the same element when consent is
-needed. A build-known, hashed script in the shared document head checks tab storage
-before paint on the training URL and suppresses the inline dialog for valid remembered
-consent. Base UI powers
-dialogs opened later. Runtime ML remains in the browser. The native production
-server and Vercel adapter own production delivery; no custom server, production
-Proxy or separate static export replaces native Next.js output. Development alone
-discovers `src/proxy.dev.ts` for nonce-based CSP Report-Only diagnostics with
+needed. The training provider reads valid remembered consent from document memory
+on same-document reentry. Base UI powers dialogs opened later. Runtime ML remains
+in the browser. The native production server and Vercel adapter own delivery.
+Development alone discovers `src/proxy.dev.ts` for nonce-based CSP Report-Only diagnostics with
 no-store delivery, as described in [development](development.md).
 
 [SSG and CSP](decisions/ssg-and-csp.md) describes the atomic build/header contract.

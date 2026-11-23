@@ -186,12 +186,12 @@ function TrainingPanelFeedback({
   );
 }
 
-function getSetupStep({
-  consent,
-  models,
-  showCameraPrompt,
-}: ReturnType<typeof useTrainingWorkspace>['resources']) {
+function getSetupStep(
+  { consent, models, showCameraPrompt }: ReturnType<typeof useTrainingWorkspace>['resources'],
+  resourceLoadFailed: boolean,
+) {
   if (consent.showConsentModal) return 'consent';
+  if (resourceLoadFailed) return 'error';
   if (models.isModelLoading) return 'loading';
   return showCameraPrompt ? 'camera' : null;
 }
@@ -272,7 +272,7 @@ function TrainingWorkspace({ initialWorkspace }: { initialWorkspace: boolean }) 
   const workspace = useTrainingWorkspace(selection, engine);
   const { resources, data, dialogs } = workspace;
   const { error, consent, models } = resources;
-  const setupStep = getSetupStep(resources);
+  const setupStep = getSetupStep(resources, engine.resourceLoadFailed);
   const { initialSetup, ...setup } = useSetupPresentation(
     setupStep,
     !setupSuppressed && (initialDocument || entryViewportReady),
@@ -346,6 +346,7 @@ function TrainingWorkspace({ initialWorkspace }: { initialWorkspace: boolean }) 
         onWithdrawIntent={prepareWithdrawal}
         onDeclineCamera={consent.declineCameraConsent}
         onConfirmCamera={consent.grantCameraConsent}
+        onRetryModel={engine.retryModels}
       />
     </div>
   );

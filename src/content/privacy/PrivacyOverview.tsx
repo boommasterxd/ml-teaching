@@ -14,11 +14,12 @@ export const PrivacyOverview = (
       Bilderkennung lesen und dir auf der Startseite die Beispiele zum Lernen mit Belohnung ansehen.
     </p>
     <p>
-      Wenn du „Für 30 Minuten in diesem Tab merken“ auswählst, speichert dein Browser deine
-      Einwilligungen und die Kamerawahl vorübergehend. So kannst du im selben Tab innerhalb dieser
-      Zeit erneut starten, ohne die Einwilligungen wiederholen zu müssen. Wenn du die Kamera erlaubt
-      hast und dein Browser sie weiterhin freigibt, kann sie beim erneuten Start automatisch
-      angehen. Dein Trainingsstand wird dabei nicht gespeichert.
+      Wenn du „Für 30 Minuten in diesem Tab merken“ auswählst, hält die Website deine Einwilligungen
+      und die Kamerawahl vorübergehend im Arbeitsspeicher deines Browsers. Deine Auswahl gilt beim
+      Wechsel innerhalb der Website bis zu 30 Minuten. Wenn du die Seite neu lädst oder schließt,
+      endet sie früher. Wenn du die Kamera erlaubt hast und dein Browser sie weiterhin freigibt,
+      kann sie beim erneuten Trainingsstart innerhalb dieser Zeit automatisch angehen. Dein
+      Trainingsstand wird dabei nicht gespeichert.
     </p>
     <p>
       Mit „Kamera ausschalten“ beendest du die Kameranutzung. Deine bereits gesammelten Bilder und
@@ -34,14 +35,6 @@ export const PrivacyOverview = (
       berichtigen oder Daten löschen. Schreib uns an{' '}
       <a href="mailto:yannickschaefer@boomapps.de">yannickschaefer@boomapps.de</a>. Die Einzelheiten
       findest du in den Abschnitten unten.
-    </p>
-    <h3>Allgemeine Hinweise</h3>
-    <p>
-      Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren
-      personenbezogenen Daten passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind
-      alle Daten, mit denen Sie persönlich identifiziert werden können. Ausführliche Informationen
-      zum Thema Datenschutz entnehmen Sie unserer unter diesem Text aufgeführten
-      Datenschutzerklärung.
     </p>
     <h3>Datenerfassung auf dieser Website</h3>
     <h4>Wer ist verantwortlich für die Datenerfassung auf dieser Website?</h4>

@@ -1,5 +1,5 @@
 import { loadGraphModelSync } from '@tensorflow/tfjs-converter';
-import type { Tensor, Tensor3D, Tensor4D } from '@tensorflow/tfjs-core';
+import type { Tensor3D, Tensor4D } from '@tensorflow/tfjs-core';
 import { ML } from '../constants';
 import type { FeatureExtractor } from '../types/ml-models';
 import { loadTensorFlow } from './ml-runtime';
@@ -26,19 +26,6 @@ export async function loadMobileNetEmbedding(signal: AbortSignal): Promise<Featu
       for (const weight of weights) tf.keep(weight);
     }
   });
-
-  try {
-    const output = tf.tidy(() => graph.predict(tf.zeros([1, inputSize, inputSize, 3])));
-    try {
-      await (output as Tensor).data();
-      signal.throwIfAborted();
-    } finally {
-      tf.dispose(output);
-    }
-  } catch (error) {
-    graph.dispose();
-    throw error;
-  }
 
   return {
     infer: (input) =>

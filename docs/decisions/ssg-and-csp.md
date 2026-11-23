@@ -54,7 +54,9 @@ template's header persistence. The fallback route's source pattern excludes
 native static assets. Next.js compiles the source at startup, so the manifest
 regex carries the same exclusion for adapters that consume it directly.
 Model weights require only connect access to the specific Google/TF Hub/Kaggle
-origins. The WebGL runtime needs neither WASM script permission nor a worker source.
+origins. The decorative WebGL renderer permits the bundled same-origin worker
+through `worker-src 'self'`. It needs no blob or remote worker source and no WASM
+script permission.
 
 Public HTML has `public, max-age=300, must-revalidate`. Five minutes balances
 browser reuse with content freshness; native RSC/error/variant behavior remains
@@ -69,12 +71,13 @@ injected scripts. Destination RSC responses do not replace the current document'
 CSP. All pages share the trusted runtime/script producers; browser verification
 must cover direct entry, in-app legal/learning navigation and back/forward.
 
-The static image-practice document includes its full initial consent. The shared
-document head includes a build-known script that checks the optional tab-local
-choice only on the training URL before paint. A remembered choice can suppress the inline dialog
-without request-dependent HTML. The 30-minute deadline gates reuse at the next
-entry. It does not interrupt an active training visit. Training links complete
-setup on the source page before the native Flow transition.
+The static image-practice document includes its full initial consent. On
+same-document reentry, the training provider restores the optional remembered
+choice from document memory before paint. The 30-minute deadline governs reentry.
+An active training visit can continue past that deadline. Leaving the document
+clears the choice and workspace, including before the browser caches the document
+for back or forward navigation. A reload or new document starts with fresh consent.
+Training links complete setup on the source page before the native Flow transition.
 
 SiteLogo reuses the shared animated Brain glyph; favicon and Apple
 assets use the icon-format exception. Local user images remain in the browser and

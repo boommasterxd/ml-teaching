@@ -1,6 +1,7 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { createElement, useLayoutEffect } from 'react';
+import { act, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useTrainingEngine } from '@/hooks/useTrainingEngine';
+import { useTrainingEngine, type TrainingEngine } from '@/hooks/useTrainingEngine';
 import { TRAINING_CONSENT_DURATION } from '@/lib/training-consent-storage';
 
 vi.mock(import('@/hooks/useModelLoader'), () => ({
@@ -25,6 +26,40 @@ function rememberedCamera() {
   return { expiresAt: Date.now() + TRAINING_CONSENT_DURATION, camera: 'allowed' as const };
 }
 
+function EngineHarness({
+  active,
+  inTraining,
+  publish,
+}: {
+  active: boolean;
+  inTraining: boolean;
+  publish: (engine: TrainingEngine) => void;
+}) {
+  const { engine, ResourceHost, resourceProps } = useTrainingEngine(active, inTraining);
+  useLayoutEffect(() => publish(engine), [engine, publish]);
+  return ResourceHost ? createElement(ResourceHost, resourceProps) : null;
+}
+
+async function renderEngine(active = true, inTraining = active) {
+  let engine: TrainingEngine;
+  const publish = (next: TrainingEngine) => {
+    engine = next;
+  };
+  const view = render(createElement(EngineHarness, { active, inTraining, publish }));
+  await act(() => vi.dynamicImportSettled());
+  return {
+    result: {
+      get current() {
+        return engine;
+      },
+    },
+    rerender: (nextActive: boolean, nextInTraining = nextActive) =>
+      view.rerender(
+        createElement(EngineHarness, { active: nextActive, inTraining: nextInTraining, publish }),
+      ),
+  };
+}
+
 beforeEach(() => {
   vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
 });
@@ -38,12 +73,7 @@ describe('restoring the training camera', () => {
   it('waits until the training route owns the camera, starts it once and stops it on withdrawal', async () => {
     const query = vi.fn(async () => ({ state: 'granted' }));
     const { getUserMedia, stream, track } = cameraEnvironment(query);
-    const { result, rerender } = renderHook(
-      (inTraining: boolean) => useTrainingEngine(true, inTraining),
-      {
-        initialProps: false,
-      },
-    );
+    const { result, rerender } = await renderEngine(true, false);
     act(() => result.current.consent.restore(rememberedCamera()));
     expect(query).not.toHaveBeenCalled();
     expect(getUserMedia).not.toHaveBeenCalled();
@@ -66,7 +96,7 @@ describe('restoring the training camera', () => {
         return { state };
       });
       const { getUserMedia } = cameraEnvironment(query);
-      const { result } = renderHook(() => useTrainingEngine(true));
+      const { result } = await renderEngine();
       await act(async () => result.current.consent.restore(rememberedCamera()));
       expect(query).toHaveBeenCalledOnce();
       expect(result.current.canUseModels).toBe(true);
@@ -82,11 +112,11 @@ describe('restoring the training camera', () => {
 
   it('ignores a permissions result that arrives after leaving training', async () => {
     const status = Promise.withResolvers<{ state: 'granted' }>();
-    const { getUserMedia } = cameraEnvironment(vi.fn(() => status.promise));
-    const { result, rerender } = renderHook((active: boolean) => useTrainingEngine(active), {
-      initialProps: true,
-    });
+    const query = vi.fn(() => status.promise);
+    const { getUserMedia } = cameraEnvironment(query);
+    const { result, rerender } = await renderEngine();
     act(() => result.current.consent.restore(rememberedCamera()));
+    expect(query).toHaveBeenCalledOnce();
     rerender(false);
     await act(async () => status.resolve({ state: 'granted' }));
     expect(getUserMedia).not.toHaveBeenCalled();

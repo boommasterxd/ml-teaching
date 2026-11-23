@@ -89,8 +89,19 @@ const perspectives = [
   },
   {
     title: 'Entscheidungen unterstützen',
-    opportunity:
-      'Ein System kann verschiedene Möglichkeiten vergleichen oder durch Ausprobieren und Belohnungen eine Strategie lernen. Das nennt man Reinforcement Learning.',
+    opportunity: (
+      <>
+        Beim Reinforcement Learning probiert eine Spielfigur verschiedene Aktionen aus. Aus den
+        Belohnungen lernt sie, welche Entscheidungen sich auf Dauer lohnen.{' '}
+        <a
+          className="underline"
+          href="https://mitpress.mit.edu/9780262039246/reinforcement-learning/"
+          rel="noreferrer"
+        >
+          Fachbuch von Sutton und Barto
+        </a>
+      </>
+    ),
     limit:
       'Menschen legen Ziele und Belohnungen fest. Eine gute Punktzahl bedeutet noch nicht, dass eine Entscheidung für alle Menschen gut oder fair ist.',
   },

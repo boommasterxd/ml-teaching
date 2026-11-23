@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
   diagnostics,
   expectAccessible,
+  expectNoStoredTrainingData,
   holdApplicationScripts,
   observePositionShift,
   observeViewTransitions,
@@ -107,8 +108,9 @@ for (const path of publicRoutes) {
       await expectReadable(main.getByRole('heading', { level: 1 }));
       if (path === '/') await expectHomeLearningAreas(main);
       if (path === learningPaths.qLearning) {
-        await expect(main).toHaveText('Coming Soon');
-        await expect(main.getByRole('heading', { level: 1 })).toHaveText('Coming Soon');
+        await expect(main.getByRole('heading', { level: 1 })).toHaveText('Q-Learning verstehen');
+        await expectReadable(main.getByText('Die Einführung erscheint demnächst.'));
+        await expectReadable(main.getByRole('link', { name: 'Zum Lernlabor' }));
         await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
       } else {
         await expectReadable(main.getByRole('heading', { level: 2 }).first());
@@ -386,103 +388,61 @@ for (const [width, colorScheme] of [
   });
 }
 
-test('remembered consent skips the first paint dialog and expires only for the next visit', async ({
+test('a reload or a new tab never restores a remembered camera choice', async ({
   page,
   context,
   baseURL,
 }) => {
-  const initialTime = new Date();
-  await page.clock.setFixedTime(initialTime);
   await context.grantPermissions(['camera']);
-  const failures = diagnostics(page);
+  await context.addInitScript(() => {
+    const getUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = (constraints) => {
+      document.documentElement.dataset.requestedCamera = 'true';
+      return getUserMedia(constraints);
+    };
+  });
+  const popupExternal: string[] = [];
+  await context.route(/^https?:[\/]{2}/, async (route) => {
+    if (new URL(route.request().url()).origin === baseURL) return route.continue();
+    popupExternal.push(route.request().resourceType());
+    await route.abort();
+  });
   const network = await routeSyntheticModel(page, baseURL!);
-  const transitions = await observeViewTransitions(page);
   await page.goto(learningPaths.imagePractice);
   await grantModelConsent(page, true);
-  const cameraChoice = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
-  await cameraChoice.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
-  const preview = page.getByLabel('Kameravorschau für Trainingsaufnahme').first();
-  await expect(preview).toBeVisible();
-  const browserStorage = () => page.evaluate(() => Object.entries(sessionStorage));
-  const remembered = await browserStorage();
-  expect(remembered).toHaveLength(1);
-  expect(await context.cookies()).toEqual([]);
-  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+  const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
+  await camera.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
+  await expect(page.getByLabel('Kameravorschau für Trainingsaufnahme').first()).toBeVisible();
+  await expectNoStoredTrainingData(page);
+  expect(network.modelRequests).toEqual(['graph', 'weights']);
 
-  await page.clock.setFixedTime(new Date(initialTime.getTime() + 29 * 60_000));
-  const scripts = await holdApplicationScripts(page);
-  const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
-  const header = page.locator('header').filter({ has: page.getByRole('heading', { level: 1 }) });
-  let measureHeaderShift: () => Promise<number>;
+  await page.evaluate(() => {
+    sessionStorage.setItem('ml-teaching-training-consent', `1:${Date.now() + 60_000}:allowed`);
+  });
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.evaluate((path) => {
+      window.open(path, '_blank');
+    }, learningPaths.imagePractice),
+  ]);
   try {
-    const response = await page.reload({ waitUntil: 'commit' });
-    expect(response?.status()).toBe(200);
-    expect(response?.headers()['cache-control']).toBe('public, max-age=300, must-revalidate');
-    expect(await response?.text()).toContain('Einwilligung zur Datenverarbeitung');
-    await scripts.expectHeld();
-    await expect(consent).toBeHidden();
-    await expect(header).toHaveCSS('display', 'grid');
-    measureHeaderShift = await observePositionShift(header);
+    await expectFreshConsent(popup);
+    expect(await popup.evaluate(() => sessionStorage.length)).toBe(1);
   } finally {
-    scripts.release();
+    await popup.close();
   }
-
-  await expect(preview).toBeVisible();
-  await expect(cameraChoice).toBeHidden();
-  await expect(consent).toBeHidden();
-  await settleEntryAnimations(page);
-  expect(await measureHeaderShift()).toBeLessThan(1);
-  const className = page.getByRole('textbox', { name: /^Name für Klasse / }).first();
-  await className.fill('Meine Klasse');
-  expect(await browserStorage()).toEqual(remembered);
-  expect(await transitions()).toEqual([]);
-
-  await page.clock.setFixedTime(new Date(initialTime.getTime() + 31 * 60_000));
-  await expect(className).toHaveValue('Meine Klasse');
-  await expect(preview).toBeVisible();
-  expect(
-    await preview.evaluate((video) => {
-      const stream = (video as HTMLVideoElement).srcObject;
-      return (
-        stream instanceof MediaStream &&
-        stream.getVideoTracks().some(({ readyState }) => readyState === 'live')
-      );
-    }),
-  ).toBe(true);
-  await expect(consent).toBeHidden();
-  expect(network.modelRequests).toEqual(['graph', 'weights', 'graph', 'weights']);
 
   await page.reload();
-  await expect(consent).toBeVisible();
-  expect(await browserStorage()).toEqual([]);
-  expect(await transitions()).toEqual([]);
-  expect(network.modelRequests).toEqual(['graph', 'weights', 'graph', 'weights']);
+  await expectFreshConsent(page);
+  expect(network.modelRequests).toEqual(['graph', 'weights']);
   expect(network.unexpectedRequests).toEqual([]);
-  expect(failures).toEqual([]);
+  expect(popupExternal).toEqual([]);
 });
 
-test('a remembered choice expiring during hydration focuses the inline consent', async ({
-  page,
-  baseURL,
-}) => {
-  const started = Date.now();
-  await page.clock.setFixedTime(started);
-  await routeSyntheticModel(page, baseURL!);
-  await page.goto(learningPaths.imagePractice);
-  await grantModelConsent(page, true);
-  await page.clock.setFixedTime(started + 30 * 60_000 - 1_000);
-  const scripts = await holdApplicationScripts(page);
-  const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
-  try {
-    await page.reload({ waitUntil: 'commit' });
-    await scripts.expectHeld();
-    await expect(consent).toBeHidden();
-    await page.clock.setFixedTime(started + 30 * 60_000 + 1_000);
-  } finally {
-    scripts.release();
-  }
-
-  await expect(consent).toBeVisible();
-  await expect.poll(() => consent.evaluate((dialog) => dialog.matches(':modal'))).toBe(true);
-  await expect(consent.getByRole('checkbox').first()).toBeFocused();
-});
+async function expectFreshConsent(page: Page) {
+  const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  await expect(dialog).toBeVisible();
+  await expect.poll(() => dialog.evaluate((node) => node.matches(':modal'))).toBe(true);
+  await expect(dialog.getByRole('button', { name: 'Zustimmen' })).toBeDisabled();
+  await expect(page.locator('html')).not.toHaveAttribute('data-requested-camera');
+}

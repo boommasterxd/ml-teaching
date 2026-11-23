@@ -30,6 +30,7 @@ export function NetworkInputButtons({
           variant={activeSignal === signal ? 'default' : 'outline'}
           size="default"
           aria-label={label}
+          aria-current={activeSignal === signal || undefined}
           data-signal={signal}
           data-active={activeSignal === signal}
           aria-disabled={busy || undefined}

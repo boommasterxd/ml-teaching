@@ -3,12 +3,13 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number }}
+  group: ci-${{ github.event.pull_request.number }}-${{ github.event.action == 'edited' && !github.event.changes.base && github.run_id || 'checks' }}
   cancel-in-progress: true
 
 env:
@@ -38,6 +39,7 @@ jobs:
         env:
           CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CHANGE_MERGE_SHA: ${{ github.sha }}
 
   quality:
     name: Quality and unit coverage
@@ -90,7 +92,7 @@ jobs:
     needs: plan
     if: needs.plan.outputs.browser == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -133,6 +135,26 @@ jobs:
       - name: Install the locked Chromium headless shell
         run: npx --no-install playwright install --only-shell chromium
       - run: npm run test:e2e
+      - name: Enforce Lighthouse performance budgets
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/lighthouse-next.log"
+          setsid npm start -- --hostname 127.0.0.1 --port 3100 > "$log" 2>&1 &
+          server_pid=$!
+          trap 'kill -TERM -- "-$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true' EXIT
+          for ((attempt=0; attempt<30; attempt++)); do
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              break
+            fi
+            if curl --fail --silent --max-time 1 http://127.0.0.1:3100/ > /dev/null; then
+              npm run test:lighthouse -- --all --locked
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$log"
+          exit 1
+        timeout-minutes: 20
 
   CI:
     name: CI
@@ -156,3 +178,9 @@ jobs:
           CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           CHANGE_MERGE_SHA: ${{ github.sha }}
+      - name: Verified PR revisions ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} ${{ github.sha }}
+        if: fromJSON(needs.plan.outputs.plan).reason != 'verified-revision'
+        run: echo 'Required checks passed for the checked-out revisions.'
+      - name: Reused PR revisions ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} ${{ github.sha }}
+        if: fromJSON(needs.plan.outputs.plan).reason == 'verified-revision'
+        run: echo 'Required checks already passed for the checked-out revisions.'

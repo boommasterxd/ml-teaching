@@ -7,7 +7,6 @@ import ToastHost from '@/components/ToastHost';
 import TrainingEntryProvider from '@/components/training/TrainingEntryProvider';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { supportedColorSchemes, THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
-import { TRAINING_CONSENT_BOOTSTRAP_SCRIPT } from '@/lib/training-consent-storage';
 import { geist } from '@/lib/fonts';
 import { siteConfig } from '@/lib/site';
 import '../index.css';
@@ -41,7 +40,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           suppressHydrationWarning
         />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: TRAINING_CONSENT_BOOTSTRAP_SCRIPT }} />
       </head>
       <body className={[geist.variable, 'app-body'].join(' ')}>
         <ThemeProvider>

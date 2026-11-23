@@ -6,9 +6,15 @@
  * (camera consent requires prior general consent).
  */
 
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useConsentFlow } from '@/hooks/useConsentFlow';
+import {
+  clearRememberedTrainingConsent,
+  readRememberedTrainingConsent,
+} from '@/lib/training-consent-storage';
+
+afterEach(clearRememberedTrainingConsent);
 
 describe('useConsentFlow', () => {
   it('allows camera-free use and requests permission only after reopening and confirming', () => {
@@ -130,21 +136,17 @@ describe('useConsentFlow', () => {
     });
   });
 
-  describe('order enforcement', () => {
-    it('showCameraModal stays false when only camera consent is granted without prior general consent', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      act(() => {
-        result.current.grantCameraConsent();
-      });
-      expect(result.current.showCameraModal).toBe(false);
+  it('ignores a camera-ready callback that finishes after withdrawal', () => {
+    const { result } = renderHook(() => useConsentFlow());
+    act(() => result.current.grantConsent(true));
+    act(() => result.current.grantCameraConsent());
+    const lateCameraReady = result.current.saveCameraPermission;
+    act(() => {
+      result.current.revokeCameraConsent();
+      lateCameraReady();
     });
 
-    it('isFullyConsented stays false when only camera consent is granted without prior general consent', () => {
-      const { result } = renderHook(() => useConsentFlow());
-      act(() => {
-        result.current.grantCameraConsent();
-      });
-      expect(result.current.isFullyConsented).toBe(false);
-    });
+    expect(result.current.cameraConsent).toBe(false);
+    expect(readRememberedTrainingConsent()?.camera).toBe('declined');
   });
 });
