@@ -10,7 +10,10 @@ import { learningPaths } from '../../src/lib/learning-paths';
 import {
   arrowOffset,
   expectPageTransitions,
+  expectTrainingSetupOnSource,
   feedbackArrow,
+  measureLinkLayout,
+  navigationStatus,
   watchStationaryHover,
 } from './intent-navigation-checks';
 
@@ -91,6 +94,8 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
           exact: true,
         });
         const link = navigation.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });
+        const icon = link.locator('[data-link-glyph]');
+        const spinner = link.locator('[data-slot="spinner"]');
         await expect(trigger).toHaveAttribute('aria-expanded', 'false');
         if (intent === 'hover') await trigger.hover();
         else if (intent === 'touch') await trigger.tap();
@@ -100,8 +105,10 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
         }
         await expect(trigger).toHaveAttribute('aria-expanded', 'true');
         await expect(link).toBeInViewport();
+        await expect(icon).toBeVisible();
         expect(network.payloads).toEqual([]);
         const original = await link.elementHandle();
+        const linkLayout = await measureLinkLayout(link);
         await page.locator('html').evaluate((node) => {
           node.dataset.navigationProbe = 'intent';
         });
@@ -112,6 +119,8 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
         } else await link.tap();
         if (intent !== 'touch') {
           await expect.poll(() => network.prefetches.length).toBeGreaterThan(0);
+          await expect(navigationStatus(page)).toHaveCount(0);
+          await expect(spinner).toHaveCount(0);
           await link.focus();
           await expect(link).toBeFocused();
           await link.hover();
@@ -123,8 +132,14 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
           await expect.poll(() => network.payloads.length).toBeGreaterThan(0);
         }
         expect(network.documents()).toBe(1);
+        await expect(spinner).toBeVisible();
+        await expect(icon).toBeHidden();
+        await expect(navigationStatus(page)).toHaveClass('sr-only');
+        expect(await measureLinkLayout(link)).toEqual(linkLayout);
+        if (intent === 'hover') await expectAccessible(page);
         network.release();
         await expect(page).toHaveURL(new RegExp(`${learningPaths.hub}$`));
+        await expect(navigationStatus(page)).toHaveCount(0);
         await expect(link).toHaveCount(0);
         await expect(page.getByRole('dialog')).toHaveCount(0);
         await expect(
@@ -142,24 +157,12 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
         await expect(page).toHaveURL(new RegExp(`${learningPaths.images}$`));
         await expect(link).toHaveCount(0);
         await expect(page.getByRole('dialog')).toHaveCount(0);
-        const practice = page.getByRole('link', {
-          name: intent === 'keyboard' ? 'Jetzt ausprobieren' : 'Eigenes Bildmodell trainieren',
-          exact: true,
-        });
-        await expect(practice).toHaveAttribute('href', learningPaths.imagePractice);
-        await practice.focus();
-        await page.keyboard.press('Enter');
-        const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
-        await expect(consent).toBeVisible();
-        await expect(page).toHaveURL(learningPaths.images);
+        await expectTrainingSetupOnSource(
+          page,
+          intent === 'keyboard' ? 'Jetzt ausprobieren' : 'Eigenes Bildmodell trainieren',
+        );
         await expect(link).toHaveCount(0);
         expect(await page.locator('html').getAttribute('data-navigation-probe')).toBe('intent');
-        await expect(
-          consent.getByRole('button', { name: 'Zustimmen', exact: true }),
-        ).toBeDisabled();
-        await page.keyboard.press('Tab');
-        expect(await consent.evaluate((node) => node.contains(document.activeElement))).toBe(true);
-        await expectAccessible(page);
         const resources = network.prefetches.map(resourceKey);
         expect(new Set(resources).size).toBe(resources.length);
         expect(network.documents()).toBe(1);
@@ -299,6 +302,7 @@ for (const intent of ['hover', 'keyboard'] as const) {
       await activateOverview();
       await expect(heading).toBeVisible();
       await expect(page).toHaveURL(learningPaths.hub);
+      await expect(navigationStatus(page)).toHaveCount(0);
       await expectPageTransitions(page, transitions, 'forward');
       expect(network.payloads).toHaveLength(preparedRequests);
 

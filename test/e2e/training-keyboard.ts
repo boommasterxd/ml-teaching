@@ -59,7 +59,7 @@ export async function captureSetupDialog(page: Page) {
   return { expectSameDialog, expectStableWorkspace };
 }
 
-export async function grantModelConsent(page: Page, remember = false) {
+export async function prepareModelConsent(page: Page, remember = false) {
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   await expect(dialog).toBeVisible();
   const required = dialog.getByRole('checkbox', { name: /^Ich stimme zu/ });
@@ -72,7 +72,52 @@ export async function grantModelConsent(page: Page, remember = false) {
     await dialog
       .getByRole('checkbox', { name: 'Für 30 Minuten in diesem Tab merken' })
       .press('Space');
-  await dialog.getByRole('button', { name: 'Zustimmen', exact: true }).click();
+  return dialog.getByRole('button', { name: 'Zustimmen', exact: true });
+}
+
+export async function grantModelConsent(page: Page, remember = false) {
+  await (await prepareModelConsent(page, remember)).click();
+}
+
+type ConsentRequestState = { submitted: boolean; earlyAttempts: number };
+
+export async function observeModelConsentRequests(page: Page, modelDirectory: string) {
+  await page.addInitScript((directory) => {
+    const state: ConsentRequestState = { submitted: false, earlyAttempts: 0 };
+    Object.assign(window, { modelConsentRequests: state });
+    const fetchRequest = window.fetch.bind(window);
+    window.fetch = (resource, options) => {
+      const url = resource instanceof Request ? resource.url : String(resource);
+      if (url.startsWith(directory) && !state.submitted) {
+        state.earlyAttempts += 1;
+        return Promise.reject(new Error('Model request before consent submission'));
+      }
+      return fetchRequest(resource, options);
+    };
+  }, modelDirectory);
+  async function state() {
+    return page.evaluate(
+      () =>
+        (window as unknown as { modelConsentRequests: ConsentRequestState }).modelConsentRequests,
+    );
+  }
+  async function submit(button: Locator) {
+    await button.evaluate((element) => {
+      element.addEventListener(
+        'click',
+        (event) => {
+          if (event.isTrusted && element instanceof HTMLButtonElement && !element.disabled) {
+            (
+              window as unknown as { modelConsentRequests: ConsentRequestState }
+            ).modelConsentRequests.submitted = true;
+          }
+        },
+        { capture: true, once: true },
+      );
+    });
+    await button.click();
+  }
+  return { state, submit };
 }
 
 export async function expectLoadingWithdrawalFocus(page: Page, dialog: Locator) {

@@ -68,7 +68,14 @@ same-origin routes. Sustained touch preparation starts after 80 ms, so a short t
 can navigate without a parallel prefetch. Training links prepare on touch-down
 because setup precedes navigation. Native router caches reuse prepared work.
 Activation stays immediate if preparation is still pending, when Next.js can
-make a full request. There is no second cache or automatic invalidation loop.
+make a full request. After 100 ms of pending native navigation, the activated
+link shows a spinner in place of its action icon or before its label when it has
+no icon. Animate UI opens the spinner space before an iconless label, with an
+immediate change under reduced motion. A visually hidden live region outside the link announces the status
+without changing the link name. Focus stays on the active control while waiting.
+The feedback clears when navigation settles. Intent warming alone leaves the
+indicator hidden. Training setup uses the same icon slot with its own pending state.
+There is no second cache or automatic invalidation loop.
 Viewport admission alone does not load another page. Caller event handlers,
 refs, modified clicks and route transition types remain native. Current
 path/search and fragment-only navigation do not prepare another route.
@@ -96,7 +103,8 @@ on actual navigation within the current document. Browser speculation prerenders
 a separate document, which cannot supply that same-document transition. Training
 links open setup outside the page capture. Flow starts after the dialog exits.
 
-The Pages Router's static 500 document uses build-rendered Speculation Rules
+The Pages Router's static 500 document shows the same inline feedback after link
+activation. It uses build-rendered Speculation Rules
 covered by its hash CSP. Pointer entry, focus or pointer down selects at most
 one canonical same-origin homepage, learning or legal link. A supporting
 browser can prerender the selected document. The image practice page follows the
@@ -113,16 +121,20 @@ Turbopack chunking rules in local and Vercel builds. Optional menus, experiments
 and WebGL remain dynamically loaded.
 
 The homepage and static error pages deliver their headings, actions and reserved
-artwork area in static HTML. When the artwork and document are visible and motion
-is allowed, the client starts loading the shared WebGL renderer after the initial
-paint. Automatic startup on the native 500 page also waits for document load and,
-where supported, an idle opportunity. Pointer or keyboard intent can start it
-sooner. Visibility and intent share the module import. The loading indicator appears
-after 500 ms of active waiting and disappears on the first draw or when waiting
-ends. A two-second active first-frame deadline switches to the optimized poster
-if the renderer has yet to draw. The resolved component mounts directly on the client
-without a second Lazy/Suspense reveal that could trigger a page update transition.
-Reduced motion, disabled scripting and renderer failure use a responsive still.
+artwork area in static HTML. A responsive preload starts the optimized poster
+request below the shared medium breakpoint, and the static picture can paint
+before hydration. When the artwork and document are visible and motion is
+allowed, the client can load
+the shared module while waiting for paint. GPU setup begins on mount. Automatic
+startup on the native 500 page also waits for document load and, where supported,
+an idle opportunity. Pointer or keyboard intent can prepare the same module sooner.
+The loading indicator appears after 500 ms of active waiting. A two-second
+first-frame deadline ends waiting if the renderer has yet to draw. The resolved
+component mounts directly on the client without a second Lazy/Suspense reveal
+that could trigger a page update transition. On wider screens the poster loads
+on demand, including for reduced motion, disabled scripting and renderer failure.
+A successful first draw takes over the same artwork area without replacing the
+responsive picture.
 Static asset imports give the native optimizer versioned poster URLs that the
 browser can reuse across visits. Each source uses the first candidate that reaches
 its native resolution, so equivalent optimizer requests share a cache entry.

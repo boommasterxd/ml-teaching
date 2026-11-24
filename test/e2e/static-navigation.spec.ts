@@ -125,9 +125,7 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
   });
 }
 
-test('the homepage starts without a glass spinner and skips the poster during playback', async ({
-  page,
-}) => {
+test('mobile uses one glass poster before hydration and after a context loss', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   const workers: string[] = [];
@@ -145,9 +143,15 @@ test('the homepage starts without a glass spinner and skips the poster during pl
       posters.push(request.url());
   });
   const spinner = page.getByRole('status', { name: 'Grafik wird geladen' });
+  const poster = page.locator('#home-hero-art picture img');
   try {
     await page.goto('/', { waitUntil: 'commit' });
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(poster).toBeVisible();
+    await expect
+      .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
+      .toBeGreaterThan(1);
+    expect(posters).toEqual([await poster.evaluate((image: HTMLImageElement) => image.currentSrc)]);
     await expect(spinner).toHaveCount(0);
     await expect(page.locator('.hero-field canvas')).toHaveCount(0);
   } finally {
@@ -157,7 +161,8 @@ test('the homepage starts without a glass spinner and skips the poster during pl
   await page.waitForLoadState('load');
   await expect(page.locator('.hero-field')).toHaveAttribute('data-enhanced', 'true');
   await expect(spinner).toHaveCount(0);
-  expect(posters).toEqual([]);
+  await expect(poster).toBeHidden();
+  expect(posters).toHaveLength(1);
   expect(workers).toHaveLength(1);
   expect(new URL(workers[0]!).origin).toBe(new URL(page.url()).origin);
 
@@ -172,11 +177,11 @@ test('the homepage starts without a glass spinner and skips the poster during pl
     cancelable: true,
   });
   await expect(page.locator('#home-hero-art canvas')).toHaveCount(0);
-  const poster = page.locator('#home-hero-art picture img');
+  await expect(poster).toBeVisible();
   await expect
     .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
     .toBeGreaterThan(1);
-  expect(posters).toHaveLength(1);
+  expect(posters).toEqual([await poster.evaluate((image: HTMLImageElement) => image.currentSrc)]);
 });
 
 test('the homepage glass resumes on the same canvas after scrolling it out of view', async ({

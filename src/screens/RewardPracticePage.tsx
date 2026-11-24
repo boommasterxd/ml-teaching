@@ -16,8 +16,12 @@ export default function RewardPracticePage() {
           transitionTypes={['nav-back']}
           variant="link"
           className="h-auto min-h-11 px-0"
+          navigationIcon={{
+            content: <ArrowLeft data-icon="inline-start" aria-hidden="true" />,
+            position: 'start',
+          }}
         >
-          <ArrowLeft data-icon="inline-start" aria-hidden="true" /> Zum Lernlabor
+          Zum Lernlabor
         </AnimatedLink>
         <div className="space-y-4">
           <Heading as="h1" className="reward-practice-title">

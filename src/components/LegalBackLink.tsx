@@ -75,6 +75,10 @@ export default function LegalBackLink() {
       variant="ghost"
       size="sm"
       className="legal-back-link"
+      navigationIcon={{
+        content: <ArrowLeft data-icon="inline-start" aria-hidden="true" />,
+        position: 'start',
+      }}
       onNavigate={(event) => {
         if (getBackTarget() === undefined) return;
         event.preventDefault();
@@ -92,7 +96,6 @@ export default function LegalBackLink() {
         router.back();
       }}
     >
-      <ArrowLeft data-icon="inline-start" aria-hidden="true" />
       Zurück
     </AnimatedLink>
   );

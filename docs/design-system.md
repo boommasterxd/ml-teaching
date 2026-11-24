@@ -497,6 +497,8 @@ The preview placeholder reserves this row while the projection prepares.
 Pointer, keyboard and touch intent prepare the menu module. Its scrollable
 viewport fits the available space with up to 15 classes. Checkbox items use the
 shared Animate UI checkmark indicator and keep the menu open during selection.
+Class names stay sharp throughout the menu entrance so they are readable as
+soon as the rows appear.
 All classes are initially visible, and the first
 item toggles them together. The trigger summarizes the visible classes. The
 camera marker and projection scale remain stable even when no classes are
@@ -756,7 +758,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   drift with moving highlights at up to 30 frames per second during autonomous
   playback. Each droplet follows its own path with a visible gap from the loop.
   Hover and light pulses use the available display cadence.
-  Hovering pulls the glass toward the pointer. Clicking or tapping
+  Hovering pulls the glass toward the pointer. Motion measures the canvas at most
+  once per animation frame and applies the latest pointer position. Leaving, cancelling
+  or pausing playback clears queued movement. Clicking or tapping
   a droplet intensifies its light and motion; the loop carries a light pulse
   from the chosen angle. Overlapping pulses finish their full 2.6-second circuit.
   The shader runs up to 32 at once within the GPU's uniform budget. Up to 16
@@ -766,22 +770,26 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   expires after 7.8 seconds of active playback, excluding pause and offscreen time.
   The artwork itself accepts Enter and Space and keeps
   the normal pointer cursor. The only separate control pauses or resumes playback.
-  The initial HTML reserves the artwork area. The shared Spinner mounts after
-  500 ms of active waiting. The first successful draw or the end of waiting removes it.
+  The initial HTML reserves the artwork area and exposes the optimized still below
+  the shared medium breakpoint. The same picture remains mounted when the first
+  successful draw takes over. The shared Spinner mounts after 500 ms of active
+  waiting. The first successful draw or the end of waiting removes it.
   Where parallel compilation is available, the renderer checks the readiness of
   both GPU programs on its frame loop.
-  Visibility and intent share one renderer import promise. Automatic preparation
-  starts after the visible artwork has had a chance to paint. The native 500 page
-  also waits for document load and, where supported, an idle opportunity. Pointer
+  Visibility and intent share one renderer import promise. The module can load
+  while the artwork waits for paint. GPU setup begins when the renderer mounts.
+  The native 500 page also waits for document load and, where supported, an idle opportunity. Pointer
   or keyboard intent can start it sooner. See the
   [shader playback decision](decisions/error-artwork-and-menus.md#shader-playback).
   The resolved component mounts directly on the client after any incoming page
-  transition. With OffscreenCanvas support, a same-origin worker compiles and
-  draws the WebGL programs. The caller keeps one draw in flight and coalesces
-  pending resizes. Browsers without canvas transfer use the same renderer on
-  the main thread.
-  The poster is used for reduced motion, unsupported WebGL, context loss or expiry
-  of the two-second active first-frame deadline.
+  transition. With OffscreenCanvas support, a same-origin worker checks for a
+  WebGL context with standard derivatives before importing its shader renderer.
+  The caller keeps one draw in flight and coalesces pending resizes. Browsers
+  without canvas transfer use the same context requirements on the main thread.
+  On wider screens, reduced motion, disabled scripting, a pause before the first
+  draw, renderer failure or expiry of the two-second active first-frame deadline
+  makes the poster available. Narrow screens reuse the poster already requested
+  for the initial paint.
   Reduced motion, a hidden tab or a lost context unmounts the enhancement and
   disposes its renderer. If the light-impulse button has focus, its removal
   returns focus to the adjacent playback control, including when the control is disabled.
@@ -808,7 +816,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   ordinary footer text links retain native text-link behavior.
   In App Router documents, `IntentLink` prepares eligible destinations through the
   native router cache on pointer entry, focus or touch intent without changing the
-  link's prefetch mode, key or motion owner. The static 500 document uses the
+  link's prefetch mode, key or motion owner. The
+  [inline navigation feedback decision](decisions/inline-navigation-feedback.md)
+  defines spinner placement on the activated link. The static 500 document uses the
   Speculation Rules described above. Modal focus, entry playback and
   consent-dependent effects remain tied to App Router navigation.
 - Training step activation uses the native Flow keyframes from route changes
@@ -976,9 +986,10 @@ Consent, model loading and the optional camera choice share one surface and scri
 Each step change focuses the incoming heading. The outgoing panel becomes inert
 as it slides out of the layout. The incoming Animate UI Effect uses a short
 horizontal offset for the step change.
-A measured height animation follows the active panel and can be interrupted by
-the next step. This preserves natural height in static HTML and bypasses the
-initial zero height of Animate UI's AutoHeight. Reduced motion skips both movements.
+The official Animate UI AutoHeight follows the active panel and can be interrupted
+by the next step. The initial panel has its natural height in static HTML without
+inline styles. CSS clips the transition and reserves room for focus outlines.
+Reduced motion skips the slide and height animation.
 Later-opening product dialogs use Animate UI's portal for entry and exit. Closing
 releases modality and restores focus to the appropriate workspace control while
 the inert visual exit completes.

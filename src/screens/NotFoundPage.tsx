@@ -12,8 +12,15 @@ export default function NotFoundPage() {
       title="Seite nicht gefunden"
       description="Vielleicht wurde die Seite verschoben oder der Link ist veraltet."
     >
-      <AnimatedLink href="/" transitionTypes={['nav-back']} size="lg">
-        <Home data-icon="inline-start" aria-hidden="true" />
+      <AnimatedLink
+        href="/"
+        transitionTypes={['nav-back']}
+        size="lg"
+        navigationIcon={{
+          content: <Home data-icon="inline-start" aria-hidden="true" />,
+          position: 'start',
+        }}
+      >
         Zurück zur Startseite
       </AnimatedLink>
     </PublicErrorScene>

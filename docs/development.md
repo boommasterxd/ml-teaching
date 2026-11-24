@@ -102,7 +102,8 @@ and unit-coverage gates; native builds and browser checks remain explicit. Do no
 run tests or source refactors to satisfy a counter without a real behavioral risk.
 
 Browser tests use the version-matched Chromium Headless Shell. The back-forward
-cache test uses the full Chromium browser. Install both with `npx playwright install chromium`.
+cache test and the test that prerenders the homepage from the native 500 page use
+the full Chromium browser. Install both with `npx playwright install chromium`.
 OS dependency setup is separate and must respond to actual missing requirements.
 Playwright starts `npm start` on
 127.0.0.1:3100 and refuses to reuse an unrelated server. Build once first.
@@ -111,15 +112,17 @@ Run `npm run test:e2e:model` separately from the required browser suite when you
 need to verify the public MobileNet provider. It requires the same local
 `npm run build` output and Playwright Chromium installation, a free port 3100,
 and network access to the configured model provider. Playwright starts the same
-native production server. The test checks that the initial page makes no model
-requests, then grants consent and downloads the real model graph and weights.
-It declines camera access and verifies that the browser extracts features from
-one synthetic PNG generated locally in memory. If the provider is unreachable or
-the model download fails, the optional run fails. Check provider reachability and
-rerun it once access is restored.
+native production server. The test verifies that model requests start only after
+the consent form is submitted. Its test-only transport fetches the public graph
+and weights with bounded downloads and manually checks each redirect against the
+allowed model file locations. Playwright fulfills the browser requests with those real
+assets. The browser runs feature extraction on one synthetic PNG generated in
+memory after declining camera access. Unexpected requests fail the test. If the
+provider or a download fails, check provider reachability before rerunning the test.
 
-For local Lighthouse audits, build the site first. Start the native production
-server in a separate terminal.
+For local Lighthouse audits, install the version-matched Chromium Headless Shell
+with `npx playwright install chromium`, then build the site. Start the native
+production server in a separate terminal.
 
 ```sh
 npm start -- --hostname 127.0.0.1 --port 3100

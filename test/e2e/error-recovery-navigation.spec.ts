@@ -129,6 +129,41 @@ test('the HTTP 500 recovery animates only the document crossing to the homepage'
   ).toEqual([]);
 });
 
+test('the static 500 recovery link shows inline feedback while a document response waits', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    // Exercise browsers without speculation rules so recovery needs a document request.
+    const supports = HTMLScriptElement.supports.bind(HTMLScriptElement);
+    HTMLScriptElement.supports = (type) => type !== 'speculationrules' && supports(type);
+  });
+  await observeDocumentTransitions(page);
+  const action = await open500(page);
+  const browser = await page.context().newCDPSession(page);
+  await browser.send('Network.emulateNetworkConditions', {
+    offline: false,
+    latency: 800,
+    downloadThroughput: -1,
+    uploadThroughput: -1,
+  });
+  await action.focus();
+  const feedback = page.waitForEvent('console', {
+    predicate: (message) => message.text() === 'focused recovery link shows spinner',
+  });
+  await action.evaluate((link) => {
+    const observer = new MutationObserver(() => {
+      if (!link.querySelector('[data-slot="spinner"]') || link !== document.activeElement) return;
+      observer.disconnect();
+      console.info('focused recovery link shows spinner');
+    });
+    observer.observe(link, { childList: true, subtree: true });
+  });
+  await page.keyboard.press('Enter');
+  await feedback;
+  await expectHomepage(page);
+});
+
 test('training recovery prepares the public consent page without using model or camera resources', async ({
   baseURL,
   context,
@@ -226,10 +261,14 @@ test('the static 500 artwork starts automatically and supports keyboard pause an
   expect((await page.goto('/500'))?.status()).toBe(500);
   const artwork = page.locator('#error-glass-art');
   const canvas = artwork.locator('canvas');
+  const poster = artwork.locator('picture img');
   const impulse = page.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
   const playback = page.getByRole('button', { name: /^Animation (pausieren|fortsetzen)$/ });
   await expect(artwork).toHaveAttribute('data-enhanced', 'true');
-  expect(posterRequests).toEqual([]);
+  await expect(poster).toBeHidden();
+  expect(posterRequests).toEqual([
+    await poster.evaluate((image: HTMLImageElement) => image.currentSrc),
+  ]);
   const initialCanvas = await canvas.elementHandle();
 
   await page.getByRole('main').getByRole('link', { name: 'Zur Startseite' }).focus();
@@ -251,11 +290,13 @@ test('the static 500 artwork starts automatically and supports keyboard pause an
   await impulse.focus();
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   await expect(canvas).toHaveCount(0);
-  const poster = artwork.locator('picture img');
   await expect(poster).toBeVisible();
   await expect
     .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
     .toBeGreaterThan(1);
+  expect(posterRequests).toEqual([
+    await poster.evaluate((image: HTMLImageElement) => image.currentSrc),
+  ]);
   const reducedPlayback = page.getByRole('button', { name: 'Bewegung reduziert' });
   await expect(reducedPlayback).toBeDisabled();
   await expect(reducedPlayback).toBeFocused();

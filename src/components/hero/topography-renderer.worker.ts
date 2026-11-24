@@ -1,4 +1,5 @@
-import { createTopographyRenderer, type FieldFrame } from './topography-renderer';
+import { createTopographyContext } from './topography-context';
+import type { FieldFrame, initializeTopographyRenderer } from './topography-renderer';
 import type { GlassShape } from './topography-gl';
 
 export type RenderRequest =
@@ -14,26 +15,32 @@ const scope = globalThis as unknown as {
   postMessage(message: RenderResponse): void;
 };
 let canvas: OffscreenCanvas | undefined;
-let renderer: ReturnType<typeof createTopographyRenderer>;
+let renderer: ReturnType<typeof initializeTopographyRenderer>;
+
+function reportUnavailable() {
+  scope.postMessage({ type: 'drawn', result: false });
+}
+
+async function startRenderer(surface: OffscreenCanvas, shape: GlassShape) {
+  const gl = createTopographyContext(surface);
+  if (!gl) return reportUnavailable();
+  canvas = surface;
+  surface.addEventListener('webglcontextlost', reportUnavailable, { once: true });
+  // Signal unsupported WebGL without first loading and evaluating the shader module.
+  const { initializeTopographyRenderer } = await import('./topography-renderer');
+  if (gl.isContextLost()) return reportUnavailable();
+  renderer = initializeTopographyRenderer(gl, shape);
+  if (!renderer) return reportUnavailable();
+  scope.postMessage({
+    type: 'ready',
+    maxRasterDimension: renderer.maxRasterDimension,
+    rippleCapacity: renderer.rippleCapacity,
+  });
+}
 
 scope.onmessage = ({ data }) => {
   if (data.type === 'start') {
-    canvas = data.canvas;
-    renderer = createTopographyRenderer(canvas, data.shape);
-    if (!renderer) {
-      scope.postMessage({ type: 'drawn', result: false });
-      return;
-    }
-    canvas.addEventListener(
-      'webglcontextlost',
-      () => scope.postMessage({ type: 'drawn', result: false }),
-      { once: true },
-    );
-    scope.postMessage({
-      type: 'ready',
-      maxRasterDimension: renderer.maxRasterDimension,
-      rippleCapacity: renderer.rippleCapacity,
-    });
+    void startRenderer(data.canvas, data.shape).catch(reportUnavailable);
     return;
   }
   if (!canvas || !renderer) return;

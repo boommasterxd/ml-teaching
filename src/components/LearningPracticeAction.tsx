@@ -32,7 +32,7 @@ export default function LearningPracticeAction({
       href={area.href}
       size="lg"
       className={actionClass}
-      trainingIcon={{
+      navigationIcon={{
         content: <ArrowRight data-icon="inline-end" aria-hidden="true" />,
         position: 'end',
       }}

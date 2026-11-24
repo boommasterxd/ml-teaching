@@ -1,10 +1,18 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempDisposableSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   cacheConfiguration,
+  npmInputDigest,
   replacementReceipt,
   restoreOutcome,
 } from '../../../.github/scripts/cache.ts';
@@ -14,6 +22,31 @@ const prefix = 'mlteaching-npm-v1-Linux-x64-node26-npm11-';
 const key = `${prefix}${hash}`;
 
 describe('npm cache adapter', () => {
+  it('reuses the digest after worker tuning and rotates it for actual npm install inputs', () => {
+    using directory = mkdtempDisposableSync(path.join(tmpdir(), 'npm-cache-inputs-'));
+    mkdirSync(path.join(directory.path, '.github/workflows'), { recursive: true });
+    const inputs = {
+      '.npmrc': 'engine-strict=true\n',
+      'package.json': '{"name":"test-fixture"}\n',
+      'package-lock.json': '{"lockfileVersion":3}\n',
+    };
+    const write = (file: string, value: string) =>
+      writeFileSync(path.join(directory.path, file), value);
+    const digest = () => npmInputDigest((file) => readFileSync(path.join(directory.path, file)));
+    for (const [file, content] of Object.entries(inputs)) write(file, content);
+    const ci = '.github/workflows/ci.yml';
+    write(ci, 'run: npm run test:e2e -- --workers=2\n');
+    const original = digest();
+    write(ci, 'run: npm run test:e2e -- --workers=3\n');
+    expect(digest()).toBe(original);
+    for (const [file, content] of Object.entries(inputs)) {
+      write(file, `${content}\n`);
+      expect(digest()).not.toBe(original);
+      write(file, content);
+    }
+    expect(restoreOutcome(`${prefix}${original}`, key, 'success')).toBe('compatible fallback');
+  });
+
   it('isolates the compatible content store and preserves the complete input identity', () => {
     expect(cacheConfiguration(hash, '11.20.0', '/tmp/npm')).toEqual({
       key,

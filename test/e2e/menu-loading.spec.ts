@@ -1,5 +1,53 @@
 import { expect, test } from '@playwright/test';
+import { learningPaths } from '../../src/lib/learning-paths';
 import { diagnostics, expectAccessible } from './browser-checks';
+
+for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+  test(`the spinner before an iconless link label respects ${reducedMotion}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({
+      reducedMotion,
+      colorScheme: reducedMotion === 'reduce' ? 'light' : 'dark',
+    });
+    const payload = Promise.withResolvers<void>();
+    await page.route('**/lernen/bilderkennung?*', async (route) => {
+      if (route.request().headers().rsc === '1') await payload.promise;
+      await route.continue();
+    });
+    try {
+      await page.goto(learningPaths.hub);
+      const link = page.getByRole('link', { name: 'Bilderkennung verstehen', exact: true });
+      const slot = link.locator('[data-icon="inline-start"]');
+      await expect(slot).toHaveCount(0);
+      const widths = await link.evaluateHandle((anchor) => {
+        const samples: number[] = [];
+        const observer = new ResizeObserver(([entry]) => {
+          if (entry) samples.push(entry.contentRect.width);
+        });
+        const added = new MutationObserver(() => {
+          const slot = anchor.querySelector('[data-icon="inline-start"]');
+          if (!slot) return;
+          observer.observe(slot);
+          added.disconnect();
+        });
+        added.observe(anchor, { childList: true, subtree: true });
+        return samples;
+      });
+      await link.press('Enter');
+      await expect(link).toBeFocused();
+      await expect(slot.locator('[data-slot="spinner"]')).toBeVisible();
+      await expect.poll(() => slot.evaluate((element) => element.clientWidth)).toBeGreaterThan(16);
+      const samples = await widths.jsonValue();
+      await widths.dispose();
+      expect(samples.some((width) => width > 0 && width < 16)).toBe(reducedMotion !== 'reduce');
+      await expectAccessible(page);
+      payload.resolve();
+      await expect(page).toHaveURL(learningPaths.images);
+    } finally {
+      payload.resolve();
+    }
+  });
+}
 
 test('the training menu item shows its own progress until the consent dialog opens', async ({
   page,

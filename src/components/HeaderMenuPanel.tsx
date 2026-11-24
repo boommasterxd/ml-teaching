@@ -56,11 +56,11 @@ function Destination({
             href={link.href}
             data-overview={link.id === 'hub' ? '' : undefined}
             onTrainingEntry={link.id === 'training' ? onTrainingEntry : undefined}
-            trainingIcon={link.id === 'training' ? { content: icon, position: 'start' } : undefined}
+            navigationIcon={{ content: icon, position: 'start' }}
           />
         }
       >
-        {link.id === 'training' ? <span>{link.label}</span> : contents}
+        <span>{link.label}</span>
         {link.id === 'hub' && <ArrowRight size={14} aria-hidden="true" />}
       </NavigationMenuLink>
     </AnimateIcon>

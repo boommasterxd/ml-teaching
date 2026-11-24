@@ -14,8 +14,12 @@ export default function QLearningPage() {
         transitionTypes={['nav-back']}
         variant="link"
         className="h-auto min-h-11 px-0"
+        navigationIcon={{
+          content: <ArrowLeft data-icon="inline-start" aria-hidden="true" />,
+          position: 'start',
+        }}
       >
-        <ArrowLeft data-icon="inline-start" aria-hidden="true" /> Zum Lernlabor
+        Zum Lernlabor
       </AnimatedLink>
     </div>
   );

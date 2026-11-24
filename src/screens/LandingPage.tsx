@@ -33,8 +33,15 @@ export default function LandingPage() {
                 Probiere aus, wie KI Bilder erkennt und durch Belohnungen lernt.
               </Text>
               <div className="hero-actions">
-                <AnimatedLink href={learningPaths.hub} size="lg">
-                  Lernlabor <ArrowRight data-icon="inline-end" aria-hidden="true" />
+                <AnimatedLink
+                  href={learningPaths.hub}
+                  size="lg"
+                  navigationIcon={{
+                    content: <ArrowRight data-icon="inline-end" aria-hidden="true" />,
+                    position: 'end',
+                  }}
+                >
+                  Lernlabor
                 </AnimatedLink>
                 <ExperimentsLink />
               </div>

@@ -13,9 +13,12 @@ Pausing or scrolling the artwork out of view stops drawing and keeps one bounded
 canvas so playback can resume at the same animation time. Page exit, a hidden
 tab, reduced motion and context loss release the renderer. Reduced motion,
 disabled scripting and unavailable WebGL use an optimized responsive still.
-During ordinary startup the artwork reserves its space without requesting that
-still. A spinner appears after 500 ms of active waiting. If the first frame
-is still pending after two active seconds, the scene switches to the still.
+The worker verifies WebGL support before loading its shader renderer. On narrow
+screens, the initial HTML preloads the matching optimized still so the artwork
+can paint before renderer startup. On wider screens,
+ordinary startup reserves space and the still loads on demand. A spinner appears
+after 500 ms of active waiting. A renderer failure or a first frame still pending
+after two active seconds ends waiting and leaves the still visible.
 Pausing before the first frame displays the still until playback draws a frame.
 Headings and return links are available in the initial render independently of
 shader startup.
