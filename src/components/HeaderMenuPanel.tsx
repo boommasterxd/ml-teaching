@@ -9,9 +9,10 @@ import { headerMenuIcons } from './site-navigation-icons';
 import { Badge } from './ui/badge';
 import { NavigationMenuLink } from './ui/navigation-menu';
 import { MenuHighlight, MenuHighlightItem } from './ui/menu-highlight';
+import type { TrainingEntryOptions } from './training/TrainingEntryContext';
 
 interface TrainingEntryAction {
-  onTrainingEntry?: (link: HTMLAnchorElement) => HTMLElement | null;
+  onTrainingEntry?: (link: HTMLAnchorElement) => TrainingEntryOptions;
 }
 
 function Destination({
@@ -21,9 +22,10 @@ function Destination({
 }: { link: HeaderNavLink; current: string | null } & TrainingEntryAction) {
   const [focused, setFocused] = useState(false);
   const Icon = headerMenuIcons[link.id];
+  const icon = <Icon size={16} aria-hidden="true" />;
   const contents = (
     <>
-      <Icon size={16} aria-hidden="true" />
+      {icon}
       <span>{link.label}</span>
     </>
   );
@@ -54,10 +56,11 @@ function Destination({
             href={link.href}
             data-overview={link.id === 'hub' ? '' : undefined}
             onTrainingEntry={link.id === 'training' ? onTrainingEntry : undefined}
+            trainingIcon={link.id === 'training' ? { content: icon, position: 'start' } : undefined}
           />
         }
       >
-        {contents}
+        {link.id === 'training' ? <span>{link.label}</span> : contents}
         {link.id === 'hub' && <ArrowRight size={14} aria-hidden="true" />}
       </NavigationMenuLink>
     </AnimateIcon>

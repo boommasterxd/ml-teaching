@@ -21,6 +21,7 @@ interface ImageGalleryProps {
   color: string;
   /** Called when the user clicks an image thumbnail outside of selection mode. */
   onImageClick: (img: MLImage) => void;
+  pendingImageId?: string;
   /** Called with the IDs of images to remove after a bulk-delete action. */
   onRemoveImages: (ids: string[]) => void;
 }
@@ -168,6 +169,7 @@ const ImageGallery = memo(function ImageGallery({
   images,
   color,
   onImageClick,
+  pendingImageId,
   onRemoveImages,
 }: ImageGalleryProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -243,6 +245,7 @@ const ImageGallery = memo(function ImageGallery({
           isSelectionMode={isSelectionMode}
           onToggleSelect={toggleImageSelection}
           onImageClick={onImageClick}
+          pendingImageId={pendingImageId}
           scrollContainerRef={scrollContainerRef}
           showRows={showRows}
         />

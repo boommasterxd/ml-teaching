@@ -1,8 +1,9 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Request } from '@playwright/test';
 import {
   diagnostics,
   expectAccessible,
   expectMenuHighlight,
+  observeViewTransitions,
   settleEntryAnimations,
 } from './browser-checks';
 
@@ -67,15 +68,8 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
   await expectAccessible(page);
   const imprint = sidebar.getByRole('link', { name: 'Impressum', exact: true });
   const current = sidebar.getByRole('link', { name: 'Datenschutz' });
-  const { background, activeColor } = await current.evaluate((link) => {
-    const style = getComputedStyle(link);
-    const swatch = document.createElement('span').style;
-    swatch.backgroundColor = style.getPropertyValue('--primary-soft');
-    return { background: swatch.backgroundColor, activeColor: style.color };
-  });
-  const neutral = await imprint.evaluate((link) => getComputedStyle(link).color);
-  expect(neutral).not.toBe(activeColor);
-  await expectMenuHighlight(current, background);
+  await expect(current).toHaveAttribute('aria-current', 'page');
+  await expectMenuHighlight(current);
   const rightEdge = await navigation.evaluate((card) => {
     const style = getComputedStyle(card);
     return (
@@ -90,9 +84,8 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
     return top + height / 2;
   });
   await page.mouse.move(rightEdge, rowMiddle);
-  await expectMenuHighlight(imprint, background);
-  await expect(imprint).toHaveCSS('color', neutral);
-  await expect(current).toHaveCSS('color', activeColor);
+  await expectMenuHighlight(imprint);
+  await expect(current).toHaveAttribute('aria-current', 'page');
   const imprintBottom = await imprint.evaluate((link) => link.getBoundingClientRect().bottom);
   await page.mouse.move(rightEdge, imprintBottom + 1);
   expect(
@@ -101,7 +94,7 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
       { x: rightEdge, y: imprintBottom + 1 },
     ),
   ).toBe('/impressum');
-  await expectMenuHighlight(imprint, background);
+  await expectMenuHighlight(imprint);
   await page.mouse.move(rightEdge, rowMiddle);
   await page.mouse.click(rightEdge, rowMiddle);
   await expect(page).toHaveURL(/\/impressum$/);
@@ -109,6 +102,7 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
   const back = sidebar.getByRole('link', { name: 'Zurück', exact: true });
   await expect(back).toHaveAttribute('href', '/datenschutz');
   await back.focus();
+  await expect(back).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/datenschutz$/);
   await expect(sidebar.getByRole('link', { name: 'Datenschutz' })).toHaveAttribute(
@@ -222,4 +216,78 @@ test('the legal back action still uses the previous history entry after reload',
   await back.focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/lernen$/);
+});
+
+test('native legal navigation restores the same entries with one transition per traversal', async ({
+  page,
+}) => {
+  const failures = diagnostics(page);
+  const transitions = await observeViewTransitions(page);
+  await page.goto('/');
+  const historyKey = () => page.evaluate(() => window.navigation.currentEntry?.key);
+  const homeEntry = await historyKey();
+  expect(homeEntry).toBeTruthy();
+  await page.evaluate(() => {
+    document.documentElement.dataset.navigationProbe = 'preserved';
+  });
+  const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
+  const legal = navigation.getByRole('button', { name: 'Rechtliches', exact: true });
+  await legal.hover();
+  const privacy = navigation.getByRole('link', { name: 'Datenschutz', exact: true });
+  await expect(navigation.getByRole('link', { name: 'Impressum', exact: true })).toBeVisible();
+  await expect(
+    navigation.getByRole('link', { name: 'Barrierefreiheit', exact: true }),
+  ).toBeVisible();
+  const isPrivacyPayload = (request: Request) =>
+    new URL(request.url()).pathname === '/datenschutz' && request.headers().rsc === '1';
+  let privacyRequests = 0;
+  page.on('request', (request) => {
+    if (isPrivacyPayload(request)) privacyRequests++;
+  });
+  const [prefetched] = await Promise.all([
+    page.waitForResponse((response) => {
+      const request = response.request();
+      return (
+        isPrivacyPayload(request) &&
+        request.headers()['next-router-segment-prefetch']?.endsWith('/__PAGE__') === true
+      );
+    }),
+    privacy.hover(),
+  ]);
+  expect(prefetched.ok()).toBe(true);
+  expect(await prefetched.text()).toContain('Datenschutz auf einen Blick');
+  await expectAccessible(page);
+  expect(await transitions()).toEqual([]);
+  const preparedRequests = privacyRequests;
+
+  await privacy.click();
+  await expect(page).toHaveURL(/\/datenschutz$/);
+  const privacyEntry = await historyKey();
+  expect(privacyEntry).not.toBe(homeEntry);
+  await expect(legal).toHaveAttribute('aria-expanded', 'false');
+  expect(await page.locator('html').getAttribute('data-navigation-probe')).toBe('preserved');
+  const privacyDocument = page.getByRole('region', { name: 'Datenschutzerklärung', exact: true });
+  await expect(
+    privacyDocument.getByRole('heading', { name: '1. Datenschutz auf einen Blick', exact: true }),
+  ).toBeVisible();
+  await settleEntryAnimations(page);
+  expect(privacyRequests).toBe(preparedRequests);
+  const forward = { root: false, outgoingPages: 1, incomingPages: 1, back: false };
+  expect(await transitions()).toEqual([forward]);
+
+  await page.goBack();
+  await expect(
+    page.getByRole('heading', { name: /Du probierst\.\s*Deine KI lernt\./ }),
+  ).toBeVisible();
+  expect(await historyKey()).toBe(homeEntry);
+  await settleEntryAnimations(page);
+  const back = { ...forward, back: true };
+  expect(await transitions()).toEqual([forward, back]);
+  await page.goForward();
+  await expect(privacyDocument).toBeVisible();
+  expect(await historyKey()).toBe(privacyEntry);
+  await settleEntryAnimations(page);
+  expect(privacyRequests).toBe(preparedRequests);
+  expect(await transitions()).toEqual([forward, back, forward]);
+  expect(failures).toEqual([]);
 });

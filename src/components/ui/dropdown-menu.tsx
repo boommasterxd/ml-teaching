@@ -3,6 +3,7 @@
 import type { ComponentProps, ReactElement } from 'react';
 import { Menu as Primitive } from '@animate-ui/react/primitives/base-ui/menu';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
+import { Check, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActionFeedback } from './action-feedback';
 import { MenuHighlight, MenuHighlightItem } from './menu-highlight';
@@ -102,15 +103,35 @@ export function DropdownMenuCheckboxItem({
   className,
   children,
   highlightValue,
+  indicator,
   ...props
-}: ComponentProps<typeof BaseMenu.CheckboxItem> & { highlightValue: string }) {
+}: ComponentProps<typeof BaseMenu.CheckboxItem> & {
+  highlightValue: string;
+  indicator?: 'check' | 'mixed';
+}) {
   return (
     <DropdownItemHighlight value={highlightValue} disabled={props.disabled}>
       <BaseMenu.CheckboxItem
         {...props}
+        {...(indicator === 'mixed' && { 'aria-checked': 'mixed' as const })}
         data-slot="dropdown-menu-checkbox-item"
-        className={cn(menuItemClass, choiceSpacing, className)}
+        className={cn(menuItemClass, choiceSpacing, indicator && 'pe-8', className)}
       >
+        {indicator && (
+          <span
+            aria-hidden="true"
+            data-slot="dropdown-menu-checkbox-item-indicator"
+            className="pointer-events-none absolute end-2 flex items-center justify-center"
+          >
+            {indicator === 'mixed' ? (
+              <Minus />
+            ) : (
+              <Primitive.CheckboxItemIndicator>
+                <Check />
+              </Primitive.CheckboxItemIndicator>
+            )}
+          </span>
+        )}
         {children}
       </BaseMenu.CheckboxItem>
     </DropdownItemHighlight>

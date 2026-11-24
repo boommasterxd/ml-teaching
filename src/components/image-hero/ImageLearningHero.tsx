@@ -31,9 +31,12 @@ export default function ImageLearningHero() {
               href={learningPaths.imagePractice}
               size="lg"
               className="mobile-action h-auto min-h-11 max-w-full self-start whitespace-normal"
+              trainingIcon={{
+                content: <ArrowRight data-icon="inline-end" aria-hidden="true" />,
+                position: 'end',
+              }}
             >
               Eigenes Bildmodell trainieren
-              <ArrowRight data-icon="inline-end" aria-hidden="true" />
             </AnimatedLink>
           </div>
         </EntryReveal>

@@ -2,6 +2,7 @@ import { Activity, useMemo, ViewTransition } from 'react';
 import { usePredictionSpacePreparation } from '@/hooks/usePredictionSpacePreparation';
 import type { useTrainingWorkspace } from '@/hooks/useTrainingWorkspace';
 import type { CameraView } from './CameraControls';
+import type { PendingTrainingDialog } from './DeferredTrainingDialogs';
 import TrainingClassesPanel from './TrainingClassesPanel';
 import type { TrainingPanelModules, TrainingStep } from './training-panel-loading';
 import { useMotionPreference } from './ui/use-motion-preference';
@@ -14,9 +15,28 @@ const stepFlow = {
   'training-back': 'training-flow',
 };
 
+type TrainingWorkspace = ReturnType<typeof useTrainingWorkspace>;
+
+function useTrainingCameraView(camera: TrainingWorkspace['resources']['camera']) {
+  const { stream, facingMode, active, isPending, hasFailed, start, pause, toggleCamera } = camera;
+  return useMemo<CameraView>(
+    () => ({
+      stream,
+      facingMode,
+      active,
+      pending: isPending,
+      failed: hasFailed,
+      onToggle: active ? pause : start,
+      onSwitch: toggleCamera,
+    }),
+    [stream, facingMode, active, isPending, hasFailed, pause, start, toggleCamera],
+  );
+}
+
 /** Only the selected panel runs effects. Prepare a single inactive panel after intent. */
 export default function TrainingPanels({
   workspace,
+  pendingDialog,
   ready,
   step,
   modules,
@@ -25,7 +45,8 @@ export default function TrainingPanels({
   onSelect,
   onPrepare,
 }: {
-  workspace: ReturnType<typeof useTrainingWorkspace>;
+  workspace: TrainingWorkspace;
+  pendingDialog?: PendingTrainingDialog;
   ready: boolean;
   step: TrainingStep;
   modules: TrainingPanelModules;
@@ -43,19 +64,7 @@ export default function TrainingPanels({
     resources.canAutoStartPrediction &&
       (step === 'prediction' || prepared === 'prediction' || openingPrediction),
   );
-  const { stream, facingMode, active, isPending, hasFailed, start, pause, toggleCamera } = camera;
-  const cameraView = useMemo<CameraView>(
-    () => ({
-      stream,
-      facingMode,
-      active,
-      pending: isPending,
-      failed: hasFailed,
-      onToggle: active ? pause : start,
-      onSwitch: toggleCamera,
-    }),
-    [stream, facingMode, active, isPending, hasFailed, pause, start, toggleCamera],
-  );
+  const cameraView = useTrainingCameraView(camera);
   const { training: TrainingControls, prediction: PredictionPanel } = modules;
 
   return (
@@ -70,9 +79,11 @@ export default function TrainingPanels({
             entryReady={ready}
             classes={classes.classes}
             nameControl={classes.nameControl}
+            validateNames={classes.validateNames}
             camera={cameraView}
             mainHeadingRef={resources.mainHeadingRef}
             cardActions={cardActions}
+            pendingDialog={pendingDialog}
             onAddClass={classes.addClass}
             onContinue={() => onSelect('training')}
             onContinueIntent={() => onPrepare('training')}
@@ -106,6 +117,7 @@ export default function TrainingPanels({
               isPredicting={step === 'prediction' && prediction.isPredicting}
               hasTrainedModel={resources.hasTrainedModel}
               predictVideoRef={resources.predictVideoRef}
+              onVisibilityChange={resources.onPredictionVisibilityChange}
               subscribeToFeatures={prediction.subscribeToFeatures}
               space={space}
             />

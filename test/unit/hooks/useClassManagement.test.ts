@@ -7,8 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useFormState } from 'react-hook-form';
-import { useClassManagement } from '@/hooks/useClassManagement';
+import { useClassManagement, useTrainingClassName } from '@/hooks/useClassManagement';
 import { ML } from '@/constants';
 import type { MLImage } from '@/types/ml';
 
@@ -23,6 +22,14 @@ const mockImage = (id: string): MLImage => ({
   dataUrl: `data:image/png;base64,${id}`,
   featureArray: [0.1],
 });
+
+function useEditableClasses(onInvalidate: () => void) {
+  const management = useClassManagement(onInvalidate);
+  const { nameControl, validateNames } = management;
+  const first = useTrainingClassName(nameControl, 0, validateNames);
+  const second = useTrainingClassName(nameControl, 1, validateNames);
+  return { ...management, editors: [first, second] };
+}
 
 describe('useClassManagement', () => {
   let onInvalidate: Mock<() => void>;
@@ -72,21 +79,21 @@ describe('useClassManagement', () => {
     });
 
     it('verwendet eine freigewordene Standardnummer nach dem Umbenennen erneut', () => {
-      const { result } = renderHook(() => useClassManagement(onInvalidate));
+      const { result } = renderHook(() => useEditableClasses(onInvalidate));
 
-      act(() => result.current.updateClassName(result.current.classes[1].id, 'Hund'));
+      act(() => result.current.editors[1].edit('Hund'));
       act(() => result.current.addClass());
 
       expect(result.current.classes[2].name).toBe('Klasse 2');
     });
 
     it('vermeidet Namenskollisionen bei großen Nummern und Leerraum', () => {
-      const { result } = renderHook(() => useClassManagement(onInvalidate));
-      const [first, second] = result.current.classes;
+      const { result } = renderHook(() => useEditableClasses(onInvalidate));
+      const [first, second] = result.current.editors;
 
       act(() => {
-        result.current.updateClassName(first.id, 'Klasse 10000000000000000');
-        result.current.updateClassName(second.id, ' Klasse 2 ');
+        first.edit('Klasse 10000000000000000');
+        second.edit(' Klasse 2 ');
         result.current.addClass();
         result.current.addClass();
       });
@@ -120,80 +127,70 @@ describe('useClassManagement', () => {
     });
   });
 
-  describe('updateClassName', () => {
+  describe('class name fields', () => {
     it('keeps field errors and training validity aligned after rapid corrections', async () => {
-      const { result } = renderHook(() => {
-        const management = useClassManagement(onInvalidate);
-        const { errors } = useFormState({ control: management.nameControl, name: 'names' });
-        return { management, errors };
-      });
-      const [first, second] = result.current.management.classes;
+      const { result } = renderHook(() => useEditableClasses(onInvalidate));
+      const firstName = result.current.classes[0].name;
 
       await act(async () => {
-        result.current.management.updateClassName(second.id, first.name);
-        expect(result.current.management.readNameValidity().hasDuplicateNames).toBe(true);
-        result.current.management.updateClassName(second.id, ' ');
+        result.current.editors[1].edit(firstName);
+        expect(result.current.readNameValidity().hasDuplicateNames).toBe(true);
+        result.current.editors[1].edit(' ');
       });
-      expect(result.current.management.nameValidity).toEqual({
+      expect(result.current.nameValidity).toEqual({
         hasInvalidNames: true,
         hasDuplicateNames: false,
       });
-      expect(result.current.errors.names?.[0]?.name).toBeUndefined();
-      expect(result.current.errors.names?.[1]?.name?.message).toBe('Name darf nicht leer sein');
+      expect(result.current.editors[0].error).toBeUndefined();
+      expect(result.current.editors[1].error).toBe('Name darf nicht leer sein');
 
-      await act(async () => result.current.management.updateClassName(second.id, 'Hund'));
-      expect(result.current.management.nameValidity.hasInvalidNames).toBe(false);
-      expect(result.current.errors.names).toBeUndefined();
+      await act(async () => result.current.editors[1].edit('Hund'));
+      expect(result.current.nameValidity.hasInvalidNames).toBe(false);
+      expect(result.current.editors.map(({ error }) => error)).toEqual([undefined, undefined]);
     });
 
     it('reports both conflicting fields and clears the surviving field after removal', async () => {
-      const { result } = renderHook(() => {
-        const management = useClassManagement(onInvalidate);
-        const { errors } = useFormState({ control: management.nameControl, name: 'names' });
-        return { management, errors };
-      });
-      const [first, second] = result.current.management.classes;
+      const { result } = renderHook(() => useEditableClasses(onInvalidate));
+      const [first, second] = result.current.classes;
       await act(async () => {
-        result.current.management.addImage(second.id, mockImage('kept'));
-        result.current.management.updateClassName(second.id, ` ${first.name} `);
+        result.current.addImage(second.id, mockImage('kept'));
+        result.current.editors[1].edit(` ${first.name} `);
       });
       await waitFor(() => {
-        expect(result.current.errors.names?.[0]?.name?.message).toBe('Name muss eindeutig sein');
-        expect(result.current.errors.names?.[1]?.name?.message).toBe('Name muss eindeutig sein');
+        expect(result.current.editors[0].error).toBe('Name muss eindeutig sein');
+        expect(result.current.editors[1].error).toBe('Name muss eindeutig sein');
       });
 
-      await act(async () => result.current.management.removeClass(first.id));
-      await waitFor(() => expect(result.current.errors.names).toBeUndefined());
-      expect(result.current.management.classes[0]).toMatchObject({
+      await act(async () => result.current.removeClass(first.id));
+      await waitFor(() => expect(result.current.editors[0].error).toBeUndefined());
+      expect(result.current.editors[0].field.value).toBe(` ${first.name} `);
+      expect(result.current.classes[0]).toMatchObject({
         id: second.id,
         name: ` ${first.name} `,
         images: [{ id: 'kept' }],
       });
     });
     it('benennt die Klasse um', () => {
-      const { result } = renderHook(() => useClassManagement(onInvalidate));
-      const id = result.current.classes[0].id;
+      const { result } = renderHook(() => useEditableClasses(onInvalidate));
 
-      act(() => result.current.updateClassName(id, 'Katze'));
+      act(() => result.current.editors[0].edit('Katze'));
 
       expect(result.current.classes[0].name).toBe('Katze');
     });
 
     it('schneidet Namen auf MAX_CLASS_NAME_LENGTH ab', () => {
-      const { result } = renderHook(() => useClassManagement(onInvalidate));
-      const id = result.current.classes[0].id;
+      const { result } = renderHook(() => useEditableClasses(onInvalidate));
       const langerName = 'a'.repeat(ML.MAX_CLASS_NAME_LENGTH + 10);
 
-      act(() => result.current.updateClassName(id, langerName));
+      act(() => result.current.editors[0].edit(langerName));
 
       expect(result.current.classes[0].name).toHaveLength(ML.MAX_CLASS_NAME_LENGTH);
     });
 
     it('ruft onInvalidate NICHT auf', () => {
-      const { result } = renderHook(() => useClassManagement(onInvalidate));
-      const id = result.current.classes[0].id;
+      const { result } = renderHook(() => useEditableClasses(onInvalidate));
 
-      act(() => result.current.updateClassName(id, 'Neuer Name'));
+      act(() => result.current.editors[0].edit('Neuer Name'));
 
       expect(onInvalidate).not.toHaveBeenCalled();
     });

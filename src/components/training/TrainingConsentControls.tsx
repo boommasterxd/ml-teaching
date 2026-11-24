@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { toast } from '@/lib/toast';
 import Button from '../Button';
 import { ShieldCheck } from '../icons/shield-check';
+import { Spinner } from '../ui/spinner';
 import { useMenuModule } from '../use-menu-module';
 
 interface TrainingConsentControlsProps {
@@ -40,6 +41,8 @@ export default function TrainingConsentControls({
   const Dialog = module?.default;
   const available = visible && !blocked;
   const pending = available && opening !== null && !Dialog && !failed;
+  const FloatingIcon = pending && opening === 'floating' ? Spinner : ShieldCheck;
+  const FooterIcon = pending && opening === 'footer' ? Spinner : ShieldCheck;
   const open = available && opening !== null && Boolean(Dialog);
   if (!available && opening !== null) setOpening(null);
 
@@ -89,7 +92,7 @@ export default function TrainingConsentControls({
           className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-30 hidden size-11 border border-input shadow-md 2xl:inline-flex"
           aria-label={label}
         >
-          <ShieldCheck aria-hidden="true" />
+          <FloatingIcon aria-hidden="true" />
         </Button>
       )}
       {visible &&
@@ -101,7 +104,7 @@ export default function TrainingConsentControls({
             size="sm"
             className="footer-link min-h-11 px-0 font-normal hover:bg-transparent"
           >
-            <ShieldCheck data-icon="inline-start" aria-hidden="true" />
+            <FooterIcon data-icon="inline-start" aria-hidden="true" />
             {label}
           </Button>,
           slot,

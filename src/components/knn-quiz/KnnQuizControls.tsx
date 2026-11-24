@@ -77,7 +77,7 @@ export function KnnQuizAnswer({
           >
             <Alert
               variant={state.result === 'correct' ? 'achievement' : 'destructive'}
-              aria-live={state.result === 'correct' ? 'off' : undefined}
+              role="presentation"
             >
               {state.result === 'correct' ? (
                 <CheckCircle2

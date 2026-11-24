@@ -19,20 +19,25 @@ import {
   type RememberedTrainingConsent,
 } from '@/lib/training-consent-storage';
 import { useTrainingEngine, type TrainingEngine } from '@/hooks/useTrainingEngine';
-import { Button } from '../ui/button';
-import { Alert, AlertDescription } from '../ui/alert';
+import { toast } from '@/lib/toast';
 import { prepareToastViewport } from '../toast-loader';
 import { useMenuModule } from '../use-menu-module';
 import type { SetupStep } from '../modals/SetupStepTransition';
 import TrainingConsentControls from './TrainingConsentControls';
-import { TrainingEntryContext, TrainingSessionContext } from './TrainingEntryContext';
+import {
+  TrainingEntryContext,
+  TrainingSessionContext,
+  type TrainingEntryOptions,
+} from './TrainingEntryContext';
 import { useTrainingWithdrawal } from './use-training-withdrawal';
 import TrainingWithdrawalFeedback from './TrainingWithdrawalFeedback';
 import { getPreparedTrainingWorkspace, loadTrainingWorkspace } from './training-workspace-loader';
 
 type Entry = {
   source: string;
+  trigger: HTMLElement | null;
   opener: HTMLElement | null;
+  onReady?: () => void;
   phase: 'setup' | 'cancelled' | 'moving';
 };
 
@@ -145,16 +150,33 @@ function useTrainingEntryState() {
     prepareWorkspace();
   }, [prepare, prepareResources, prepareWorkspace]);
   const openEntry = useCallback(
-    (opener: HTMLElement | null) => {
+    (trigger: HTMLElement | null, options?: TrainingEntryOptions) => {
       if (!pathname || inTraining || activeEntry) return;
       const saved = readRememberedTrainingConsent();
       if (saved) restore(saved);
-      setEntry({ source: pathname, opener, phase: 'setup' });
+      setEntry({
+        source: pathname,
+        trigger,
+        opener: options ? options.opener : trigger,
+        onReady: options?.onReady,
+        phase: 'setup',
+      });
       prepareEntry();
     },
     [pathname, inTraining, activeEntry, prepareEntry, restore],
   );
-  const actions = useMemo(() => ({ openEntry, prepareEntry }), [openEntry, prepareEntry]);
+  const pendingTrigger =
+    activeEntry?.phase === 'setup' && !module && !setup.failed ? activeEntry.trigger : null;
+  const cancelPendingEntry = useCallback(() => {
+    if (!pendingTrigger) return;
+    setEntry(null);
+    cancel();
+    clearError();
+  }, [pendingTrigger, cancel, clearError]);
+  const actions = useMemo(
+    () => ({ openEntry, prepareEntry, pendingTrigger, cancelPendingEntry }),
+    [openEntry, prepareEntry, pendingTrigger, cancelPendingEntry],
+  );
   const withdrawal = useTrainingWithdrawal(pathname, inTraining);
 
   function closeEntry() {
@@ -162,7 +184,7 @@ function useTrainingEntryState() {
     if (module) setEntry({ ...activeEntry, phase: 'cancelled' });
     else {
       setEntry(null);
-      activeEntry.opener?.focus({ preventScroll: true });
+      activeEntry.trigger?.focus({ preventScroll: true });
     }
     cancel();
     clearError();
@@ -280,7 +302,6 @@ function useTrainingEntryFlow() {
     workspace,
     Setup: module?.default,
     failed,
-    prepare: actions.prepareEntry,
     remembered,
     setRemembered,
     closeEntry,
@@ -341,11 +362,32 @@ export default function TrainingEntryProvider({ children }: { children: ReactNod
 }
 
 function TrainingEntryOverlay({ flow }: { flow: ReturnType<typeof useTrainingEntryFlow> }) {
-  const { activeEntry, Setup, complete, failed, prepare, engine, workspace } = flow;
+  const { activeEntry, Setup, complete, failed, engine, workspace } = flow;
   const { consent } = engine;
   const [lastStep, setLastStep] = useState<SetupStep>('consent');
   const open = activeEntry?.phase === 'setup' && !complete;
   const step = open ? getStep(engine, Boolean(workspace.module)) : lastStep;
+  const loading = open && !Setup && !failed;
+  const onReady = activeEntry?.onReady;
+  const cancel = useEffectEvent(flow.closeEntry);
+  useLayoutEffect(() => {
+    if (open && Setup) onReady?.();
+  }, [open, Setup, onReady]);
+  useEffect(() => {
+    if (!open || Setup || !failed) return;
+    cancel();
+    toast.error('Die Einrichtung konnte nicht geladen werden. Versuche es erneut.');
+  }, [open, Setup, failed]);
+  useLayoutEffect(() => {
+    if (!loading) return;
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      event.preventDefault();
+      cancel();
+    };
+    document.addEventListener('keydown', dismissOnEscape);
+    return () => document.removeEventListener('keydown', dismissOnEscape);
+  }, [loading]);
   if (open && step !== lastStep) setLastStep(step);
   if (!activeEntry) return null;
   if (Setup) {
@@ -372,22 +414,9 @@ function TrainingEntryOverlay({ flow }: { flow: ReturnType<typeof useTrainingEnt
       />
     );
   }
-  if (failed) {
-    return (
-      <Alert role="alert" className="fixed inset-x-4 bottom-4 z-40 mx-auto max-w-md">
-        <AlertDescription>Die Einrichtung konnte nicht geöffnet werden.</AlertDescription>
-        <Button variant="secondary" onClick={prepare}>
-          Erneut versuchen
-        </Button>
-        <Button variant="ghost" onClick={flow.closeEntry}>
-          Abbrechen
-        </Button>
-      </Alert>
-    );
-  }
   return (
-    <p role="status" className="sr-only">
-      Einrichtung wird geladen …
-    </p>
+    <span role="status" className="sr-only">
+      {loading ? 'Einrichtung wird geladen …' : ''}
+    </span>
   );
 }

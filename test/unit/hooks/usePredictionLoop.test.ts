@@ -345,7 +345,7 @@ describe('usePredictionLoop', () => {
       expect(result.current.isPredicting).toBe(false);
     });
 
-    it('stopPredicting setzt prediction auf null zurück', () => {
+    it('clears an existing prediction when live prediction stops', async () => {
       const { result } = renderHook(() =>
         usePredictionLoop(makeClassifier(), makeFeatureExtractor(), makeVideoRef(), onError),
       );
@@ -353,6 +353,8 @@ describe('usePredictionLoop', () => {
       act(() => {
         result.current.startPredicting();
       });
+      await act(async () => fireRaf());
+      expect(result.current.prediction).toMatchObject({ label: 'Class 1' });
       act(() => {
         result.current.stopPredicting();
       });

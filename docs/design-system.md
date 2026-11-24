@@ -130,7 +130,7 @@ hero, with technique before the explanatory animation and training steps. Its wo
 lives on a separate practice route. The hub displays one inactive Coming Soon action
 for Q-learning while its explanation and practice are pending.
 The shared Lucide Brain glyph defines the brand. Its stroke uses the local primary color.
-The SVG favicon has light/dark variants and the PNG Apple icon uses the same glyph.
+The SVG favicon and PNG Apple icon use the same glyph.
 
 The selected foundation is Tailwind CSS 4, shadcn/ui with Base UI and Animate UI 2.4.
 `components.json` selects the official `base-nova` registry and shared aliases.
@@ -316,7 +316,9 @@ The dropdown's three native links use the shared Animate UI menu, including
 current-page semantics, shared intent-based native route prefetching and whole-control icon
 feedback.
 Pointer, keyboard focus and touch intent prepare the three legal items through
-one retryable module. The portal mounts on opening and owns focus and exit.
+one retryable module. If the menu opens while the module is still loading, a
+visible status with a spinner appears below the trigger. The portal owns focus
+and exit once the menu content mounts.
 The appearance menu loads its popup and choice
 components on intent through a separate entry point from the shared trigger.
 `PageContent` composes Card, CardHeader and CardContent around one semantic article
@@ -434,11 +436,13 @@ button uses a compact text style. Animate UI Auto Height follows the class grid 
 rows appear or disappear, moving the actions and footer with the list. Reduced
 motion applies the new height immediately. Adding a class preserves the page's
 scroll position. Keyboard activation focuses the new name field without scrolling.
-The class name fills the card header beside
-the compact, vertically centered image count. An invalid name uses the field's error border and
-an anchored Animate UI tooltip on focus or hover. The field retains a live error
-description. The training status reserves space for its wrapped messages. A
-full-width row groups upload, reset and removal.
+The class name fills the card header beside the compact, vertically centered
+image count. The shared shadcn tooltip stays open above an invalid name, including
+after focus leaves, and closes when the name becomes valid. It sits outside the
+card layout, so validation leaves the card height stable. The invalid input uses
+the field's error border and references a screen-reader-only `FieldError` for its
+description and live announcement. The training status reserves space for its
+wrapped messages. A full-width row groups upload, reset and removal.
 Narrow cards retain more space for the upload label and show reset and removal
 as icons with accessible names. The gallery's fixed-height area includes its
 selection controls so collecting the first image keeps the card height stable.
@@ -470,13 +474,16 @@ stream and preserves camera consent. Play reconnects when consent is active and
 opens the camera choice when consent is missing. The training settings provide
 the separate action to withdraw camera consent. Recording requires a live stream.
 Local image uploads remain available.
-With active camera consent and no pause, live prediction starts when the trained
-prediction step opens.
+With active camera consent and no manual pause, live inference runs while the
+prediction panel is in view. Scrolling away pauses inference and keeps the
+authorized camera stream connected. Inference resumes when the panel returns.
 The prediction card keeps its camera frame and result areas in place, and confidence
 bars are empty until results arrive.
 The camera and confidence readout share a row when the card is wide enough.
 The PCA diagram reserves its plot and legend below the
 confidence bars before prediction starts.
+If feature-space preparation fails, the plot offers an inline retry. Retrying
+prepares the projection again while live prediction continues.
 During live prediction, it shows a scatter plot with one point per training image
 and a diamond for the current camera frame. When the panel uses two columns, the
 camera frame stretches to the bottom of the legend. The title identifies the 2D
@@ -485,10 +492,16 @@ Point positions are visual only. The predicted class and confidence values are
 available as text above the plot.
 The plot reuses the lesson's diamond, class palette and typography. Training
 classes use circles, squares and triangles in sequence. When shapes repeat, the
-live legend lets users isolate one class via pressed-state buttons and select it
-again to restore all points. Filtering keeps the camera marker and projection
-scale stable. A packed SVG path per class keeps the point cloud separate from
-the Animate UI marker motion.
+camera key shares a row with a single trigger for the shared shadcn dropdown.
+The preview placeholder reserves this row while the projection prepares.
+Pointer, keyboard and touch intent prepare the menu module. Its scrollable
+viewport fits the available space with up to 15 classes. Checkbox items use the
+shared Animate UI checkmark indicator and keep the menu open during selection.
+All classes are initially visible, and the first
+item toggles them together. The trigger summarizes the visible classes. The
+camera marker and projection scale remain stable even when no classes are
+selected. A packed SVG path per class keeps the point cloud separate from the
+Animate UI marker motion.
 The workspace panels, dialogs, gallery and camera preview use shared theme and media tokens.
 SiteBrand is a small client boundary so Animate UI's press Slot receives a concrete
 Link element. Passing the server-produced Link through that Slot can resolve to an
@@ -534,10 +547,11 @@ produce an honest status message. The trusted build-known bootstrap is rendered
 in static HTML for exact CSP hashing.
 Both document owners declare light and dark color schemes so the browser can
 match the system canvas while the stylesheets load.
-The favicon link precedes the trusted bootstrap in both document owners. Before
-hydration, the bootstrap creates the browser theme-color meta tag and sets its
-color and the favicon for the resolved theme. The default favicon SVG also
-follows the OS color scheme. Selecting a theme updates both immediately.
+The App Router root metadata and the native 500 document both reference
+`/favicon.svg`. Its built-in `prefers-color-scheme` rule follows the browser's
+color scheme. An in-app appearance change leaves the favicon URL stable. The
+trusted bootstrap sets the app appearance and browser toolbar color before
+hydration, and both continue to follow the user's in-app appearance selection.
 
 The static switch takes its initial position, track color and glyph from the
 bootstrapped root theme. React adopts that position as it reads the preference.
@@ -569,10 +583,13 @@ after model consent as a sibling of
 the page, preserving the inline consent dialog.
 It stays mounted during the transition from source-page setup into the workspace.
 Source-page setup uses one dialog for consent, model loading and the camera decision.
+While its dialog module loads, the activated training link replaces its icon
+with the shared spinner. Escape cancels the opening. A menu item keeps its menu
+open during loading and closes it when the setup dialog takes focus.
 The model error step offers a retry for the host import or model loading. Intent on
 a confirmation or image-preview trigger prepares one shared module. The workspace
-mounts one active dialog at a time and supports cancelling a pending first opening
-with Escape. Upload and capture
+mounts one active dialog at a time. A pending first opening shows a spinner on the
+activated class action or image thumbnail and can be cancelled with Escape. Upload and capture
 intent warm the thumbnail module. Its virtualizer mounts when there are images
 to display. Prediction intent prepares the local feature projection when the camera
 can start automatically. Play intent can prepare or retry the same projection. The
@@ -650,8 +667,9 @@ Quiz completion and KNN answer feedback share `AnimatedFeedback`. Animate UI's
 `Effect` owns its short fade and upward entrance. Presence retains outgoing content
 until exit finishes, while immediately hiding it from assistive technology. KNN
 answer corrections replay the content entrance without replacing the height owner.
-The correct class shows the animated check. The vote sentence stays visible and
-the persistent status region announces it with the success title.
+The correct class shows the animated check. The visible KNN feedback keeps its
+existing layout and animation. One persistent polite status region announces
+both outcomes, including the vote sentence and title on success.
 Reduced motion uses the library's instant height change and opacity feedback.
 KNN results, quiz completion and training completion share `success-surface`.
 It combines a thin green border, rounded corners and a light green tint over the
@@ -741,8 +759,11 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   Hovering pulls the glass toward the pointer. Clicking or tapping
   a droplet intensifies its light and motion; the loop carries a light pulse
   from the chosen angle. Overlapping pulses finish their full 2.6-second circuit.
-  The shader runs up to 32 at once within the GPU's uniform budget. Further
-  activations start as slots become free, including repeated taps at the same pixel.
+  The shader runs up to 32 at once within the GPU's uniform budget. Up to 16
+  activations can wait for a slot, including repeated taps at the same pixel.
+  Expired requests are discarded before new activations are admitted to a full
+  queue. If it is still full, the new activation is dropped. A queued activation
+  expires after 7.8 seconds of active playback, excluding pause and offscreen time.
   The artwork itself accepts Enter and Space and keeps
   the normal pointer cursor. The only separate control pauses or resumes playback.
   The initial HTML reserves the artwork area. The shared Spinner mounts after
@@ -785,10 +806,11 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   feedback while another remains active. Disabled buttons suppress it. Landing calls to action,
   the not-found action and page-header navigation use the shared link wrapper;
   ordinary footer text links retain native text-link behavior.
-  All internal route links compose `IntentLink`: pointer entry, focus and pointer
-  down warm the native App Router cache without changing the Link's prefetch mode,
-  key or motion owner. Modal focus, entry playback and consent-dependent effects
-  remain tied to App Router navigation.
+  In App Router documents, `IntentLink` prepares eligible destinations through the
+  native router cache on pointer entry, focus or touch intent without changing the
+  link's prefetch mode, key or motion owner. The static 500 document uses the
+  Speculation Rules described above. Modal focus, entry playback and
+  consent-dependent effects remain tied to App Router navigation.
 - Training step activation uses the native Flow keyframes from route changes
   with a shorter glide and a crossfade for the workspace. Explicit step changes
   from the step bar or panel actions capture the outgoing and incoming panels

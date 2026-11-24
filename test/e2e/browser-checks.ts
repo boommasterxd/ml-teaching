@@ -151,10 +151,10 @@ export function diagnostics(page: Page, expectedMissingDocument?: string) {
   return failures;
 }
 
-export async function expectMenuHighlight(row: Locator, background?: string) {
+export async function expectMenuHighlight(row: Locator) {
   await expect
     .poll(() =>
-      row.evaluate((item, checkBackground) => {
+      row.evaluate((item) => {
         const container = item.closest('[data-slot="motion-highlight-container"]');
         if (!container) throw new Error('The item has no menu highlight container.');
         const rowBounds = item.getBoundingClientRect();
@@ -162,10 +162,8 @@ export async function expectMenuHighlight(row: Locator, background?: string) {
           container.querySelectorAll('[data-slot="motion-highlight"]'),
           (surface) => {
             const bounds = surface.getBoundingClientRect();
-            const style = getComputedStyle(surface);
             return {
-              ...(checkBackground && { background: style.backgroundColor }),
-              opacity: style.opacity,
+              opacity: getComputedStyle(surface).opacity,
               onRow:
                 Math.abs(bounds.left - rowBounds.left) <= 2 &&
                 Math.abs(bounds.top - rowBounds.top) <= 2 &&
@@ -174,9 +172,9 @@ export async function expectMenuHighlight(row: Locator, background?: string) {
             };
           },
         );
-      }, background !== undefined),
+      }),
     )
-    .toEqual([{ ...(background !== undefined && { background }), opacity: '1', onRow: true }]);
+    .toEqual([{ opacity: '1', onRow: true }]);
 }
 
 export async function expectLiveSystemThemeChanges(page: Page, theme: Locator) {

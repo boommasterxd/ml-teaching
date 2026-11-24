@@ -60,7 +60,7 @@ const flowDocuments = new Set<string>([
   '/datenschutz',
 ]);
 const assets =
-  /^(?:\/_next\/static\/(?:chunks\/[\w./-]+\.(?:js|css)|media\/[\w.-]+\.(?:webp|woff2))|\/favicon(?:-(?:dark|light))?\.svg|\/apple-icon\.png)$/;
+  /^(?:\/_next\/static\/(?:chunks\/[\w./-]+\.(?:js|css)|media\/[\w.-]+\.(?:webp|woff2))|\/favicon\.svg|\/apple-icon\.png)$/;
 const publicRoutes = new Set<string>(siteConfig.routes);
 
 function blockedDestination(url: URL, origin: string) {

@@ -138,7 +138,7 @@ jobs:
       - run: npm run build
       - name: Install the locked Chromium browser and headless shell
         run: npx --no-install playwright install chromium
-      - run: npm run test:e2e -- --workers=2
+      - run: npm run test:e2e -- --workers=3
 
   CI:
     name: CI

@@ -47,12 +47,12 @@ back to the hub while the exercise is pending. Both pending routes carry
 The root Server Component renders the shared header, main content and footer.
 Shared CSS tokens supply the light and dark backgrounds, glass surfaces and red
 accent colors for the learning, practice, legal and error pages.
-ThemeProvider encloses them outside the shared Flow PageTransition. A persistent
-React ViewTransition applies the Animate UI Flow preset to the main content on
-typed route changes. Public pages remain
-complete SSG documents; the transition wrapper is a small client boundary and does
-not add request-time reads. ThemeProvider preserves both
-appearance and private in-memory training state across theme changes. A trusted
+`ThemeProvider` manages appearance. It wraps `TrainingEntryProvider`, which
+manages the in-memory training session outside the shared Flow `PageTransition`.
+The training workspace owns its local state and stays mounted across theme changes.
+A persistent React ViewTransition applies the Animate UI Flow preset to the main
+content on typed route changes. Public pages remain complete SSG documents; the
+transition wrapper is a small client boundary without request-time reads. A trusted
 static bootstrap applies a valid remembered light/dark/system selection or the
 operating-system preference. Only explicit remembering writes the single enum key;
 there is no theme service or server personalization. The local font and brand
@@ -237,6 +237,8 @@ how Article 8 GDPR applies to the current private educational offer.
    collection step and the trained prediction step request the stream while camera
    consent is active and the workspace is unpaused.
    Selected local files and captures are resized for local feature extraction.
+   The import rechecks class capacity after acquiring the shared upload slot and
+   stops the batch before reading another original if the class is full.
    Import failures use the shared notification viewport and remain available until
    dismissed, superseded by a completed import, or cleared with the class or workspace.
 4. Training requires complete selected upload batches and no active image work.
@@ -287,6 +289,8 @@ Capture and image-removal callbacks read current class and dialog state without
 changing identity on each gallery update.
 
 Prediction attaches its video once the stream and active prediction are ready.
+Live inference and video attachment pause outside the prediction viewport. The
+authorized stream stays connected so both can resume when the panel returns.
 Collection previews attach video while visible or while a capture is active.
 Hiding the document stops capture and releases the camera tracks. Pause releases the
 tracks and keeps camera consent. The pause persists across training steps until Play

@@ -127,10 +127,10 @@ export default memo(function PredictionPointCloud({
   const markers = useMemo(() => getMarkerStyles(classes), [classes]);
   const series = useMemo(() => getSeries(markers, points, scale), [markers, points, scale]);
   const marker = position && plotMarker(toPlot(position, scale));
-  const [selected, setSelected] = useState<string | null>(null);
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
   const visibleSeries = useMemo(
-    () => (selected ? series.filter(({ id }) => id === selected) : series),
-    [selected, series],
+    () => (hidden.size ? series.filter(({ id }) => !hidden.has(id)) : series),
+    [hidden, series],
   );
 
   return (
@@ -145,7 +145,7 @@ export default memo(function PredictionPointCloud({
           )}
         </div>
       </PredictionPlot>
-      <PredictionLegend markers={markers} selected={selected} onSelect={setSelected} />
+      <PredictionLegend markers={markers} hidden={hidden} onChange={setHidden} />
     </>
   );
 });

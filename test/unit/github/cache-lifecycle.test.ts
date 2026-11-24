@@ -212,10 +212,13 @@ describe('cache lifecycle', () => {
     expect(api.removed).toEqual([]);
   });
 
-  it('recovers a trusted producer receipt after unrelated main changes', () => {
+  it('recovers a trusted producer receipt despite a full page of newer unrelated main runs', () => {
     const api = new FixtureApi();
     generations(api);
     api.producer = run({ head_sha: previousHead });
+    api.otherCompletedRuns = Array.from({ length: 20 }, (_, index) =>
+      run({ id: 100 + index, name: 'Cache lifecycle', path: '.github/workflows/cleanup.yml' }),
+    );
     expect(runLifecycle(options(api, 'workflow_run')).deleted.map(({ id }) => id)).toEqual([1]);
   });
 

@@ -18,7 +18,10 @@ export const metadata: Metadata = {
     template: '%s | ML Teaching',
   },
   applicationName: siteConfig.name,
-  icons: { apple: '/apple-icon.png' },
+  icons: {
+    icon: { url: '/favicon.svg', type: 'image/svg+xml', sizes: 'any' },
+    apple: '/apple-icon.png',
+  },
 };
 
 export const viewport: Viewport = {
@@ -32,13 +35,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="de" suppressHydrationWarning>
       <head>
         <ErrorRecoveryTransitionStyles />
-        <link
-          id="site-favicon"
-          rel="icon"
-          href="/favicon.svg"
-          type="image/svg+xml"
-          suppressHydrationWarning
-        />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
       </head>
       <body className={[geist.variable, 'app-body'].join(' ')}>

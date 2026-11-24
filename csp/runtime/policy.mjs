@@ -123,11 +123,17 @@ export function policyFor(hashes, definitions) {
 }
 
 /** The caller owns cryptographic generation, freshness and trusted request forwarding.
- * @param {string} nonce @param {import('./types.js').PolicyDefinitions} definitions */
-export function noncePolicyFor(nonce, definitions) {
+ * @param {string} nonce @param {import('./types.js').PolicyDefinitions} definitions
+ * @param {{scripts: string[], styles: string[]}} [trustedHashes]
+ */
+export function noncePolicyFor(nonce, definitions, trustedHashes = { scripts: [], styles: [] }) {
   if (typeof nonce !== 'string' || !/^[A-Za-z0-9+/_-]{22,256}={0,2}$/u.test(nonce)) {
     throw new Error('Invalid CSP nonce');
   }
-  const authorization = [`'nonce-${nonce}'`];
-  return headerFor(configuredPolicy(definitions, 'ssr'), authorization, authorization);
+  const authorization = `'nonce-${nonce}'`;
+  return headerFor(
+    configuredPolicy(definitions, 'ssr'),
+    [authorization, ...quoteHashes(trustedHashes.scripts)],
+    [authorization, ...quoteHashes(trustedHashes.styles)],
+  );
 }

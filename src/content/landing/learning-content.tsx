@@ -111,8 +111,16 @@ function ImageTrainingAction() {
           <CardTitle id="section-cta">Trainiere deine eigenen Klassen.</CardTitle>
         </EntryReveal>
         <EntryReveal kind="text" index={1} className="mobile-action">
-          <AnimatedLink href={learningPaths.imagePractice} size="lg" className="mobile-action">
-            Jetzt ausprobieren <ArrowRight data-icon="inline-end" aria-hidden="true" />
+          <AnimatedLink
+            href={learningPaths.imagePractice}
+            size="lg"
+            className="mobile-action"
+            trainingIcon={{
+              content: <ArrowRight data-icon="inline-end" aria-hidden="true" />,
+              position: 'end',
+            }}
+          >
+            Jetzt ausprobieren
           </AnimatedLink>
         </EntryReveal>
       </Card>

@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { SubscribePredictionFeatures } from '@/hooks/usePredictionLoop';
 import type { usePredictionSpacePreparation } from '@/hooks/usePredictionSpacePreparation';
 import { Camera } from './icons/camera';
@@ -24,6 +24,7 @@ interface PredictionPanelProps {
   isPredicting: boolean;
   hasTrainedModel: boolean;
   predictVideoRef: React.RefObject<HTMLVideoElement | null>;
+  onVisibilityChange: (visible: boolean) => void;
   subscribeToFeatures: SubscribePredictionFeatures;
   space: ReturnType<typeof usePredictionSpacePreparation>;
 }
@@ -157,12 +158,33 @@ function PredictionWorkspace({
   prediction,
   subscribeToFeatures,
   space,
+  onVisibilityChange,
   ...preview
 }: Omit<PredictionPanelProps, 'entryReady' | 'hasTrainedModel'>) {
+  const surface = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = surface.current;
+    if (!node) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      onVisibilityChange(true);
+      return () => onVisibilityChange(false);
+    }
+    const observer = new IntersectionObserver(([entry]) =>
+      onVisibilityChange(entry.isIntersecting),
+    );
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      onVisibilityChange(false);
+    };
+  }, [onVisibilityChange]);
   const { isPredicting, camera } = preview;
   const live = isPredicting && Boolean(camera.stream);
   return (
-    <div className="grid items-start gap-4 @lg/prediction:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+    <div
+      ref={surface}
+      className="grid items-start gap-4 @lg/prediction:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]"
+    >
       <PredictionCamera {...preview} onStartIntent={space.prepare} />
       <div className="grid min-w-0 gap-3">
         <Badge variant="secondary">
@@ -183,6 +205,7 @@ function PredictionWorkspace({
               result={space.result}
               classes={classes}
               subscribeToFeatures={subscribeToFeatures}
+              onRetry={space.prepare}
             />
           )}
         </PredictionDiagram>

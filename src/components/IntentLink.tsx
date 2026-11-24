@@ -1,15 +1,25 @@
 'use client';
 
-import { useCallback, useEffect, useRef, type ComponentProps, type PointerEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  type ComponentProps,
+  type PointerEvent,
+  type ReactNode,
+} from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { learningPaths } from '@/lib/learning-paths';
 import { prepareRoute } from './prepare-route';
-import { useTrainingEntry } from './training/TrainingEntryContext';
+import { useTrainingEntry, type TrainingEntryOptions } from './training/TrainingEntryContext';
+import { Spinner } from './ui/spinner';
 
 type IntentLinkProps = ComponentProps<typeof Link> & {
   prepareOnIntent?: boolean;
-  onTrainingEntry?: (link: HTMLAnchorElement) => HTMLElement | null;
+  onTrainingEntry?: (link: HTMLAnchorElement) => TrainingEntryOptions;
+  trainingIcon?: { content: ReactNode; position: 'start' | 'end' };
 };
 const forwardNavigation = ['nav-forward'];
 const touchIntentDelay = 80;
@@ -81,23 +91,12 @@ function startsTraining(target: URL, current: Location) {
   );
 }
 
-/** Native navigation warms its route payload only after pointer, keyboard or touch intent. */
-export default function IntentLink({
-  onClick,
-  onPointerEnter,
-  onFocus,
-  onPointerDown,
-  onPointerUp,
-  onPointerCancel,
-  onNavigate,
-  onTrainingEntry,
-  prepareOnIntent = true,
-  ...props
-}: IntentLinkProps) {
-  const router = useRouter();
-  const entry = useTrainingEntry();
-  const activatedLink = useRef<HTMLAnchorElement | null>(null);
-  const prepare = useCallback(
+function useLinkPreparation(
+  router: ReturnType<typeof useRouter>,
+  prepareOnIntent: boolean,
+  prepareEntry?: () => void,
+) {
+  return useCallback(
     (anchor: HTMLAnchorElement) => {
       if (!prepareOnIntent) return;
       const target = new URL(anchor.href);
@@ -115,10 +114,41 @@ export default function IntentLink({
       }
       const path = target.pathname + target.search;
       prepareRoute(router, path.startsWith('//') ? target.origin + path : path, target.pathname);
-      if (startsTraining(target, current)) entry?.prepareEntry();
+      if (startsTraining(target, current)) prepareEntry?.();
     },
-    [entry, prepareOnIntent, router],
+    [prepareEntry, prepareOnIntent, router],
   );
+}
+
+/** Native navigation warms its route payload only after pointer, keyboard or touch intent. */
+export default function IntentLink({
+  onClick,
+  onPointerEnter,
+  onFocus,
+  onPointerDown,
+  onPointerUp,
+  onPointerCancel,
+  onNavigate,
+  onTrainingEntry,
+  trainingIcon,
+  children,
+  id,
+  prepareOnIntent = true,
+  ...props
+}: IntentLinkProps) {
+  const router = useRouter();
+  const entry = useTrainingEntry();
+  const generatedId = useId();
+  const linkId = id ?? (trainingIcon ? generatedId : undefined);
+  const pending = linkId !== undefined && entry?.pendingTrigger?.id === linkId;
+  const prepareEntry = entry?.prepareEntry;
+  const icon = pending ? (
+    <Spinner data-icon={`inline-${trainingIcon?.position ?? 'end'}`} aria-hidden="true" />
+  ) : (
+    trainingIcon?.content
+  );
+  const activatedLink = useRef<HTMLAnchorElement | null>(null);
+  const prepare = useLinkPreparation(router, prepareOnIntent, prepareEntry);
   const touch = useTouchPreparation(prepare);
 
   const navigate: IntentLinkProps['onNavigate'] = (event) => {
@@ -137,13 +167,16 @@ export default function IntentLink({
     });
     if (cancelled) return;
     event.preventDefault();
-    entry.openEntry(onTrainingEntry ? onTrainingEntry(anchor) : anchor);
+    if (onTrainingEntry) entry.openEntry(anchor, onTrainingEntry(anchor));
+    else entry.openEntry(anchor);
   };
 
   return (
     <Link
       transitionTypes={forwardNavigation}
       {...props}
+      id={linkId}
+      aria-busy={pending || props['aria-busy']}
       prefetch={false}
       onClick={(event) => {
         touch.cancel();
@@ -181,6 +214,10 @@ export default function IntentLink({
         onPointerCancel?.(event);
         touch.cancelPointer(event);
       }}
-    />
+    >
+      {trainingIcon?.position === 'start' && icon}
+      {children}
+      {trainingIcon?.position === 'end' && icon}
+    </Link>
   );
 }

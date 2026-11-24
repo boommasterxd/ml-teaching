@@ -98,6 +98,42 @@ describe('local image upload', () => {
     expect(onError).not.toHaveBeenCalled();
   });
 
+  it('skips a queued file when its class fills and lets the following class proceed', async () => {
+    const held = Promise.withResolvers<void>();
+    const onError = vi.fn();
+    const active = processImageFiles(
+      [file('active.png')],
+      () => held.promise,
+      onError,
+      controller().signal,
+    );
+    await loaded(0);
+
+    const blocked = file('class-full.png');
+    const read = vi.spyOn(FileReader.prototype, 'readAsArrayBuffer');
+    const hasCapacity = vi.fn(() => true);
+    const discarded = vi.fn();
+    const pending = processImageFiles(
+      [blocked],
+      discarded,
+      onError,
+      controller().signal,
+      hasCapacity,
+    );
+    const onNext = vi.fn();
+    const next = processImageFiles([file('next.png')], onNext, onError, controller().signal);
+    hasCapacity.mockReturnValue(false);
+    held.resolve();
+
+    await pending;
+    await loaded(1);
+    await Promise.all([active, next]);
+    expect(read.mock.calls.map(([original]) => (original as File).name)).toEqual(['next.png']);
+    expect(discarded).not.toHaveBeenCalled();
+    expect(onNext).toHaveBeenCalledOnce();
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it('reports a broken image, frees it, and continues with the next file', async () => {
     const onImage = vi.fn();
     const onError = vi.fn();

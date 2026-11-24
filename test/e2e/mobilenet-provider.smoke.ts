@@ -22,9 +22,7 @@ function isModelFile(url: URL) {
 function isLocalAsset(url: URL) {
   return (
     !url.search &&
-    /^(?:\/_next\/static\/[\w./-]+|\/favicon(?:-dark|-light)?\.svg|\/apple-icon\.png)$/.test(
-      url.pathname,
-    )
+    /^(?:\/_next\/static\/[\w./-]+|\/favicon\.svg|\/apple-icon\.png)$/.test(url.pathname)
   );
 }
 

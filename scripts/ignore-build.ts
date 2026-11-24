@@ -29,10 +29,32 @@ const nonRuntime = [
   /^(?:README|AGENTS)\.md$/,
   /^test\/(?:unit|e2e)\/.+\.(?:ts|tsx|mjs)$/,
   /^test\/setup\.ts$/,
-  /^\.github\/workflows\/(?:ci|commit-style-check|dependabot-auto-merge|gitleaks|update-gitleaks)\.yml$/,
-  /^\.github\/(?:dependabot\.yml|gitleaks(?:-version\.json|\.toml))$/,
-  /^\.github\/scripts\/(?:plan-ci|validate-ci)\.ts$/,
 ];
+const ciOnlyPaths = new Set([
+  '.github/cache-policy.json',
+  '.github/dependabot.yml',
+  '.github/gitleaks-version.json',
+  '.github/gitleaks.toml',
+  '.github/scripts/cache.ts',
+  '.github/scripts/cache-lifecycle/core.cjs',
+  '.github/scripts/cache-lifecycle/github.cjs',
+  '.github/scripts/cache-lifecycle/planner.cjs',
+  '.github/scripts/cache-lifecycle/recovery.cjs',
+  '.github/scripts/cache-lifecycle/run.cjs',
+  '.github/scripts/cache-lifecycle/types.d.ts',
+  '.github/scripts/plan-ci.ts',
+  '.github/scripts/pr-check-evidence.ts',
+  '.github/scripts/validate-ci.ts',
+  '.github/workflows/cache-lifecycle.yml',
+  '.github/workflows/ci.yml',
+  '.github/workflows/commit-style-check.yml',
+  '.github/workflows/dependabot-auto-merge.yml',
+  '.github/workflows/dependency-cache-reconciliation.yml',
+  '.github/workflows/dependency-cache.yml',
+  '.github/workflows/gitleaks.yml',
+  '.github/workflows/update-gitleaks.yml',
+  'tsconfig.cache-lifecycle.json',
+]);
 
 type ReadGit = (args: string[]) => string;
 
@@ -91,7 +113,7 @@ function classifyBuild(previous: string, current: string, readGit: ReadGit) {
           readGit(['show', `${current}:package.json`]),
         );
       }
-      return nonRuntime.some((pattern) => pattern.test(path));
+      return ciOnlyPaths.has(path) || nonRuntime.some((pattern) => pattern.test(path));
     });
     return safe ? 'non-runtime-diff' : 'unclassified-or-runtime-change';
   } catch {
