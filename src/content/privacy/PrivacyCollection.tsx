@@ -88,9 +88,10 @@ export const PrivacyCollection = (
     <h4>Download des KI-Modells</h4>
     <p>
       Nach Ihrer Einwilligung lädt Ihr Browser ein vortrainiertes Modell, das die Lernfunktion zur
-      Bilderkennung benötigt. Kaggle leitet den Abruf weiter und Google liefert die Modelldateien
-      aus. Beide erhalten dabei Ihre IP-Adresse sowie technische Angaben wie Browserinformationen
-      und den Zeitpunkt des Abrufs.
+      Bilderkennung benötigt. Der Browser fragt zuerst bei Google an und wird zu Kaggle
+      weitergeleitet. Kaggle leitet den Browser für den Download zu Google zurück. Beide erhalten
+      dabei Ihre IP-Adresse sowie technische Angaben wie Browserinformationen und den Zeitpunkt des
+      Abrufs.
     </p>
     <p>
       Nach Googles Datenschutzerklärung ist Google Ireland Limited, Gordon House, Barrow Street,
@@ -121,9 +122,10 @@ export const PrivacyCollection = (
     <h4>Speicherdauer</h4>
     <p>
       Bildbeispiele, Bildmerkmale, Klassennamen und der trainierte Klassifikator werden für die
-      aktuelle Nutzung im Arbeitsspeicher Ihres Browsers gehalten. Wenn Sie „Einwilligung
-      widerrufen“ wählen, die Seite neu laden oder schließen, wird dieser Anwendungszustand
-      verworfen. Die Anwendung speichert Ihre Trainingsdaten nicht dauerhaft.
+      aktuelle Nutzung im Arbeitsspeicher Ihres Browsers gehalten. Die Anwendung verwirft diesen
+      Trainingsstand, sobald Sie die Trainingsseite verlassen, sie neu laden, den Tab schließen oder
+      „Einwilligung widerrufen“ wählen. Beim Seitenwechsel innerhalb der Website kann Ihre gemerkte
+      Auswahl weiter gelten. Die Anwendung speichert Ihre Trainingsdaten nicht dauerhaft.
     </p>
     <p>
       Die Kamerabilder der Live-Vorhersage und die dafür berechneten Merkmale werden vorübergehend

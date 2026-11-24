@@ -27,7 +27,16 @@ export interface CaptureActions {
   onCommitCapture: (classId: string, frames: CapturedFrames) => void;
   onAddImageExample: (classId: string, image: HTMLImageElement) => void | Promise<void>;
   onError: (message: string) => void;
+  onUploadResult: (classId: string, report: UploadFailureReport | null) => void;
 }
+
+interface UploadFailureReport {
+  className: string;
+  total: number;
+  details: string[];
+}
+
+const uploadFailureDetailLimit = 5;
 
 interface UploadBatch {
   controller: AbortController;
@@ -164,6 +173,17 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
     if (!files.length || !latest.current.actions.onUploadStart()) return;
     cancelUpload(uploadRef.current);
     const controller = new AbortController();
+    const version = current.captureVersion ?? 0;
+    const report: UploadFailureReport = {
+      className: current.name,
+      total: 0,
+      details: [],
+    };
+    function reportFailure(message: string) {
+      if (controller.signal.aborted) return;
+      report.total++;
+      if (report.details.length < uploadFailureDetailLimit) report.details.push(message);
+    }
     let finished = false;
     const finish = () => {
       if (finished) return;
@@ -174,14 +194,23 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
     void processImageFiles(
       files,
       (image) => latest.current.actions.onAddImageExample(current.id, image),
-      (message) => latest.current.actions.onError(message),
+      reportFailure,
       controller.signal,
     )
       .catch(() => {
-        if (!controller.signal.aborted)
-          latest.current.actions.onError('Die Bilder konnten nicht verarbeitet werden.');
+        reportFailure('Die Bilder konnten nicht verarbeitet werden.');
       })
-      .finally(finish);
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          uploadRef.current = null;
+          const { cls, actions } = latest.current;
+          if ((cls.captureVersion ?? 0) === version) {
+            report.className = cls.name;
+            actions.onUploadResult(current.id, report.total ? report : null);
+          }
+        }
+        finish();
+      });
   }, []);
   useEffect(() => () => cancelUpload(uploadRef.current), [captureVersion]);
   return { ...recording, handleFileUpload };

@@ -34,29 +34,38 @@ export default function GlassArtworkPlaceholder({
   fallback: boolean;
   pending: boolean;
 }) {
-  if (fallback) return <StaticContourPoster sources={sources} />;
-
   return (
     <>
-      <picture className="hero-field-poster">
-        {(['desktop', 'mobile'] as const).map((variant) => {
-          const image = sources[variant];
-          return (
-            <source
-              key={variant}
-              media={`${reducedMotionMedia} and ${contourMedia[variant]}`}
-              srcSet={image.srcSet ?? image.src}
-              sizes={image.sizes}
-              width={image.width}
-              height={image.height}
-            />
-          );
-        })}
-        <img src={emptyImage} alt="" width={sources.mobile.width} height={sources.mobile.height} />
-      </picture>
-      <noscript>
+      {fallback ? (
         <StaticContourPoster sources={sources} />
-      </noscript>
+      ) : (
+        <>
+          <picture className="hero-field-poster">
+            {(['desktop', 'mobile'] as const).map((variant) => {
+              const image = sources[variant];
+              return (
+                <source
+                  key={variant}
+                  media={`${reducedMotionMedia} and ${contourMedia[variant]}`}
+                  srcSet={image.srcSet ?? image.src}
+                  sizes={image.sizes}
+                  width={image.width}
+                  height={image.height}
+                />
+              );
+            })}
+            <img
+              src={emptyImage}
+              alt=""
+              width={sources.mobile.width}
+              height={sources.mobile.height}
+            />
+          </picture>
+          <noscript>
+            <StaticContourPoster sources={sources} />
+          </noscript>
+        </>
+      )}
       {pending && <DelayedLoadingIndicator />}
     </>
   );

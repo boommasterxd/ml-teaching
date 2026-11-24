@@ -62,18 +62,24 @@ function confirmScheduleMiss(mainSha: string, cacheInventory: string) {
   }
 }
 
-it('serializes each PR revision independently and isolates manual Gitleaks scans', () => {
+it('replaces overlapping code runs per PR and isolates metadata edits and retries', () => {
   const concurrency = (workflow: string) =>
     /^concurrency:\n((?: +[^\n]+\n)+)/m.exec(workflow)?.[1].trim().replace(/\s+/g, ' ');
-  expect(concurrency(ci)).toBe(
-    'group: ci-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.base.sha }}-' +
-      '${{ github.event.pull_request.head.sha }}-${{ github.sha }} cancel-in-progress: false',
+  const ciConcurrency = concurrency(ci);
+  const gitleaksConcurrency = concurrency(read('workflows/gitleaks.yml'));
+  const prGroup =
+    "github.run_attempt > 1 && format('retry-{0}', github.run_id) " +
+    "|| (github.event.action == 'edited' && !github.event.changes.base) " +
+    "&& format('metadata-{0}-{1}', github.event.pull_request.number, github.sha) " +
+    "|| format('pr-{0}', github.event.pull_request.number)";
+  const cancelNewCode =
+    "github.run_attempt == 1 && (github.event.action != 'edited' || github.event.changes.base != null)";
+  expect(ciConcurrency).toBe(
+    `group: >- ci-\${{ ${prGroup} }} cancel-in-progress: \${{ ${cancelNewCode} }}`,
   );
-  expect(concurrency(read('workflows/gitleaks.yml'))).toBe(
-    "group: >- gitleaks-${{ github.event_name == 'pull_request' && format('pr-{0}-{1}-{2}-{3}', " +
-      'github.event.pull_request.number, github.event.pull_request.base.sha, ' +
-      "github.event.pull_request.head.sha, github.sha) || format('manual-{0}', github.ref) }} " +
-      "cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' }}",
+  expect(gitleaksConcurrency).toBe(
+    "group: >- gitleaks-${{ github.event_name == 'workflow_dispatch' && format('manual-{0}', github.ref) " +
+      `|| ${prGroup} }} cancel-in-progress: >- \${{ github.event_name == 'workflow_dispatch' || (${cancelNewCode}) }}`,
   );
 });
 

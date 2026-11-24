@@ -30,6 +30,7 @@ describe('class card', () => {
       onUpdateName: vi.fn(),
       onImageClick: vi.fn(),
       onError: vi.fn(),
+      onUploadResult: vi.fn(),
       onUploadStart: vi.fn(() => true),
       onUploadEnd: vi.fn(),
       captureDisabled: false,

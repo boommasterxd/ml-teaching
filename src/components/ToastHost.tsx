@@ -1,12 +1,7 @@
 'use client';
 
 import { useEffect, useState, useSyncExternalStore, type ComponentType } from 'react';
-import {
-  dismissPendingToast,
-  getInitialToasts,
-  getPendingToasts,
-  subscribeToPendingToasts,
-} from '@/lib/toast';
+import { getInitialToasts, getPendingToasts, subscribeToPendingToasts, toast } from '@/lib/toast';
 import { Alert, AlertDescription } from './ui/alert';
 import Button from './Button';
 import { X } from './icons/x';
@@ -44,21 +39,29 @@ export default function ToastHost() {
 
   return (
     <div className="app-toast-viewport flex flex-col gap-3">
-      {pending.map(({ id, message, type }) => (
+      {pending.map(({ id, message, description, type }) => (
         <Alert
           key={id}
           role={type === 'error' ? 'alert' : 'status'}
           variant={type === 'error' ? 'destructive' : 'default'}
           className="pointer-events-auto grid-cols-[1fr_auto] items-center bg-popover"
         >
-          <AlertDescription className="col-start-1 [overflow-wrap:anywhere]">
-            {message}
+          <AlertDescription className="col-start-1 wrap-anywhere">
+            <p>{message}</p>
+            {description && (
+              <p
+                tabIndex={0}
+                className="control-focus control-focus-inset max-h-[min(35dvh,16rem)] overflow-y-auto whitespace-pre-line"
+              >
+                {description}
+              </p>
+            )}
           </AlertDescription>
           <Button
             variant="ghost"
             size="icon-sm"
             aria-label="Meldung schließen"
-            onClick={() => dismissPendingToast(id)}
+            onClick={() => toast.dismiss(id)}
           >
             <X aria-hidden="true" />
           </Button>

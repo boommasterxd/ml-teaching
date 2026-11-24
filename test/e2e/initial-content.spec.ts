@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import {
   diagnostics,
   expectAccessible,
@@ -12,48 +12,18 @@ import { learningPaths } from '../../src/lib/learning-paths';
 import { headerLegalLinks } from '../../src/content/site-navigation';
 import { routeSyntheticModel } from './synthetic-model';
 import { grantModelConsent } from './training-keyboard';
-import {
-  expectHomeLearningAreas,
-  expectReadable,
-  expectReadableLink,
-} from './initial-content-checks';
+import { expectPublicMain, expectReadable, expectReadableLink } from './initial-content-checks';
 
-async function expectLearningHub(main: Locator) {
-  await expectReadableLink(
-    main.getByRole('link', { name: 'Bilderkennung verstehen' }),
-    learningPaths.images,
-  );
-  await expectReadableLink(
-    main.getByRole('link', { name: 'Eigenes Bildmodell trainieren' }),
-    learningPaths.imagePractice,
-  );
-  const pending = main.getByRole('button', { name: 'Coming Soon' });
-  await expectReadable(pending);
-  await expect(pending).toBeDisabled();
-}
-
-async function expectImageExercises(main: Locator) {
-  const network = main.getByRole('list', { name: 'Vom Beispielbild zur Ausgabe' });
-  for (const name of ['Beispielbild', 'MobileNet', 'KNN', 'Mehrheit gewinnt']) {
-    await expectReadable(network.getByRole('heading', { name, exact: true }));
+async function expectPublicShell(page: Page) {
+  const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
+  await expectReadable(navigation.getByRole('button', { name: 'Lernlabor', exact: true }));
+  await expectReadable(navigation.getByRole('button', { name: 'Rechtliches', exact: true }));
+  const footer = page
+    .getByRole('contentinfo')
+    .getByRole('navigation', { name: 'Rechtliche Links' });
+  for (const { href, label } of headerLegalLinks) {
+    await expectReadableLink(footer.getByRole('link', { name: label, exact: true }), href);
   }
-  await expectReadable(main.getByRole('button', { name: 'Katzenbild zeigen' }));
-  await expectReadable(main.getByRole('button', { name: 'Hundebild zeigen' }));
-  const everyday = main.getByRole('region', { name: 'Wo steckt Bilderkennung drin?' });
-  await expectReadable(everyday.getByText(/Wähle die drei Beispiele/));
-  const choices = everyday.getByRole('button', { name: /^Auswählen: / });
-  await expect(choices).toHaveCount(6);
-  for (const choice of await choices.all()) await expectReadable(choice);
-  const neighbors = main.getByRole('region', { name: 'Welche Nachbarn zählen?' });
-  await expectReadable(neighbors.getByText(/Finde die nächsten Nachbarn der Raute/));
-  await expectReadable(neighbors.getByRole('heading', { name: 'Hund oder Katze?' }));
-  await expectReadable(
-    neighbors.getByRole('status').filter({ hasText: 'Die Übung wird geladen …' }),
-  );
-  await expectReadableLink(
-    main.getByRole('link', { name: 'Jetzt ausprobieren' }),
-    learningPaths.imagePractice,
-  );
 }
 
 async function expectLegalNavigation(page: Page, path: string) {
@@ -95,30 +65,12 @@ for (const path of publicRoutes) {
       expect(response?.status()).toBe(200);
       await response?.finished();
       await scripts.expectHeld();
-      await expectReadable(page.getByRole('navigation', { name: 'Hauptnavigation' }));
-      if (path === '/') {
-        const footer = page
-          .getByRole('contentinfo')
-          .getByRole('navigation', { name: 'Rechtliche Links' });
-        for (const name of ['Impressum', 'Datenschutz', 'Barrierefreiheit']) {
-          await expectReadable(footer.getByRole('link', { name, exact: true }));
-        }
-      }
       const main = page.getByRole('main');
-      await expectReadable(main.getByRole('heading', { level: 1 }));
-      if (path === '/') await expectHomeLearningAreas(main);
+      await expectPublicShell(page);
+      await expectPublicMain(main, path, 'static');
       if (path === learningPaths.qLearning) {
-        await expect(main.getByRole('heading', { level: 1 })).toHaveText('Q-Learning verstehen');
-        await expectReadable(main.getByText('Die Einführung erscheint demnächst.'));
-        await expectReadable(main.getByRole('link', { name: 'Zum Lernlabor' }));
         await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
-      } else {
-        await expectReadable(main.getByRole('heading', { level: 2 }).first());
-        await expectReadable(main.locator('p:not(.sr-only)').first());
-        await expectReadable(main.getByRole('link').first());
       }
-      if (path === learningPaths.hub) await expectLearningHub(main);
-      if (path === learningPaths.images) await expectImageExercises(main);
       if (headerLegalLinks.some(({ href }) => href === path)) {
         await expectLegalNavigation(page, path);
       }
@@ -135,6 +87,11 @@ for (const path of publicRoutes) {
       await expect(appearance).toBeChecked();
       await settleEntryAnimations(page);
       expect(await measureShift()).toBeLessThan(1);
+      await expectPublicShell(page);
+      await expectPublicMain(main, path, 'hydrated');
+      if (headerLegalLinks.some(({ href }) => href === path)) {
+        await expectLegalNavigation(page, path);
+      }
       await appearance.press('Space');
       await expect(appearance).not.toBeChecked();
       expect(failures).toEqual([]);
@@ -328,10 +285,9 @@ for (const [width, colorScheme] of [
       await expect(local).toContainText('Über die Kamera entscheide ich extra.');
       await expect(local.getByRole('link')).toHaveAttribute('href', '/datenschutz');
       await expectReadable(model);
-      await expect(model).toContainText('das KI-Modell von Google über Kaggle lädt');
-      await expect(model).toContainText('damit ich die Bilderkennung ausprobieren kann');
-      await expect(model).toContainText('meine IP-Adresse (meine Internetadresse)');
-      await expect(model.getByRole('link')).toHaveAttribute('href', '/datenschutz');
+      await expect(model).toHaveText(
+        'Ich stimme zu, dass mein Browser das KI-Modell lädt. Google und Kaggle erhalten dabei meine IP-Adresse.',
+      );
       await expectReadable(dialog.getByRole('note'));
       await expect(dialog.getByRole('note')).toContainText(
         'Auch ohne Zustimmung kannst du über Bilderkennung lesen',
@@ -377,6 +333,7 @@ for (const [width, colorScheme] of [
         ).toBe(true);
       }
       const required = dialog.getByRole('checkbox', { name: /^Ich stimme zu/ });
+      await expect(required).toHaveCount(2);
       for (const [index, choice] of (await required.all()).entries()) {
         await choice.focus();
         await page.keyboard.press('Space');

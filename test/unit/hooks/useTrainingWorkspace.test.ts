@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   modelReady: true,
   extract: vi.fn(),
   toastError: vi.fn(),
+  dismissToast: vi.fn(),
   setClassifier: vi.fn(),
   retryCamera: vi.fn(),
   cameraFailed: false,
@@ -28,7 +29,7 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@/lib/toast', () => ({ toast: { error: mocks.toastError } }));
+vi.mock('@/lib/toast', () => ({ toast: { error: mocks.toastError, dismiss: mocks.dismissToast } }));
 vi.mock('@/hooks/useModelLoader', () => ({
   useModelLoader: () => ({
     classifier: mocks.modelReady ? mocks.classifier : null,
@@ -107,6 +108,7 @@ async function renderWorkspace(step: TrainingStep = 'images') {
   const view = render(createElement(WorkspaceHarness, { step, publish }));
   await act(() => vi.dynamicImportSettled());
   return {
+    unmount: view.unmount,
     result: {
       get current() {
         return workspace;
@@ -149,6 +151,24 @@ beforeEach(() => {
 });
 
 describe('local training workspace', () => {
+  it('keeps upload notifications available until a retry or workspace exit', async () => {
+    const { result, unmount } = await renderWorkspace();
+    const { onUploadResult } = result.current.cardActions;
+    const report = { className: 'Rot', total: 2, details: ['"bild.png": Ungültiges Bild.'] };
+    act(() => onUploadResult('class-1', report));
+    expect(mocks.toastError).toHaveBeenCalledWith('2 Bilder konnten nicht hinzugefügt werden.', {
+      id: 'training-upload-class-1',
+      timeout: 0,
+      description: 'Rot\n"bild.png": Ungültiges Bild.\nEine weitere Datei ist fehlgeschlagen.',
+    });
+    act(() => onUploadResult('class-1', null));
+    expect(mocks.dismissToast).toHaveBeenCalledWith('training-upload-class-1');
+
+    act(() => onUploadResult('class-2', report));
+    unmount();
+    expect(mocks.dismissToast).toHaveBeenLastCalledWith('training-upload-class-2');
+  });
+
   it('waits for every selected batch, trains all accepted images, and rejects new batches during training', async () => {
     const { result } = await renderWorkspace();
     await collectMinimumImages(result);

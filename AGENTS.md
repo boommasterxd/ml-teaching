@@ -12,6 +12,13 @@
   implied by source-edit authority. Authorized integration uses squash merge.
 - Preserve unrelated work. Do not add databases, accounts, tracking, external fonts,
   client fingerprinting or paid services without a concrete requirement and authority.
+- Before adding functionality anywhere in the project, inspect the existing
+  implementation and its callers. Reuse the established components, hooks, helpers,
+  services, and workflows through their shared interfaces. If a new case needs the
+  same behavior with a small difference, extend the shared implementation. Add a
+  separate implementation only when the existing one cannot meet a concrete
+  requirement, and document the reason. This applies to every state and code path,
+  including loading, errors, retries, and empty states.
 - Every administrative write to an actual database needs direct user approval for
   the exact reviewed target and change. No migration/seed hook may run implicitly.
 - Apply relevant installed domain guidance before work, respecting its scope.
@@ -100,6 +107,11 @@
   controls for forms, dialogs, menus and feedback. Apply this to loading, error
   and pre-hydration states as well. Extend a shared variant when the design
   needs one. Keep semantic HTML for ordinary layout, links and document content.
+- Use the shared destructive [`Alert`](src/components/ui/alert.tsx) for contextual
+  errors that block an active step, such as camera setup. Use the shared
+  [`toast`](src/lib/toast.ts) for global notifications, including workspace camera
+  and image import errors. Upload error notifications stay available until
+  dismissed or superseded. Use `FieldError` for field validation.
 - During review, trace card-like surfaces and controls to their shared component.
   Replace local HTML/CSS lookalikes. If shadcn/ui has no suitable component,
   check the Animate UI catalog before writing custom UI. Record concrete platform or
@@ -184,6 +196,7 @@ maintained documentation change.
 | [`docs/decisions/pull-request-branch-retention.md`](docs/decisions/pull-request-branch-retention.md)   | Records intentional retention of merged pull request branches.  |
 | [`docs/decisions/ssg-and-csp.md`](docs/decisions/ssg-and-csp.md)                                       | Records static rendering and guarded CSP integration.           |
 | [`docs/decisions/training-visual-accessibility.md`](docs/decisions/training-visual-accessibility.md)   | Records accepted visual limitations of image training.          |
+| [`docs/decisions/vercel-challenge-hsts.md`](docs/decisions/vercel-challenge-hsts.md)                   | Records the accepted HSTS gap on Vercel challenge responses.    |
 | [`docs/deployment.md`](docs/deployment.md)                                                             | Defines the Vercel release workflow and publication boundaries. |
 | [`docs/design-system.md`](docs/design-system.md)                                                       | Defines shared UI, motion, accessibility and integration rules. |
 | [`docs/development.md`](docs/development.md)                                                           | Documents runtime, commands and local verification.             |

@@ -23,6 +23,7 @@ const actions = () => ({
   onCommitCapture: vi.fn<CaptureActions['onCommitCapture']>(),
   onAddImageExample: vi.fn(),
   onError: vi.fn(),
+  onUploadResult: vi.fn<CaptureActions['onUploadResult']>(),
   captureDisabled: false,
   onUploadStart: vi.fn(() => true),
   onUploadEnd: vi.fn(),
@@ -41,6 +42,40 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe('class image capture', () => {
+  it('reports a bounded list of import errors only for the completed batch', async () => {
+    const callbacks = actions();
+    const cls = makeClass();
+    const { result } = renderHook(() => useClassCapture(cls, callbacks));
+    const files = Array.from({ length: 7 }, (_, index) => new File(['a'], `${index}.png`));
+    const event = {
+      target: { files, value: 'selected' },
+    } as unknown as React.ChangeEvent<HTMLInputElement>;
+    let completeOldBatch!: () => void;
+    vi.mocked(processImageFiles).mockImplementationOnce(
+      (_files, _onImage, onError) =>
+        new Promise<void>((resolve) => {
+          completeOldBatch = () => {
+            onError('Outdated error');
+            resolve();
+          };
+        }),
+    );
+    vi.mocked(processImageFiles).mockImplementationOnce(async (selected, _onImage, onError) => {
+      for (const file of selected) onError(`Invalid file: ${file.name}`);
+    });
+    act(() => result.current.handleFileUpload(event));
+    await act(async () => result.current.handleFileUpload(event));
+    await act(async () => completeOldBatch());
+    expect(callbacks.onUploadResult).toHaveBeenCalledExactlyOnceWith(cls.id, {
+      className: cls.name,
+      total: 7,
+      details: files.slice(0, 5).map((file) => `Invalid file: ${file.name}`),
+    });
+    expect(callbacks.onError).not.toHaveBeenCalled();
+    await act(async () => result.current.handleFileUpload(event));
+    expect(callbacks.onUploadResult).toHaveBeenLastCalledWith(cls.id, null);
+  });
+
   it('releases the upload batch exactly once when its class unmounts during processing', async () => {
     let finish!: () => void;
     vi.mocked(processImageFiles).mockImplementationOnce(

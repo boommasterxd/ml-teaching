@@ -133,10 +133,7 @@ beforeEach(() => {
           get: () => src,
           set: (value: string) => {
             src = value;
-            if (value)
-              queueMicrotask(() =>
-                image.dispatchEvent(new Event(value.includes('broken') ? 'error' : 'load')),
-              );
+            if (value) queueMicrotask(() => image.dispatchEvent(new Event('load')));
           },
         });
         return image;
@@ -407,21 +404,6 @@ describe('training page integration', () => {
     expect(boundary.push).toHaveBeenCalledWith(learningPaths.images, {
       transitionTypes: ['nav-back'],
     });
-  });
-
-  it('reports failed file selections once per action and accepts a later valid local image', async () => {
-    const { container } = render(<TrainingFixture />);
-    await enterWithoutCamera();
-    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      fireEvent.change(input, { target: { files: selectedImages('broken', 1) } });
-      await waitFor(() => expect(boundary.toastError).toHaveBeenCalledTimes(attempt));
-      expect(boundary.toastError).toHaveBeenLastCalledWith(expect.stringContaining('broken-0.png'));
-    }
-    expect(screen.queryByRole('alert')).toBeNull();
-    fireEvent.change(input, { target: { files: selectedImages('valid', 1) } });
-    await screen.findByText('1 / 10 Bilder');
-    expect(boundary.getUserMedia).not.toHaveBeenCalled();
   });
 
   it('reports camera access failure and still lets the user continue with uploads', async () => {

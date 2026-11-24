@@ -159,7 +159,7 @@ describe('decorative hero lifetime', () => {
     expect(screen.getByText('Previews playing')).toBeTruthy();
   });
 
-  it('allows a fresh startup window after pausing and retires a renderer that never draws', async () => {
+  it('keeps the early pause poster through a fresh startup window and a renderer timeout', async () => {
     lifecycle.canDraw = false;
     vi.useFakeTimers();
     const { container } = render(
@@ -173,17 +173,21 @@ describe('decorative hero lifetime', () => {
       });
     const artwork = () => container.querySelector('#home-hero-art picture img');
     await advance(800);
+    expect(artwork()?.getAttribute('src')).toMatch(/^data:/);
     fireEvent.click(screen.getByRole('button', { name: 'Animationen pausieren' }));
     await advance(2_000);
-    expect(artwork()?.getAttribute('src')).toMatch(/^data:/);
+    const poster = artwork();
+    expect(poster?.getAttribute('src')).toContain('/_next/image');
+    expect(screen.queryByRole('status', { name: 'Grafik wird geladen' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Animationen fortsetzen' }));
     await advance(1_999);
     expect(container.querySelector('canvas')).not.toBeNull();
-    expect(artwork()?.getAttribute('src')).toMatch(/^data:/);
+    expect(artwork()).toBe(poster);
+    expect(screen.getByRole('status', { name: 'Grafik wird geladen' })).toBeTruthy();
     await advance(1);
     expect(container.querySelector('canvas')).toBeNull();
-    expect(artwork()?.getAttribute('src')).toContain('/_next/image');
+    expect(artwork()).toBe(poster);
     expect(screen.queryByRole('status', { name: 'Grafik wird geladen' })).toBeNull();
   });
 });
