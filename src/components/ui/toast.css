@@ -6,14 +6,14 @@
   z-index: 50;
   inset: calc(env(safe-area-inset-top) + var(--header-height) + 0.5rem) 1rem auto;
   width: auto;
-  max-width: 24rem;
+  max-width: 28rem;
   margin-inline: auto;
   pointer-events: none;
 
   @variant md {
     --toast-side: bottom;
     inset: auto max(env(safe-area-inset-right), 1rem) max(env(safe-area-inset-bottom), 1rem) auto;
-    width: 24rem;
+    width: 100%;
   }
 }
 

@@ -73,6 +73,8 @@ function useThumbnailPress(onHold: () => void, onClick: () => void) {
         suppressPointerClick.current = false;
         return;
       }
+      // Keep a keyboard-activated thumbnail in view when the dialog takes focus.
+      if (event.detail === 0) event.currentTarget.scrollIntoView?.({ block: 'nearest' });
       onClick();
     },
   };
@@ -280,10 +282,15 @@ export interface ImageGalleryRowsProps extends Pick<
   'images' | 'selectedIds' | 'isSelectionMode' | 'onToggleSelect' | 'onImageClick'
 > {
   scrollContainerRef: RefObject<HTMLDivElement | null>;
+  showRows: boolean;
 }
 
 /** Virtualization starts when the first collected image is ready for display. */
-export default function ImageGalleryRows({ scrollContainerRef, ...props }: ImageGalleryRowsProps) {
+export default function ImageGalleryRows({
+  scrollContainerRef,
+  showRows,
+  ...props
+}: ImageGalleryRowsProps) {
   const columnCount = useColumnCount(scrollContainerRef);
   const focus = useGalleryFocus(props.images, columnCount);
   const virtualizer = useVirtualizer({
@@ -304,11 +311,13 @@ export default function ImageGalleryRows({ scrollContainerRef, ...props }: Image
       onFocusCapture={focus.onFocusCapture}
       onBlurCapture={focus.onBlurCapture}
     >
-      <GalleryRows
-        {...props}
-        columnCount={columnCount}
-        virtualRows={virtualizer.getVirtualItems()}
-      />
+      {showRows && (
+        <GalleryRows
+          {...props}
+          columnCount={columnCount}
+          virtualRows={virtualizer.getVirtualItems()}
+        />
+      )}
     </div>
   );
 }

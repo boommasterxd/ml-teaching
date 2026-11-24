@@ -8,10 +8,14 @@ on:
 
 concurrency:
   group: >-
-    gitleaks-${{ github.event_name == 'pull_request' && format('pr-{0}-{1}-{2}-{3}',
-    github.event.pull_request.number, github.event.pull_request.base.sha,
-    github.event.pull_request.head.sha, github.sha) || format('manual-{0}', github.ref) }}
-  cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' }}
+    gitleaks-${{ github.event_name == 'workflow_dispatch' && format('manual-{0}', github.ref)
+    || github.run_attempt > 1 && format('retry-{0}', github.run_id)
+    || (github.event.action == 'edited' && !github.event.changes.base)
+    && format('metadata-{0}-{1}', github.event.pull_request.number, github.sha)
+    || format('pr-{0}', github.event.pull_request.number) }}
+  cancel-in-progress: >-
+    ${{ github.event_name == 'workflow_dispatch'
+    || (github.run_attempt == 1 && (github.event.action != 'edited' || github.event.changes.base != null)) }}
 
 permissions:
   contents: read

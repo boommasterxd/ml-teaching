@@ -19,12 +19,15 @@ base, head and merge revisions. Consumers reject a different checked-out revisio
 
 Selection and the final result gate use `ubuntu-slim`. Selected quality and browser
 jobs use regular runners; job-level conditions prevent allocation of unselected
-substantive jobs. CI and Gitleaks each group PR runs by PR number and the exact
-base, head and simulated merge revisions. Each group allows one running and one
-pending run. A new run can replace a pending run for the same revision. Different
-revisions can overlap, so an older run can finish while the newer revision gets
-its own checks. Manual Gitleaks scans use a separate group per ref and supersede
-earlier manual scans on that ref.
+substantive jobs. CI and Gitleaks each group new code and base-change runs by PR
+number. GitHub cancels an in-progress run or replaces a pending run in the same
+group when another run arrives. GitHub schedules by concurrency queue arrival,
+which can differ from revision order. Required checks still apply to the current
+revision. PR edits without a base change use a separate group for each simulated
+merge revision, allowing a running check to finish. Explicit PR reruns use their
+original run ID in a separate group. A code check and a metadata check can overlap
+until exact successful evidence is available. Manual Gitleaks scans use a separate
+group per ref and supersede earlier manual scans on that ref.
 The unconditional final `CI` check accepts successful selected jobs and explicitly
 excluded skipped jobs only. Invalid plans, planning failures, cancellations and
 unexpected skips fail.
@@ -167,10 +170,11 @@ that Proxy remain forbidden.
 `npm run build` uses the native Next.js build and its CSP verification hooks.
 `npm run test:e2e` runs the complete browser suite against the native production
 server, including accessibility and keyboard contracts. It remains unfiltered with
-`CI=true`. CI downloads the lockfile-matched Chromium Headless Shell and full
-Chromium for the back-forward cache test. Browser launch, host dependency
-validation and the suite are blocking when selected. Lighthouse runs locally as
-described in the [performance audit decision](decisions/performance-audits.md).
+`CI=true`. The browser job uses two Playwright workers to run independent test
+files against one production server. CI downloads the lockfile-matched Chromium
+Headless Shell and full Chromium for the back-forward cache test. Browser launch,
+host dependency validation and the suite are blocking when selected. Lighthouse
+runs locally as described in the [performance audit decision](decisions/performance-audits.md).
 
 ## Security automation and release boundary
 

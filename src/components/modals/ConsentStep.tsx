@@ -102,10 +102,8 @@ export default function ConsentStep({
                 className="min-w-0 leading-normal font-normal [overflow-wrap:anywhere] sm:leading-relaxed"
               >
                 <span>
-                  Ich stimme zu, dass mein Browser das KI-Modell von Google über Kaggle lädt, damit
-                  ich die Bilderkennung ausprobieren kann. Dabei erfahren Google und Kaggle meine
-                  IP-Adresse (meine Internetadresse), welchen Browser ich nutze und wann ich das
-                  Modell abrufe. Mehr in der <Link href="/datenschutz">Datenschutzerklärung</Link>.
+                  Ich stimme zu, dass mein Browser das KI-Modell lädt. Google und Kaggle erhalten
+                  dabei meine IP-Adresse.
                 </span>
               </FieldLabel>
             </Field>

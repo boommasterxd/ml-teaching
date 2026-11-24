@@ -152,7 +152,8 @@ and stacks them when the available dialog width is smaller.
 DialogTitle places optional 1rem icons beside the first line of the heading.
 Confirmations use muted icons. Model loading, training and the appearance menu use
 the shared shadcn Spinner with its Animate UI glyph. Retryable gallery and example
-loading errors use the shared Alert, as does the training-panel retry fallback.
+loading errors use the shared Alert, as do camera setup errors and the
+training-panel retry fallback.
 The everyday quiz composes standard
 Cards, whole-card answer Buttons and contextual Alerts, including its feedback retry fallback.
 Notices use Alert. Badges use default, secondary, outline and
@@ -165,9 +166,10 @@ so they remain distinguishable without relying on color.
 Global notifications use the shared shadcn Toast composition through Animate UI.
 Its single viewport appears at the top center on mobile and at the bottom right
 from the desktop breakpoint. Toast code is prepared on training consent and
-mounted on the first notification. Camera failures in the training workspace
-use this viewport. Image upload and camera retry remain in the workspace, and
-the toast does not move focus. The provider owns announcements, timers and
+mounted on the first notification. Camera and image import failures in the training
+workspace use this viewport. Import errors stay available without a timer. Image
+upload and camera retry remain in the workspace, and notifications do not move
+focus on arrival. The provider owns announcements, timers and
 dismissal. If the viewport chunk fails, pending notices use a lightweight alert
 and another notification retries the same module. Field errors, exercise results
 and recovery for a blocked step stay with their controls.
@@ -336,8 +338,8 @@ intent can start it sooner. The shared Spinner appears after 500 ms of active
 waiting and clears when the first frame is ready or loading stops. A two-second
 active first-frame deadline switches to the optimized responsive poster.
 Pointer and keyboard intent prepare the shared renderer. The poster covers
-renderer failure, reduced motion and disabled scripting. Recovery actions remain
-available throughout.
+renderer failure, reduced motion, disabled scripting and a pause before the
+first frame. Recovery actions remain available throughout.
 The recovery artwork and the mobile homepage start both WebGL passes at a
 low resolution and increase quality only when frame timing allows it. The
 desktop homepage keeps its sharper initial frame.
@@ -440,6 +442,8 @@ full-width row groups upload, reset and removal.
 Narrow cards retain more space for the upload label and show reset and removal
 as icons with accessible names. The gallery's fixed-height area includes its
 selection controls so collecting the first image keeps the card height stable.
+Import errors are announced through the shared notification viewport, which is
+available with F6. Each class has one notification with the failed file details.
 A persistent live status announces the selected image count during selection mode.
 Holding a thumbnail enters selection mode and toggles that image. A short press
 opens its preview outside selection mode and toggles it inside selection mode.
@@ -745,9 +749,11 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   500 ms of active waiting. The first successful draw or the end of waiting removes it.
   Where parallel compilation is available, the renderer checks the readiness of
   both GPU programs on its frame loop.
-  Visibility and intent share one renderer import promise. The homepage and the
-  static error pages start preparing the renderer after the visible artwork has
-  had a chance to paint, even while the document is still loading.
+  Visibility and intent share one renderer import promise. Automatic preparation
+  starts after the visible artwork has had a chance to paint. The native 500 page
+  also waits for document load and, where supported, an idle opportunity. Pointer
+  or keyboard intent can start it sooner. See the
+  [shader playback decision](decisions/error-artwork-and-menus.md#shader-playback).
   The resolved component mounts directly on the client after any incoming page
   transition. With OffscreenCanvas support, a same-origin worker compiles and
   draws the WebGL programs. The caller keeps one draw in flight and coalesces
@@ -760,7 +766,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   returns focus to the adjacent playback control, including when the control is disabled.
   The homepage and error artwork pause the render loop when the artwork leaves
   the viewport and retain a single bounded canvas for the active page. Scrolling
-  back resumes the same frame without reinitializing WebGL. Explicit pause retains the current GPU image,
+  back resumes the same frame without reinitializing WebGL. A pause before the
+  first frame shows the poster until playback draws a frame. After the first
+  frame, pausing retains the current GPU image,
   stops frame, pointer-spring and ripple playback, and freezes parallax. Pausing
   or scrolling away detaches the parallax scroll subscription. On resume, the
   current scroll position updates the retained offset and playback continues at
@@ -853,8 +861,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   18 synthetic points, three neighbor connections and two readout bars. Finite user-triggered sequences
   need no virtualizer, continuous rendering loop or scene engine.
 
-Old node-glow CSS and custom focus/scroll-lock implementations are removed. Avoid
-competing CSS transitions on properties already owned by Animate UI.
+Avoid competing CSS transitions on properties already owned by Animate UI.
+See [Explicit integration boundaries](#explicit-integration-boundaries) for
+dialog focus and scroll locking.
 
 ## Explicit integration boundaries
 

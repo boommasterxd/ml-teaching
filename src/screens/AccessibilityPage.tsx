@@ -60,7 +60,7 @@ export default function AccessibilityPage() {
         </p>
         <h2>Stand</h2>
         <p>
-          Diese Seite wurde zuletzt im <time dateTime="2026-11-23">November 2026</time>{' '}
+          Diese Seite wurde zuletzt im <time dateTime="2026-11-24">November 2026</time>{' '}
           aktualisiert.
         </p>
         <p>

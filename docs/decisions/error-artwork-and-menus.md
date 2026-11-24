@@ -16,6 +16,7 @@ disabled scripting and unavailable WebGL use an optimized responsive still.
 During ordinary startup the artwork reserves its space without requesting that
 still. A spinner appears after 500 ms of active waiting. If the first frame
 is still pending after two active seconds, the scene switches to the still.
+Pausing before the first frame displays the still until playback draws a frame.
 Headings and return links are available in the initial render independently of
 shader startup.
 

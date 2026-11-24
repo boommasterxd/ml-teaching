@@ -126,6 +126,37 @@ export async function grantModelConsent(page: Page, remember = false) {
   await dialog.getByRole('button', { name: 'Zustimmen', exact: true }).click();
 }
 
+export async function expectLoadingWithdrawalFocus(page: Page, dialog: Locator) {
+  const action = await dialog.getByRole('button', { name: /widerrufen/ }).elementHandle();
+  for (const reducedMotion of ['reduce', 'no-preference', 'reduce'] as const) {
+    await page.emulateMedia({ reducedMotion });
+    await settleEntryAnimations(page);
+    expect(await action.evaluate((node) => node === document.activeElement)).toBe(true);
+  }
+  expect(
+    await action.evaluate((button) => {
+      const { outlineWidth, outlineOffset } = getComputedStyle(button);
+      const outset = parseFloat(outlineWidth) + parseFloat(outlineOffset);
+      const control = button.getBoundingClientRect();
+      if (!button.matches(':focus-visible') || parseFloat(outlineWidth) === 0) return false;
+      for (let ancestor = button.parentElement; ancestor; ancestor = ancestor.parentElement) {
+        const clip = getComputedStyle(ancestor);
+        if (clip.overflow !== 'clip') continue;
+        const bounds = ancestor.getBoundingClientRect();
+        const clearance = Math.min(
+          control.left - bounds.left,
+          bounds.right - control.right,
+          control.top - bounds.top,
+          bounds.bottom - control.bottom,
+        );
+        if (clearance + (parseFloat(clip.overflowClipMargin) || 0) < outset) return false;
+      }
+      return true;
+    }),
+    'the entire keyboard focus outline fits inside the dialog step',
+  ).toBe(true);
+}
+
 export function trainingSettingsTrigger(page: Page) {
   return page.getByRole('contentinfo').getByRole('button', {
     name: 'Einstellungen zum Bildtraining',

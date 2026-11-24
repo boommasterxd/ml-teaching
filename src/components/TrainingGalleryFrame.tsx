@@ -27,6 +27,8 @@ export default function TrainingGalleryFrame({
   toolbar,
   children,
   scrollContainerRef,
+  scrollFade = true,
+  onFocusWithinChange,
 }: {
   className?: string;
   label: string;
@@ -34,10 +36,19 @@ export default function TrainingGalleryFrame({
   toolbar?: ReactNode;
   children?: ReactNode;
   scrollContainerRef?: Ref<HTMLDivElement>;
+  scrollFade?: boolean;
+  onFocusWithinChange?: (focused: boolean) => void;
 }) {
   const hasImages = children != null && children !== false;
   return (
     <div
+      onFocusCapture={onFocusWithinChange && (() => onFocusWithinChange(true))}
+      onBlurCapture={
+        onFocusWithinChange &&
+        ((event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) onFocusWithinChange(false);
+        })
+      }
       className={cn(
         '@container/gallery flex h-58 min-w-0 flex-col gap-1 overflow-clip rounded-2xl bg-muted/60 px-1.5 pt-1.5 dark:bg-background/40',
         '@xl/training-class:h-auto @xl/training-class:[contain:size]',
@@ -47,7 +58,7 @@ export default function TrainingGalleryFrame({
     >
       {toolbar}
       <ScrollFadeViewport
-        enabled={hasImages}
+        enabled={hasImages && scrollFade}
         blurItems
         ref={scrollContainerRef}
         tabIndex={hasImages ? 0 : -1}

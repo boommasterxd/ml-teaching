@@ -135,13 +135,14 @@ separately under the repository's installation controls.
 With `--locked`, the fallback verifies the installed package against
 `package-lock.json` without querying the registry. The flag retains global-first
 selection and the Node.js and native CLI checks.
-The default run measures the homepage and saves reports under
-`test-results/lighthouse/`. With `--all`, the command reads the route list from the
-static CSP configuration and checks each HTML status, including the native 404
-and 500. It runs each device profile sequentially and stores per-route reports
-under `test-results/lighthouse/routes/`. Both modes require a Lighthouse
-Performance score strictly above 95 points for each measured route on mobile and
-desktop. A score of exactly 95 causes the command to exit unsuccessfully.
+The default run measures Performance, Accessibility, Best Practices and SEO on
+the homepage and saves reports under `test-results/lighthouse/`. With `--all`,
+the command measures Performance on the routes listed in the static CSP
+configuration and checks each HTML status, including the native 404 and 500. It
+runs each device profile sequentially and stores per-route reports under
+`test-results/lighthouse/routes/`. Both modes require valid scores in every
+measured category and a Performance score strictly above 95 points for each
+measured route on mobile and desktop.
 The report output includes the browser version, throttling profile, CPU benchmark,
 Largest Contentful Paint and Total Blocking Time. A missed budget also prints the
 available LCP phases and up to five long tasks.

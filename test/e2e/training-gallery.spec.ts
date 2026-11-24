@@ -4,7 +4,7 @@ import { ML } from '../../src/constants';
 import { learningPaths } from '../../src/lib/learning-paths';
 import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-checks';
 import { routeSyntheticModel } from './synthetic-model';
-import { grantModelConsent } from './training-keyboard';
+import { grantModelConsent, trainingSettingsTrigger } from './training-keyboard';
 
 const limit = ML.MAX_IMAGES_PER_CLASS;
 
@@ -12,6 +12,29 @@ async function expectWindowed(gallery: Locator) {
   await expect
     .poll(() => gallery.getByRole('button', { name: /^Bild \d+ (auswählen|vergrößern)$/ }).count())
     .toBeLessThan(limit / 2);
+}
+
+async function expectGalleryReentry(gallery: Locator, selected: Locator) {
+  const page = gallery.page();
+  const position = () =>
+    gallery.evaluate(({ scrollTop, scrollHeight }) => ({ scrollTop, scrollHeight }));
+  const saved = await position();
+  await trainingSettingsTrigger(page).focus();
+  await expect(gallery).not.toBeInViewport();
+  const choices = gallery.getByRole('button', { name: /^Bild \d+ auswählen$/ });
+  await expect(choices).toHaveCount(0);
+  expect(await position()).toEqual(saved);
+
+  await gallery.focus();
+  await expect(gallery).toBeFocused();
+  await expect(selected).toBeInViewport();
+  await expect(selected).toHaveAttribute('aria-pressed', 'true');
+  expect(await position()).toEqual(saved);
+  await page.keyboard.press('Tab');
+  await expect(choices.and(page.locator(':focus'))).toBeInViewport();
+  await gallery.press('End');
+  await expect(selected).toBeInViewport();
+  await selected.focus();
 }
 
 async function collectGalleryImages(page: Page, count: number, classIndex = 0) {
@@ -134,6 +157,42 @@ async function expectStableRequirementsToggle(name: Locator, next: Locator) {
   expect(controlMovement).toBeLessThanOrEqual(2);
 }
 
+test('a long import error stays in the mobile notification area and is dismissible by keyboard', async ({
+  page,
+  baseURL,
+}) => {
+  const network = await routeSyntheticModel(page, baseURL!);
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await page.goto(learningPaths.imagePractice);
+  await grantModelConsent(page);
+  await page.getByRole('button', { name: 'Ohne Kamera fortfahren' }).click();
+  await expect(page.getByRole('heading', { name: 'Bilder sammeln' })).toBeFocused();
+  const upload = page.getByRole('button', { name: 'Bilder auswählen' }).first();
+  const card = upload.locator('xpath=ancestor::*[@data-slot="card"][1]');
+  const fileName = `${'untrennbarerdateiname'.repeat(6)}.png`;
+  await upload.focus();
+  await card.locator('input[type="file"]').setInputFiles({
+    name: fileName,
+    mimeType: 'image/png',
+    buffer: Buffer.from('Invalid PNG'),
+  });
+  const viewport = page.getByRole('region', { name: 'Mitteilungen' });
+  const error = viewport.getByRole('dialog', { name: 'Ein Bild konnte nicht hinzugefügt werden.' });
+  await expect(error).toContainText(fileName);
+  await expect(error).toBeInViewport({ ratio: 1 });
+  await expect(card.getByText(fileName, { exact: false })).toHaveCount(0);
+  await expect(upload).toBeFocused();
+  expect((await error.boundingBox())!.y).toBeLessThan(185);
+  await page.keyboard.press('F6');
+  await expect(viewport).toBeFocused();
+  await expectAccessible(page);
+  await error.getByRole('button', { name: 'Meldung schließen' }).press('Enter');
+  await expect(upload).toBeFocused();
+  await expect(error).toBeHidden();
+  expect(network.unexpectedRequests).toEqual([]);
+});
+
 test('a full training gallery keeps keyboard focus and selection across virtual windows', async ({
   page,
   baseURL,
@@ -176,6 +235,7 @@ test('a full training gallery keeps keyboard focus and selection across virtual 
   await expect(last).toBeFocused();
   await page.keyboard.press('Space');
   await expect(last).toHaveAttribute('aria-pressed', 'true');
+  await expectGalleryReentry(gallery, last);
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(last).toBeInViewport();

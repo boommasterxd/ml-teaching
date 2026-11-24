@@ -11,7 +11,7 @@ import { X } from '../icons/x';
 
 // shadcn's Base UI Toast composition with Animate UI owning entry, exit and swipe.
 function ToastList() {
-  const { toasts, add } = Primitive.useToastManager();
+  const { toasts, add, close } = Primitive.useToastManager();
   const [top, setTop] = useState<boolean | null>(null);
   const attachViewport = useCallback((element: HTMLDivElement | null) => {
     if (!element) return;
@@ -25,10 +25,13 @@ function ToastList() {
 
   useEffect(
     () =>
-      connectToasts(({ id, message, type }) => {
-        add({ id, title: message, type });
+      connectToasts({
+        receive: ({ id, message, type, description, timeout }) => {
+          add({ id, title: message, type, description, timeout });
+        },
+        close,
       }),
-    [add],
+    [add, close],
   );
 
   return (
@@ -54,10 +57,16 @@ function ToastList() {
                 className="flex h-full items-center gap-3 p-4 data-behind:opacity-0 data-expanded:opacity-100"
               >
                 <ToastIcon type={item.type} />
-                <Primitive.Title
-                  data-slot="toast-title"
-                  className="min-w-0 flex-1 text-sm font-medium [overflow-wrap:anywhere]"
-                />
+                <div className="min-w-0 flex-1 wrap-anywhere">
+                  <Primitive.Title data-slot="toast-title" className="text-sm font-medium" />
+                  {item.description && (
+                    <Primitive.Description
+                      data-slot="toast-description"
+                      tabIndex={0}
+                      className="control-focus control-focus-inset mt-1 max-h-[min(35dvh,16rem)] overflow-y-auto text-sm whitespace-pre-line text-muted-foreground"
+                    />
+                  )}
+                </div>
                 <Primitive.Close
                   aria-label="Meldung schließen"
                   render={<Button variant="ghost" size="icon-sm" />}

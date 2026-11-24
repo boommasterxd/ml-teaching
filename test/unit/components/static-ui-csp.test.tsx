@@ -56,9 +56,10 @@ describe('strict-CSP static UI', () => {
     expect(title?.textContent).toBe('Einwilligung zur Datenverarbeitung');
     expect(dialog?.querySelectorAll('[role="checkbox"][aria-checked="false"]')).toHaveLength(3);
     const modelConsent = dialog?.querySelector('label[for="model-consent"]');
-    expect(modelConsent?.textContent).toContain('Google und Kaggle meine IP-Adresse');
-    expect(modelConsent?.querySelector('a[href="/datenschutz"]')).not.toBeNull();
-    expect(dialog?.querySelector('a[href="/datenschutz"]')).not.toBeNull();
+    expect(modelConsent?.textContent).toContain(
+      'Google und Kaggle erhalten dabei meine IP-Adresse.',
+    );
+    expect(dialog?.querySelectorAll('a[href="/datenschutz"]')).toHaveLength(1);
     expect(dialog?.querySelector(`a[href="${learningPaths.images}"]`)?.textContent).toBe(
       'Abbrechen',
     );

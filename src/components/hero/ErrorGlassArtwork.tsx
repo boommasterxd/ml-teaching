@@ -27,6 +27,7 @@ function ErrorGlassScene({ deferStartup, digits, sources }: ErrorGlassArtworkPro
     available,
     inView,
     failed,
+    showPoster,
     reduce,
     rendered,
     pending,
@@ -41,7 +42,7 @@ function ErrorGlassScene({ deferStartup, digits, sources }: ErrorGlassArtworkPro
     <div className="error-glass">
       <ErrorGlassFrame
         sources={sources}
-        fallback={failed}
+        fallback={showPoster}
         pending={pending}
         ref={artwork}
         data-enhanced={(available && rendered) || undefined}
