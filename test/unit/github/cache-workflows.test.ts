@@ -85,13 +85,18 @@ it('replaces overlapping code runs per PR and isolates metadata edits and retrie
 
 describe('dependency-cache workflow contracts', () => {
   it('shares complete dependency identities and covers every producer input trigger', () => {
-    const hashes = [...`${ci}\n${producer}\n${reconciliation}`.matchAll(/CACHE_INPUT_HASH: (.+)/g)];
-    expect(hashes).toHaveLength(4);
-    expect(new Set(hashes.map((match) => match[1])).size).toBe(1);
+    const callers = [ci, producer, reconciliation].join('\n');
+    expect(callers.match(/run: node \.github\/scripts\/cache\.ts configure\n/g)).toHaveLength(4);
+    expect(callers).not.toContain('CACHE_INPUT_HASH');
     const paths = producer.split('  workflow_dispatch:')[0];
     for (const input of policy.producerInputs) {
       expect(paths).toContain(`      - ${input}${input.endsWith('/') ? '**' : ''}\n`);
     }
+    for (const input of ['package.json', 'package-lock.json', '.npmrc']) {
+      expect(policy.producerInputs).toContain(input);
+    }
+    expect(paths).not.toContain('.github/workflows/ci.yml');
+    expect(policy.producerInputs).not.toContain('.github/workflows/ci.yml');
     expect(policy.retiredPrefixes).toEqual([]);
     expect(selectWork(['.github/workflows/dependency-cache.yml']).reason).toBe('full');
     expect(selectWork(['.github/workflows/dependency-cache-reconciliation.yml']).reason).toBe(

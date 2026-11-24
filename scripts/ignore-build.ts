@@ -35,6 +35,7 @@ const ciOnlyPaths = new Set([
   '.github/dependabot.yml',
   '.github/gitleaks-version.json',
   '.github/gitleaks.toml',
+  '.github/scripts/browser-ci.ts',
   '.github/scripts/cache.ts',
   '.github/scripts/cache-lifecycle/core.cjs',
   '.github/scripts/cache-lifecycle/github.cjs',

@@ -254,5 +254,12 @@ export const PrivacyCollection = (
       Nachrichten nach eigenen Angaben bis zu 30 Tage wiederherstellen. Danach löscht Hostinger die
       Daten des gelöschten Postfachs endgültig.
     </p>
+    <p>
+      Hostinger erfasst bei eingehenden und ausgehenden E-Mails die E-Mail-Adressen von Absendern
+      und Empfängern, den Zeitpunkt, den Zustellstatus und gegebenenfalls technische Rückmeldungen
+      des Mailservers. Damit lassen sich Zustellprobleme erkennen. Unser berechtigtes Interesse ist
+      die zuverlässige Bearbeitung von Anfragen per E-Mail (Art. 6 Abs. 1 lit. f DSGVO). Nach
+      Angaben von Hostinger stehen uns die Zustellprotokolle 30 Tage lang zur Verfügung.
+    </p>
   </>
 );

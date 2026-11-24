@@ -31,7 +31,7 @@ export default function ImageLearningHero() {
               href={learningPaths.imagePractice}
               size="lg"
               className="mobile-action h-auto min-h-11 max-w-full self-start whitespace-normal"
-              trainingIcon={{
+              navigationIcon={{
                 content: <ArrowRight data-icon="inline-end" aria-hidden="true" />,
                 position: 'end',
               }}

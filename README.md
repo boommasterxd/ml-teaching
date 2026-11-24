@@ -45,9 +45,10 @@ test. You can supply local image files without enabling the camera.
 ## Data, providers and costs
 
 Training images, class names, features and classifier state stay in browser
-memory, as does quiz progress. If you choose to remember training consent, the
-document keeps that consent and your camera choice in memory for up to 30 minutes
-so you can return to training within the same document. A training visit already
+memory and are discarded when you leave the training page. Quiz progress also
+stays in memory. If you choose to remember training consent, the document keeps
+that consent and your camera choice in memory for up to 30 minutes so you can
+start a new training session within the same document. A training visit already
 in progress can continue after that deadline. Reloading or opening the training
 in a new document asks for consent again. The appearance setting is stored on
 your device only when you choose to remember it.

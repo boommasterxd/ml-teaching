@@ -15,5 +15,11 @@ export function ErrorRecoveryStyle({ enabled }: { enabled: boolean }) {
 
 /** The browser needs the opt-in in the initial head and only while home is active. */
 export default function ErrorRecoveryTransitionStyles() {
-  return <ErrorRecoveryStyle enabled={usePathname() === '/'} />;
+  const enabled = usePathname() === '/';
+  return (
+    <>
+      <ErrorRecoveryStyle enabled={enabled} />
+      {enabled && <link rel="expect" href="#main-content" blocking="render" media={allowMotion} />}
+    </>
+  );
 }

@@ -1,9 +1,20 @@
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const family = 'mlteaching-npm-v1-';
+const npmInstallInputs = ['.npmrc', 'package.json', 'package-lock.json'];
+
+export function npmInputDigest(readInput: (file: string) => Buffer = readFileSync) {
+  const hash = createHash('sha256');
+  for (const file of npmInstallInputs) {
+    const bytes = readInput(file);
+    hash.update(`${file}\0${bytes.length}\0`).update(bytes);
+  }
+  return hash.digest('hex');
+}
 
 export function cacheConfiguration(hash: string, npmVersion: string, cacheRoot: string) {
   if (!/^[a-f0-9]{64}$/.test(hash)) throw new Error('Missing complete cache input hash.');
@@ -53,7 +64,7 @@ function main() {
     const npm = (args: string[]) =>
       execFileSync('npm', args, { encoding: 'utf8', timeout: 10_000 }).trim();
     const config = cacheConfiguration(
-      process.env.CACHE_INPUT_HASH ?? '',
+      npmInputDigest(),
       npm(['--version']),
       npm(['config', 'get', 'cache']),
     );

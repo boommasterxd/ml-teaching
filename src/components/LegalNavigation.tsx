@@ -20,8 +20,11 @@ function InitialLegalLinks({ page }: { page: LegalPage }) {
               variant="ghost"
               aria-current={page === id ? 'page' : undefined}
               className="legal-page-link"
+              navigationIcon={{
+                content: <Icon data-icon="inline-start" aria-hidden="true" />,
+                position: 'start',
+              }}
             >
-              <Icon data-icon="inline-start" aria-hidden="true" />
               {label}
             </AnimatedLink>
           </li>

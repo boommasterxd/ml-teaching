@@ -2,54 +2,15 @@
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, MotionConfig, motion, useIsPresent } from 'motion/react';
+import { AutoHeight } from '@animate-ui/react/primitives/effects/auto-height';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { ReducedMotionContext } from '@animate-ui/react/utils/motion';
 import { flowMotion } from '../animate-ui/components/flow-motion';
+import { useControlHydrated } from '../ui/use-control-hydration';
 import { useMotionPreference } from '../ui/use-motion-preference';
 import { cn } from '@/lib/utils';
 
 export type SetupStep = 'consent' | 'loading' | 'camera' | 'error' | 'workspace';
-
-// AutoHeight starts at zero with inline overflow. The initial static consent needs natural height.
-function useStepHeight(step: SetupStep, reduce: boolean) {
-  const viewport = useRef<HTMLDivElement>(null);
-  const content = useRef<HTMLDivElement>(null);
-  const previousStep = useRef(step);
-  const previousHeight = useRef<number>(0);
-  const animation = useRef<Animation | undefined>(undefined);
-  const changed = useRef(false);
-
-  useLayoutEffect(() => {
-    const frame = viewport.current!;
-    const panel = content.current!;
-    if (previousStep.current !== step) {
-      changed.current = true;
-      previousStep.current = step;
-      const titleId = frame.closest('[role="dialog"]')?.getAttribute('aria-labelledby');
-      if (titleId) document.getElementById(titleId)?.focus();
-    }
-    function measure() {
-      const target = panel.getBoundingClientRect().height;
-      const previous = previousHeight.current;
-      previousHeight.current = target;
-      if (reduce) animation.current?.cancel();
-      if (!changed.current || reduce || !previous || previous === target) return;
-      const from = animation.current?.playState === 'running' ? frame.offsetHeight : previous;
-      animation.current?.cancel();
-      animation.current = frame.animate([{ height: `${from}px` }, { height: `${target}px` }], {
-        duration: flowMotion.enter.duration * 1000,
-        easing: `cubic-bezier(${flowMotion.enter.ease.join(',')})`,
-      });
-    }
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(panel);
-    return () => observer.disconnect();
-  }, [step, reduce]);
-
-  useLayoutEffect(() => () => animation.current?.cancel(), []);
-  return { viewport, content };
-}
 
 function StepPanel({
   step,
@@ -110,15 +71,30 @@ export default function SetupStepTransition({
   children: ReactNode;
 }) {
   const [initialStep] = useState(step);
+  const previousStep = useRef(step);
+  const viewport = useRef<HTMLDivElement>(null);
+  const hydrated = useControlHydrated();
   const motionPreference = useMotionPreference();
-  const { viewport, content } = useStepHeight(step, motionPreference.reduce);
+  const heightOverride = hydrated ? { height: 'auto' } : { height: undefined };
+
+  useLayoutEffect(() => {
+    if (previousStep.current === step) return;
+    previousStep.current = step;
+    const titleId = viewport.current?.closest('[role="dialog"]')?.getAttribute('aria-labelledby');
+    if (titleId) document.getElementById(titleId)?.focus();
+  }, [step]);
+
   return (
-    // Expand the clip edge around focus outlines without moving the step controls.
-    <div
+    // A parent that suppresses entry seeds the initial style from AutoHeight's animate target.
+    <AutoHeight
       ref={viewport}
+      initial={{}}
+      style={{ overflow: undefined }}
+      animate={hydrated && !motionPreference.reduce ? undefined : heightOverride}
+      transition={flowMotion.enter}
       className="-m-(--step-focus-space) min-w-0 overflow-clip [--step-focus-space:8px]"
     >
-      <div ref={content} className="p-(--step-focus-space)">
+      <div className="p-(--step-focus-space)">
         <div className="relative">
           <AnimatePresence initial={false}>
             <StepPanel
@@ -132,6 +108,6 @@ export default function SetupStepTransition({
           </AnimatePresence>
         </div>
       </div>
-    </div>
+    </AutoHeight>
   );
 }

@@ -115,7 +115,7 @@ function ImageTrainingAction() {
             href={learningPaths.imagePractice}
             size="lg"
             className="mobile-action"
-            trainingIcon={{
+            navigationIcon={{
               content: <ArrowRight data-icon="inline-end" aria-hidden="true" />,
               position: 'end',
             }}

@@ -1,5 +1,36 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { settleEntryAnimations, type observeViewTransitions } from './browser-checks';
+import { learningPaths } from '../../src/lib/learning-paths';
+import {
+  expectAccessible,
+  settleEntryAnimations,
+  type observeViewTransitions,
+} from './browser-checks';
+
+export function navigationStatus(page: Page) {
+  return page.getByRole('status').filter({ hasText: 'Seite wird geladen …' });
+}
+
+export function measureLinkLayout(link: Locator) {
+  return link.evaluate((element) => {
+    const anchor = element as HTMLAnchorElement;
+    return [anchor.offsetLeft, anchor.offsetTop, anchor.offsetWidth, anchor.offsetHeight];
+  });
+}
+
+export async function expectTrainingSetupOnSource(page: Page, actionName: string) {
+  const practice = page.getByRole('link', { name: actionName, exact: true });
+  await expect(practice).toHaveAttribute('href', learningPaths.imagePractice);
+  await practice.focus();
+  await page.keyboard.press('Enter');
+  const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+  await expect(consent).toBeVisible();
+  await expect(navigationStatus(page)).toHaveCount(0);
+  await expect(page).toHaveURL(learningPaths.images);
+  await expect(consent.getByRole('button', { name: 'Zustimmen', exact: true })).toBeDisabled();
+  await page.keyboard.press('Tab');
+  expect(await consent.evaluate((node) => node.contains(document.activeElement))).toBe(true);
+  await expectAccessible(page);
+}
 
 export function feedbackArrow(link: Locator) {
   return link.locator('svg').last().locator('g').first();

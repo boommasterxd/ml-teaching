@@ -3,7 +3,14 @@ import { expect, test } from '@playwright/test';
 test('a failure from the active hero worker closes it and displays the poster', async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const posterRequests: string[] = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === '/_next/image' && url.searchParams.get('url')?.includes('/hero-glass'))
+      posterRequests.push(url.href);
+  });
   const started = page.waitForEvent('worker');
   await page.goto('/');
   const worker = await started;
@@ -11,6 +18,7 @@ test('a failure from the active hero worker closes it and displays the poster', 
   const canvas = scene.locator('canvas');
   await expect(page.locator('.hero-field')).toHaveAttribute('data-enhanced', 'true');
   await expect(canvas).toBeVisible();
+  expect(posterRequests).toEqual([]);
 
   await Promise.all([
     worker.waitForEvent('close'),
@@ -26,4 +34,7 @@ test('a failure from the active hero worker closes it and displays the poster', 
   await expect
     .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
     .toBeGreaterThan(0);
+  expect(posterRequests).toEqual([
+    await poster.evaluate((image: HTMLImageElement) => image.currentSrc),
+  ]);
 });

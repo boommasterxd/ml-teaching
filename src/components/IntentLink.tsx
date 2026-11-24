@@ -5,21 +5,21 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   type ComponentProps,
   type PointerEvent,
-  type ReactNode,
 } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { learningPaths } from '@/lib/learning-paths';
+import { LinkNavigationContent, type LinkIcon } from './LinkNavigationIndicator';
 import { prepareRoute } from './prepare-route';
 import { useTrainingEntry, type TrainingEntryOptions } from './training/TrainingEntryContext';
-import { Spinner } from './ui/spinner';
 
 type IntentLinkProps = ComponentProps<typeof Link> & {
   prepareOnIntent?: boolean;
   onTrainingEntry?: (link: HTMLAnchorElement) => TrainingEntryOptions;
-  trainingIcon?: { content: ReactNode; position: 'start' | 'end' };
+  navigationIcon?: LinkIcon;
 };
 const forwardNavigation = ['nav-forward'];
 const touchIntentDelay = 80;
@@ -120,6 +120,21 @@ function useLinkPreparation(
   );
 }
 
+function useDocumentNavigationPending() {
+  const [pending, setPending] = useState(false);
+  useEffect(() => {
+    if (!pending) return;
+    const clear = () => setPending(false);
+    window.addEventListener('pageshow', clear);
+    window.navigation?.addEventListener('navigateerror', clear);
+    return () => {
+      window.removeEventListener('pageshow', clear);
+      window.navigation?.removeEventListener('navigateerror', clear);
+    };
+  }, [pending]);
+  return [pending, setPending] as const;
+}
+
 /** Native navigation warms its route payload only after pointer, keyboard or touch intent. */
 export default function IntentLink({
   onClick,
@@ -130,7 +145,7 @@ export default function IntentLink({
   onPointerCancel,
   onNavigate,
   onTrainingEntry,
-  trainingIcon,
+  navigationIcon,
   children,
   id,
   prepareOnIntent = true,
@@ -139,14 +154,10 @@ export default function IntentLink({
   const router = useRouter();
   const entry = useTrainingEntry();
   const generatedId = useId();
-  const linkId = id ?? (trainingIcon ? generatedId : undefined);
+  const linkId = id ?? (navigationIcon ? generatedId : undefined);
   const pending = linkId !== undefined && entry?.pendingTrigger?.id === linkId;
   const prepareEntry = entry?.prepareEntry;
-  const icon = pending ? (
-    <Spinner data-icon={`inline-${trainingIcon?.position ?? 'end'}`} aria-hidden="true" />
-  ) : (
-    trainingIcon?.content
-  );
+  const [documentPending, setDocumentPending] = useDocumentNavigationPending();
   const activatedLink = useRef<HTMLAnchorElement | null>(null);
   const prepare = useLinkPreparation(router, prepareOnIntent, prepareEntry);
   const touch = useTouchPreparation(prepare);
@@ -154,10 +165,6 @@ export default function IntentLink({
   const navigate: IntentLinkProps['onNavigate'] = (event) => {
     const anchor = activatedLink.current;
     activatedLink.current = null;
-    if (!entry || !anchor || !startsTraining(new URL(anchor.href), window.location)) {
-      onNavigate?.(event);
-      return;
-    }
     let cancelled = false;
     onNavigate?.({
       preventDefault() {
@@ -165,7 +172,12 @@ export default function IntentLink({
         event.preventDefault();
       },
     });
-    if (cancelled) return;
+    if (cancelled || !anchor) return;
+    if (!entry || !startsTraining(new URL(anchor.href), window.location)) {
+      // Next's Pages Router Link does not expose useLinkStatus.
+      if (document.getElementById('error-recovery-speculation')) setDocumentPending(true);
+      return;
+    }
     event.preventDefault();
     if (onTrainingEntry) entry.openEntry(anchor, onTrainingEntry(anchor));
     else entry.openEntry(anchor);
@@ -215,9 +227,13 @@ export default function IntentLink({
         touch.cancelPointer(event);
       }}
     >
-      {trainingIcon?.position === 'start' && icon}
-      {children}
-      {trainingIcon?.position === 'end' && icon}
+      <LinkNavigationContent
+        icon={navigationIcon}
+        trainingPending={pending}
+        documentPending={documentPending}
+      >
+        {children}
+      </LinkNavigationContent>
     </Link>
   );
 }

@@ -4,6 +4,7 @@ import TopographyField from '@/components/hero/TopographyField';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
 const host = vi.hoisted(() => ({
+  read: vi.fn(),
   render: vi.fn(),
   cancel: vi.fn(),
   draw: vi.fn(),
@@ -26,7 +27,7 @@ vi.mock('@/components/hero/topography-renderer', () => ({
 }));
 vi.mock('motion/react', async (original) => ({
   ...(await original<typeof import('motion/react')>()),
-  frame: { render: host.render },
+  frame: { read: host.read, render: host.render },
   cancelFrame: host.cancel,
   animate: () => {
     const completion = Promise.withResolvers<void>();
@@ -118,6 +119,35 @@ describe('active glass field ownership', () => {
     vi.spyOn(window, 'getSelection').mockReturnValue({ isCollapsed: false } as Selection);
     fireEvent.click(glass, { detail: 1 });
     expect(host.animations).toHaveLength(2);
+  });
+
+  it('reads geometry once per pointer frame and discards work after exit or pause', () => {
+    const bounds = vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect');
+    const callbacks = { onUnavailable: vi.fn(), onRendered: vi.fn() };
+    const { rerender } = render(<TopographyField {...callbacks} />);
+    const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
+    bounds.mockClear();
+
+    fireEvent.pointerMove(field, { clientX: 20, clientY: 50 });
+    fireEvent.pointerMove(field, { clientX: 30, clientY: 60 });
+    expect(bounds).not.toHaveBeenCalled();
+    expect(host.read).toHaveBeenCalledTimes(1);
+    const measure = host.read.mock.lastCall![0];
+    act(measure);
+    expect(bounds).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerMove(field, { clientX: 40, clientY: 70 });
+    fireEvent.pointerOut(field);
+    expect(host.cancel).toHaveBeenCalledWith(measure);
+    act(measure);
+    expect(bounds).toHaveBeenCalledTimes(1);
+
+    host.cancel.mockClear();
+    fireEvent.pointerMove(field, { clientX: 50, clientY: 80 });
+    rerender(<TopographyField {...callbacks} paused />);
+    expect(host.cancel).toHaveBeenCalledWith(measure);
+    act(measure);
+    expect(bounds).toHaveBeenCalledTimes(1);
   });
 
   it('paces autonomous GPU work by scene time and draws each display frame during an impulse', () => {

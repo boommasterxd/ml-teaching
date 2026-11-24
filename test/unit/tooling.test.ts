@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempDisposableSync, readFileSync, writeFileSync } from 'n
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createPlan, selectWork } from '../../.github/scripts/plan-ci.ts';
+import { ciPlanVersion, createPlan, selectWork } from '../../.github/scripts/plan-ci.ts';
 import { validatePlan, validateResults } from '../../.github/scripts/validate-ci.ts';
 
 const revisions = { base: 'a'.repeat(40), head: 'b'.repeat(40), merge: 'c'.repeat(40) };
@@ -20,10 +20,15 @@ const gitEnv = {
   GIT_COMMITTER_EMAIL: 'ci@example.invalid',
 };
 
-function createMergeFixture(cwd: string) {
+function createGitFixture(cwd: string) {
   const git = (...args: string[]) =>
     execFileSync('git', args, { cwd, env: gitEnv, encoding: 'utf8', timeout: 5_000 }).trim();
   git('init', '-q', '--template=', '--initial-branch=main');
+  return git;
+}
+
+function createMergeFixture(cwd: string) {
+  const git = createGitFixture(cwd);
   mkdirSync(join(cwd, 'docs'));
   writeFileSync(join(cwd, 'docs', 'guide.md'), 'Guide\n');
   git('add', 'docs');
@@ -43,6 +48,39 @@ function createMergeFixture(cwd: string) {
   const base = git('rev-parse', 'HEAD');
   git('merge', '-q', '--no-ff', 'feature', '-m', 'Simulated pull request merge');
   return { base, head, merge: git('rev-parse', 'HEAD') };
+}
+
+const browserSpec = 'test/e2e/quiz.spec.ts';
+
+function planBrowserFixture(cwd: string, change: string) {
+  const git = createGitFixture(cwd);
+  mkdirSync(join(cwd, 'test/e2e'), { recursive: true });
+  writeFileSync(join(cwd, browserSpec), 'Original spec\n');
+  git('add', '.');
+  git('commit', '-qm', 'Add browser spec');
+  git('switch', '-qc', 'feature');
+  if (change === 'deleted') git('rm', '-q', browserSpec);
+  else writeFileSync(join(cwd, browserSpec), 'Changed spec\n');
+  if (change === 'fixture')
+    writeFileSync(join(cwd, 'test/e2e/browser-checks.ts'), 'Shared fixture\n');
+  git('add', '.');
+  git('commit', '-qm', 'Update browser test');
+  const head = git('rev-parse', 'HEAD');
+  git('switch', '-q', 'main');
+  if (change === 'base') {
+    writeFileSync(join(cwd, 'package.json'), '{}\n');
+    git('add', 'package.json');
+    git('commit', '-qm', 'Change the base');
+  }
+  const base = git('rev-parse', 'HEAD');
+  git('merge', '-q', '--no-ff', '--no-commit', 'feature');
+  if (change === 'merge-tree') {
+    writeFileSync(join(cwd, 'test/e2e/browser-checks.ts'), 'Unexpected merge content\n');
+    git('add', 'test/e2e/browser-checks.ts');
+  }
+  git('commit', '-qm', 'Simulated pull request merge');
+  const merge = git('rev-parse', 'HEAD');
+  return createPlan({ base, head, merge }, (args) => git(...args));
 }
 
 describe('CI selection and required gate', () => {
@@ -73,6 +111,37 @@ describe('CI selection and required gate', () => {
     expect(() => createPlan({ ...revisions, head: 'truncated' })).toThrow();
   });
 
+  it('selects one isolated spec on an up-to-date simulated merge and requires its browser job', () => {
+    using directory = mkdtempDisposableSync(join(tmpdir(), 'ml-teaching-browser-plan-'));
+    const plan = planBrowserFixture(directory.path, 'single');
+    expect(plan).toMatchObject({
+      quality: true,
+      browser: true,
+      reason: 'browser-spec',
+      spec: browserSpec,
+    });
+    const outcomes = { plan: 'success', quality: 'success', browser: 'success' };
+    expect(() => validateResults(plan, plan, outcomes)).not.toThrow();
+    for (const browser of ['failure', 'cancelled', 'skipped']) {
+      expect(() => validateResults(plan, plan, { ...outcomes, browser })).toThrow();
+    }
+    expect(() => validatePlan({ ...plan, spec: 'test/e2e/*.spec.ts' }, plan)).toThrow();
+    expect(() => validatePlan({ ...plan, spec: undefined }, plan)).toThrow();
+    expect(() => validatePlan({ ...plan, reason: 'full' }, plan)).toThrow();
+  });
+
+  it.each(['deleted', 'fixture', 'base', 'merge-tree'])(
+    'selects the full browser suite for a %s change',
+    (change) => {
+      using directory = mkdtempDisposableSync(join(tmpdir(), 'ml-teaching-browser-plan-'));
+      expect(planBrowserFixture(directory.path, change)).toMatchObject({
+        quality: true,
+        browser: true,
+        reason: 'full',
+      });
+    },
+  );
+
   it('selects browser checks for an earlier rename out of docs and fails if CI skips them', () => {
     using directory = mkdtempDisposableSync(join(tmpdir(), 'ml-teaching-ci-'));
     const cwd = directory.path;
@@ -92,23 +161,26 @@ describe('CI selection and required gate', () => {
     const plan = readFileSync(output, 'utf8').match(/^plan=(.+)$/m)?.[1];
     if (!plan) throw new Error('The CI planner did not publish a plan.');
     expect(JSON.parse(plan)).toMatchObject({ base, head, merge, quality: true, browser: true });
-    const validate = (browser: string) =>
-      spawnSync(process.execPath, [validator], {
+    const validate = (browser?: string) =>
+      spawnSync(process.execPath, [validator, '--results'], {
         ...options,
         env: {
           ...env,
           CI_PLAN: plan,
-          CI_RESULTS: JSON.stringify({ plan: 'success', quality: 'success', browser }),
+          CI_RESULTS: browser
+            ? JSON.stringify({ plan: 'success', quality: 'success', browser })
+            : undefined,
         },
       });
     expect(validate('success').status).toBe(0);
     const skipped = validate('skipped');
     expect(skipped.status).toBe(1);
     expect(skipped.stderr).toContain('Unexpected browser result: skipped');
+    expect(validate().stderr).toContain('The final CI gate requires job results.');
   });
 
   it('rejects failed planning, selected failures, unexpected skips and stale plans', () => {
-    const plan = { version: 1, ...revisions, ...selectWork(['src/app/page.tsx']) };
+    const plan = { version: ciPlanVersion, ...revisions, ...selectWork(['src/app/page.tsx']) };
     expect(() =>
       validateResults(plan, revisions, { plan: 'success', quality: 'success', browser: 'success' }),
     ).not.toThrow();
@@ -121,7 +193,11 @@ describe('CI selection and required gate', () => {
       expect(() => validateResults(plan, revisions, results)).toThrow();
     expect(() => validatePlan({ ...plan, head: 'd'.repeat(40) }, revisions)).toThrow();
     expect(() => validatePlan({ ...plan, browser: false }, revisions)).toThrow();
-    const docsPlan = { version: 1, ...revisions, ...selectWork(['docs/architecture.md']) };
+    const docsPlan = {
+      version: ciPlanVersion,
+      ...revisions,
+      ...selectWork(['docs/architecture.md']),
+    };
     expect(() =>
       validateResults(docsPlan, revisions, {
         plan: 'success',

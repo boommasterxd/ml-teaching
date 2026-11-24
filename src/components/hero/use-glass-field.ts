@@ -73,21 +73,20 @@ export function useGlassField(
   useEffect(() => {
     if (!active) return;
     let current = true;
-    // Keep shader setup out of the first static paint and the route snapshot.
+    const prepared = prepareField().catch(() => {
+      if (current) onUnavailable();
+    });
+    // Load the code while waiting for paint. GPU setup starts only on mount.
     const cancel = afterFirstPaint(() => {
-      void prepareField()
-        .then((module) => {
-          if (current) setField(() => module.default);
-        })
-        .catch(() => {
-          if (current) setFailed(true);
-        });
+      void prepared.then((module) => {
+        if (current && module) setField(() => module.default);
+      });
     });
     return () => {
       current = false;
       cancel();
     };
-  }, [active]);
+  }, [active, onUnavailable]);
 
   useEffect(() => {
     if (!pending) return;

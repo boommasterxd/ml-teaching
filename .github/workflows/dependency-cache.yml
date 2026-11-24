@@ -7,7 +7,6 @@ on:
       - package.json
       - package-lock.json
       - .npmrc
-      - .github/workflows/ci.yml
       - .github/workflows/dependency-cache.yml
       - .github/workflows/cache-lifecycle.yml
       - .github/scripts/cache.ts
@@ -46,8 +45,6 @@ jobs:
       - name: Resolve compatible npm cache
         id: cache-config
         run: node .github/scripts/cache.ts configure
-        env:
-          CACHE_INPUT_HASH: ${{ hashFiles('package.json', 'package-lock.json', '.npmrc', '.github/scripts/cache.ts', '.github/workflows/ci.yml', '.github/workflows/dependency-cache.yml') }}
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: cache
         continue-on-error: true

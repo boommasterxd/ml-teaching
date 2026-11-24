@@ -9,6 +9,10 @@ import {
   DropdownMenuSeparator,
 } from './ui/dropdown-menu';
 
+// Animate UI animates each row's filter, so override it to keep class names readable on entry.
+const classFilterSurface =
+  'max-h-[min(var(--available-height),24rem)] w-56 [&_[role=menuitemcheckbox]]:filter-none!';
+
 export default function PredictionClassMenu({
   markers,
   hidden,
@@ -35,7 +39,7 @@ export default function PredictionClassMenu({
   return (
     <DropdownMenuContent
       align="end"
-      className="max-h-[min(var(--available-height),24rem)] w-56"
+      className={classFilterSurface}
       aria-label="Klassenfilter"
       data-prediction-class-menu=""
     >

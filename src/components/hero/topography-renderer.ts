@@ -1,4 +1,5 @@
 // Adapted from Animate UI Topography; see docs/third-party-notices.md.
+import { createTopographyContext } from './topography-context';
 import {
   configureTexture,
   queueGlassPrograms,
@@ -93,14 +94,11 @@ export function createTopographyRenderer(
   canvas: HTMLCanvasElement | OffscreenCanvas,
   shape: GlassShape = 'ring',
 ) {
-  const gl = canvas.getContext('webgl', {
-    premultipliedAlpha: true,
-    preserveDrawingBuffer: false,
-    antialias: false,
-    depth: false,
-    stencil: false,
-  });
-  if (!gl || !gl.getExtension('OES_standard_derivatives')) return null;
+  const gl = createTopographyContext(canvas);
+  return gl && initializeTopographyRenderer(gl, shape);
+}
+
+export function initializeTopographyRenderer(gl: WebGLRenderingContext, shape: GlassShape) {
   // The reconstruction pass reads the signed silhouette from the alpha channel.
   gl.disable(gl.DITHER);
   const maxRasterDimension = rasterLimit(gl);

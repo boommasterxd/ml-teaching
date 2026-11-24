@@ -17,6 +17,7 @@ export default function SiteBrand() {
         transitionTypes={['nav-back']}
         className="site-brand"
         aria-label="ML Teaching – Startseite"
+        navigationIcon={{ content: <SiteLogo className="brand-mark" />, position: 'start' }}
         onNavigate={(event) => {
           const { pathname, search, hash } = window.location;
           if (pathname !== '/' || search) return;
@@ -25,7 +26,6 @@ export default function SiteBrand() {
           scrollHome();
         }}
       >
-        <SiteLogo className="brand-mark" />
         <span>ML Teaching</span>
       </Link>
     </ActionFeedback>

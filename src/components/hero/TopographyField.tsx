@@ -1,7 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { useMotionValue, useSpring } from 'motion/react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+  type RefObject,
+} from 'react';
+import { cancelFrame, frame, useMotionValue, useSpring } from 'motion/react';
 import Button from '@/components/Button';
 import { GlassImpulses } from './glass-impulses';
 import type { GlassShape } from './topography-gl';
@@ -43,6 +53,51 @@ function useFieldMotion(playback: FieldPlayback) {
   return { values, pointerX, pointerY, raised };
 }
 
+function pointInCanvas(canvas: HTMLCanvasElement, point: PointerPoint, fromKeyboard = false) {
+  const rect = canvas.getBoundingClientRect();
+  return fromKeyboard
+    ? { x: rect.width / 2, y: rect.height / 2 }
+    : { x: point.clientX - rect.left, y: point.clientY - rect.top };
+}
+
+function useFieldPointer(
+  canvas: RefObject<HTMLCanvasElement | null>,
+  { pointerX, pointerY, raised }: ReturnType<typeof useFieldMotion>,
+  paused: boolean,
+) {
+  const pending = useRef<PointerPoint | null>(null);
+  const measure = useCallback(() => {
+    const point = pending.current;
+    pending.current = null;
+    if (!point || !canvas.current || window.getSelection()?.isCollapsed === false) return;
+    const { x, y } = pointInCanvas(canvas.current, point);
+    pointerX.set(x);
+    pointerY.set(y);
+    raised.set(1);
+  }, [canvas, pointerX, pointerY, raised]);
+  const cancelPending = useCallback(() => {
+    pending.current = null;
+    cancelFrame(measure);
+  }, [measure]);
+  useLayoutEffect(() => {
+    if (!paused) return cancelPending;
+  }, [cancelPending, paused]);
+
+  function move({ clientX, clientY, pointerType }: PointerEvent<HTMLButtonElement>) {
+    if (paused || pointerType === 'touch') return;
+    const shouldSchedule = pending.current === null;
+    pending.current = { clientX, clientY };
+    if (shouldSchedule) frame.read(measure);
+  }
+
+  function leave() {
+    cancelPending();
+    raised.set(0);
+  }
+
+  return { move, leave };
+}
+
 /** Animate UI's Topography pointer hills and bounded waves, with explicit animation disposal. */
 export default function TopographyField({
   onUnavailable,
@@ -62,7 +117,8 @@ export default function TopographyField({
   const surface = useRef<HTMLDivElement>(null);
   const playback = inView ? (userPaused ? 'paused' : 'running') : 'offscreen';
   const paused = playback !== 'running';
-  const { values, pointerX, pointerY, raised } = useFieldMotion(playback);
+  const motion = useFieldMotion(playback);
+  const { values } = motion;
   const { ripples } = values;
   const canvas = useTopographyRenderer(
     surface,
@@ -72,16 +128,12 @@ export default function TopographyField({
     shape,
     sharpDesktopStart,
   );
-  function point(event: PointerPoint, fromKeyboard = false) {
-    const rect = canvas.current!.getBoundingClientRect();
-    return fromKeyboard
-      ? { x: rect.width / 2, y: rect.height / 2 }
-      : { x: event.clientX - rect.left, y: event.clientY - rect.top };
-  }
+  const pointer = useFieldPointer(canvas, motion, paused);
 
   function sendImpulse(event: MouseEvent<HTMLButtonElement>) {
-    if (paused || window.getSelection()?.isCollapsed === false) return;
-    ripples.send(point(event, event.detail === 0));
+    const element = canvas.current;
+    if (!element || paused || window.getSelection()?.isCollapsed === false) return;
+    ripples.send(pointInCanvas(element, event, event.detail === 0));
   }
 
   return (
@@ -93,20 +145,9 @@ export default function TopographyField({
         className="hero-glass-input"
         aria-label="Lichtimpuls im Glas auslösen"
         disabled={paused}
-        onPointerMove={(event) => {
-          if (
-            paused ||
-            event.pointerType === 'touch' ||
-            window.getSelection()?.isCollapsed === false
-          )
-            return;
-          const { x, y } = point(event);
-          pointerX.set(x);
-          pointerY.set(y);
-          raised.set(1);
-        }}
-        onPointerLeave={() => raised.set(0)}
-        onPointerCancel={() => raised.set(0)}
+        onPointerMove={pointer.move}
+        onPointerLeave={pointer.leave}
+        onPointerCancel={pointer.leave}
         onClick={sendImpulse}
       />
     </div>
