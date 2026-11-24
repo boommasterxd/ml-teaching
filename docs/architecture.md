@@ -110,6 +110,9 @@ one canonical same-origin homepage, learning or legal link. A supporting
 browser can prerender the selected document. The image practice page follows the
 [Browser ML flow](#browser-ml-flow) on direct entry. Activation uses normal browser
 navigation when preparation is unsupported or incomplete.
+The homepage waits for its static main content to be parsed before the browser
+can capture the incoming view of the document transition. This render hint
+applies when motion is allowed and does not wait for hydration or artwork.
 App Router recovery renders its text and actions immediately and uses the shared
 visibility-gated artwork lifecycle.
 
