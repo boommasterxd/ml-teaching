@@ -3,8 +3,9 @@
 import type { ComponentProps, ReactElement } from 'react';
 import { Menu as Primitive } from '@animate-ui/react/primitives/base-ui/menu';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
-import { Check, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Check } from '../icons/check';
+import { Minus } from '../icons/minus';
 import { ActionFeedback } from './action-feedback';
 import { MenuHighlight, MenuHighlightItem } from './menu-highlight';
 import { ScrollFadeViewport } from './scroll-fade-viewport';
@@ -124,10 +125,10 @@ export function DropdownMenuCheckboxItem({
             className="pointer-events-none absolute end-2 flex items-center justify-center"
           >
             {indicator === 'mixed' ? (
-              <Minus />
+              <Minus animate={false} />
             ) : (
               <Primitive.CheckboxItemIndicator>
-                <Check />
+                <Check animate={false} />
               </Primitive.CheckboxItemIndicator>
             )}
           </span>

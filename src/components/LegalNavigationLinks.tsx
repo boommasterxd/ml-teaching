@@ -24,9 +24,17 @@ export default function LegalNavigationLinks({ page }: { page: LegalPage }) {
               <NavigationMenuLink
                 active={page === id}
                 className="legal-page-link"
-                render={<AnimatedLink href={href} variant="ghost" />}
+                render={
+                  <AnimatedLink
+                    href={href}
+                    variant="ghost"
+                    navigationIcon={{
+                      content: <Icon data-icon="inline-start" aria-hidden="true" />,
+                      position: 'start',
+                    }}
+                  />
+                }
               >
-                <Icon data-icon="inline-start" aria-hidden="true" />
                 {label}
               </NavigationMenuLink>
             </MenuHighlightItem>

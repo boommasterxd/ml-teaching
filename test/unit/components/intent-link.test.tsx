@@ -2,7 +2,7 @@ import { createElement, createRef, type ComponentProps, type ReactNode } from 'r
 import type Link from 'next/link';
 import type { NextRouter } from 'next/router';
 import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import IntentLink from '@/components/IntentLink';
@@ -13,7 +13,10 @@ import ServerError, { getStaticProps } from '@/pages/500';
 import { AppRouterHost, testRouter } from '../helpers/app-router-host';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
-const nativeLink = vi.hoisted(() => ({ props: vi.fn() }));
+const nativeLink = vi.hoisted(() => ({
+  props: vi.fn(),
+  status: vi.fn(() => ({ pending: false })),
+}));
 
 // Inspect the resource contract while preserving Next's actual Link rendering and events.
 vi.mock('next/link', async (importOriginal) => {
@@ -23,6 +26,7 @@ vi.mock('next/link', async (importOriginal) => {
       nativeLink.props(props);
       return createElement(NativeLink, props);
     },
+    useLinkStatus: nativeLink.status,
   };
 });
 
@@ -53,6 +57,7 @@ function LinkActivationHost({ children }: { children: ReactNode }) {
 beforeEach(() => {
   installBrowserHost();
   vi.clearAllMocks();
+  nativeLink.status.mockReturnValue({ pending: false });
   window.history.replaceState(null, '', '/');
 });
 afterEach(() => {
@@ -61,6 +66,44 @@ afterEach(() => {
 });
 
 describe('intent-only native navigation', () => {
+  it('delays feedback for native navigation and keeps the same named link', () => {
+    vi.useFakeTimers();
+    const destination = () => <IntentLink href="/lernen">Lernen</IntentLink>;
+    const { rerender } = render(destination(), { wrapper: AppRouterHost });
+    const link = screen.getByRole('link', { name: 'Lernen' });
+    const spinner = () => link.querySelector('[data-slot="spinner"]');
+    const message = 'Seite wird geladen …';
+    const setPending = (pending: boolean) => {
+      nativeLink.status.mockReturnValue({ pending });
+      rerender(destination());
+    };
+
+    setPending(true);
+    expect(screen.getByRole('status').textContent).toBe('');
+    expect(spinner()).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(99);
+    });
+    expect(screen.queryByText(message)).toBeNull();
+    setPending(false);
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(spinner()).toBeNull();
+
+    setPending(true);
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(screen.getByRole('status').textContent).toBe(message);
+    expect(screen.getByRole('link', { name: 'Lernen' })).toBe(link);
+    expect(link.firstElementChild?.contains(spinner())).toBe(true);
+    expect(link.lastChild?.textContent).toBe('Lernen');
+    setPending(false);
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   it('keeps viewport preparation off and warms the native URL on hover and keyboard focus', () => {
     render(
       <IntentLink href={{ pathname: '/lernen', query: { mode: 'bilder' } }}>Lernen</IntentLink>,

@@ -73,6 +73,9 @@ The native Next.js HTTP server omits configured headers on redirects. Verify
 the full HSTS policy on hosted HTTPS redirects and their canonical targets,
 including every covered subdomain.
 
+The [homepage revalidation decision](decisions/vercel-revalidation-hsts.md)
+records the accepted HSTS omission on Vercel's conditional 304 response.
+
 There are no application mutation endpoints, image-upload API, auth flows or shared
 databases. Native image optimization must remain outside custom restrictive WAF
 rules. Vercel Bot Protection uses `challenge` without a separate AI-bot rule. The

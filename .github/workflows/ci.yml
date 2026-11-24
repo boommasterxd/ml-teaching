@@ -71,8 +71,6 @@ jobs:
         id: cache-config
         continue-on-error: true
         run: node .github/scripts/cache.ts configure
-        env:
-          CACHE_INPUT_HASH: ${{ hashFiles('package.json', 'package-lock.json', '.npmrc', '.github/scripts/cache.ts', '.github/workflows/ci.yml', '.github/workflows/dependency-cache.yml') }}
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: cache
         if: steps.cache-config.outcome == 'success'
@@ -117,8 +115,6 @@ jobs:
         id: cache-config
         continue-on-error: true
         run: node .github/scripts/cache.ts configure
-        env:
-          CACHE_INPUT_HASH: ${{ hashFiles('package.json', 'package-lock.json', '.npmrc', '.github/scripts/cache.ts', '.github/workflows/ci.yml', '.github/workflows/dependency-cache.yml') }}
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: cache
         if: steps.cache-config.outcome == 'success'
@@ -138,7 +134,13 @@ jobs:
       - run: npm run build
       - name: Install the locked Chromium browser and headless shell
         run: npx --no-install playwright install chromium
-      - run: npm run test:e2e -- --workers=3
+      - name: Run the selected production browser checks
+        run: node .github/scripts/browser-ci.ts
+        env:
+          CI_PLAN: ${{ needs.plan.outputs.plan }}
+          CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CHANGE_MERGE_SHA: ${{ github.sha }}
 
   CI:
     name: CI
@@ -155,7 +157,7 @@ jobs:
           node-version: '26.x'
           check-latest: true
       - name: Require every selected check
-        run: node .github/scripts/validate-ci.ts
+        run: node .github/scripts/validate-ci.ts --results
         env:
           CI_PLAN: ${{ needs.plan.outputs.plan }}
           CI_RESULTS: '{"plan":"${{ needs.plan.result }}","quality":"${{ needs.quality.result }}","browser":"${{ needs.browser.result }}"}'

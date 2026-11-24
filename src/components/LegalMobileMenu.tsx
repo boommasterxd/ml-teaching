@@ -14,9 +14,14 @@ export default function LegalMobileMenu({ selectedValue }: { selectedValue: Lega
               key={id}
               highlightValue={id}
               className="legal-page-link min-h-11"
-              render={<Link href={href} aria-current={selectedValue === id ? 'page' : undefined} />}
+              render={
+                <Link
+                  href={href}
+                  aria-current={selectedValue === id ? 'page' : undefined}
+                  navigationIcon={{ content: <Icon aria-hidden="true" />, position: 'start' }}
+                />
+              }
             >
-              <Icon aria-hidden="true" />
               {label}
             </DropdownMenuLinkItem>
           );

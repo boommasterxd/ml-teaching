@@ -9,7 +9,8 @@ export default function LearningHubPage() {
     <div className="learning-hub landing-container">
       <LearningChapterIntro title="Dein Lernlabor">
         Wie lernt eine KI, was du von ihr willst? Beim Bildtraining gibst du ihr Bilder mit Namen.
-        Beim Lernen durch Belohnung zeigen Punkte einer Spielfigur, welche Wege sich lohnen.
+        Beim Lernen durch Belohnung zeigen Punkte einer Spielfigur, welche Wege sich lohnen. Das
+        Lernlabor ist kostenlos.
       </LearningChapterIntro>
       <LearningAreas idPrefix="hub" />
       <section className="learning-hub-ideas" aria-labelledby="hub-ideas-title">

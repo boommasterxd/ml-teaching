@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import ErrorGlassArtwork from '@/components/hero/ErrorGlassArtwork';
 import HeroScene from '@/components/hero/HeroScene';
 import { errorRingPosterImages, heroPosterImages } from '@/components/hero/poster-assets';
+import { contourMedia } from '@/components/hero/contour-poster';
 import { EntryViewportReadyContext } from '@/components/ui/entry-policy';
 import { HomePlaybackProvider, useHomePlayback } from '@/components/home/HomePlaybackProvider';
 import { ReducedMotionContext } from '@animate-ui/react/utils/motion';
@@ -172,12 +173,16 @@ describe('decorative hero lifetime', () => {
         await vi.advanceTimersByTimeAsync(milliseconds);
       });
     const artwork = () => container.querySelector('#home-hero-art picture img');
+    const desktopMedia = () =>
+      container.querySelector('#home-hero-art picture source:nth-child(2)')?.getAttribute('media');
     await advance(800);
-    expect(artwork()?.getAttribute('src')).toMatch(/^data:/);
+    const poster = artwork();
+    expect(poster).not.toBeNull();
+    expect(desktopMedia()).toContain('prefers-reduced-motion');
     fireEvent.click(screen.getByRole('button', { name: 'Animationen pausieren' }));
     await advance(2_000);
-    const poster = artwork();
-    expect(poster?.getAttribute('src')).toContain('/_next/image');
+    expect(artwork()).toBe(poster);
+    expect(desktopMedia()).toBe(contourMedia.desktop);
     expect(screen.queryByRole('status', { name: 'Grafik wird geladen' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Animationen fortsetzen' }));

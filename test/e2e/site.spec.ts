@@ -11,6 +11,7 @@ import { learningPaths } from '../../src/lib/learning-paths';
 import { ANIMATION, NETWORK_STAGES } from '../../src/constants';
 import sharp from 'sharp';
 import { failSyntheticModel, routeSyntheticModel } from './synthetic-model';
+import modelContract from '../unit/lib/fixtures/mobilenet-v2-embedding.json' with { type: 'json' };
 import { expectNetworkLayout } from './network-layout';
 import { classLayout, expectStableNameValidation } from './training-name-validation';
 import {
@@ -20,13 +21,14 @@ import {
 } from './training-camera';
 import {
   captureSetupDialog,
+  observeModelConsentRequests,
+  prepareModelConsent,
   expectKeyboardCapture,
   expectCancelledResetKeepsImages,
   expectEmptyTrainingAfterConsent,
   expectPreviewDeletion,
   expectThemeControlAlignment,
   expectTrainingCompletion,
-  expectTrainingGlide,
   expectThemeMenuTriggers,
   grantModelConsent,
   openDeferredTrainingStep,
@@ -37,6 +39,7 @@ import {
   withdrawTrainingConsent,
   withdrawWithActiveCamera,
 } from './training-keyboard';
+import { expectTrainingGlide } from './training-motion-checks';
 
 async function uploadTrainingClasses(page: Page) {
   const empty = await classLayout(page);
@@ -248,16 +251,21 @@ test('model download is consent-gated and a failed download leaves an accessible
   baseURL,
 }) => {
   const network = await routeSyntheticModel(page, baseURL!, failSyntheticModel);
+  const consent = await observeModelConsentRequests(
+    page,
+    new URL('.', modelContract.modelUrl).href,
+  );
   await page.goto(learningPaths.imagePractice);
-  await expect(
-    page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' }),
-  ).toBeVisible();
+  const submit = await prepareModelConsent(page);
+  await expect(submit).toBeEnabled();
+  expect(await consent.state()).toEqual({ submitted: false, earlyAttempts: 0 });
   expect(network.modelRequests).toEqual([]);
-  await grantModelConsent(page);
+  await consent.submit(submit);
   await expect(
     page.getByRole('alert').filter({ hasText: 'Fehler beim Laden der KI-Modelle' }),
   ).toBeVisible({ timeout: 25_000 });
   expect(network.modelRequests.length).toBeGreaterThan(0);
+  expect(await consent.state()).toEqual({ submitted: true, earlyAttempts: 0 });
   await expect(
     page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' }),
   ).not.toBeVisible();

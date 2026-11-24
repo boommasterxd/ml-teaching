@@ -62,8 +62,8 @@ export function HomePurpose() {
               wann liegt die KI daneben?
             </Text>
             <Text>
-              Du sammelst Beispiele, testest dein Modell und prüfst seine Fehler. Dafür brauchst du
-              keine Programmierkenntnisse.
+              Du sammelst Beispiele, testest dein Modell und prüfst seine Fehler. Das Lernangebot
+              ist kostenlos. Du brauchst keine Programmierkenntnisse.
             </Text>
           </CardContent>
         </ScrollReveal>
@@ -210,8 +210,12 @@ export function HomeCallToAction() {
               href={learningPaths.hub}
               size="lg"
               className="home-cta-action mobile-action"
+              navigationIcon={{
+                content: <ArrowRight data-icon="inline-end" aria-hidden="true" />,
+                position: 'end',
+              }}
             >
-              Zum Lernlabor <ArrowRight data-icon="inline-end" aria-hidden="true" />
+              Zum Lernlabor
             </AnimatedLink>
           </CardFooter>
         </Card>

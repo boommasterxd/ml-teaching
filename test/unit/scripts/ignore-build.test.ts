@@ -20,6 +20,7 @@ describe('Vercel build admission', () => {
     ['README.md', 'AGENTS.md'],
     ['test/unit/hooks/useModelLoader.test.ts', 'test/setup.ts'],
     ['.github/workflows/ci.yml', '.github/scripts/plan-ci.ts'],
+    ['.github/scripts/browser-ci.ts'],
     [
       '.github/workflows/dependency-cache.yml',
       '.github/workflows/dependency-cache-reconciliation.yml',
@@ -44,6 +45,7 @@ describe('Vercel build admission', () => {
     ['.github/scripts/unknown.ts'],
     ['.github/scripts/cache-lifecycle/unknown.cjs'],
     ['.github/workflows/dependency-cache-deploy.yml'],
+    ['.github/scripts/browser-ci.ts', 'src/app/page.tsx'],
     ['.github/workflows/dependency-cache.yml', 'src/app/page.tsx'],
     ['next.config.mjs'],
     ['package-lock.json'],

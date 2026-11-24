@@ -107,6 +107,12 @@
   controls for forms, dialogs, menus and feedback. Apply this to loading, error
   and pre-hydration states as well. Extend a shared variant when the design
   needs one. Keep semantic HTML for ordinary layout, links and document content.
+- Keep pending internal page navigation feedback on the activated link. Use the
+  shared spinner in the action icon's slot, or before the label when the link
+  has no icon. Use Animate UI to open and close the spinner space before an
+  iconless label and respect reduced motion. Show feedback after 100 ms of
+  pending activation and preserve the label and focus. Follow the
+  [inline navigation feedback decision](docs/decisions/inline-navigation-feedback.md).
 - Use the shared destructive [`Alert`](src/components/ui/alert.tsx) for contextual
   errors that block an active step, such as camera setup. Use the shared
   [`toast`](src/lib/toast.ts) for global notifications, including workspace camera
@@ -190,6 +196,7 @@ maintained documentation change.
 | [`docs/decisions/error-artwork-and-menus.md`](docs/decisions/error-artwork-and-menus.md)               | Records the shared playback and menu-loading decisions.         |
 | [`docs/decisions/eslint-peer-compatibility.md`](docs/decisions/eslint-peer-compatibility.md)           | Records the temporary ESLint peer compatibility exception.      |
 | [`docs/decisions/hostinger-mail-retention.md`](docs/decisions/hostinger-mail-retention.md)             | Records mailbox recovery and the accepted backup gap.           |
+| [`docs/decisions/inline-navigation-feedback.md`](docs/decisions/inline-navigation-feedback.md)         | Records the scope and placement of navigation loading feedback. |
 | [`docs/decisions/minimatch-development-advisory.md`](docs/decisions/minimatch-development-advisory.md) | Records the limited development-only advisory acceptance.       |
 | [`docs/decisions/performance-audits.md`](docs/decisions/performance-audits.md)                         | Explains why Lighthouse runs locally outside merge checks.      |
 | [`docs/decisions/public-repository-visibility.md`](docs/decisions/public-repository-visibility.md)     | Records accepted exposure of existing repository history.       |
@@ -197,6 +204,7 @@ maintained documentation change.
 | [`docs/decisions/ssg-and-csp.md`](docs/decisions/ssg-and-csp.md)                                       | Records static rendering and guarded CSP integration.           |
 | [`docs/decisions/training-visual-accessibility.md`](docs/decisions/training-visual-accessibility.md)   | Records accepted visual limitations of image training.          |
 | [`docs/decisions/vercel-challenge-hsts.md`](docs/decisions/vercel-challenge-hsts.md)                   | Records the accepted HSTS gap on Vercel challenge responses.    |
+| [`docs/decisions/vercel-revalidation-hsts.md`](docs/decisions/vercel-revalidation-hsts.md)             | Records the accepted HSTS gap on homepage revalidation.         |
 | [`docs/deployment.md`](docs/deployment.md)                                                             | Defines the Vercel release workflow and publication boundaries. |
 | [`docs/design-system.md`](docs/design-system.md)                                                       | Defines shared UI, motion, accessibility and integration rules. |
 | [`docs/development.md`](docs/development.md)                                                           | Documents runtime, commands and local verification.             |

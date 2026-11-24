@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ciPlanVersion } from '../../../.github/scripts/plan-ci.ts';
 import { hasCheckEvidence, isTextOnlyEdit } from '../../../.github/scripts/pr-check-evidence.ts';
 import { validateResults } from '../../../.github/scripts/validate-ci.ts';
 
@@ -87,7 +88,7 @@ describe('required checks after a pull request edit', () => {
 
   it('allows recorded reuse only on text edits with the expected job results', () => {
     const plan = {
-      version: 1,
+      version: ciPlanVersion,
       ...revisions,
       reason: 'verified-revision',
       quality: false,

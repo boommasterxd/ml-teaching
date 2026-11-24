@@ -10,12 +10,21 @@ The dependency-free planner reads the complete merge-base-to-head Git diff. Rena
 include both endpoints, and deletions remain part of the scope. Its plan records the
 base, head and merge revisions. Consumers reject a different checked-out revision.
 
-| Complete changed scope                                                                                 | Selected work                                                          |
-| ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| Nonempty root `docs/` files only                                                                       | Real successful final gate; no dependency installation, tests or build |
-| Only `*.test.ts`, `*.test.tsx` or `*.test.mjs` files under `test/unit/`                                | Static quality, production dependency audit and full unit coverage     |
-| Application, test fixtures, browser tests, assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and browser suite          |
-| Empty diff or unavailable Git history                                                                  | All checks                                                             |
+| Complete changed scope                                                                                 | Selected work                                                                         |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| Nonempty root `docs/` files only                                                                       | Real successful final gate; no dependency installation, tests or build                |
+| Only `*.test.ts`, `*.test.tsx` or `*.test.mjs` files under `test/unit/`                                | Static quality, production dependency audit and full unit coverage                    |
+| One eligible added or modified `test/e2e/*.spec.ts`                                                    | Full quality checks, native production build, core browser specs and the changed spec |
+| Application, test fixtures, browser tests, assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and browser suite                         |
+| Empty diff or unavailable Git history                                                                  | All checks                                                                            |
+
+The single-spec selection requires a regular file, a branch up to date with its
+base and a verified simulated merge tree identical to the PR head tree. CI runs
+`test/e2e/security-headers.spec.ts`, `test/e2e/site.spec.ts` and the changed spec,
+deduplicating the selection if the changed file is already a core spec.
+Unfiltered Playwright discovery checks that every selected file contains runnable
+tests. Invalid discovery fails the browser job. Deletions, renames, multiple changes
+and missing eligibility evidence retain the full browser suite.
 
 Selection and the final result gate use `ubuntu-slim`. Selected quality and browser
 jobs use regular runners; job-level conditions prevent allocation of unselected
@@ -43,16 +52,19 @@ CI provenance and the complementary roles of Gitleaks and GitHub Secret Scanning
 
 ## Dependency cache lifecycle
 
-PR quality and browser jobs restore only npm's `_cacache` content store. Cache
-identities include Linux x64, the approved Node.js major, the active npm major and
-a hash of dependency and cache configuration inputs. Compatible prefix restores
-can reuse downloaded packages; every job still runs `npm ci --no-audit`, including
-on a cold cache. PR jobs never save caches, and installed `node_modules`, build
-output and browser profiles are not cached.
+PR quality and browser jobs restore only npm's `_cacache` content store.
+`.github/scripts/cache.ts` computes the same install-input digest for PR jobs,
+the producer and reconciliation from `.npmrc`, `package.json` and `package-lock.json`.
+The `mlteaching-npm-v1-` prefix retains Linux x64, Node.js 26 and the active npm
+major. Older keys with the same compatible prefix can still supply downloaded
+packages. Every consuming job runs `npm ci --no-audit`, including on a cold cache.
+PR jobs never save caches, and installed `node_modules`, build output and browser
+profiles are not cached.
 
-The separate `Dependency cache` workflow produces caches from trusted `main` when
-dependency, runtime or cache configuration inputs change. Its manual entry point
-also requires `main`. An exact cache hit reuses the immutable cache; otherwise it
+The separate `Dependency cache` workflow runs on trusted `main` when install
+inputs or cache producer and lifecycle configuration change. Its manual entry
+point also requires `main`. Changes confined to the PR CI workflow do not trigger
+warming. An exact cache hit reuses the immutable cache. On a miss, the producer
 restores a compatible fallback when available and installs locked dependencies.
 It records the native producer identity without repeating application quality,
 build or browser jobs.
@@ -150,9 +162,9 @@ still apply. Duplication excludes only the official generated registry icons und
 `src/components/animate-ui/icons/`: repeated SVG/motion scaffolding belongs to that
 upstream implementation. Handwritten adapters and application components retain
 the 5% duplication limit. React Compiler is not enabled, so its incompatible-library adoption
-rule is disabled. Hook ordering and dependency rules remain enforced. The CSP
-template keeps its unused nonce-policy export for template fidelity; Knip ignores
-only exported API usage in that exact vendor module, not application dead code.
+rule is disabled. Hook ordering and dependency rules remain enforced. Knip checks
+exports in the CSP runtime, including the nonce-policy module used by the
+development Proxy.
 
 The syntax-aware source boundary gate discovers root and nested App Router
 `page`/`layout` modules. They remain Server Components. Native metadata/API entries
@@ -172,12 +184,13 @@ that Proxy remain forbidden.
 
 `npm run build` uses the native Next.js build and its CSP verification hooks.
 `npm run test:e2e` runs the complete browser suite against the native production
-server, including accessibility and keyboard contracts. It remains unfiltered with
-`CI=true`. The browser job uses three Playwright workers to run independent test
-files against one production server. CI downloads the lockfile-matched Chromium
-Headless Shell and full Chromium for the back-forward cache test. Browser launch,
-host dependency validation and the suite are blocking when selected. Lighthouse
-runs locally as described in the [performance audit decision](decisions/performance-audits.md).
+server, including accessibility and keyboard contracts. The local command remains
+unfiltered with `CI=true`. The CI browser job validates the plan and limits
+Playwright to two workers to leave CPU headroom for WebGL and accessibility checks.
+It installs both lockfile-matched Chromium variants for
+[the browser tests](development.md#checks). Browser launch, host dependency
+validation and the selected suite are blocking. Lighthouse runs locally as
+described in the [performance audit decision](decisions/performance-audits.md).
 
 ## Security automation and release boundary
 
