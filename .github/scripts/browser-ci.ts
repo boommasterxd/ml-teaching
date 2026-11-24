@@ -45,7 +45,7 @@ export function runBrowserChecks(plan: CiPlan, run = runPlaywright) {
     collectRunnableFiles(discovery.suites, discovery.config.rootDir, files);
     const missing = selected.filter((file) => !files.has(resolve(file)));
     if (missing.length) throw new Error(`No runnable browser tests in ${missing.join(', ')}.`);
-    args.push(...selected.map((file) => `(^|/)${file.replace(/\./g, '\\.')}$`));
+    args.push(...selected.map((file) => `(^|/)${RegExp.escape(file)}$`));
   }
   run(args);
 }

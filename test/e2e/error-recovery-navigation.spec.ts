@@ -129,7 +129,7 @@ test('the HTTP 500 recovery animates only the document crossing to the homepage'
   ).toEqual([]);
 });
 
-test('the static 500 recovery link shows inline feedback while a document response waits', async ({
+test('the static 500 header link replaces its icon while a document response waits', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -139,7 +139,10 @@ test('the static 500 recovery link shows inline feedback while a document respon
     HTMLScriptElement.supports = (type) => type !== 'speculationrules' && supports(type);
   });
   await observeDocumentTransitions(page);
-  const action = await open500(page);
+  await open500(page);
+  const action = page
+    .getByRole('navigation', { name: 'Hauptnavigation' })
+    .getByRole('link', { name: 'ML Teaching – Startseite' });
   const browser = await page.context().newCDPSession(page);
   await browser.send('Network.emulateNetworkConditions', {
     offline: false,
@@ -148,19 +151,34 @@ test('the static 500 recovery link shows inline feedback while a document respon
     uploadThroughput: -1,
   });
   await action.focus();
+  await expect(action).toBeFocused();
+  await expect(action.locator('[data-link-glyph]')).toBeVisible();
   const feedback = page.waitForEvent('console', {
-    predicate: (message) => message.text() === 'focused recovery link shows spinner',
+    predicate: (message) => message.text().startsWith('recovery feedback: '),
   });
   await action.evaluate((link) => {
     const observer = new MutationObserver(() => {
-      if (!link.querySelector('[data-slot="spinner"]') || link !== document.activeElement) return;
+      const slot = link.querySelector('[data-slot="link-icon"]');
+      const spinner = slot?.querySelector('[data-slot="spinner"]');
+      if (!spinner) return;
       observer.disconnect();
-      console.info('focused recovery link shows spinner');
+      const glyph = slot?.querySelector('[data-link-glyph]');
+      console.info(
+        `recovery feedback: ${JSON.stringify({
+          focused: link === document.activeElement,
+          glyphHidden: Boolean(glyph && !glyph.checkVisibility({ visibilityProperty: true })),
+          spinnerVisible: spinner.checkVisibility({ visibilityProperty: true }),
+        })}`,
+      );
     });
     observer.observe(link, { childList: true, subtree: true });
   });
   await page.keyboard.press('Enter');
-  await feedback;
+  expect(JSON.parse((await feedback).text().slice('recovery feedback: '.length))).toEqual({
+    focused: true,
+    glyphHidden: true,
+    spinnerVisible: true,
+  });
   await expectHomepage(page);
 });
 

@@ -6,7 +6,7 @@
 
 /* Include the shell's deferred menus and error artwork in the native 500 document. */
 @source './pages';
-@source './components/{AnimatedLink,Button,Footer,HeaderMenuPanel,IntentLink,PublicErrorScene,Site*,animated-*,button-variants}.{ts,tsx}';
+@source './components/{AnimatedLink,Button,Footer,HeaderMenuPanel,IntentLink,LinkNavigationIndicator,PublicErrorScene,Site*,animated-*,button-variants}.{ts,tsx}';
 @source './components/theme';
 @source './components/icons';
 @source './components/animate-ui/icons';
