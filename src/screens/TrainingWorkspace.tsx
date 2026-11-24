@@ -16,7 +16,7 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { Spinner } from '../components/ui/spinner';
 import TrainingPanels from '../components/TrainingPanels';
 import { useTrainingPanelLoading, type TrainingStep } from '../components/training-panel-loading';
-import DeferredTrainingDialogs from '../components/DeferredTrainingDialogs';
+import { useDeferredTrainingDialogs } from '../components/DeferredTrainingDialogs';
 import { useTrainingSession } from '@/components/training/TrainingEntryContext';
 import { useMotionPreference } from '@/components/ui/use-motion-preference';
 import { TrainingWorkspaceHeader, trainingSteps } from '@/components/TrainingCollectionFrame';
@@ -124,6 +124,7 @@ export default function TrainingWorkspace({
   const [selection, setSelection] = useState<TrainingStep>('images');
   const workspace = useTrainingWorkspace(selection, engine);
   const { resources, data, dialogs, cardActions } = workspace;
+  const { Dialogs, pendingDialog } = useDeferredTrainingDialogs(dialogs.modal, dialogs.closeModal);
   const canPredict = data.canTrain && resources.hasTrainedModel && !data.training.isTraining;
   const flow = useTrainingNavigation(data.canTrain, canPredict, selection, setSelection);
 
@@ -157,6 +158,7 @@ export default function TrainingWorkspace({
       />
       <TrainingPanels
         workspace={workspace}
+        pendingDialog={pendingDialog}
         ready={ready}
         step={flow.current}
         modules={flow.modules}
@@ -165,20 +167,25 @@ export default function TrainingWorkspace({
         onSelect={flow.select}
         onPrepare={flow.onPrepare}
       />
-      <DeferredTrainingDialogs
-        modal={dialogs.modal}
-        classes={data.classes.classes}
-        closeModal={dialogs.closeModal}
-        removeImage={data.classes.removeImage}
-        clearClass={(id) => {
-          cardActions.onUploadResult(id, null);
-          data.classes.clearClass(id);
-        }}
-        removeClass={(id) => {
-          cardActions.onUploadResult(id, null);
-          data.classes.removeClass(id);
-        }}
-      />
+      <span role="status" className="sr-only">
+        {pendingDialog ? 'Dialog wird geladen.' : ''}
+      </span>
+      {Dialogs && (
+        <Dialogs
+          modal={dialogs.modal}
+          classes={data.classes.classes}
+          closeModal={dialogs.closeModal}
+          removeImage={data.classes.removeImage}
+          clearClass={(id) => {
+            cardActions.onUploadResult(id, null);
+            data.classes.clearClass(id);
+          }}
+          removeClass={(id) => {
+            cardActions.onUploadResult(id, null);
+            data.classes.removeClass(id);
+          }}
+        />
+      )}
     </>
   );
 }

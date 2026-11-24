@@ -1,13 +1,18 @@
 import { afterEach, beforeEach, expect, it } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { createRef } from 'react';
 import PredictionPointCloud from '@/components/PredictionPointCloud';
 import { ML } from '@/constants';
-import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
+import { installThemeHost, restoreThemeHost } from '../helpers/theme-host';
 import { makeClasses } from '../helpers/training-data';
 
-beforeEach(installBrowserHost);
-afterEach(restoreBrowserHost);
+beforeEach(() => {
+  installThemeHost();
+});
+afterEach(() => {
+  cleanup();
+  restoreThemeHost();
+});
 
 it('distinguishes classes by shape and marks a camera point beyond the plot edge', () => {
   const props = {
@@ -34,7 +39,7 @@ it('distinguishes classes by shape and marks a camera point beyond the plot edge
   expect(edgeMarker()).not.toBeNull();
 });
 
-it('isolates a class in a full diagram and restores all points on a second activation', () => {
+it('shows the selected classes together and keeps the camera point when none are selected', async () => {
   const examples = makeClasses(ML.MIN_IMAGES_PER_CLASS);
   const classes = Array.from({ length: ML.MAX_CLASSES }, (_, index) => ({
     ...examples[index % examples.length],
@@ -45,7 +50,12 @@ it('isolates a class in a full diagram and restores all points on a second activ
     images.map((_, imageIndex) => ({ classId: id, x: index, y: imageIndex })),
   );
   const { container } = render(
-    <PredictionPointCloud area={createRef()} classes={classes} points={points} position={null} />,
+    <PredictionPointCloud
+      area={createRef()}
+      classes={classes}
+      points={points}
+      position={{ x: 0, y: 0 }}
+    />,
   );
   const paths = () =>
     Array.from(
@@ -54,14 +64,23 @@ it('isolates a class in a full diagram and restores all points on a second activ
     );
   const all = paths();
   expect(all).toHaveLength(ML.MAX_CLASSES);
-  const legend = within(screen.getByRole('list', { name: 'Legende' }));
-  const choice = legend.getByRole('button', { name: /^Klasse 15\b/, pressed: false });
-  choice.focus();
+  const camera = container.querySelector('[data-slot="prediction-live-point"]');
+  expect(camera).not.toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Klassenfilter: Alle Klassen' }));
+  const filters = within(await screen.findByRole('menu', { name: 'Klassenfilter' }));
+  const allClasses = filters.getByRole('menuitemcheckbox', { name: 'Alle Klassen' });
+  const choice = filters.getByRole('menuitemcheckbox', { name: 'Klasse 15' });
+  const other = filters.getByRole('menuitemcheckbox', { name: 'Klasse 1' });
+  fireEvent.click(allClasses);
+  expect(paths()).toEqual([]);
+  expect(container.querySelector('[data-slot="prediction-live-point"]')).toBe(camera);
   fireEvent.click(choice);
-  expect(legend.getByRole('button', { name: /^Klasse 15\b/, pressed: true })).toBe(choice);
-  expect(document.activeElement).toBe(choice);
   expect(paths()).toEqual([all.at(-1)]);
+  fireEvent.click(other);
+  expect(paths()).toEqual([all[0], all.at(-1)]);
+  expect(allClasses.getAttribute('aria-checked')).toBe('mixed');
   fireEvent.click(choice);
-  expect(legend.getByRole('button', { name: /^Klasse 15\b/, pressed: false })).toBe(choice);
+  expect(paths()).toEqual([all[0]]);
+  fireEvent.click(allClasses);
   expect(paths()).toEqual(all);
 });

@@ -15,6 +15,12 @@ Development uses `src/proxy.dev.ts` for nonce-based CSP Report-Only diagnostics
 and private/no-store responses. Native `pageExtensions` configuration discovers it
 only during the development-server phase. Production retains standard extensions,
 complete SSG and enforced hash CSP without a Proxy or root request dependencies.
+The shared nonce policy builder also validates exact hashes supplied by the
+development Proxy for the trusted theme bootstrap, transition styles and error-page
+speculation rules. Application hashes come from the same constants as their rendered
+output. The development hash for the installed Animate UI ThemeToggler stylesheet
+is reviewed separately and checked against the rendered primitive when it changes.
+Production authorization stays bound to the final build output.
 
 `csp.config.mjs` enumerates the complete canonical route inventory. Adding,
 renaming, removing or changing a page's rendering mode must update that inventory

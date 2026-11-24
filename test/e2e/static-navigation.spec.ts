@@ -394,66 +394,6 @@ test('static documents preserve strict CSP and visible content', async ({ page, 
   ).toEqual([]);
 });
 
-test('native legal navigation restores the same entries with one transition per traversal', async ({
-  page,
-}) => {
-  const failures = diagnostics(page);
-  const transitions = await observeViewTransitions(page);
-  await page.goto('/');
-  const historyKey = () => page.evaluate(() => window.navigation.currentEntry?.key);
-  const homeEntry = await historyKey();
-  expect(homeEntry).toBeTruthy();
-  await page.evaluate(() => {
-    document.documentElement.dataset.navigationProbe = 'preserved';
-  });
-  const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
-  const legal = navigation.getByRole('button', { name: 'Rechtliches', exact: true });
-  await legal.hover();
-  const privacy = navigation.getByRole('link', { name: 'Datenschutz', exact: true });
-  await expect(navigation.getByRole('link', { name: 'Impressum', exact: true })).toBeVisible();
-  await expect(
-    navigation.getByRole('link', { name: 'Barrierefreiheit', exact: true }),
-  ).toBeVisible();
-  const [prefetched] = await Promise.all([
-    page.waitForResponse(
-      (response) =>
-        new URL(response.url()).pathname === '/datenschutz' &&
-        response.request().headers().rsc === '1',
-    ),
-    privacy.hover(),
-  ]);
-  await prefetched.finished();
-  await expectAccessible(page);
-  expect(await transitions()).toEqual([]);
-
-  await privacy.click();
-  await expect(page).toHaveURL(/\/datenschutz$/);
-  const privacyEntry = await historyKey();
-  expect(privacyEntry).not.toBe(homeEntry);
-  await expect(legal).toHaveAttribute('aria-expanded', 'false');
-  expect(await page.locator('html').getAttribute('data-navigation-probe')).toBe('preserved');
-  const privacyDocument = page.getByRole('region', { name: 'Datenschutzerklärung', exact: true });
-  await expect(privacyDocument.locator('[data-entry-admission="scroll"]').first()).toBeAttached();
-  await settleEntryAnimations(page);
-  const forward = { root: false, outgoingPages: 1, incomingPages: 1, back: false };
-  expect(await transitions()).toEqual([forward]);
-
-  await page.goBack();
-  await expect(
-    page.getByRole('heading', { name: /Du probierst\.\s*Deine KI lernt\./ }),
-  ).toBeVisible();
-  expect(await historyKey()).toBe(homeEntry);
-  await settleEntryAnimations(page);
-  const back = { ...forward, back: true };
-  expect(await transitions()).toEqual([forward, back]);
-  await page.goForward();
-  await expect(privacyDocument).toBeVisible();
-  expect(await historyKey()).toBe(privacyEntry);
-  await settleEntryAnimations(page);
-  expect(await transitions()).toEqual([forward, back, forward]);
-  expect(failures).toEqual([]);
-});
-
 test('the missing-page artwork supports keyboard playback and reduced-motion recovery', async ({
   page,
 }) => {

@@ -4,21 +4,25 @@
  * Card component representing a single ML class.
  * Orchestrates camera recording, image upload, and thumbnail gallery via subcomponents.
  */
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, type ComponentProps } from 'react';
+import { useIsPresent } from 'motion/react';
+import type { Control } from 'react-hook-form';
 import { useClassCapture } from '../hooks/useClassCapture';
 import type { CaptureActions } from '../hooks/useClassCapture';
+import { useTrainingClassName } from '../hooks/useClassManagement';
+import type { TrainingClassNames } from '@/lib/training-class-names';
 import { ML } from '../constants';
 import type { MLClass, MLImage } from '../types/ml';
 import CameraPreview from './CameraPreview';
 import type { CameraPreviewProps } from './CameraPreview';
-import { prepareTrainingDialogs } from './DeferredTrainingDialogs';
+import { prepareTrainingDialogs, type PendingTrainingDialog } from './DeferredTrainingDialogs';
 import ImageGallery, { prepareImageGallery } from './ImageGallery';
-import { FieldError } from './ui/field';
 import TrainingClassFrame, {
   ClassManagementActions,
   TrainingClassNameField,
   trainingGalleryLabel,
 } from './TrainingClassFrame';
+import { FieldError } from './ui/field';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 /**
@@ -33,8 +37,6 @@ export interface ClassCardActions extends CaptureActions {
   onClear: (classId: string) => void;
   /** Called to remove a specific subset of images by their IDs. */
   onRemoveImages: (classId: string, ids: string[]) => void;
-  /** Called when the class name input changes. */
-  onUpdateName: (classId: string, name: string) => void;
   /** Called when a thumbnail image in the gallery is clicked. */
   onImageClick: (classId: string, img: MLImage) => void;
   /** Called when a file cannot be read or decoded as an image. */
@@ -48,69 +50,32 @@ interface ClassCardProps extends Pick<CameraPreviewProps, 'camera'> {
   position: number;
   /** The ML class data to display and manage. */
   cls: MLClass;
-  nameError?: string;
+  nameControl: Control<TrainingClassNames>;
+  validateNames: () => void;
   /** Grouped callback actions for class management and user interactions. */
   actions: ClassCardActions;
+  pendingDialog?: PendingTrainingDialog;
 }
 
-function ClassNameInput({
+function EditableClassName({
   id,
-  name,
   error,
-  onChange,
-}: {
-  id: string;
-  name: string;
-  error?: string;
-  onChange: (name: string) => void;
-}) {
-  const [showError, setShowError] = useState(false);
+  ...props
+}: ComponentProps<typeof TrainingClassNameField> & { id: string; error?: string }) {
   const errorId = `${id}-error`;
   return (
-    <Tooltip
-      open={!!error && showError}
-      disabled={!error}
-      onOpenChange={(open, { reason }) => {
-        if (open || reason !== 'trigger-hover' || document.activeElement?.id !== id) {
-          setShowError(open);
-        }
-      }}
-    >
+    <Tooltip triggerId={id} open={Boolean(error)} disabled={!error}>
       <TooltipTrigger
         closeOnClick={false}
-        aria-describedby={undefined}
-        render={
-          <TrainingClassNameField
-            id={id}
-            value={name}
-            onChange={(event) => {
-              onChange(event.currentTarget.value);
-              setShowError(true);
-            }}
-            onFocus={() => setShowError(true)}
-            onPointerDown={(event) => {
-              event.currentTarget.dataset.mouseFocused = '1';
-              setShowError(true);
-            }}
-            onBlur={(event) => {
-              delete event.currentTarget.dataset.mouseFocused;
-              setShowError(false);
-            }}
-            aria-invalid={!!error}
-            aria-errormessage={error ? errorId : undefined}
-            aria-describedby={error ? errorId : undefined}
-          />
-        }
+        aria-describedby={error ? errorId : undefined}
+        aria-errormessage={error ? errorId : undefined}
+        aria-invalid={Boolean(error)}
+        render={<TrainingClassNameField {...props} />}
       />
       <TooltipContent collisionPadding={12} aria-hidden="true">
         {error}
       </TooltipContent>
-      <FieldError
-        id={errorId}
-        role={error ? 'alert' : undefined}
-        aria-live="polite"
-        className="sr-only"
-      >
+      <FieldError id={errorId} role="status" className="sr-only">
         {error}
       </FieldError>
     </Tooltip>
@@ -120,11 +85,17 @@ function ClassNameInput({
 const ClassCard = memo(function ClassCard({
   cls,
   position,
-  nameError,
+  nameControl,
+  validateNames,
   actions,
+  pendingDialog,
   camera,
 }: ClassCardProps) {
   const { onRemoveImages, onImageClick } = actions;
+  const { field, error, edit } = useTrainingClassName(nameControl, position - 1, validateNames);
+  const present = useIsPresent();
+  const value = present ? field.value : cls.name;
+  const nameError = present ? error : undefined;
   const { videoRef, isRecording, startRecording, stopRecording, handleFileUpload } =
     useClassCapture(cls, actions);
 
@@ -148,13 +119,13 @@ const ClassCard = memo(function ClassCard({
     <TrainingClassFrame
       cls={cls}
       position={position}
-      nameError={nameError}
       nameField={
-        <ClassNameInput
+        <EditableClassName
+          {...field}
           id={`class-name-${cls.id}`}
-          name={cls.name}
+          value={value}
           error={nameError}
-          onChange={(name) => actions.onUpdateName(cls.id, name)}
+          onChange={(event) => edit(event.currentTarget.value)}
         />
       }
     >
@@ -174,6 +145,7 @@ const ClassCard = memo(function ClassCard({
             onClear={() => actions.onClear(cls.id)}
             onRemove={() => actions.onRemove(cls.id)}
             onPrepare={prepareTrainingDialogs}
+            pendingAction={pendingDialog?.type}
           />
         }
       />
@@ -183,6 +155,7 @@ const ClassCard = memo(function ClassCard({
         color={cls.color}
         onImageClick={handleImageClick}
         onRemoveImages={handleRemoveImages}
+        pendingImageId={pendingDialog?.type === 'imagePreview' ? pendingDialog.image.id : undefined}
       />
     </TrainingClassFrame>
   );

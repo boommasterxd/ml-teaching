@@ -18,29 +18,33 @@ function receipts(value, rules) {
   return result;
 }
 
-/** @param {RecoveryOptions} options @param {Policy} rules @param {string} base @param {string} head @param {boolean} exact */
-function producerRuns(options, rules, base, head, exact) {
-  const page = object(
-    options.api.read(
-      `${base}/actions/runs?${exact ? `head_sha=${head}&` : ""}branch=${rules.defaultBranch}&status=success&per_page=20`,
-    ),
-  );
-  const rows = page.workflow_runs;
-  if (!Array.isArray(rows) || rows.length > 20) throw new Error("Invalid producer recovery page");
-  const runs = rows
-    .map(run)
-    .filter(
-      (run) =>
-        run.status === "completed" &&
-        run.conclusion === "success" &&
-        (!exact || run.head_sha === head) &&
-        run.head_branch === rules.defaultBranch &&
-        ["push", "workflow_dispatch"].includes(run.event) &&
-        rules.producerWorkflows.some(
-          (w) => w.name === run.name && w.path === run.path.split("@")[0],
-        ),
-    );
-  return runs.sort((a, b) => b.id - a.id);
+/** @param {RecoveryOptions} options @param {Policy} rules @param {string} base @param {string} [head] */
+function latestProducerRun(options, rules, base, head) {
+  const query = new URLSearchParams({
+    branch: rules.defaultBranch,
+    status: "success",
+    per_page: "20",
+  });
+  if (head) query.set("head_sha", head);
+  const runs = rules.producerWorkflows.flatMap((workflow) => {
+    const file = encodeURIComponent(workflow.path.slice(workflow.path.lastIndexOf("/") + 1));
+    const page = object(options.api.read(`${base}/actions/workflows/${file}/runs?${query}`));
+    const rows = page.workflow_runs;
+    if (!Array.isArray(rows) || rows.length > 20) throw new Error("Invalid producer recovery page");
+    return rows
+      .map(run)
+      .filter(
+        (entry) =>
+          entry.status === "completed" &&
+          entry.conclusion === "success" &&
+          (!head || entry.head_sha === head) &&
+          entry.head_branch === rules.defaultBranch &&
+          ["push", "workflow_dispatch"].includes(entry.event) &&
+          entry.name === workflow.name &&
+          entry.path.split("@")[0] === workflow.path,
+      );
+  });
+  return runs.sort((a, b) => b.id - a.id)[0];
 }
 
 /** @param {RecoveryOptions} options @param {Policy} rules @param {string} base @param {string} source @param {string} head */
@@ -82,8 +86,7 @@ function unchangedInputs(options, rules, base, source, head) {
 /** @param {RecoveryOptions} options @param {Policy} rules @param {string} base @param {string} head @returns {Replacement[]} */
 function recoverReceipts(options, rules, base, head) {
   const latest =
-    producerRuns(options, rules, base, head, true)[0] ||
-    producerRuns(options, rules, base, head, false)[0];
+    latestProducerRun(options, rules, base, head) || latestProducerRun(options, rules, base);
   if (!latest) return [];
   if (!unchangedInputs(options, rules, base, latest.head_sha, head)) return [];
   const attempt = identifier(object(latest).run_attempt);

@@ -4,8 +4,10 @@ import { useRef, useState } from 'react';
 import type { LegalPage } from '@/content/site-navigation';
 import { DeferredMenuLoadError } from './DeferredMenuLoadError';
 import { ChevronDown } from './icons/chevron-down';
+import { Alert, AlertDescription } from './ui/alert';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuTrigger } from './ui/dropdown-menu-trigger';
+import { Spinner } from './ui/spinner';
 import { useMenuModule, usePendingMenuDismissal } from './use-menu-module';
 
 type MenuContent = typeof import('./LegalMobileMenu').default;
@@ -72,9 +74,14 @@ export default function LegalMobileNavigation({ selectedValue }: { selectedValue
         </DropdownMenuTrigger>
         {Menu && <Menu selectedValue={selectedValue} />}
       </DropdownMenu>
-      <span role="status" className="sr-only">
-        {pending ? 'Informationsmenü wird geladen.' : ''}
-      </span>
+      <div className="absolute top-full right-0 z-30 mt-2 w-60" role="status">
+        {pending && (
+          <Alert role="presentation">
+            <Spinner aria-hidden="true" />
+            <AlertDescription>Informationsmenü wird geladen.</AlertDescription>
+          </Alert>
+        )}
+      </div>
       {open && failed && (
         <DeferredMenuLoadError
           className="absolute top-full right-0 z-30 mt-2 w-60"

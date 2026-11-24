@@ -51,6 +51,7 @@ export function run(overrides: Partial<Run> = {}): Run {
 export class FixtureApi implements Api {
   caches: Cache[] = [];
   runs: Run[] = [];
+  otherCompletedRuns: Run[] = [];
   producer = run();
   triggering = run({ id: 20, name: 'CI', path: '.github/workflows/ci.yml' });
   prs: Record<number, { state: string; head: { sha: string; ref: string } }> = {};
@@ -80,12 +81,12 @@ export class FixtureApi implements Api {
         merge_base_commit: { sha: previousHead },
         files: this.files.map((filename) => ({ filename })),
       };
-    if (path.includes('/actions/runs?')) {
+    const repositoryRuns = path.includes('/actions/runs?');
+    if (repositoryRuns || path.includes('/actions/workflows/warm.yml/runs?')) {
+      const headSha = new URLSearchParams(path.split('?')[1]).get('head_sha');
+      const runs = repositoryRuns ? [...this.otherCompletedRuns, this.producer] : [this.producer];
       return {
-        workflow_runs:
-          path.includes(`head_sha=${head}`) && this.producer.head_sha !== head
-            ? []
-            : [this.producer],
+        workflow_runs: runs.filter((item) => !headSha || item.head_sha === headSha).slice(0, 20),
       };
     }
     if (path.endsWith('/actions/runs/10')) return this.producer;

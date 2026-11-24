@@ -75,12 +75,14 @@ export async function processImageFiles(
   onImage: (image: HTMLImageElement) => void | Promise<void>,
   onError: (message: string) => void,
   signal: AbortSignal,
+  hasCapacity: () => boolean = () => true,
 ): Promise<void> {
   for (const file of files) {
     if (signal.aborted) return;
     let release: (() => void) | undefined;
     try {
       release = await acquireImageUpload(signal);
+      if (signal.aborted || !hasCapacity()) return;
       const prepared = await prepareImage(file, signal);
       try {
         if (!signal.aborted) await onImage(prepared.image);

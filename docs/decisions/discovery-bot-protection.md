@@ -1,10 +1,11 @@
-# Bot protection for public discovery resources
+# Bot protection for public routes
 
-The maintainer accepts the Vercel Bot Protection challenge for ordinary automated
-HTTP clients requesting `robots.txt`, `sitemap.xml`, `llms.txt`, or the social
-preview image. These clients can receive HTTP 429 and may be unable to retrieve
-those resources. The challenge is intentional, and the maintainer confirms that
-the intended crawlers are exempt.
+The maintainer accepts the Vercel Bot Protection challenge for ordinary scripted
+HTTP clients across the public site. This includes every public HTML route,
+`robots.txt`, `sitemap.xml`, `llms.txt`, and the social preview image. These
+clients may receive HTTP 429 and be unable to retrieve the content. The challenge
+is intentional. The maintainer confirms that people, intended search crawlers,
+and intended AI bots can access the site through their normal clients.
 
-This decision applies while those crawler exemptions remain effective. A block
-affecting an intended exempt crawler requires separate investigation.
+This decision applies while normal visitor and intended crawler access remains
+effective. A block affecting those clients requires separate investigation.

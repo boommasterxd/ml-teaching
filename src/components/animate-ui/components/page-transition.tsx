@@ -6,13 +6,7 @@ import { cn } from '@/lib/utils';
 import { EntryViewportReadyContext, InitialEntryContext } from '@/components/ui/entry-policy';
 import { useMotionPreference } from '@/components/ui/use-motion-preference';
 import { subscribeToHistoryTransitions } from '@/lib/history-transition';
-
-// Exact trusted bytes emitted by Motion's AnimateView reset hook, also hashed during SSG.
-export const VIEW_TRANSITION_RESET = `
-    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {
-        animation-timing-function: linear !important;
-    }
-    `;
+import { VIEW_TRANSITION_RESET } from '@/lib/view-transition-styles';
 
 type PageTransitionEffect = 'flow' | 'fade';
 type PageTransitionProps = ComponentProps<'div'> & {

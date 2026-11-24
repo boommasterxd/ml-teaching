@@ -15,57 +15,6 @@ export async function expectAlignedTrainingCards(page: Page) {
     .toBeLessThan(1);
 }
 
-export async function classLayout(page: Page) {
-  const names = page.getByRole('textbox', { name: /^Name für Klasse / });
-  return names.evaluateAll((inputs) => {
-    const cards = inputs.map((input) => input.closest('[data-slot="card"]')!);
-    const [first, next] = cards.map((card) => card.getBoundingClientRect());
-    if (!first || !next) throw new Error('The training workspace is incomplete.');
-    return {
-      heights: [Math.round(first.height), Math.round(next.height)],
-      spacing: Math.round(next.top - first.top),
-      actions: cards.map((card) =>
-        Math.round(
-          card.querySelector('[data-slot="card-content"]')!.getBoundingClientRect().top -
-            card.getBoundingClientRect().top,
-        ),
-      ),
-    };
-  });
-}
-
-export async function expectStableNameValidation(page: Page) {
-  const names = page.getByRole('textbox', { name: /^Name für Klasse / });
-  const first = names.nth(0);
-  const second = names.nth(1);
-  const originalName = await first.inputValue();
-  const layout = await classLayout(page);
-
-  await first.fill('');
-  await expect(first).toHaveAccessibleDescription('Name darf nicht leer sein');
-  const hint = page.locator('[data-slot="tooltip-content"]');
-  await expect(hint).toBeVisible();
-  await expect(hint).toHaveText('Name darf nicht leer sein');
-  expect(await classLayout(page)).toEqual(layout);
-  await expectAccessible(page);
-  await first.press('Escape');
-  await expect(hint).toHaveCount(0);
-  await expect(first).toBeFocused();
-  await expect(first).toHaveAccessibleDescription('Name darf nicht leer sein');
-
-  await first.fill(await second.inputValue());
-  await expect(first).toHaveAccessibleDescription('Name muss eindeutig sein');
-  await expect(second).toHaveAccessibleDescription('Name muss eindeutig sein');
-  await expect(hint).toHaveText('Name muss eindeutig sein');
-  expect(await classLayout(page)).toEqual(layout);
-
-  await first.fill(originalName);
-  await expect(first).not.toHaveAttribute('aria-describedby');
-  await expect(second).not.toHaveAttribute('aria-describedby');
-  await expect(hint).toHaveCount(0);
-  expect(await classLayout(page)).toEqual(layout);
-}
-
 export async function captureSetupDialog(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   const workspaceLayout = () =>

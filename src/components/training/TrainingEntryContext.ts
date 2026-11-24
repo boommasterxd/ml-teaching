@@ -3,9 +3,16 @@
 import { createContext, useContext } from 'react';
 import type { TrainingEngine } from '@/hooks/useTrainingEngine';
 
+export interface TrainingEntryOptions {
+  opener: HTMLElement | null;
+  onReady: () => void;
+}
+
 export const TrainingEntryContext = createContext<{
-  openEntry: (opener: HTMLElement | null) => void;
+  openEntry: (trigger: HTMLElement | null, options?: TrainingEntryOptions) => void;
   prepareEntry: () => void;
+  pendingTrigger?: HTMLElement | null;
+  cancelPendingEntry?: () => void;
 } | null>(null);
 
 export function useTrainingEntry() {

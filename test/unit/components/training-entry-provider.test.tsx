@@ -297,6 +297,13 @@ describe('training entry across routes', () => {
   it('closes the source-page dialog with Escape and returns focus without starting any resources', async () => {
     showPage();
     const opener = startTraining();
+    expect(screen.getByText('Einrichtung wird geladen …')).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await act(() => vi.dynamicImportSettled());
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(opener);
+
+    fireEvent.click(opener);
     await screen.findByRole('dialog', { name: consentName });
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());

@@ -1,4 +1,8 @@
 // @vitest-environment node
+import { createHash } from 'node:crypto';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { ThemeToggler } from '@animate-ui/react/primitives/effects/theme-toggler';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
@@ -9,9 +13,16 @@ import {
 } from 'next/constants.js';
 import configureNext from '../../next.config.mjs';
 import { config, proxy } from '../../src/proxy.dev';
+import { ERROR_RECOVERY_SPECULATION_RULES } from '@/lib/error-recovery-speculation';
+import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
+import { ERROR_RECOVERY_STYLES, VIEW_TRANSITION_RESET } from '@/lib/view-transition-styles';
 
 const defaults = { defaultConfig: { pageExtensions: ['tsx', 'ts', 'jsx', 'js'] } };
 const origin = 'http://localhost:3101';
+
+function sourceHash(inline: string) {
+  return `'sha256-${createHash('sha256').update(inline).digest('base64')}'`;
+}
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -53,6 +64,29 @@ describe('development-only CSP transport', () => {
     }
   });
 
+  it('authorizes the exact trusted scripts and styles by hash in their own directives', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const { headers } = proxy(new NextRequest(origin));
+    const policy = headers.get('Content-Security-Policy-Report-Only')!;
+    const themeMarkup = renderToStaticMarkup(
+      createElement(ThemeToggler, { theme: 'system', resolvedTheme: 'light', setTheme: vi.fn() }),
+    );
+    const themeStyle = themeMarkup.match(/<style>([^<]+)<\/style>/u)?.[1];
+    expect(themeStyle).toBeTruthy();
+    const sources = (directive: string) =>
+      policy
+        .split('; ')
+        .find((part) => part.startsWith(directive + ' '))
+        ?.split(' ')
+        .filter((token) => token.startsWith("'sha256-"));
+    expect(sources('script-src')).toEqual(
+      [THEME_BOOTSTRAP_SCRIPT, ERROR_RECOVERY_SPECULATION_RULES].map(sourceHash),
+    );
+    expect(sources('style-src')).toEqual(
+      [ERROR_RECOVERY_STYLES, VIEW_TRANSITION_RESET, themeStyle!].map(sourceHash),
+    );
+  });
+
   it('exposes the compound Proxy extension only to the native development phase', () => {
     vi.stubEnv('NEXT_DEV_ALLOWED_ORIGIN', '');
     expect(configureNext(PHASE_DEVELOPMENT_SERVER, defaults).pageExtensions).toEqual([
@@ -81,6 +115,8 @@ describe('development-only CSP transport', () => {
       '/500',
       '/unknown.png',
       '/favicon.svg/missing',
+      '/favicon-light.svg',
+      '/favicon-dark.svg',
     ]) {
       expect(unstable_doesMiddlewareMatch({ config, nextConfig, url: origin + path })).toBe(true);
     }
@@ -90,8 +126,6 @@ describe('development-only CSP transport', () => {
       '/_next/hmr',
       '/_next/webpack-hmr',
       '/favicon.svg',
-      '/favicon-light.svg',
-      '/favicon-dark.svg',
       '/apple-icon.png',
       '/robots.txt',
     ]) {

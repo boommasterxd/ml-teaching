@@ -311,6 +311,7 @@ describe('class image capture', () => {
       expect.any(Function),
       expect.any(Function),
       expect.any(AbortSignal),
+      expect.any(Function),
     );
     expect(event.target.value).toBe('');
     const firstSignal = vi.mocked(processImageFiles).mock.calls[0][3];

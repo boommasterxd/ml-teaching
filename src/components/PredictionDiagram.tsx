@@ -1,18 +1,24 @@
-import { memo, useId, type ReactNode, type Ref } from 'react';
+import { memo, useId, useRef, useState, type ReactNode, type Ref } from 'react';
 import { classColorClasses } from '@/lib/class-colors';
 import type { ProjectedPosition } from '@/lib/feature-projection';
 import { cn } from '@/lib/utils';
 import type { MLClass } from '@/types/ml';
 import { KnnQuery } from './network/KnnArtwork';
-import Button from './Button';
-import { Check } from './icons/check';
-import { Heading, Text } from './ui/typography';
+import { DeferredMenuLoadError } from './DeferredMenuLoadError';
+import { ChevronDown } from './icons/chevron-down';
+import { Button } from './ui/button';
+import { DropdownMenu, DropdownMenuTrigger } from './ui/dropdown-menu-trigger';
+import { Spinner } from './ui/spinner';
+import { Heading } from './ui/typography';
+import { useMenuModule, usePendingMenuDismissal } from './use-menu-module';
 
 export const plotWidth = 320;
 export const plotHeight = 168;
 export const plotViewBox = `0 0 ${plotWidth} ${plotHeight}`;
 const shapes = ['circle', 'square', 'triangle'] as const;
 type MarkerShape = (typeof shapes)[number];
+const filterRowClass =
+  'relative flex min-h-11 min-w-0 flex-wrap items-center justify-between gap-2';
 
 const fixed = (value: number) => Math.round(value * 10) / 10;
 
@@ -34,7 +40,8 @@ export function getMarkerStyles(classes: readonly MLClass[]) {
   }));
 }
 
-type ClassMarker = ReturnType<typeof getMarkerStyles>[number];
+export type ClassMarker = ReturnType<typeof getMarkerStyles>[number];
+const loadClassMenu = () => import('./PredictionClassMenu');
 
 export function PredictionPlot({
   children,
@@ -73,70 +80,159 @@ export function PredictionPlotPlaceholder({
   );
 }
 
-function LegendMarker({ name, color, shape }: ClassMarker) {
+function LegendGlyph({ color, shape }: ClassMarker) {
+  return (
+    <svg viewBox="-9 -9 18 18" className="size-4 shrink-0" aria-hidden="true">
+      <path
+        d={markerPath({ x: 0, y: 0 }, shape, 4)}
+        className={cn('fill-(--class-on-surface)', classColorClasses(color))}
+      />
+    </svg>
+  );
+}
+
+function CameraLegendMarker() {
   return (
     <>
       <svg viewBox="-9 -9 18 18" className="size-4 shrink-0" aria-hidden="true">
-        <path
-          d={markerPath({ x: 0, y: 0 }, shape, 4)}
-          className={cn('fill-(--class-on-surface)', classColorClasses(color))}
-        />
+        <KnnQuery x={0} y={0} />
       </svg>
-      <span className="min-w-0 wrap-anywhere">{name}</span>
+      Kamerabild
     </>
+  );
+}
+
+function CameraLegendHint() {
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+      <CameraLegendMarker />
+    </span>
+  );
+}
+
+function PredictionClassFilter({
+  markers,
+  hidden,
+  onChange,
+}: {
+  markers: readonly ClassMarker[];
+  hidden: ReadonlySet<string>;
+  onChange: (ids: ReadonlySet<string>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const focusOnOpen = useRef(false);
+  const { module, failed, prepare } = useMenuModule(loadClassMenu);
+  const Menu = module?.default;
+  const pending = open && !Menu && !failed;
+  const { area, trigger } = usePendingMenuDismissal({
+    active: open && !Menu,
+    popupSelector: '[data-prediction-class-menu]',
+    onDismiss: () => setOpen(false),
+  });
+  const visible = markers.filter(({ id }) => !hidden.has(id)).length;
+  const summary =
+    visible === markers.length ? 'Alle Klassen' : `${visible} von ${markers.length} Klassen`;
+
+  return (
+    <div ref={area} className={filterRowClass}>
+      <CameraLegendHint />
+      <DropdownMenu
+        modal={false}
+        open={open}
+        onOpenChange={(next, { event }) => {
+          focusOnOpen.current =
+            next &&
+            (event instanceof KeyboardEvent ||
+              (event instanceof MouseEvent && event.type === 'click' && event.detail === 0));
+          setOpen(next);
+          if (next) prepare();
+        }}
+        onItemHighlighted={(item) => {
+          if (!focusOnOpen.current || !(item instanceof HTMLElement)) return;
+          focusOnOpen.current = false;
+          if (item.ownerDocument.activeElement === trigger.current)
+            item.focus({ preventScroll: true });
+        }}
+      >
+        <DropdownMenuTrigger
+          ref={trigger}
+          render={<Button variant="outline" size="sm" />}
+          className="h-auto min-h-11 max-w-full whitespace-normal"
+          aria-label={`Klassenfilter: ${summary}`}
+          aria-busy={pending || undefined}
+          {...(!Menu && { 'aria-controls': undefined })}
+          onPointerEnter={prepare}
+          onPointerDown={prepare}
+          onFocus={prepare}
+        >
+          {summary}
+          {pending ? (
+            <Spinner data-icon="inline-end" aria-hidden="true" />
+          ) : (
+            <ChevronDown data-icon="inline-end" aria-hidden="true" />
+          )}
+        </DropdownMenuTrigger>
+        {Menu && (
+          <Menu
+            markers={markers}
+            hidden={hidden}
+            onChange={onChange}
+            visible={visible}
+            glyph={LegendGlyph}
+          />
+        )}
+      </DropdownMenu>
+      {pending && (
+        <span role="status" className="sr-only">
+          Klassenfilter wird geladen.
+        </span>
+      )}
+      {open && failed && (
+        <DeferredMenuLoadError
+          className="absolute top-full right-0 z-30 mt-2 w-56"
+          message="Der Klassenfilter konnte nicht geladen werden."
+          trigger={trigger}
+          retry={prepare}
+        />
+      )}
+    </div>
   );
 }
 
 export const PredictionLegend = memo(function PredictionLegend({
   markers,
-  selected,
-  onSelect,
+  hidden,
+  onChange,
 }: {
   markers: readonly ClassMarker[];
-  selected?: string | null;
-  onSelect?: (id: string | null) => void;
+  hidden?: ReadonlySet<string>;
+  onChange?: (ids: ReadonlySet<string>) => void;
 }) {
-  const filter = markers.length > shapes.length ? onSelect : undefined;
+  if (markers.length > shapes.length) {
+    return hidden && onChange ? (
+      <PredictionClassFilter markers={markers} hidden={hidden} onChange={onChange} />
+    ) : (
+      <div className={filterRowClass}>
+        <CameraLegendHint />
+      </div>
+    );
+  }
   return (
-    <>
-      {filter && (
-        <Text variant="muted" className="text-xs">
-          Wähle eine Klasse, um nur ihre Punkte zu sehen. Wähle sie erneut, um alle Punkte zu sehen.
-        </Text>
-      )}
-      <ul
-        role="list"
-        aria-label="Legende"
-        className="flex min-w-0 flex-wrap items-start justify-center gap-x-2 gap-y-1 text-xs leading-4 text-muted-foreground"
-      >
-        <li className="inline-flex items-center gap-1">
-          <svg viewBox="-9 -9 18 18" className="size-4 shrink-0" aria-hidden="true">
-            <KnnQuery x={0} y={0} />
-          </svg>
-          Kamerabild
+    <ul
+      role="list"
+      aria-label="Legende"
+      className="flex min-w-0 flex-wrap items-start justify-center gap-x-2 gap-y-1 text-xs leading-4 text-muted-foreground"
+    >
+      <li className="inline-flex items-center gap-1">
+        <CameraLegendMarker />
+      </li>
+      {markers.map((marker) => (
+        <li key={marker.id} className="inline-flex min-w-0 items-start gap-1">
+          <LegendGlyph {...marker} />
+          <span className="min-w-0 wrap-anywhere">{marker.name}</span>
         </li>
-        {markers.map((marker) => (
-          <li key={marker.id} className="inline-flex min-w-0 items-start gap-1">
-            {filter ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-auto min-h-11 max-w-full min-w-0 text-left whitespace-normal"
-                aria-pressed={selected === marker.id}
-                onClick={() => filter(selected === marker.id ? null : marker.id)}
-              >
-                <LegendMarker {...marker} />
-                <span aria-hidden="true" className="size-4 shrink-0">
-                  {selected === marker.id && <Check animate={false} data-icon="inline-end" />}
-                </span>
-              </Button>
-            ) : (
-              <LegendMarker {...marker} />
-            )}
-          </li>
-        ))}
-      </ul>
-    </>
+      ))}
+    </ul>
   );
 });
 

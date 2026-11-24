@@ -27,8 +27,17 @@ export default function LearningPracticeAction({
     );
   }
   return (
-    <AnimatedLink id={id} href={area.href} size="lg" className={actionClass}>
-      {area.action} <ArrowRight data-icon="inline-end" aria-hidden="true" />
+    <AnimatedLink
+      id={id}
+      href={area.href}
+      size="lg"
+      className={actionClass}
+      trainingIcon={{
+        content: <ArrowRight data-icon="inline-end" aria-hidden="true" />,
+        position: 'end',
+      }}
+    >
+      {area.action}
     </AnimatedLink>
   );
 }
