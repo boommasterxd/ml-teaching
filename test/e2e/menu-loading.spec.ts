@@ -1,6 +1,48 @@
 import { expect, test } from '@playwright/test';
 import { diagnostics, expectAccessible } from './browser-checks';
 
+test('the training menu item shows its own progress until the consent dialog opens', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/lernen');
+  const menu = page.getByRole('button', { name: 'Lernlabor', exact: true });
+  const entry = page.getByRole('link', { name: 'Bildmodell trainieren', exact: true });
+  await menu.press('Enter');
+  await expect(entry).toBeVisible();
+
+  const scripts = '**/_next/static/chunks/*.js';
+  const loading = Promise.withResolvers<void>();
+  await page.route(scripts, async (route) => {
+    await loading.promise;
+    await route.continue();
+  });
+  try {
+    await entry.hover();
+    await entry.press('Enter');
+    await expect(entry).toHaveAttribute('aria-busy', 'true');
+    await expect(entry.locator('[data-slot="spinner"]')).toBeVisible();
+    await page.mouse.move(1, 1);
+    await expect(menu).toHaveAttribute('aria-expanded', 'true');
+    await expect(entry).toBeFocused();
+    await expectAccessible(page);
+
+    loading.resolve();
+    const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+    await expect(consent).toBeVisible();
+    await expect(page.locator('button[data-header-control="Lernlabor"]')).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    await page.keyboard.press('Escape');
+    await expect(consent).toHaveCount(0);
+    await expect(menu).toBeFocused();
+  } finally {
+    loading.resolve();
+    await page.unroute(scripts);
+  }
+});
+
 test('the desktop menu loads on intent and Escape cancels a cold opening', async ({ page }) => {
   const failures = diagnostics(page);
   await page.emulateMedia({ colorScheme: 'dark' });
@@ -105,6 +147,9 @@ test('the information trigger keeps press and focus as its first intent load set
     await expect(trigger).toHaveAttribute('aria-busy', 'true');
     await expect(trigger).toBeFocused();
     await expect(menu).toHaveCount(0);
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Informationsmenü wird geladen.' }),
+    ).toBeVisible();
 
     const chunkResponse = page.waitForResponse(async (response) => {
       if (!response.ok() || response.request().resourceType() !== 'script') return false;

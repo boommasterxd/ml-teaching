@@ -70,7 +70,10 @@ cache producer, closed pull requests or declared workflow completion. It verifie
 replacement receipts and active runs before deleting eligible obsolete caches,
 rechecks the trusted branch identity and bounds deletion to 100 entries per run.
 Workflow completions and PR closures can both resume deferred main rotation using
-a verified producer receipt. An expired npm receipt leaves the npm generations in
+a verified producer receipt. Recovery queries each approved producer workflow
+directly so other workflow runs cannot displace eligible receipts from the bounded
+search. It prefers the current revision and checks that producer inputs are unchanged
+before using an older receipt. An expired npm receipt leaves the npm generations in
 place while independently verified closed-PR and CodeQL cleanup can proceed.
 For main rotation, the active lifecycle workflow
 can proceed past queued or pending runs with the same verified GitHub workflow
@@ -170,7 +173,7 @@ that Proxy remain forbidden.
 `npm run build` uses the native Next.js build and its CSP verification hooks.
 `npm run test:e2e` runs the complete browser suite against the native production
 server, including accessibility and keyboard contracts. It remains unfiltered with
-`CI=true`. The browser job uses two Playwright workers to run independent test
+`CI=true`. The browser job uses three Playwright workers to run independent test
 files against one production server. CI downloads the lockfile-matched Chromium
 Headless Shell and full Chromium for the back-forward cache test. Browser launch,
 host dependency validation and the suite are blocking when selected. Lighthouse

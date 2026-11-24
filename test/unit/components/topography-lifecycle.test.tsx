@@ -8,6 +8,7 @@ const host = vi.hoisted(() => ({
   cancel: vi.fn(),
   draw: vi.fn(),
   dispose: vi.fn(),
+  rippleCapacity: 8,
   animations: [] as {
     finish: () => void;
     stop: ReturnType<typeof vi.fn>;
@@ -20,7 +21,7 @@ vi.mock('@/components/hero/topography-renderer', () => ({
     draw: host.draw,
     dispose: host.dispose,
     maxRasterDimension: 8192,
-    rippleCapacity: 8,
+    rippleCapacity: host.rippleCapacity,
   }),
 }));
 vi.mock('motion/react', async (original) => ({
@@ -45,11 +46,18 @@ beforeEach(() => {
   vi.clearAllMocks();
   host.draw.mockReturnValue(true);
   host.animations = [];
+  host.rippleCapacity = 8;
 });
 afterEach(restoreBrowserHost);
 
 function activeFrame() {
   return host.render.mock.calls[0]![0] as (frame: { timestamp: number }) => void;
+}
+
+async function finishGlassWaves(first: number, end?: number) {
+  await act(async () => {
+    for (const wave of host.animations.slice(first, end)) wave.finish();
+  });
 }
 
 describe('active glass field ownership', () => {
@@ -285,18 +293,70 @@ describe('active glass field ownership', () => {
     for (const control of host.animations) expect(control.stop).not.toHaveBeenCalled();
   });
 
-  it('bounds raster density and cancels active waves and the frame owner when retired', () => {
+  it('limits delayed waves after a burst of repeated and distinct presses', async () => {
+    vi.spyOn(performance, 'now').mockReturnValue(0);
+    render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+    const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
+    for (let index = 0; index < 64; index++) {
+      const clientX = index % 2 === 0 ? 25 : 30 + index;
+      fireEvent.click(field, { detail: 1, clientX, clientY: 50 });
+    }
+
+    expect(host.animations).toHaveLength(8);
+    await finishGlassWaves(0, 8);
+    expect(host.animations).toHaveLength(16);
+    await finishGlassWaves(8, 16);
+    expect(host.animations).toHaveLength(24);
+    await finishGlassWaves(16, 24);
+    expect(host.animations).toHaveLength(24);
+    fireEvent.click(field);
+    expect(host.animations).toHaveLength(25);
+  });
+
+  it('lets fresh waves through after stale taps expire in active playback time', async () => {
+    host.rippleCapacity = 4;
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(0);
+    const onRendered = vi.fn();
+    const onUnavailable = vi.fn();
+    const { rerender } = render(
+      <TopographyField onUnavailable={onUnavailable} onRendered={onRendered} />,
+    );
+    const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
+    for (let index = 0; index < 20; index++)
+      fireEvent.click(field, { detail: 1, clientX: 50, clientY: 50 });
+
+    clock.mockReturnValue(2_600);
+    await finishGlassWaves(0, 4);
+    expect(host.animations).toHaveLength(8);
+    rerender(<TopographyField paused onUnavailable={onUnavailable} onRendered={onRendered} />);
+    clock.mockReturnValue(12_600);
+    rerender(<TopographyField onUnavailable={onUnavailable} onRendered={onRendered} />);
+    clock.mockReturnValue(15_200);
+    await finishGlassWaves(4, 8);
+    expect(host.animations).toHaveLength(12);
+    fireEvent.click(field, { detail: 1, clientX: 75, clientY: 75 });
+
+    clock.mockReturnValue(17_800);
+    await finishGlassWaves(8, 12);
+    expect(host.animations).toHaveLength(13);
+    activeFrame()({ timestamp: 7_800 });
+    expect(Array.from(host.draw.mock.lastCall![0].ripples.slice(0, 4))).toEqual([75, 75, 0, 1]);
+  });
+
+  it('bounds raster density and retires active and waiting waves with the frame owner', async () => {
     vi.stubGlobal('devicePixelRatio', 4);
     const onRendered = vi.fn();
     const { unmount } = render(<TopographyField onUnavailable={vi.fn()} onRendered={onRendered} />);
     expect(onRendered).toHaveBeenCalledWith(true);
     expect(host.draw.mock.calls[0]![0].dpr).toBe(0.5);
     const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
-    for (let wave = 0; wave < 5; wave++)
+    for (let wave = 0; wave < 11; wave++)
       fireEvent.click(field, { detail: 1, clientX: 25, clientY: 25 });
-    expect(host.animations).toHaveLength(5);
+    expect(host.animations).toHaveLength(8);
     unmount();
     for (const animation of host.animations) expect(animation.stop).toHaveBeenCalledTimes(1);
+    await finishGlassWaves(0);
+    expect(host.animations).toHaveLength(8);
     expect(host.cancel).toHaveBeenCalledWith(host.render.mock.calls[0]![0]);
     expect(host.dispose).toHaveBeenCalledTimes(1);
     expect(onRendered).toHaveBeenLastCalledWith(false);

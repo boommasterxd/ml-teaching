@@ -21,6 +21,7 @@ import {
 import IntentLink from './IntentLink';
 import { loadHeaderMenu } from './header-menu-loader';
 import { useMenuModule } from './use-menu-module';
+import { useTrainingEntry } from './training/TrainingEntryContext';
 import { MenuHighlightItem } from './ui/menu-highlight';
 import { Alert, AlertDescription } from './ui/alert';
 import { Button } from './ui/button';
@@ -106,6 +107,8 @@ function HeaderMenu({ mobile, pathname, runtime, focusRef }: MenuProps) {
   const value = open.pathname === pathname ? open.value : null;
   const current = mobile ? value : currentHeaderItem(pathname);
   const menuClass = mobile ? 'header-menu-mobile' : 'header-menu-desktop';
+  const trainingEntry = useTrainingEntry();
+  const pendingInMenu = Boolean(trainingEntry?.pendingTrigger?.closest(`.${menuClass}`));
 
   useEffect(() => {
     if (!Groups || !value) return;
@@ -119,7 +122,12 @@ function HeaderMenu({ mobile, pathname, runtime, focusRef }: MenuProps) {
     <NavigationMenu
       ref={focusRef}
       value={value}
-      onValueChange={(next) => {
+      onValueChange={(next, details) => {
+        if (pendingInMenu && details.reason === 'trigger-hover') {
+          details.cancel();
+          return;
+        }
+        if (pendingInMenu && next !== value) trainingEntry?.cancelPendingEntry?.();
         pendingFocus.current = null;
         setOpen({ pathname, value: next });
         if (next) prepare();
@@ -157,12 +165,13 @@ function HeaderMenu({ mobile, pathname, runtime, focusRef }: MenuProps) {
                 <Groups
                   groups={groups}
                   current={containsCurrentPage(groups, pathname) ? pathname : null}
-                  onTrainingEntry={(link) => {
-                    const opener = findHeaderTrigger(link, menuClass, label);
-                    pendingFocus.current = null;
-                    setOpen({ pathname, value: null });
-                    return opener ?? null;
-                  }}
+                  onTrainingEntry={(link) => ({
+                    opener: findHeaderTrigger(link, menuClass, label) ?? null,
+                    onReady: () => {
+                      pendingFocus.current = null;
+                      setOpen({ pathname, value: null });
+                    },
+                  })}
                 />
               ) : (
                 <HeaderMenuLoading

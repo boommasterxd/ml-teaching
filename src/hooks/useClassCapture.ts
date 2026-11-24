@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { CAMERA, ML } from '../constants';
 import { processImageFiles } from '../lib/image-upload';
 import type { MLClass, MLImage } from '../types/ml';
@@ -157,7 +157,7 @@ function useCameraCapture(latest: CaptureState, captureVersion: number) {
 /** Bounded capture/upload lifecycle for one class; callbacks use current workspace state. */
 export function useClassCapture(cls: MLClass, actions: CaptureActions) {
   const latest = useRef({ cls, actions });
-  useEffect(() => {
+  useLayoutEffect(() => {
     latest.current = { cls, actions };
   }, [cls, actions]);
   const captureVersion = cls.captureVersion ?? 0;
@@ -196,6 +196,14 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
       (image) => latest.current.actions.onAddImageExample(current.id, image),
       reportFailure,
       controller.signal,
+      () => {
+        const { cls } = latest.current;
+        return (
+          cls.id === current.id &&
+          (cls.captureVersion ?? 0) === version &&
+          cls.images.length < ML.MAX_IMAGES_PER_CLASS
+        );
+      },
     )
       .catch(() => {
         reportFailure('Die Bilder konnten nicht verarbeitet werden.');

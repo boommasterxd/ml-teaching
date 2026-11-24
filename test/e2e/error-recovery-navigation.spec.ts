@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { learningPaths } from '@/lib/learning-paths';
 import { diagnostics, expectAccessible } from './browser-checks';
+import { expectNativeRecoveryPrerender } from './prerender-browser';
 
 const stylesheet = 'style#error-recovery-transition';
 
@@ -75,6 +76,13 @@ async function expectPrerenderActivation(page: Page, ready: boolean) {
   });
   expect(activationStart).toBeGreaterThan(0);
 }
+
+test('the native browser activates the homepage prepared by the HTTP 500 recovery link', async ({
+  baseURL,
+}) => {
+  if (!baseURL) throw new Error('The production server URL is required.');
+  await expectNativeRecoveryPrerender(baseURL);
+});
 
 test('the HTTP 500 recovery animates only the document crossing to the homepage', async ({
   page,

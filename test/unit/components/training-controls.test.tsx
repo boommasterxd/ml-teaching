@@ -93,6 +93,7 @@ describe('training and prediction controls', () => {
       hasTrainedModel: true,
       camera,
       predictVideoRef: { current: null },
+      onVisibilityChange: vi.fn(),
       subscribeToFeatures: () => () => {},
       space: { result: undefined, prepare: vi.fn() },
     };
@@ -103,6 +104,7 @@ describe('training and prediction controls', () => {
     expect(screen.getByRole('heading', { name: 'Vorhersage' }).id).toBe('training-prediction');
     expect(screen.getByText(/Trainiere zuerst dein Modell/)).toBeTruthy();
     rerender(<PredictionPanel {...base} />);
+    expect(base.onVisibilityChange).toHaveBeenLastCalledWith(true);
     const start = screen.getByRole('button', { name: 'Kamera aktivieren' });
     expect(screen.getByText('Kamera aus')).toBeTruthy();
     expect(
@@ -138,9 +140,15 @@ describe('training and prediction controls', () => {
     expect(
       screen.getByRole('progressbar', { name: 'Konfidenz für Blau' }).getAttribute('aria-valuenow'),
     ).toBe('15');
+    const failed = { ...base, space: { ...base.space, result: { failed: true as const } } };
+    rerender(<PredictionPanel {...failed} camera={liveCamera} isPredicting />);
+    fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
+    expect(document.activeElement).toBe(screen.getByRole('group', { name: 'Merkmalsraum' }));
+    expect(base.space.prepare).toHaveBeenCalledTimes(2);
+    expect(preview.srcObject).toBe(stream);
     fireEvent.click(screen.getByRole('button', { name: 'Kamera pausieren' }));
     expect(onToggle).toHaveBeenCalledTimes(2);
-    expect(base.space.prepare).toHaveBeenCalledOnce();
+    expect(base.space.prepare).toHaveBeenCalledTimes(2);
     rerender(<PredictionPanel {...base} />);
     expect(preview.isConnected).toBe(false);
     expect(screen.getByRole('button', { name: 'Kamera aktivieren' })).toBe(start);

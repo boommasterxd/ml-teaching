@@ -150,7 +150,7 @@ async function expectOddNeighborVote(exercise: Locator, count: number) {
   const dogs = nearest.filter((point) => point.label.startsWith('Hund')).length;
   const winner = dogs > count / 2 ? 'Hund' : 'Katze';
   await exercise.getByRole('button', { name: winner, exact: true }).click();
-  await expect(exercise.getByRole('alert')).toContainText('Richtig zugeordnet!');
+  await expect(exercise.locator('[data-slot="alert"]')).toContainText('Richtig zugeordnet!');
 }
 
 async function expectAnswerRows(exercise: Locator, rows: number) {
@@ -168,7 +168,7 @@ async function expectAnswerRows(exercise: Locator, rows: number) {
 
 async function expectResponsiveFeedback(page: Page, exercise: Locator, originalWidth: number) {
   const answers = exercise.getByRole('group', { name: '2. Welche Klasse gewinnt?' });
-  const feedback = exercise.getByRole('alert');
+  const feedback = exercise.locator('[data-slot="alert"]');
   for (const width of [originalWidth, 390, 1280, originalWidth]) {
     await page.setViewportSize({ width, height: 1000 });
     await expect
@@ -268,7 +268,14 @@ test('KNN exercise supports retries, voting limits, and new rounds', async ({ pa
   const wrongAnswer = exercise.getByRole('button', { name: loser, exact: true });
   await wrongAnswer.focus();
   await page.keyboard.press('Enter');
-  await expect(exercise.getByRole('alert')).toContainText('Zähle noch einmal.');
+  const feedback = exercise.locator('[data-slot="alert"]');
+  await expect(feedback).toContainText('Zähle noch einmal.');
+  await expect(exercise.getByRole('status')).toContainText('wie viele Stimmen');
+  await expect(
+    exercise.locator(
+      ':is([role="alert"], [role="status"], [aria-live="assertive"], [aria-live="polite"])',
+    ),
+  ).toHaveCount(1);
   await expect(wrongAnswer).toBeFocused();
   await exercise.getByRole('button', { name: winner, exact: true }).focus();
   await page.keyboard.press('Enter');
@@ -278,7 +285,7 @@ test('KNN exercise supports retries, voting limits, and new rounds', async ({ pa
     .getByRole('button', { name: /^(Hund|Katze), Punkt / })
     .and(page.locator(':disabled'));
   await expect(disabledPoints).toHaveCount(12);
-  await expect(exercise.getByRole('alert')).toContainText('Richtig zugeordnet!');
+  await expect(feedback).toContainText('Richtig zugeordnet!');
   await expect(exercise.getByRole('status')).toContainText(
     `2 von 3 Nachbarn stimmen für ${winner}`,
   );
@@ -310,7 +317,7 @@ test('KNN exercise supports retries, voting limits, and new rounds', async ({ pa
   await expect(slider).toHaveAttribute('aria-valuenow', '2');
   for (const point of (await rankedTargets(exercise)).slice(0, 2)) await point.control.click();
   await exercise.getByRole('button', { name: 'Gleichstand', exact: true }).click();
-  await expect(exercise.getByRole('alert')).toContainText('Gleichstand erkannt!');
+  await expect(feedback).toContainText('Gleichstand erkannt!');
   await expectAccessible(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   expect(failures).toEqual([]);

@@ -14,8 +14,9 @@ export function TooltipProvider(props: ComponentProps<typeof Primitive.Provider>
   return <Primitive.Provider delay={0} {...props} />;
 }
 
-export function Tooltip({ open, ...props }: Primitive.Root.Props & { open: boolean }) {
-  const id = useId();
+export function Tooltip({ open, triggerId, ...props }: Primitive.Root.Props & { open: boolean }) {
+  const generatedId = useId();
+  const id = triggerId ?? generatedId;
   return (
     <TooltipContext value={{ id, open }}>
       <Primitive.Root {...props} triggerId={id} open={open} />

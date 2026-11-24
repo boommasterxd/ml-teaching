@@ -3,6 +3,7 @@ import { act, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTrainingWorkspace as useWorkspace } from '@/hooks/useTrainingWorkspace';
 import { useTrainingEngine } from '@/hooks/useTrainingEngine';
+import { useTrainingClassName } from '@/hooks/useClassManagement';
 import type { TrainingStep } from '@/components/training-panel-loading';
 import { ML } from '@/constants';
 import type { MLImage } from '@/types/ml';
@@ -85,7 +86,7 @@ const image = (id: string): MLImage => ({
   dataUrl: 'data:image/jpeg;base64,a',
 });
 
-type Workspace = ReturnType<typeof useWorkspace>;
+type Workspace = ReturnType<typeof useWorkspace> & { editSecondName: (name: string) => void };
 
 function WorkspaceHarness({
   step,
@@ -96,7 +97,12 @@ function WorkspaceHarness({
 }) {
   const { engine, ResourceHost, resourceProps } = useTrainingEngine(true, true);
   const workspace = useWorkspace(step, engine);
-  useLayoutEffect(() => publish(workspace), [publish, workspace]);
+  const { nameControl, validateNames } = workspace.data.classes;
+  const { edit: editSecondName } = useTrainingClassName(nameControl, 1, validateNames);
+  useLayoutEffect(
+    () => publish({ ...workspace, editSecondName }),
+    [publish, workspace, editSecondName],
+  );
   return ResourceHost ? createElement(ResourceHost, resourceProps) : null;
 }
 
@@ -328,6 +334,14 @@ describe('local training workspace', () => {
     mocks.cameraReady = true;
     act(() => mocks.refreshCamera());
     expect(result.current.resources.camera.stream).toBe(mocks.stream);
+    expect(result.current.resources.prediction.isPredicting).toBe(false);
+    const { onPredictionVisibilityChange } = result.current.resources;
+    act(() => onPredictionVisibilityChange(true));
+    expect(result.current.resources.prediction.isPredicting).toBe(true);
+    act(() => onPredictionVisibilityChange(false));
+    expect(result.current.resources.prediction.isPredicting).toBe(false);
+    expect(result.current.resources.camera.stream).toBe(mocks.stream);
+    act(() => onPredictionVisibilityChange(true));
     expect(result.current.resources.prediction.isPredicting).toBe(true);
 
     rerender('images');
@@ -351,6 +365,7 @@ describe('local training workspace', () => {
     act(() => result.current.data.trainModel());
     await waitFor(() => expect(result.current.resources.hasTrainedModel).toBe(true));
     rerender('prediction');
+    act(() => result.current.resources.onPredictionVisibilityChange(true));
     expect(result.current.resources.prediction.isPredicting).toBe(true);
 
     mocks.cameraFailed = true;
@@ -368,6 +383,11 @@ describe('local training workspace', () => {
     mocks.cameraReady = true;
     act(() => mocks.refreshCamera());
     expect(result.current.resources.prediction.isPredicting).toBe(true);
+    act(() => result.current.resources.camera.pause());
+    act(() => result.current.resources.onPredictionVisibilityChange(false));
+    act(() => result.current.resources.onPredictionVisibilityChange(true));
+    expect(result.current.resources.camera.stream).toBeNull();
+    expect(result.current.resources.prediction.isPredicting).toBe(false);
   });
 
   it('retains existing images and ignores an unfinished frame after pausing the camera', async () => {
@@ -432,7 +452,7 @@ describe('local training workspace', () => {
       result.current.cardActions.onAddImageExample('deleted-class', document.createElement('img')),
     );
     expect(mocks.extract).toHaveBeenCalledOnce();
-    act(() => result.current.data.classes.updateClassName('class-2', 'Klasse 1'));
+    act(() => result.current.editSecondName('Klasse 1'));
     expect(result.current.data.hasDuplicateNames).toBe(true);
     expect(result.current.data.training.canTrain).toBe(false);
     act(() => result.current.data.trainModel());
@@ -444,10 +464,10 @@ describe('local training workspace', () => {
     await collectMinimumImages(result);
     expect(result.current.data.canTrain).toBe(true);
 
-    const { data, cardActions } = result.current;
-    const [first, second] = data.classes.classes;
+    const { data, editSecondName } = result.current;
+    const [first] = data.classes.classes;
     await act(async () => {
-      cardActions.onUpdateName(second.id, first.name);
+      editSecondName(first.name);
       data.trainModel();
       expect(data.training.isTrainingActive()).toBe(false);
     });

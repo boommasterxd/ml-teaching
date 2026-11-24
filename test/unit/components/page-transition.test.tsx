@@ -3,10 +3,8 @@ import { resolve } from 'node:path';
 import Link from 'next/link';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  PageTransition,
-  VIEW_TRANSITION_RESET,
-} from '@/components/animate-ui/components/page-transition';
+import { PageTransition } from '@/components/animate-ui/components/page-transition';
+import { VIEW_TRANSITION_RESET } from '@/lib/view-transition-styles';
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/impressum' }));
 

@@ -1,5 +1,12 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { observeViewTransitions } from './browser-checks';
+import { openThemeMenu } from './training-keyboard';
+
+async function expectCanonicalFavicon(page: Page) {
+  const icon = page.locator('link[rel="icon"]');
+  await expect(icon).toHaveCount(1);
+  await expect(icon).toHaveAttribute('href', '/favicon.svg');
+}
 
 test('the browser canvas follows the dark system preference during a reload with pending CSS', async ({
   page,
@@ -42,6 +49,7 @@ test('the browser canvas follows the dark system preference during a reload with
     releaseStyles();
   }
   await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+  await expectCanonicalFavicon(page);
 });
 
 test('changing the motion preference disables the theme wipe without losing the selected theme', async ({
@@ -50,11 +58,28 @@ test('changing the motion preference disables the theme wipe without losing the 
   const transitions = await observeViewTransitions(page);
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
   await page.goto('/lernen');
+  await expectCanonicalFavicon(page);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const theme = page.getByRole('switch', { name: 'Dunkle Darstellung' });
   await theme.press('Space');
   await expect(theme).toBeChecked();
   await expect(theme).toBeFocused();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expectCanonicalFavicon(page);
   expect(await transitions()).toEqual([]);
+});
+
+test('the native error document restores a remembered theme without changing the favicon URL', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.goto('/lernen');
+  await page.getByRole('switch', { name: 'Dunkle Darstellung' }).press('Space');
+  const menu = await openThemeMenu(page);
+  await menu.getByRole('menuitemcheckbox', { name: 'Auswahl merken' }).click();
+
+  const response = await page.goto('/500');
+  expect(response?.status()).toBe(500);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expectCanonicalFavicon(page);
 });

@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useFormState, type Control } from 'react-hook-form';
+import type { Control } from 'react-hook-form';
 import { Fade } from '@animate-ui/react/primitives/effects/fade';
 import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
 import type { MLClass } from '../types/ml';
@@ -8,6 +8,7 @@ import { ML } from '../constants';
 import ClassCard from './ClassCard';
 import type { ClassCardActions } from './ClassCard';
 import type { CameraView } from './CameraControls';
+import type { PendingTrainingDialog } from './DeferredTrainingDialogs';
 import { Empty, EmptyDescription, EmptyHeader } from './ui/empty';
 import { AnimatedList, AnimatedListItem } from './ui/animated-list';
 import { EntryReveal } from './ui/entry-reveal';
@@ -28,11 +29,13 @@ interface TrainingClassesPanelProps {
   /** List of ML classes to display. */
   classes: MLClass[];
   nameControl: Control<TrainingClassNames>;
+  validateNames: () => void;
   camera: CameraView;
   /** Ref to the main heading element for programmatic focus management. */
   mainHeadingRef: React.RefObject<HTMLHeadingElement | null>;
   /** Callbacks for all actions a ClassCard can trigger (rename, delete, add image, etc.). */
   cardActions: ClassCardActions;
+  pendingDialog?: PendingTrainingDialog;
   /** Called when the user clicks the "Add class" button. */
   onAddClass: () => void;
   onContinue: () => void;
@@ -134,9 +137,11 @@ function CollectionActions({
 export default function TrainingClassesPanel({
   classes,
   nameControl,
+  validateNames,
   camera,
   mainHeadingRef,
   cardActions,
+  pendingDialog,
   entryReady = true,
   onAddClass,
   onContinue,
@@ -144,7 +149,6 @@ export default function TrainingClassesPanel({
   canContinue,
 }: TrainingClassesPanelProps) {
   const continueRef = useRef<HTMLButtonElement>(null);
-  const { errors } = useFormState({ control: nameControl, name: 'names' });
   return (
     <TrainingCollectionFrame
       mainHeadingRef={mainHeadingRef}
@@ -179,9 +183,11 @@ export default function TrainingClassesPanel({
                 <ClassCard
                   cls={cls}
                   position={index + 1}
-                  nameError={errors.names?.[index]?.name?.message}
+                  nameControl={nameControl}
+                  validateNames={validateNames}
                   camera={camera}
                   actions={cardActions}
+                  pendingDialog={pendingDialog?.classId === cls.id ? pendingDialog : undefined}
                 />
               </AnimatedListItem>
             ))

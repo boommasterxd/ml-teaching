@@ -41,7 +41,8 @@ The project uses `node scripts/ignore-build.ts` as its Ignore Build Step. The sc
 branch, with `VERCEL_GIT_COMMIT_SHA`, which must match the checked-out `HEAD`.
 It skips only a verified, nonempty delta containing maintained Markdown, declared
 test files, explicitly listed CI files or changes confined to the allowlisted
-quality scripts in `package.json`. Runtime, build, dependency, engine and unknown
+quality scripts in `package.json`. The exact CI paths include the GitHub dependency
+cache and its maintenance tooling. Runtime, build, dependency, engine and unknown
 changes build. Missing history, divergent ancestry, malformed input, an empty diff
 or any Git error also build. Git reads have a five-second timeout and a bounded
 output buffer. Comparing the entire deployment gap preserves runtime changes from
@@ -75,9 +76,9 @@ including every covered subdomain.
 There are no application mutation endpoints, image-upload API, auth flows or shared
 databases. Native image optimization must remain outside custom restrictive WAF
 rules. Vercel Bot Protection uses `challenge` without a separate AI-bot rule. The
-[discovery bot protection decision](decisions/discovery-bot-protection.md) records
-the accepted challenge behavior for automated clients and the required crawler
-exemptions. Vercel Authentication protects deployment URLs while the custom domain
+[bot protection decision](decisions/discovery-bot-protection.md) records the
+accepted challenge across public routes for scripted clients and the required
+access for normal visitors and intended crawlers. Vercel Authentication protects deployment URLs while the custom domain
 serves the public app. Do not add BotID solely because this is hosted on Vercel.
 
 No application secrets are required. Never pull private environment values just to

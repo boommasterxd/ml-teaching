@@ -43,6 +43,7 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
   const mainHeadingRef = useRef<HTMLHeadingElement>(null);
   const [cameraPaused, setCameraPaused] = useState(false);
   const [predictionFailed, setPredictionFailed] = useState(false);
+  const [predictionVisible, setPredictionVisible] = useState(false);
   const predictionWanted = step === 'prediction' && hasTrainedModel && !predictionFailed;
   const cameraNeeded = !cameraPaused && (step === 'images' || predictionWanted);
   useLayoutEffect(() => {
@@ -58,10 +59,17 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
   );
   const { stopPredicting, startPredicting: activatePrediction } = prediction;
   useLayoutEffect(() => {
-    if (!predictionWanted || !visible || !camera.stream) return;
+    if (!predictionWanted || !predictionVisible || !visible || !camera.stream) return;
     activatePrediction();
     return stopPredicting;
-  }, [predictionWanted, visible, camera.stream, activatePrediction, stopPredicting]);
+  }, [
+    predictionWanted,
+    predictionVisible,
+    visible,
+    camera.stream,
+    activatePrediction,
+    stopPredicting,
+  ]);
   useStopPredictionOnHide(stopPredicting);
   function reportPredictionError(category: 'prediction', message: string) {
     stopPredicting();
@@ -106,6 +114,7 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
       toggleCamera: switchCamera,
     },
     prediction,
+    onPredictionVisibilityChange: setPredictionVisible,
     canAutoStartPrediction:
       visible && cameraConsent && !cameraPaused && !camera.hasFailed && !predictionFailed,
     invalidateModel,
@@ -277,7 +286,7 @@ export function useTrainingWorkspace(step: TrainingStep, engine: TrainingEngine)
   const data = useTrainingData(resources);
   const dialogs = useModalState();
   const onUploadResult = useUploadNotifications();
-  const { removeImages, updateClassName } = data.classes;
+  const { removeImages } = data.classes;
   const { modal, closeModal, showRemoveClass, showClearClass, showImagePreview } = dialogs;
   const currentModal = useRef(modal);
   useLayoutEffect(() => {
@@ -308,7 +317,6 @@ export function useTrainingWorkspace(step: TrainingStep, engine: TrainingEngine)
       onRemove: showRemoveClass,
       onClear: showClearClass,
       onRemoveImages: handleRemoveImages,
-      onUpdateName: updateClassName,
       onImageClick: showImagePreview,
       onError: notifyError,
       onUploadResult,
@@ -324,7 +332,6 @@ export function useTrainingWorkspace(step: TrainingStep, engine: TrainingEngine)
       showClearClass,
       showImagePreview,
       handleRemoveImages,
-      updateClassName,
       onUploadResult,
       beginUpload,
       endUpload,

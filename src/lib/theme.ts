@@ -21,9 +21,6 @@ export function applyTheme(selection: ThemeSelection, resolved: ResolvedTheme): 
   const root = document.documentElement;
   root.classList.toggle('dark', resolved === 'dark');
   if (root.dataset.theme !== selection) root.dataset.theme = selection;
-  const favicon = document.getElementById('site-favicon');
-  const iconHref = `/favicon-${resolved}.svg`;
-  if (favicon && favicon.getAttribute('href') !== iconHref) favicon.setAttribute('href', iconHref);
   const color = document.getElementById('site-theme-color');
   if (color && color.getAttribute('content') !== themeColors[resolved]) {
     color.setAttribute('content', themeColors[resolved]);
@@ -60,7 +57,6 @@ export const THEME_BOOTSTRAP_SCRIPT = `(()=>{
   const dark = selection === "dark" || (selection === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.classList.toggle("dark", dark);
   document.documentElement.dataset.theme = selection;
-  document.getElementById("site-favicon")?.setAttribute("href", dark ? "/favicon-dark.svg" : "/favicon-light.svg");
   let chromeColor = document.getElementById("site-theme-color");
   if (!chromeColor) {
     chromeColor = document.createElement("meta");

@@ -12,10 +12,20 @@ const classNames = [
   { name: 'Gemeinsamer sehr langer Klassenname: Variante B', color: '#0000ff' },
 ] as const;
 
-async function collectExamples(page: Page) {
+const classColors = ['#ff0000', '#0000ff', '#00ff00', '#ffff00'];
+const filterClasses = Array.from({ length: ML.MAX_CLASSES }, (_, index) => ({
+  name: `Klasse ${index + 1}`,
+  color: classColors[index % classColors.length],
+}));
+
+type ExampleClass = { name: string; color: string };
+
+async function collectExamples(page: Page, examples: readonly ExampleClass[]) {
   const names = page.getByRole('textbox', { name: /^Name für Klasse / });
   const uploads = page.locator('input[type="file"]');
-  for (const [index, { name, color }] of classNames.entries()) {
+  const addClass = page.getByRole('button', { name: 'Neue Klasse hinzufügen', exact: true });
+  for (const [index, { name, color }] of examples.entries()) {
+    if (index >= 2) await addClass.click();
     await names.nth(index).fill(name);
     const buffer = await sharp({
       create: { width: 16, height: 16, channels: 3, background: color },
@@ -32,7 +42,21 @@ async function collectExamples(page: Page) {
   }
 }
 
+async function openLivePrediction(page: Page, baseURL: string, examples: readonly ExampleClass[]) {
+  await routeSyntheticModel(page, baseURL);
+  await page.goto(learningPaths.imagePractice);
+  await observeWorkspaceCamera(page, 'class-colors');
+  await grantModelConsent(page);
+  await page.getByRole('button', { name: 'Erlauben', exact: true }).click();
+  await collectExamples(page, examples);
+  await page.getByRole('button', { name: 'Weiter zum Training', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Modell trainieren', exact: true }).click();
+  await page.getByRole('button', { name: 'Weiter zur Vorhersage', exact: true }).click();
+}
+
 async function expectUnclippedConfidenceLabels(page: Page) {
+  const heading = page.getByRole('heading', { name: 'Vorhersage', exact: true });
+  await heading.evaluate((node) => node.scrollIntoView({ block: 'start', behavior: 'instant' }));
   for (const { name } of classNames) {
     const progress = page.getByRole('progressbar', {
       name: `Konfidenz für ${name}`,
@@ -73,15 +97,7 @@ test('live confidence values remain distinguishable for long class names', async
 }) => {
   await page.setViewportSize({ width: 320, height: 844 });
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
-  await routeSyntheticModel(page, baseURL!);
-  await page.goto(learningPaths.imagePractice);
-  await observeWorkspaceCamera(page, 'class-colors');
-  await grantModelConsent(page);
-  await page.getByRole('button', { name: 'Erlauben', exact: true }).click();
-  await collectExamples(page);
-  await page.getByRole('button', { name: 'Weiter zum Training', exact: true }).first().click();
-  await page.getByRole('button', { name: 'Modell trainieren', exact: true }).click();
-  await page.getByRole('button', { name: 'Weiter zur Vorhersage', exact: true }).click();
+  await openLivePrediction(page, baseURL!, classNames);
   await expectUnclippedConfidenceLabels(page);
   await expectAccessible(page);
   await page.evaluate(() => {
@@ -97,4 +113,67 @@ test('live confidence values remain distinguishable for long class names', async
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await expectUnclippedConfidenceLabels(page);
   await expectAccessible(page);
+});
+
+test.describe('live prediction class filters', () => {
+  test.use({ hasTouch: true });
+
+  test('filter all 15 classes with keyboard and touch', async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 1280, height: 844 });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    const styleViolations: string[] = [];
+    page.on('console', (message) => {
+      const text = message.text();
+      if (message.type() === 'error' && /Content Security Policy.*style-src/i.test(text)) {
+        styleViolations.push(text);
+      }
+    });
+    await openLivePrediction(page, baseURL!, filterClasses);
+
+    const chart = page.getByRole('figure', { name: /Merkmalsraum/ });
+    const trigger = chart.getByRole('button', { name: /^Klassenfilter:/ });
+    const filters = page.getByRole('menu', { name: 'Klassenfilter' });
+    const all = filters.getByRole('menuitemcheckbox', { name: 'Alle Klassen', exact: true });
+    const first = filters.getByRole('menuitemcheckbox', { name: 'Klasse 1', exact: true });
+    const last = filters.getByRole('menuitemcheckbox', { name: 'Klasse 15', exact: true });
+    const camera = chart.locator('[data-slot="prediction-live-point"]');
+    const paths = chart.locator('[data-slot="prediction-training-points"] path');
+    await chart.scrollIntoViewIfNeeded();
+    await expect(paths).toHaveCount(ML.MAX_CLASSES);
+    await expect(camera).toBeVisible();
+    await trigger.press('ArrowDown');
+    await expect(all).toBeFocused();
+    await expect(filters.getByRole('menuitemcheckbox')).toHaveCount(ML.MAX_CLASSES + 1);
+    await page.keyboard.press('Space');
+    await expect(paths).toHaveCount(0);
+    await page.keyboard.press('ArrowDown');
+    await expect(first).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(first).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('End');
+    await expect(last).toBeFocused();
+    await expect(last).toBeInViewport();
+    await page.keyboard.press('Space');
+    await expect(last).toHaveAttribute('aria-checked', 'true');
+    await expect(paths).toHaveCount(2);
+    await expect(all).toHaveAttribute('aria-checked', 'mixed');
+    await expect(camera).toBeVisible();
+    await expectAccessible(page);
+    await page.keyboard.press('Escape');
+    await expect(filters).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+    await trigger.tap();
+    await last.tap();
+    await expect(last).toHaveAttribute('aria-checked', 'false');
+    await expect(paths).toHaveCount(1);
+    await all.tap();
+    await expect(all).toHaveAttribute('aria-checked', 'true');
+    await expect(paths).toHaveCount(ML.MAX_CLASSES);
+    await expect(camera).toBeVisible();
+    await expectAccessible(page);
+    expect(styleViolations).toEqual([]);
+  });
 });

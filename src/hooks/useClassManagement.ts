@@ -5,7 +5,15 @@
  * Provides CRUD operations for classes and exposes model invalidation on destructive changes.
  */
 import { useState, useCallback, useMemo } from 'react';
-import { useFieldArray, useForm, useWatch, type FieldError, type Resolver } from 'react-hook-form';
+import {
+  useController,
+  useFieldArray,
+  useForm,
+  useWatch,
+  type Control,
+  type FieldError,
+  type Resolver,
+} from 'react-hook-form';
 import { toNestErrors } from '@hookform/resolvers';
 import { createInitialTrainingClasses } from '@/lib/training-class-defaults';
 import { createClassNameValidator, type TrainingClassNames } from '@/lib/training-class-names';
@@ -63,10 +71,26 @@ function createNameResolver(
   };
 }
 
+export function useTrainingClassName(
+  control: Control<TrainingClassNames>,
+  index: number,
+  validateNames: () => void,
+) {
+  const { field, fieldState } = useController({ control, name: `names.${index}.name` });
+  return {
+    field,
+    error: fieldState.error?.message,
+    edit: (name: string) => {
+      field.onChange(name.slice(0, ML.MAX_CLASS_NAME_LENGTH));
+      validateNames();
+    },
+  };
+}
+
 function useClassNames(onWarning?: (message: string) => void) {
   const [validate] = useState(createClassNameValidator);
   const resolver = useMemo(() => createNameResolver(validate), [validate]);
-  const { control, getValues, setValue, trigger } = useForm<TrainingClassNames>({
+  const { control, getValues, trigger } = useForm<TrainingClassNames>({
     defaultValues: initialNames,
     resolver,
   });
@@ -74,6 +98,9 @@ function useClassNames(onWarning?: (message: string) => void) {
   const names = useWatch({ control, name: 'names' });
   const nameValidity = useMemo(() => validate({ names }).validity, [names, validate]);
   const readNameValidity = useCallback(() => validate(getValues()).validity, [getValues, validate]);
+  const validateNames = useCallback(() => {
+    void trigger('names');
+  }, [trigger]);
 
   const addName = useCallback(() => {
     const current = getValues('names');
@@ -84,32 +111,19 @@ function useClassNames(onWarning?: (message: string) => void) {
     const nextNum = getNextClassNumber(current);
     const id = `class-${crypto.randomUUID()}`;
     append({ classId: id, name: `Klasse ${nextNum}` }, { shouldFocus: false });
-    void trigger('names');
+    validateNames();
     return { id, images: [], color: COLORS[(nextNum - 1) % COLORS.length] };
-  }, [append, getValues, onWarning, trigger]);
+  }, [append, getValues, onWarning, validateNames]);
 
   const removeName = useCallback(
     (id: string) => {
       const index = getValues('names').findIndex(({ classId }) => classId === id);
       if (index === -1) return false;
       remove(index);
-      void trigger('names');
+      validateNames();
       return true;
     },
-    [getValues, remove, trigger],
-  );
-
-  /** Renames a class. Does not invalidate the model. */
-  const updateClassName = useCallback(
-    (id: string, newName: string) => {
-      const index = getValues('names').findIndex(({ classId }) => classId === id);
-      if (index === -1) return;
-      setValue(`names.${index}.name`, newName.slice(0, ML.MAX_CLASS_NAME_LENGTH), {
-        shouldDirty: true,
-      });
-      void trigger('names');
-    },
-    [getValues, setValue, trigger],
+    [getValues, remove, validateNames],
   );
 
   return {
@@ -119,7 +133,7 @@ function useClassNames(onWarning?: (message: string) => void) {
     readNameValidity,
     addName,
     removeName,
-    updateClassName,
+    validateNames,
   };
 }
 
@@ -150,15 +164,8 @@ export function useClassManagement(
   onWarning?: (message: string) => void,
 ) {
   const [examples, setExamples] = useState(createInitialExamples);
-  const {
-    names,
-    nameControl,
-    nameValidity,
-    readNameValidity,
-    addName,
-    removeName,
-    updateClassName,
-  } = useClassNames(onWarning);
+  const { names, nameControl, nameValidity, readNameValidity, addName, removeName, validateNames } =
+    useClassNames(onWarning);
   const classes = useNamedClasses(examples, names);
 
   const addClass = useCallback(() => {
@@ -241,7 +248,7 @@ export function useClassManagement(
     readNameValidity,
     addClass,
     removeClass,
-    updateClassName,
+    validateNames,
     addImage,
     addImages,
     removeImage,

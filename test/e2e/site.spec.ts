@@ -12,6 +12,7 @@ import { ANIMATION, NETWORK_STAGES } from '../../src/constants';
 import sharp from 'sharp';
 import { failSyntheticModel, routeSyntheticModel } from './synthetic-model';
 import { expectNetworkLayout } from './network-layout';
+import { classLayout, expectStableNameValidation } from './training-name-validation';
 import {
   expectCameraToggleKeepsImages,
   expectLivePredictionControls,
@@ -19,8 +20,6 @@ import {
 } from './training-camera';
 import {
   captureSetupDialog,
-  classLayout,
-  expectStableNameValidation,
   expectKeyboardCapture,
   expectCancelledResetKeepsImages,
   expectEmptyTrainingAfterConsent,

@@ -11,18 +11,17 @@ import { Input } from './ui/input';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
 import { Field, FieldLabel } from './ui/field';
+import { Spinner } from './ui/spinner';
 
 export function TrainingClassNameField(props: ComponentProps<typeof Input>) {
   return (
-    <div className="min-w-0 flex-1">
-      <Input
-        type="text"
-        autoComplete="off"
-        maxLength={ML.MAX_CLASS_NAME_LENGTH}
-        className="h-10 min-w-0 rounded-xl bg-background/60 font-medium dark:bg-background/60"
-        {...props}
-      />
-    </div>
+    <Input
+      type="text"
+      autoComplete="off"
+      maxLength={ML.MAX_CLASS_NAME_LENGTH}
+      className="h-10 min-w-0 rounded-xl bg-background/60 font-medium dark:bg-background/60"
+      {...props}
+    />
   );
 }
 
@@ -33,23 +32,22 @@ export function trainingGalleryLabel(cls: MLClass, position: number) {
 export default function TrainingClassFrame({
   cls,
   position,
-  nameError,
   nameField,
   children,
 }: {
   cls: MLClass;
   position: number;
-  nameError?: string;
   nameField?: ReactNode;
   children: ReactNode;
 }) {
+  const nameId = `class-name-${cls.id}`;
   const count = cls.images.length;
   const enoughImages = count >= ML.MIN_IMAGES_PER_CLASS;
   const atLimit = count >= ML.MAX_IMAGES_PER_CLASS;
   return (
     <Card className="@container/training-class gap-4 py-4 lg:h-full">
       <CardHeader className="items-center px-4 @md/training-class:px-5">
-        <Field data-invalid={!!nameError} className="min-w-0 gap-2">
+        <Field className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
             <div
               className={cn(
@@ -58,12 +56,12 @@ export default function TrainingClassFrame({
               )}
               aria-hidden="true"
             />
-            <FieldLabel htmlFor={`class-name-${cls.id}`} className="sr-only">
+            <FieldLabel htmlFor={nameId} className="sr-only">
               Name für Klasse {position}: {cls.name.trim() || 'ohne Namen'}
             </FieldLabel>
-            {nameField ?? (
-              <TrainingClassNameField id={`class-name-${cls.id}`} value={cls.name} readOnly />
-            )}
+            <div className="min-w-0 flex-1">
+              {nameField ?? <TrainingClassNameField id={nameId} value={cls.name} readOnly />}
+            </div>
             <Badge
               variant="secondary"
               className="min-h-7 max-w-[50%] px-2.5 whitespace-normal tabular-nums"
@@ -91,20 +89,25 @@ export function ClassManagementActions({
   onClear,
   onRemove,
   onPrepare,
+  pendingAction,
 }: {
   cls: MLClass;
   position: number;
   onClear?: () => void;
   onRemove?: () => void;
   onPrepare?: () => void;
+  pendingAction?: 'clearClass' | 'removeClass' | 'imagePreview';
 }) {
   const name = cls.name.trim() || 'ohne Namen';
+  const ClearIcon = pendingAction === 'clearClass' ? Spinner : RotateCcw;
+  const RemoveIcon = pendingAction === 'removeClass' ? Spinner : Trash2;
   return (
     <>
       <Button
         variant="outline"
         className="h-auto min-h-11 min-w-0 px-2"
         aria-haspopup="dialog"
+        aria-busy={pendingAction === 'clearClass' || undefined}
         onPointerEnter={onPrepare}
         onFocus={onPrepare}
         onPointerDown={onPrepare}
@@ -112,13 +115,14 @@ export function ClassManagementActions({
         title="Bilder dieser Klasse zurücksetzen"
         aria-label={`Bilder der Klasse ${position}: ${name} zurücksetzen`}
       >
-        <RotateCcw data-icon="inline-start" aria-hidden="true" />
+        <ClearIcon data-icon="inline-start" aria-hidden="true" />
         <span className="hidden @md/training-class:inline">Zurücksetzen</span>
       </Button>
       <Button
         variant="outline"
         className="h-auto min-h-11 min-w-0 px-2 text-destructive hover:text-destructive"
         aria-haspopup="dialog"
+        aria-busy={pendingAction === 'removeClass' || undefined}
         onPointerEnter={onPrepare}
         onFocus={onPrepare}
         onPointerDown={onPrepare}
@@ -126,7 +130,7 @@ export function ClassManagementActions({
         title="Klasse löschen"
         aria-label={`Klasse ${position}: ${name} löschen`}
       >
-        <Trash2 data-icon="inline-start" aria-hidden="true" />
+        <RemoveIcon data-icon="inline-start" aria-hidden="true" />
         <span className="hidden @md/training-class:inline">Löschen</span>
       </Button>
     </>

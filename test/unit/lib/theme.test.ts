@@ -12,14 +12,8 @@ import { installThemeHost, restoreThemeHost } from '../helpers/theme-host';
 let host: ReturnType<typeof installThemeHost>;
 beforeEach(() => {
   host = installThemeHost();
-  const favicon = document.createElement('link');
-  favicon.id = 'site-favicon';
-  favicon.rel = 'icon';
-  favicon.href = '/favicon.svg';
-  document.head.append(favicon);
 });
 afterEach(() => {
-  document.getElementById('site-favicon')?.remove();
   document.getElementById('site-theme-color')?.remove();
   restoreThemeHost();
 });
@@ -51,7 +45,6 @@ describe('theme preference and prepaint contract', () => {
     expect(document.getElementById('site-theme-color')?.getAttribute('content')).toBe(
       themeColors.dark,
     );
-    expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe('/favicon-dark.svg');
     expect(writes).not.toHaveBeenCalled();
     window.localStorage.setItem(THEME_STORAGE_KEY, 'light');
     writes.mockClear();
@@ -62,14 +55,11 @@ describe('theme preference and prepaint contract', () => {
     expect(document.getElementById('site-theme-color')?.getAttribute('content')).toBe(
       themeColors.light,
     );
-    expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe(
-      '/favicon-light.svg',
-    );
     expect(writes).not.toHaveBeenCalled();
     expect(document.documentElement.hasAttribute('style')).toBe(false);
   });
 
-  it('updates the favicon with the applied choice and system changes without remembering them', () => {
+  it('updates the browser theme color without remembering the choice', () => {
     host.setSystemDark(true);
     boot();
     const writes = vi.spyOn(Storage.prototype, 'setItem');
@@ -77,19 +67,12 @@ describe('theme preference and prepaint contract', () => {
     expect(document.getElementById('site-theme-color')?.getAttribute('content')).toBe(
       themeColors.light,
     );
-    expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe(
-      '/favicon-light.svg',
-    );
     applyTheme('system', 'dark');
     expect(document.getElementById('site-theme-color')?.getAttribute('content')).toBe(
       themeColors.dark,
     );
-    expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe('/favicon-dark.svg');
     host.setSystemDark(false);
     applyTheme('system', 'light');
-    expect(document.getElementById('site-favicon')?.getAttribute('href')).toBe(
-      '/favicon-light.svg',
-    );
     expect(writes).not.toHaveBeenCalled();
   });
 

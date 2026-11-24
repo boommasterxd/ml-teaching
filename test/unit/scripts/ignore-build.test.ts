@@ -20,6 +20,17 @@ describe('Vercel build admission', () => {
     ['README.md', 'AGENTS.md'],
     ['test/unit/hooks/useModelLoader.test.ts', 'test/setup.ts'],
     ['.github/workflows/ci.yml', '.github/scripts/plan-ci.ts'],
+    [
+      '.github/workflows/dependency-cache.yml',
+      '.github/workflows/dependency-cache-reconciliation.yml',
+      '.github/workflows/cache-lifecycle.yml',
+      '.github/cache-policy.json',
+      '.github/scripts/cache.ts',
+      '.github/scripts/cache-lifecycle/run.cjs',
+      '.github/scripts/cache-lifecycle/types.d.ts',
+      'tsconfig.cache-lifecycle.json',
+    ],
+    ['.github/scripts/pr-check-evidence.ts'],
   ])('skips proven non-runtime changes: %s', (...paths) => {
     expect(ignoreBuild(previous, current, history(paths))).toBe(0);
   });
@@ -31,6 +42,9 @@ describe('Vercel build admission', () => {
     ['docs/guide.md', 'scripts/unknown.ts'],
     ['docs/guide.md', 'docs/model.json'],
     ['.github/scripts/unknown.ts'],
+    ['.github/scripts/cache-lifecycle/unknown.cjs'],
+    ['.github/workflows/dependency-cache-deploy.yml'],
+    ['.github/workflows/dependency-cache.yml', 'src/app/page.tsx'],
     ['next.config.mjs'],
     ['package-lock.json'],
     ['test/fixtures/production-input.json'],

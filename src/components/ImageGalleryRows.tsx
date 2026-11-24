@@ -17,6 +17,7 @@ import { prepareTrainingDialogs } from './DeferredTrainingDialogs';
 import { Check } from './icons/check';
 import { cn } from '../lib/utils';
 import { Badge } from './ui/badge';
+import { Spinner } from './ui/spinner';
 import type { MLImage } from '../types/ml';
 
 const thumbnailHoldDelayMs = 450;
@@ -90,6 +91,7 @@ interface ImageThumbnailProps {
   isSelectionMode: boolean;
   /** Whether this specific thumbnail is currently selected. */
   isSelected: boolean;
+  pending: boolean;
   /** Enters selection mode and toggles the given image. */
   onToggleSelect: (id: string) => void;
   /** Called with the full image object when clicked outside of selection mode. */
@@ -109,6 +111,7 @@ const ImageThumbnail = memo(function ImageThumbnail({
   imgIndex,
   isSelectionMode,
   isSelected,
+  pending,
   onToggleSelect,
   onImageClick,
 }: ImageThumbnailProps) {
@@ -125,6 +128,7 @@ const ImageThumbnail = memo(function ImageThumbnail({
       data-selection-mode={isSelectionMode || undefined}
       aria-pressed={isSelectionMode ? isSelected : undefined}
       aria-haspopup={isSelectionMode ? undefined : 'dialog'}
+      aria-busy={pending || undefined}
       aria-label={`Bild ${imageNumber} ${isSelectionMode ? 'auswählen' : 'vergrößern'}`}
       onPointerEnter={isSelectionMode ? undefined : prepareTrainingDialogs}
       onFocus={isSelectionMode ? undefined : prepareTrainingDialogs}
@@ -143,6 +147,14 @@ const ImageThumbnail = memo(function ImageThumbnail({
         draggable={false}
         className="w-full h-full object-cover"
       />
+      {pending && (
+        <Badge
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 m-auto size-8 rounded-full bg-background p-0 text-foreground shadow-sm"
+        >
+          <Spinner />
+        </Badge>
+      )}
       {isSelectionMode && (
         <Badge
           variant="outline"
@@ -190,6 +202,7 @@ interface GalleryRowsProps extends Pick<
   columnCount: number;
   virtualRows: VirtualItem[];
   selectedIds: Set<string>;
+  pendingImageId?: string;
 }
 
 function GalleryRows({
@@ -200,6 +213,7 @@ function GalleryRows({
   isSelectionMode,
   onToggleSelect,
   onImageClick,
+  pendingImageId,
 }: GalleryRowsProps) {
   return (
     <>
@@ -226,6 +240,7 @@ function GalleryRows({
               imgIndex={startIndex + colIdx}
               isSelectionMode={isSelectionMode}
               isSelected={selectedIds.has(img.id)}
+              pending={!isSelectionMode && pendingImageId === img.id}
               onToggleSelect={onToggleSelect}
               onImageClick={onImageClick}
             />
@@ -279,7 +294,12 @@ function useFocusedRowVisibility(
 
 export interface ImageGalleryRowsProps extends Pick<
   GalleryRowsProps,
-  'images' | 'selectedIds' | 'isSelectionMode' | 'onToggleSelect' | 'onImageClick'
+  | 'images'
+  | 'selectedIds'
+  | 'isSelectionMode'
+  | 'onToggleSelect'
+  | 'onImageClick'
+  | 'pendingImageId'
 > {
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   showRows: boolean;

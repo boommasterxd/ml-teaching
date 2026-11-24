@@ -186,7 +186,7 @@ maintained documentation change.
 | [`docs/decisions/admin-ruleset-bypass.md`](docs/decisions/admin-ruleset-bypass.md)                     | Records the intentional ruleset bypass for the owner.           |
 | [`docs/decisions/children-training-consent.md`](docs/decisions/children-training-consent.md)           | Explains the scoped Article 8 GDPR decision for image training. |
 | [`docs/decisions/ci-trust-boundary.md`](docs/decisions/ci-trust-boundary.md)                           | Records CI provenance and complementary secret scanning.        |
-| [`docs/decisions/discovery-bot-protection.md`](docs/decisions/discovery-bot-protection.md)             | Records the accepted challenge for automated discovery clients. |
+| [`docs/decisions/discovery-bot-protection.md`](docs/decisions/discovery-bot-protection.md)             | Records the accepted challenge for scripted public requests.    |
 | [`docs/decisions/error-artwork-and-menus.md`](docs/decisions/error-artwork-and-menus.md)               | Records the shared playback and menu-loading decisions.         |
 | [`docs/decisions/eslint-peer-compatibility.md`](docs/decisions/eslint-peer-compatibility.md)           | Records the temporary ESLint peer compatibility exception.      |
 | [`docs/decisions/hostinger-mail-retention.md`](docs/decisions/hostinger-mail-retention.md)             | Records mailbox recovery and the accepted backup gap.           |

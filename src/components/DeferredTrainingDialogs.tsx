@@ -1,8 +1,9 @@
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useEffect, useState } from 'react';
+import type { ModalState } from '@/hooks/useModalState';
 import { toast } from '@/lib/toast';
 
 type DialogsComponent = typeof import('./TrainingPageModals').default;
-type DialogsProps = ComponentProps<DialogsComponent>;
+export type PendingTrainingDialog = Exclude<ModalState, { type: 'none' }>;
 
 let pendingDialogs: Promise<DialogsComponent> | undefined;
 let readyDialogs: DialogsComponent | undefined;
@@ -24,13 +25,15 @@ export function prepareTrainingDialogs() {
   if (!pendingDialogs) void loadTrainingDialogs().catch(() => {});
 }
 
-function TrainingDialogsBoundary(props: DialogsProps) {
-  const { modal, closeModal } = props;
-  const [Dialogs, setDialogs] = useState(() => readyDialogs);
-  const pending = modal.type !== 'none' && !Dialogs;
+/** Mount on first activation and retain the dialog owner through its exits. */
+export function useDeferredTrainingDialogs(modal: ModalState, closeModal: () => void) {
+  const [Dialogs, setDialogs] = useState<DialogsComponent>();
+  const prepared = readyDialogs;
+  if (!Dialogs && modal.type !== 'none' && prepared) setDialogs(() => prepared);
+  const pendingDialog = !Dialogs && modal.type !== 'none' ? modal : undefined;
 
   useEffect(() => {
-    if (!pending) return;
+    if (!pendingDialog) return;
     let active = true;
     let opener = document.activeElement;
     const cancel = (event: KeyboardEvent) => {
@@ -68,19 +71,7 @@ function TrainingDialogsBoundary(props: DialogsProps) {
       document.removeEventListener('keydown', cancel);
       document.removeEventListener('focusin', dismissOnFocusChange);
     };
-  }, [closeModal, pending]);
+  }, [closeModal, pendingDialog]);
 
-  if (Dialogs) return <Dialogs {...props} />;
-  return (
-    <p className="sr-only" role="status">
-      {pending ? 'Dialog wird geladen.' : ''}
-    </p>
-  );
-}
-
-/** Mount after the first activation and retain the existing dialog through its exit. */
-export default function DeferredTrainingDialogs(props: DialogsProps) {
-  const [activated, setActivated] = useState(false);
-  if (!activated && props.modal.type !== 'none') setActivated(true);
-  return activated ? <TrainingDialogsBoundary {...props} /> : null;
+  return { Dialogs, pendingDialog };
 }
