@@ -257,6 +257,7 @@ for (const intent of ['hover', 'keyboard'] as const) {
     const transitions = await observeViewTransitions(page);
     try {
       await page.goto('/');
+      await expect(page.locator('.header-menu-mobile')).toHaveCount(0);
       const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
       const trigger = navigation.getByRole('button', { name: 'Lernlabor', exact: true });
       const overview = navigation.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true });

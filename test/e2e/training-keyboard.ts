@@ -350,37 +350,6 @@ export async function expectTrainingCompletion(page: Page) {
   await expectAccessible(page);
 }
 
-export async function expectTrainingGlide(trigger: Locator, direction: 'left' | 'right') {
-  const page = trigger.page();
-  const panel = await page.locator('[data-training-panel]').evaluate((node) => {
-    const { left, right } = node.getBoundingClientRect();
-    return { name: `training-panel-${node.getAttribute('data-training-panel')}`, left, right };
-  });
-  const [frame] = await Promise.all([
-    page.waitForFunction(
-      ({ direction, panel }) => {
-        const root = document.documentElement;
-        const snapshot = getComputedStyle(root, `::view-transition-old(${panel.name})`);
-        const opacity = Number(snapshot.opacity);
-        if (!(opacity > 0 && opacity < 1) || snapshot.transform === 'none') return false;
-
-        const pair = getComputedStyle(root, `::view-transition-image-pair(${panel.name})`);
-        const offset = new DOMMatrixReadOnly(snapshot.transform).m41;
-        const reachesEdge =
-          direction === 'left'
-            ? panel.left + offset <= 0
-            : panel.right + offset >= root.clientWidth;
-        return reachesEdge && pair.overflowX === 'visible' && root.scrollWidth === root.clientWidth;
-      },
-      { direction, panel },
-      { timeout: 3_000 },
-    ),
-    trigger.press('Enter'),
-  ]);
-  await frame.dispose();
-  await settleEntryAnimations(page);
-}
-
 export async function revealBottomTrainingButton(page: Page) {
   const next = page.getByRole('button', { name: 'Weiter zum Training' });
   const addClass = page.getByRole('button', { name: 'Neue Klasse hinzufügen' });

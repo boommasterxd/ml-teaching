@@ -33,7 +33,7 @@ function runPlaywright(args: string[], capture = false) {
 
 export function runBrowserChecks(plan: CiPlan, run = runPlaywright) {
   if (!plan.browser) throw new Error('Browser checks are required to run this job.');
-  const args = ['--workers=3', '--forbid-only'];
+  const args = ['--workers=2', '--forbid-only'];
   if (plan.reason === 'browser-spec') {
     const selected = [...new Set([...coreSpecs, plan.spec])];
     // Discover without file filters so Playwright can reject imports between specs.

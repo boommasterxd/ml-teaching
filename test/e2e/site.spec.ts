@@ -29,7 +29,6 @@ import {
   expectPreviewDeletion,
   expectThemeControlAlignment,
   expectTrainingCompletion,
-  expectTrainingGlide,
   expectThemeMenuTriggers,
   grantModelConsent,
   openDeferredTrainingStep,
@@ -40,6 +39,7 @@ import {
   withdrawTrainingConsent,
   withdrawWithActiveCamera,
 } from './training-keyboard';
+import { expectTrainingGlide } from './training-motion-checks';
 
 async function uploadTrainingClasses(page: Page) {
   const empty = await classLayout(page);

@@ -37,7 +37,7 @@ describe('CI browser execution', () => {
     expect(run.mock.calls[0]).toEqual([['--list', '--reporter=json', '--forbid-only'], true]);
     const [args] = run.mock.calls[1];
     const [workers, focused, ...patterns] = args;
-    expect([workers, focused]).toEqual(['--workers=3', '--forbid-only']);
+    expect([workers, focused]).toEqual(['--workers=2', '--forbid-only']);
     expect(patterns).toHaveLength(3);
     for (const file of [...core, changed]) {
       expect(patterns.some((pattern) => new RegExp(pattern).test(`/checkout/${file}`))).toBe(true);
@@ -64,6 +64,6 @@ describe('CI browser execution', () => {
   it('executes the full default Playwright suite without file filters on a general plan', () => {
     const run = vi.fn();
     runBrowserChecks(full, run);
-    expect(run.mock.calls).toEqual([[['--workers=3', '--forbid-only']]]);
+    expect(run.mock.calls).toEqual([[['--workers=2', '--forbid-only']]]);
   });
 });

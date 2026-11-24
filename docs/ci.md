@@ -185,11 +185,12 @@ that Proxy remain forbidden.
 `npm run build` uses the native Next.js build and its CSP verification hooks.
 `npm run test:e2e` runs the complete browser suite against the native production
 server, including accessibility and keyboard contracts. The local command remains
-unfiltered with `CI=true`. The CI browser job validates the plan and uses three
-Playwright workers against one production server. It installs both lockfile-matched
-Chromium variants for [the browser tests](development.md#checks). Browser launch,
-host dependency validation and the selected suite are blocking. Lighthouse runs
-locally as described in the [performance audit decision](decisions/performance-audits.md).
+unfiltered with `CI=true`. The CI browser job validates the plan and limits
+Playwright to two workers to leave CPU headroom for WebGL and accessibility checks.
+It installs both lockfile-matched Chromium variants for
+[the browser tests](development.md#checks). Browser launch, host dependency
+validation and the selected suite are blocking. Lighthouse runs locally as
+described in the [performance audit decision](decisions/performance-audits.md).
 
 ## Security automation and release boundary
 

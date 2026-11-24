@@ -221,7 +221,7 @@ type TransitionSnapshot = {
   dialogPresentAtStart?: true;
 };
 type TransitionObserver = typeof window & {
-  observedTransitions: Promise<TransitionSnapshot | 'skipped'>[];
+  observedTransitions: Promise<TransitionSnapshot | { skipped: string }>[];
 };
 
 export async function observeViewTransitions(page: Page, { checkDialogExit = false } = {}) {
@@ -280,7 +280,7 @@ export async function observeViewTransitions(page: Page, { checkDialogExit = fal
                 ...(dialogPresentAtStart && { dialogPresentAtStart: true }),
               };
             },
-            () => 'skipped',
+            (error: unknown) => ({ skipped: String(error) }),
           ),
         );
         return transition;
