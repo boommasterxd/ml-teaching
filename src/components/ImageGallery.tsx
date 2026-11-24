@@ -1,4 +1,5 @@
-import { memo, useState, useEffect, useRef, useCallback, type RefObject } from 'react';
+import { memo, useState, useEffect, useRef, useCallback, useMemo, type RefObject } from 'react';
+import { useInView } from 'motion/react';
 import Button from './Button';
 import TrainingGalleryFrame from './TrainingGalleryFrame';
 import { Trash2 } from './icons/trash2';
@@ -171,8 +172,10 @@ const ImageGallery = memo(function ImageGallery({
 }: ImageGalleryProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [rawSelectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const selectedIds = new Set(
-    [...rawSelectedIds].filter((id) => images.some((image) => image.id === id)),
+  const imageIds = useMemo(() => new Set(images.map(({ id }) => id)), [images]);
+  const selectedIds = useMemo(
+    () => new Set([...rawSelectedIds].filter((id) => imageIds.has(id))),
+    [rawSelectedIds, imageIds],
   );
   if (images.length === 0 && isSelectionMode) {
     setIsSelectionMode(false);
@@ -180,6 +183,10 @@ const ImageGallery = memo(function ImageGallery({
   }
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const modeButtonRef = useRef<HTMLButtonElement>(null);
+  const [focusWithin, setFocusWithin] = useState(false);
+  // Prepare one gallery-height ahead of normal scrolling.
+  const nearViewport = useInView(scrollContainerRef, { margin: '240px 0px' });
+  const showRows = nearViewport || focusWithin;
   const hasImages = images.length > 0;
 
   /** Enters selection mode and adds or removes the image ID. */
@@ -212,6 +219,8 @@ const ImageGallery = memo(function ImageGallery({
       label={label}
       color={color}
       scrollContainerRef={scrollContainerRef}
+      scrollFade={showRows}
+      onFocusWithinChange={setFocusWithin}
       toolbar={
         hasImages && (
           <GalleryToolbar
@@ -235,6 +244,7 @@ const ImageGallery = memo(function ImageGallery({
           onToggleSelect={toggleImageSelection}
           onImageClick={onImageClick}
           scrollContainerRef={scrollContainerRef}
+          showRows={showRows}
         />
       )}
     </TrainingGalleryFrame>

@@ -49,18 +49,14 @@ async function uploadTrainingClasses(page: Page) {
       mimeType: 'image/png',
       buffer: Buffer.from('Invalid image bytes'),
     });
-  const error = page.locator('[data-slot="toast"]').filter({ hasText: 'unlesbar.png' });
+  const error = page
+    .getByRole('region', { name: 'Mitteilungen' })
+    .getByRole('dialog', { name: 'Ein Bild konnte nicht hinzugefügt werden.' })
+    .filter({ hasText: 'unlesbar.png' });
   await expect(error).toHaveCount(1);
   await expect(error).toBeVisible();
-  await page.keyboard.press('F6');
-  await expect(page.getByRole('region', { name: 'Mitteilungen' })).toBeFocused();
-  const close = error.getByRole('button', { name: 'Meldung schließen', exact: true });
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Tab');
-  await expect(close).toBeFocused();
   await expectAccessible(page);
-  await page.keyboard.press('Enter');
-  await expect(error).toHaveCount(0);
+  await expect.poll(() => classLayout(page)).toEqual(empty);
 
   for (const [index, background] of ['#ff0000', '#0000ff'].entries()) {
     const buffer = await sharp({ create: { width: 224, height: 224, channels: 3, background } })
@@ -75,12 +71,13 @@ async function uploadTrainingClasses(page: Page) {
     if (index === 0) {
       await input.setInputFiles(files.splice(0, 1));
       await expect(page.getByText('1 / 10 Bilder', { exact: true })).toBeVisible();
-      expect(await classLayout(page)).toEqual(empty);
+      await expect(error).toBeHidden();
+      await expect.poll(() => classLayout(page)).toEqual(empty);
     }
     await input.setInputFiles(files);
     await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(index + 1);
   }
-  expect(await classLayout(page)).toEqual(empty);
+  await expect.poll(() => classLayout(page)).toEqual(empty);
 }
 
 test('the native image optimizer serves the bounded hero poster as AVIF and WebP', async ({

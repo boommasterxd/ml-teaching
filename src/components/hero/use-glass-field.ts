@@ -40,7 +40,13 @@ export function useGlassField(
   const [interested, setInterested] = useState(false);
   const [Field, setField] = useState<FieldComponent | null>(null);
   const [failed, setFailed] = useState(false);
-  const [rendered, onRendered] = useState(false);
+  const [rendered, setRendered] = useState(false);
+  const [startupPoster, setStartupPoster] = useState(false);
+  if (paused && !rendered && !startupPoster) setStartupPoster(true);
+  const onRendered = useCallback((ready: boolean) => {
+    setRendered(ready);
+    if (ready) setStartupPoster(false);
+  }, []);
   const onUnavailable = useCallback(() => setFailed(true), []);
   const available = visible && !reduce && !failed && (inView || rendered) && (!paused || rendered);
   const active = inView && available && !paused && viewportReady && (motionReady || interested);
@@ -102,6 +108,7 @@ export function useGlassField(
     available,
     inView,
     failed,
+    showPoster: failed || startupPoster,
     reduce,
     rendered,
     pending,

@@ -7,6 +7,12 @@ import {
   settleEntryAnimations,
 } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
+import {
+  arrowOffset,
+  expectPageTransitions,
+  feedbackArrow,
+  watchStationaryHover,
+} from './intent-navigation-checks';
 
 function isLearningPayload(request: Request) {
   return new URL(request.url()).pathname === learningPaths.hub && request.headers().rsc === '1';
@@ -237,41 +243,6 @@ test('the mobile navigation marks the current page and moves its highlight on ho
   expect(failures).toEqual([]);
 });
 
-function feedbackArrow(link: Locator) {
-  return link.locator('svg').last().locator('g').first();
-}
-
-function arrowOffset(link: Locator) {
-  return feedbackArrow(link).evaluate((arrow) => {
-    const transform = getComputedStyle(arrow).transform;
-    return transform === 'none' ? 0 : new DOMMatrix(transform).m41;
-  });
-}
-
-async function watchStationaryHover(link: Locator) {
-  const probe = await feedbackArrow(link).evaluateHandle((arrow) => {
-    const state = { stopped: false, lost: false };
-    function check() {
-      if (state.stopped) return;
-      const transform = getComputedStyle(arrow).transform;
-      if (!arrow.isConnected || transform === 'none' || new DOMMatrix(transform).m41 <= 0) {
-        state.lost = true;
-      }
-      requestAnimationFrame(check);
-    }
-    requestAnimationFrame(check);
-    return state;
-  });
-  return async () => {
-    const lost = await probe.evaluate((state) => {
-      state.stopped = true;
-      return state.lost;
-    });
-    await probe.dispose();
-    expect(lost).toBe(false);
-  };
-}
-
 for (const intent of ['hover', 'keyboard'] as const) {
   test(`finished ${intent} preparation supplies the complete page on first activation and reentry`, async ({
     page,
@@ -280,6 +251,7 @@ for (const intent of ['hover', 'keyboard'] as const) {
     await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
     const failures = diagnostics(page);
     const network = await holdLearningPayloads(page, baseURL!);
+    const transitions = await observeViewTransitions(page);
     try {
       await page.goto('/');
       const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
@@ -321,21 +293,24 @@ for (const intent of ['hover', 'keyboard'] as const) {
         await expect(overview).toBeFocused();
       }
 
+      await expectPageTransitions(page, transitions);
       const preparedRequests = network.payloads.length;
       const heading = page.getByRole('heading', { name: 'Dein Lernlabor', exact: true });
       await activateOverview();
       await expect(heading).toBeVisible();
       await expect(page).toHaveURL(learningPaths.hub);
+      await expectPageTransitions(page, transitions, 'forward');
       expect(network.payloads).toHaveLength(preparedRequests);
 
       await navigation.getByRole('link', { name: 'Startseite', exact: true }).press('Enter');
       await expect(page).toHaveURL('/');
+      await expectPageTransitions(page, transitions, 'forward', 'forward');
       await openOverview();
       await prepareOverview();
       await activateOverview();
       await expect(heading).toBeVisible();
       await expect(page).toHaveURL(learningPaths.hub);
-      await settleEntryAnimations(page);
+      await expectPageTransitions(page, transitions, 'forward', 'forward', 'forward');
       expect(network.payloads).toHaveLength(preparedRequests);
       expect(network.documents()).toBe(1);
       expect(failures).toEqual([]);
@@ -346,7 +321,11 @@ for (const intent of ['hover', 'keyboard'] as const) {
 }
 
 test.describe('held touch navigation', () => {
-  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+  test.use({
+    hasTouch: true,
+    viewport: { width: 390, height: 844 },
+    reducedMotion: 'no-preference',
+  });
 
   test('prepares the complete learning page and reuses it on tap and reentry', async ({
     page,
@@ -354,6 +333,7 @@ test.describe('held touch navigation', () => {
   }) => {
     const failures = diagnostics(page);
     const network = await holdLearningPayloads(page, baseURL!);
+    const transitions = await observeViewTransitions(page);
     await page.goto('/');
     const link = page.getByRole('main').getByRole('link', { name: 'Lernlabor', exact: true });
     await link.tap({ trial: true });
@@ -374,7 +354,7 @@ test.describe('held touch navigation', () => {
       const response = await prepared;
       expect(response.ok()).toBe(true);
       expect(await response.text()).toContain('Dein Lernlabor');
-      await settleEntryAnimations(page);
+      await expectPageTransitions(page, transitions);
       await expect(page).toHaveURL('/');
     } finally {
       network.release();
@@ -391,7 +371,7 @@ test.describe('held touch navigation', () => {
     await link.tap();
     await expect(page).toHaveURL(learningPaths.hub);
     await expect(heading).toBeVisible();
-    await settleEntryAnimations(page);
+    await expectPageTransitions(page, transitions, 'forward');
     expect(network.payloads).toHaveLength(preparedRequests);
 
     await page
@@ -399,10 +379,11 @@ test.describe('held touch navigation', () => {
       .getByRole('link', { name: 'ML Teaching – Startseite', exact: true })
       .tap();
     await expect(page).toHaveURL('/');
+    await expectPageTransitions(page, transitions, 'forward', 'back');
     await link.tap();
     await expect(page).toHaveURL(learningPaths.hub);
     await expect(heading).toBeVisible();
-    await settleEntryAnimations(page);
+    await expectPageTransitions(page, transitions, 'forward', 'back', 'forward');
     expect(network.payloads).toHaveLength(preparedRequests);
     expect(network.documents()).toBe(1);
     expect(network.unexpected).toEqual([]);

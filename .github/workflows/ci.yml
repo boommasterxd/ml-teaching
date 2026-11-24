@@ -9,8 +9,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.base.sha }}-${{ github.event.pull_request.head.sha }}-${{ github.sha }}
-  cancel-in-progress: false
+  group: >-
+    ci-${{ github.run_attempt > 1 && format('retry-{0}', github.run_id)
+    || (github.event.action == 'edited' && !github.event.changes.base)
+    && format('metadata-{0}-{1}', github.event.pull_request.number, github.sha)
+    || format('pr-{0}', github.event.pull_request.number) }}
+  cancel-in-progress: ${{ github.run_attempt == 1 && (github.event.action != 'edited' || github.event.changes.base != null) }}
 
 env:
   NEXT_TELEMETRY_DISABLED: 1
@@ -134,7 +138,7 @@ jobs:
       - run: npm run build
       - name: Install the locked Chromium browser and headless shell
         run: npx --no-install playwright install chromium
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --workers=2
 
   CI:
     name: CI

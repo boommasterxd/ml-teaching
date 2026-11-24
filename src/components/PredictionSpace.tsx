@@ -23,30 +23,24 @@ export default function PredictionSpace({
     const node = area.current;
     if (!node) return;
     let visible = false;
-    let disposed = false;
     let sampleAfter = 0;
     const observer = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
     });
     observer.observe(node);
 
-    const unsubscribe = subscribeToFeatures((features) => {
-      const now = performance.now();
-      if (!visible || now < sampleAfter) return;
-      sampleAfter = now + sampleIntervalMs;
-      return (async () => {
-        try {
-          const values = await features.data();
-          if (!disposed && visible && values instanceof Float32Array) {
-            setPosition(model.project(values));
-          }
-        } catch {
-          // An optional visualization read must not count as a classification failure.
-        }
-      })();
+    const unsubscribe = subscribeToFeatures({
+      shouldSample() {
+        const now = performance.now();
+        if (!visible || now < sampleAfter) return false;
+        sampleAfter = now + sampleIntervalMs;
+        return true;
+      },
+      onSample(values) {
+        if (visible) setPosition(model.project(values));
+      },
     });
     return () => {
-      disposed = true;
       unsubscribe();
       observer.disconnect();
     };

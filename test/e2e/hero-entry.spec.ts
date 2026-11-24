@@ -99,7 +99,7 @@ for (const [entry, width, height, colorScheme] of [
     try {
       if (entry === 'reload') await page.reload({ waitUntil: 'commit' });
       else await page.goto('/', { waitUntil: 'commit' });
-      await expect(page.locator('.hero-copy')).toHaveCSS('display', 'flex');
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
       await expect
         .poll(() =>

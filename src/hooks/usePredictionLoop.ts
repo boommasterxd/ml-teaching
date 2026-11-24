@@ -9,19 +9,56 @@
 import { useState, useEffect, useRef, useCallback, useEffectEvent } from 'react';
 import type React from 'react';
 import type * as tf from '@tensorflow/tfjs-core';
-import { loadTensorFlow, retainModel } from '../lib/ml-runtime';
+import { loadTensorFlow, retainBackendWork, retainModel } from '../lib/ml-runtime';
 import { drawFeatureFrame } from '../lib/feature-frame';
 import type { Prediction } from '../types/ml';
 import { PREDICTION } from '../constants';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
 import type { ErrorCategory } from '../types/errors';
 
-type PredictionFeatureSampler = (features: tf.Tensor) => Promise<void> | undefined;
+interface PredictionFeatureSampler {
+  shouldSample: () => boolean;
+  onSample: (values: Float32Array) => void;
+}
+
 export type SubscribePredictionFeatures = (sample: PredictionFeatureSampler) => () => void;
-type PublishPrediction = (
-  prediction: Prediction,
+type PublishPrediction = (prediction: Prediction, features: tf.Tensor) => boolean;
+
+// A retiring workspace can still own a GPU read while the next workspace mounts.
+let featureReadPending = false;
+
+/** On acceptance, the detached read owns the tensor and its backend until it settles. */
+function startFeatureReadback(
+  samplerRef: React.RefObject<PredictionFeatureSampler | null>,
   features: tf.Tensor,
-) => ReturnType<PredictionFeatureSampler>;
+  isCurrent: () => boolean,
+): boolean {
+  const sampler = samplerRef.current;
+  if (featureReadPending || !sampler || !sampler.shouldSample()) return false;
+
+  featureReadPending = true;
+  const releaseBackend = retainBackendWork();
+  void Promise.resolve()
+    .then(() => {
+      if (isCurrent() && samplerRef.current === sampler) return features.data();
+    })
+    .then((values) => {
+      if (isCurrent() && samplerRef.current === sampler && values instanceof Float32Array)
+        sampler.onSample(values);
+    })
+    .finally(() => {
+      try {
+        features.dispose();
+      } finally {
+        featureReadPending = false;
+        releaseBackend?.();
+      }
+    })
+    .catch(() => {
+      // Optional visualization failures do not count as classification errors.
+    });
+  return true;
+}
 
 /**
  * Groups the three ML objects that are always passed together into inference
@@ -73,8 +110,8 @@ async function runInference(
     img = runtime.browser.fromPixels(ctx.canvas);
     features = ctx.mobilenetModel.infer(img);
     const result = await ctx.classifier.predictClass(features);
-    const sample = publish({ label: result.label, confidences: result.confidences }, features);
-    if (sample) await sample;
+    if (publish({ label: result.label, confidences: result.confidences }, features))
+      features = null;
     return true;
   } catch (err) {
     // Design decision: Individual prediction errors are intentionally only
@@ -202,9 +239,9 @@ export function usePredictionLoop(
         const result = await handleInference(
           ctx,
           (value, features) => {
-            if (!isCurrent()) return;
+            if (!isCurrent()) return false;
             setPrediction(value);
-            return featureSampler.current?.(features);
+            return startFeatureReadback(featureSampler, features, isCurrent);
           },
           consecutiveErrorRef,
           isCurrent,

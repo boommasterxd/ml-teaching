@@ -10,7 +10,11 @@ import {
 } from './browser-checks';
 import { routeSyntheticModel } from './synthetic-model';
 import { expectCameraDenialRetainsFocus, observeWorkspaceCamera } from './training-camera';
-import { confirmTrainingWithdrawal, grantModelConsent } from './training-keyboard';
+import {
+  confirmTrainingWithdrawal,
+  expectLoadingWithdrawalFocus,
+  grantModelConsent,
+} from './training-keyboard';
 
 const classAddCases = [
   { input: 'mouse', width: 1280, colorScheme: 'light', reducedMotion: 'no-preference' },
@@ -429,12 +433,8 @@ test('the first model download keeps keyboard focus inside the loading dialog', 
   await page.goto(learningPaths.imagePractice);
   const heading = page.getByRole('heading', { name: 'Bilder sammeln' });
   const held = Promise.withResolvers<void>();
-  await page.route(
-    '**/mobilenet_v2_100_224/classification/2/model.json?tfjs-format=file',
-    async (route) => {
-      await held.promise;
-      await route.fallback();
-    },
+  await page.route(/\/model\.json\?tfjs-format=file$/, (route) =>
+    held.promise.then(() => route.fallback()),
   );
   try {
     await grantModelConsent(page);
@@ -447,12 +447,11 @@ test('the first model download keeps keyboard focus inside the loading dialog', 
     await page.keyboard.press('Tab');
     await expect(loading.getByRole('region')).toBeFocused();
     await page.keyboard.press('Shift+Tab');
-    await expect(loading.getByRole('button', { name: 'Einwilligung widerrufen' })).toBeFocused();
+    await expectLoadingWithdrawalFocus(page, loading);
     await expectAccessible(page);
   } finally {
     held.resolve();
   }
-
   await page.getByRole('button', { name: 'Ohne Kamera fortfahren' }).press('Enter');
   await expect(heading).toBeFocused();
   await expect(page.getByRole('button', { name: 'Bilder auswählen' })).toHaveCount(2);

@@ -10,15 +10,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePredictionLoop } from '@/hooks/usePredictionLoop';
 import { PREDICTION } from '@/constants';
-import { retireModel } from '@/lib/ml-runtime';
+import { acquireWebGlBackend, retireModel } from '@/lib/ml-runtime';
 import type { Classifier, FeatureExtractor } from '@/types/ml-models';
 
-// Mock TF.js — only fromPixels is called inside the prediction loop.
 vi.mock('@tensorflow/tfjs-core', () => ({
   browser: {
     fromPixels: vi.fn(() => ({ dispose: vi.fn() })),
   },
+  findBackendFactory: () => () => ({}),
+  ready: vi.fn().mockResolvedValue(undefined),
+  removeBackend: vi.fn(),
+  setBackend: vi.fn().mockResolvedValue(true),
 }));
+vi.mock('@tensorflow/tfjs-backend-webgl', () => ({}));
 
 // ─── Helper functions ────────────────────────────────────────────────────────
 
@@ -191,6 +195,88 @@ describe('usePredictionLoop', () => {
     expect(result.current.isPredicting).toBe(false);
     expect(classifier.dispose).toHaveBeenCalledOnce();
     expect(model.dispose).toHaveBeenCalledOnce();
+  });
+
+  it('continues classifying with only one pending feature read and discards it after restart', async () => {
+    const session = acquireWebGlBackend();
+    const tf = await session.ready;
+    const removeBackend = vi.mocked(tf.removeBackend).mockClear();
+    const oldRead = Promise.withResolvers<Float32Array>();
+    const first = { data: vi.fn(() => oldRead.promise), dispose: vi.fn() };
+    const nextValues = new Float32Array([2]);
+    const next = { data: vi.fn().mockResolvedValue(nextValues), dispose: vi.fn() };
+    const model = makeFeatureExtractor();
+    vi.mocked(model.infer)
+      .mockReturnValueOnce(first as never)
+      .mockImplementation(() => ({ ...next }) as never);
+    const classifier = makeClassifier();
+    const video = makeVideoRef();
+    const onSample = vi.fn();
+    const { result } = renderHook(() => usePredictionLoop(classifier, model, video, onError));
+    act(() => {
+      result.current.subscribeToFeatures({ shouldSample: () => true, onSample });
+      result.current.startPredicting();
+    });
+    await act(() => fireRaf(1000));
+    await act(() => fireRaf(2000));
+    expect(classifier.predictClass).toHaveBeenCalledTimes(2);
+    expect(first.data).toHaveBeenCalledOnce();
+    expect(first.dispose).not.toHaveBeenCalled();
+    expect(next.data).not.toHaveBeenCalled();
+    expect(next.dispose).toHaveBeenCalledOnce();
+
+    act(() => result.current.stopPredicting());
+    session.release?.();
+    await session.ready;
+    expect(removeBackend).not.toHaveBeenCalled();
+
+    const reopened = acquireWebGlBackend();
+    act(() => result.current.startPredicting());
+    await act(() => fireRaf(3000));
+    expect(classifier.predictClass).toHaveBeenCalledTimes(3);
+    expect(next.data).not.toHaveBeenCalled();
+    await act(async () => oldRead.resolve(new Float32Array([1])));
+    expect(first.dispose).toHaveBeenCalledOnce();
+    expect(onSample).not.toHaveBeenCalled();
+
+    await act(() => fireRaf(4000));
+    expect(onSample).toHaveBeenCalledExactlyOnceWith(nextValues);
+    expect(next.dispose).toHaveBeenCalledTimes(3);
+    expect(onError).not.toHaveBeenCalled();
+    reopened.release?.();
+    await reopened.ready;
+    expect(first.dispose).toHaveBeenCalledBefore(removeBackend);
+    expect(removeBackend).toHaveBeenCalledExactlyOnceWith('webgl');
+  });
+
+  it('disposes a failed visualization read and samples a later classification', async () => {
+    const failed = {
+      data: vi.fn().mockRejectedValue(new Error('Readback failed')),
+      dispose: vi.fn(),
+    };
+    const values = new Float32Array([3]);
+    const next = { data: vi.fn().mockResolvedValue(values), dispose: vi.fn() };
+    const model = makeFeatureExtractor();
+    vi.mocked(model.infer)
+      .mockReturnValueOnce(failed as never)
+      .mockReturnValueOnce(next as never);
+    const classifier = makeClassifier();
+    const video = makeVideoRef();
+    const onSample = vi.fn();
+    const { result } = renderHook(() => usePredictionLoop(classifier, model, video, onError));
+    act(() => {
+      result.current.subscribeToFeatures({ shouldSample: () => true, onSample });
+      result.current.startPredicting();
+    });
+    await act(() => fireRaf(1000));
+    expect(failed.dispose).toHaveBeenCalledOnce();
+    expect(result.current.prediction?.label).toBe('Class 1');
+    expect(onSample).not.toHaveBeenCalled();
+
+    await act(() => fireRaf(2000));
+    expect(next.dispose).toHaveBeenCalledOnce();
+    expect(onSample).toHaveBeenCalledExactlyOnceWith(values);
+    expect(onError).not.toHaveBeenCalled();
   });
 
   it('releases the input tensor and reports repeated feature-extraction failures', async () => {

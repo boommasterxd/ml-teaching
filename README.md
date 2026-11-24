@@ -26,8 +26,10 @@
 
 ## Quick start
 
-Use Node.js 26.x LTS and npm. Training requires a browser with WebGL. Camera access
-requires HTTPS or localhost and separate browser permission.
+Use Node.js 26.x LTS and npm. Training requires a browser with WebGL and access
+to the external MobileNet provider for the initial model download, including
+when running locally with your own image files. Camera access requires HTTPS
+or localhost and separate browser permission.
 
 ```sh
 npm ci --no-audit
@@ -35,8 +37,10 @@ npm run dev
 ```
 
 Open [localhost:3000](http://localhost:3000), choose **Bilderkennung** in the
-learning lab and open the practice page. The required model downloads after you
-consent. You can supply local image files without enabling the camera.
+learning lab and open the practice page. The model downloads after you consent.
+If it fails to load, check your connection and select **Erneut versuchen**.
+See [development checks](docs/development.md#checks) for the model-provider smoke
+test. You can supply local image files without enabling the camera.
 
 ## Data, providers and costs
 

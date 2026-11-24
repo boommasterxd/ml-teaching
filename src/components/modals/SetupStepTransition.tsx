@@ -1,10 +1,11 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion, useIsPresent } from 'motion/react';
+import { AnimatePresence, MotionConfig, motion, useIsPresent } from 'motion/react';
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
-import { useShouldReduceMotion } from '@animate-ui/react/utils/motion';
+import { ReducedMotionContext } from '@animate-ui/react/utils/motion';
 import { flowMotion } from '../animate-ui/components/flow-motion';
+import { useMotionPreference } from '../ui/use-motion-preference';
 import { cn } from '@/lib/utils';
 
 export type SetupStep = 'consent' | 'loading' | 'camera' | 'error' | 'workspace';
@@ -53,15 +54,16 @@ function useStepHeight(step: SetupStep, reduce: boolean) {
 function StepPanel({
   step,
   initial,
-  reduce,
+  motionPreference,
   children,
 }: {
   step: SetupStep;
   initial: boolean;
-  reduce: boolean;
+  motionPreference: ReturnType<typeof useMotionPreference>;
   children: ReactNode;
 }) {
   const present = useIsPresent();
+  const { preference, reduce } = motionPreference;
   const props = {
     className: cn(
       // Size the panel independently of the frame that animates to its height.
@@ -76,17 +78,27 @@ function StepPanel({
       opacity: 0,
       transition: reduce ? { duration: 0 } : flowMotion.exit,
     },
-    children,
   };
   // The SSG panel has only an exit target, so its initial HTML needs no inline style.
-  if (initial) return <motion.div {...props} />;
+  if (initial) return <motion.div {...props}>{children}</motion.div>;
   return (
-    <Effect
-      fade
-      slide={{ direction: 'left', offset: flowMotion.enterOffset }}
-      transition={reduce ? { duration: 0 } : flowMotion.enter}
-      {...props}
-    />
+    // Effect remounts on preference changes. Apply reduction to its targets and keep controls mounted.
+    <ReducedMotionContext value="never">
+      <MotionConfig reducedMotion="never">
+        <Effect
+          fade
+          slide={{ direction: 'left', offset: flowMotion.enterOffset }}
+          initial={reduce ? false : 'hidden'}
+          {...(reduce ? { animate: { x: 0, opacity: 1, transition: { duration: 0 } } } : {})}
+          transition={flowMotion.enter}
+          {...props}
+        >
+          <ReducedMotionContext value={preference}>
+            <MotionConfig reducedMotion={preference}>{children}</MotionConfig>
+          </ReducedMotionContext>
+        </Effect>
+      </MotionConfig>
+    </ReducedMotionContext>
   );
 }
 
@@ -98,16 +110,27 @@ export default function SetupStepTransition({
   children: ReactNode;
 }) {
   const [initialStep] = useState(step);
-  const reduce = useShouldReduceMotion();
-  const { viewport, content } = useStepHeight(step, reduce);
+  const motionPreference = useMotionPreference();
+  const { viewport, content } = useStepHeight(step, motionPreference.reduce);
   return (
-    <div ref={viewport} className="min-w-0 overflow-clip [overflow-clip-margin:4px]">
-      <div ref={content} className="relative">
-        <AnimatePresence initial={false}>
-          <StepPanel key={step} step={step} initial={step === initialStep} reduce={reduce}>
-            {children}
-          </StepPanel>
-        </AnimatePresence>
+    // Expand the clip edge around focus outlines without moving the step controls.
+    <div
+      ref={viewport}
+      className="-m-(--step-focus-space) min-w-0 overflow-clip [--step-focus-space:8px]"
+    >
+      <div ref={content} className="p-(--step-focus-space)">
+        <div className="relative">
+          <AnimatePresence initial={false}>
+            <StepPanel
+              key={step}
+              step={step}
+              initial={step === initialStep}
+              motionPreference={motionPreference}
+            >
+              {children}
+            </StepPanel>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

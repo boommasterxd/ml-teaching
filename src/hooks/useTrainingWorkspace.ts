@@ -243,10 +243,40 @@ function useTrainingData(resources: ReturnType<typeof useTrainingResources>) {
   };
 }
 
+function useUploadNotifications() {
+  const active = useRef(new Set<string>());
+  useEffect(() => {
+    const ids = active.current;
+    return () => {
+      for (const id of ids) toast.dismiss(id);
+      ids.clear();
+    };
+  }, []);
+  return useCallback<CaptureActions['onUploadResult']>((classId, report) => {
+    const id = `training-upload-${classId}`;
+    if (!report) {
+      if (active.current.delete(id)) toast.dismiss(id);
+      return;
+    }
+    const title =
+      report.total === 1
+        ? 'Ein Bild konnte nicht hinzugefügt werden.'
+        : `${report.total} Bilder konnten nicht hinzugefügt werden.`;
+    const details = [...report.details];
+    const remaining = report.total - details.length;
+    if (remaining === 1) details.push('Eine weitere Datei ist fehlgeschlagen.');
+    if (remaining > 1) details.push(`${remaining} weitere Dateien sind fehlgeschlagen.`);
+    if (report.className.trim()) details.unshift(report.className.trim());
+    active.current.add(id);
+    toast.error(title, { id, timeout: 0, description: details.join('\n') });
+  }, []);
+}
+
 export function useTrainingWorkspace(step: TrainingStep, engine: TrainingEngine) {
   const resources = useTrainingResources(step, engine);
   const data = useTrainingData(resources);
   const dialogs = useModalState();
+  const onUploadResult = useUploadNotifications();
   const { removeImages, updateClassName } = data.classes;
   const { modal, closeModal, showRemoveClass, showClearClass, showImagePreview } = dialogs;
   const currentModal = useRef(modal);
@@ -281,6 +311,7 @@ export function useTrainingWorkspace(step: TrainingStep, engine: TrainingEngine)
       onUpdateName: updateClassName,
       onImageClick: showImagePreview,
       onError: notifyError,
+      onUploadResult,
       onUploadStart: beginUpload,
       onUploadEnd: endUpload,
       captureDisabled,
@@ -294,6 +325,7 @@ export function useTrainingWorkspace(step: TrainingStep, engine: TrainingEngine)
       showImagePreview,
       handleRemoveImages,
       updateClassName,
+      onUploadResult,
       beginUpload,
       endUpload,
       captureDisabled,

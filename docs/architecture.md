@@ -35,10 +35,8 @@ links to image training and its explanation. Both screens read the reward
 practice availability from `src/content/learning-areas.ts`.
 `/lernen/bilderkennung` contains the image-learning explanation, demonstrations and
 quizzes; `/lernen/bilderkennung/ausprobieren` owns the existing browser training
-workspace. Training links start setup on the current page. Declining direct-entry
-consent returns to the image explanation; cancelling source-page setup stays on
-the source page. Full withdrawal clears the saved choice and discards the in-memory
-training workspace.
+workspace. See [Browser ML flow](#browser-ml-flow) for training entry, consent
+and resource cleanup.
 `src/lib/learning-paths.ts` centralizes these destinations for navigation.
 `/lernen/q-learning` shows the German title “Q-Learning verstehen”, an availability
 notice for the upcoming introduction and a link back to the learning hub.
@@ -96,20 +94,14 @@ during intent and destination rendering.
 React Flow creates the destination's browser tree
 on actual navigation within the current document. Browser speculation prerenders
 a separate document, which cannot supply that same-document transition. Training
-intent prepares the static route, setup and workspace code. Activation opens setup outside
-the page capture; Flow starts after the dialog exits. Direct entry serves the
-complete inline consent in static HTML.
-Full training withdrawal clears the remembered choice, resets the workspace and
-releases the training resources. The confirmation opens after the preceding
-dialog closes. Its single action returns visitors from the training workspace to the
-homepage. Outside the workspace, the action dismisses the confirmation and keeps the
-current page. A separate training entry starts fresh consent.
+links open setup outside the page capture. Flow starts after the dialog exits.
+
 The Pages Router's static 500 document uses build-rendered Speculation Rules
 covered by its hash CSP. Pointer entry, focus or pointer down selects at most
 one canonical same-origin homepage, learning or legal link. A supporting
-browser can prerender the selected document. The image practice page renders
-its initial consent without starting model downloads or camera access.
-Activation uses normal browser navigation when preparation is unsupported or incomplete.
+browser can prerender the selected document. The image practice page follows the
+[Browser ML flow](#browser-ml-flow) on direct entry. Activation uses normal browser
+navigation when preparation is unsupported or incomplete.
 App Router recovery renders its text and actions immediately and uses the shared
 visibility-gated artwork lifecycle.
 
@@ -123,7 +115,9 @@ and WebGL remain dynamically loaded.
 The homepage and static error pages deliver their headings, actions and reserved
 artwork area in static HTML. When the artwork and document are visible and motion
 is allowed, the client starts loading the shared WebGL renderer after the initial
-paint. Visibility and intent share the module import. The loading indicator appears
+paint. Automatic startup on the native 500 page also waits for document load and,
+where supported, an idle opportunity. Pointer or keyboard intent can start it
+sooner. Visibility and intent share the module import. The loading indicator appears
 after 500 ms of active waiting and disappears on the first draw or when waiting
 ends. A two-second active first-frame deadline switches to the optimized poster
 if the renderer has yet to draw. The resolved component mounts directly on the client
@@ -203,9 +197,12 @@ The [children's consent decision](decisions/children-training-consent.md) record
 how Article 8 GDPR applies to the current private educational offer.
 
 1. Pointer entry, keyboard focus or pointer down on a training link prepares the
-   setup dialog, interactive workspace module and browser resource host in parallel.
-   The direct route renders its initial consent and the inert collection frame in
-   static HTML. The frame and active collection share card and gallery markup.
+   static route, setup dialog, interactive workspace module and browser resource host.
+   Activating the link opens setup on the source page. Cancel keeps that page open.
+   Direct entry renders its initial consent dialog and inert collection frame in
+   static HTML. Hydration makes the same dialog element modal when consent is needed.
+   Base UI powers dialogs opened later. Declining direct-entry consent returns to the
+   image explanation. The frame and active collection share card and gallery markup.
    When both required choices are selected, intent on the consent action prepares
    the workspace module and resource host. The provider mounts the host
    after model consent is granted or valid remembered consent is restored.
@@ -240,6 +237,8 @@ how Article 8 GDPR applies to the current private educational offer.
    collection step and the trained prediction step request the stream while camera
    consent is active and the workspace is unpaused.
    Selected local files and captures are resized for local feature extraction.
+   Import failures use the shared notification viewport and remain available until
+   dismissed, superseded by a completed import, or cleared with the class or workspace.
 4. Training requires complete selected upload batches and no active image work.
    New capture and file selection are disabled during training. It creates a
    replacement KNN classifier from one normalized feature matrix per class. A stale
@@ -250,6 +249,12 @@ how Article 8 GDPR applies to the current private educational offer.
    collection and prediction reuses the stream, while entering training releases
    it. Route cleanup stops camera tracks and disposes classifiers and models.
 
+Full training withdrawal clears the remembered choice, resets the workspace and
+releases training resources. The confirmation opens after the preceding dialog
+closes. Its single action returns visitors from the training workspace to the
+homepage. Outside the workspace, the action dismisses the confirmation and keeps
+the current page. A separate training entry starts fresh consent.
+
 Activating the live view or expressing intent through its Play control can prepare
 a local PCA projection of the normalized training features in interruptible batches.
 Play intent alone never requests a camera stream. The fitted axes and projected
@@ -257,7 +262,9 @@ examples are reused while the ordered class IDs and their image arrays are
 unchanged, including across name edits.
 While visible, the plot samples the same embedding already produced for live
 classification and moves its marker independently from the classifier, which uses
-the full feature vector.
+the full feature vector. At most one optional embedding read can be active. It
+retains the tensor and WebGL backend until it settles, without delaying the next
+classification frame.
 Images, features, class names and classifier state are never sent to an app server.
 Local file preparation shares one global FIFO slot across classes, with at most
 15 waiting files. Before native decoding, bounded file bytes and header dimensions
@@ -273,10 +280,11 @@ A model download is a consent-gated one-time asset load. TanStack Virtual owns
 thumbnail windowing. Empty galleries keep their server-rendered scroll region and
 hint. Pointer entry, keyboard focus and touch intent on the upload and capture
 controls prepare the shared row module. Direct file selection and the first
-collected image also start or reuse the same import. Rendering and measurement of
-real rows begin when image data is available and are released after the last
-image is removed. Capture and image-removal callbacks read current class and dialog
-state without changing identity on each gallery update.
+collected image also start or reuse the same import. With images available,
+virtual row geometry and scroll position stay available. Thumbnail nodes and
+fade effects appear near the page viewport or while focus is in the gallery.
+Capture and image-removal callbacks read current class and dialog state without
+changing identity on each gallery update.
 
 Prediction attaches its video once the stream and active prediction are ready.
 Collection previews attach video while visible or while a capture is active.
@@ -305,12 +313,9 @@ class-name fields in memory, and a shared Zod schema validates them before train
 
 ## Delivery
 
-All nine public routes use SSG and fixed hash CSP, including the initially rendered
-learning workspace and complete initial consent. The initial HTML dialog stays
-inline through hydration and becomes modal on the same element when consent is
-needed. The training provider reads valid remembered consent from document memory
-on same-document reentry. Base UI powers dialogs opened later. Runtime ML remains
-in the browser. The native production server and Vercel adapter own delivery.
+All nine public routes use SSG and fixed hash CSP. The [Browser ML flow](#browser-ml-flow)
+describes the training route's static content and browser-only runtime. The native
+production server and Vercel adapter own delivery.
 Development alone discovers `src/proxy.dev.ts` for nonce-based CSP Report-Only diagnostics with
 no-store delivery, as described in [development](development.md).
 

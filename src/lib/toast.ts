@@ -1,5 +1,7 @@
 interface ToastOptions {
   id?: string;
+  description?: string;
+  timeout?: number;
 }
 
 type ToastType = 'error' | 'success' | 'info';
@@ -13,7 +15,8 @@ export interface Notification extends ToastOptions {
 const empty: readonly Notification[] = [];
 let pending = empty;
 let nextId = 0;
-let receive: ((notification: Notification) => void) | undefined;
+let viewport:
+  { receive: (notification: Notification) => void; close: (id: string) => void } | undefined;
 const listeners = new Set<() => void>();
 
 function setPending(notifications: readonly Notification[]) {
@@ -24,7 +27,7 @@ function setPending(notifications: readonly Notification[]) {
 function publish(type: ToastType, message: string, options: ToastOptions = {}) {
   const id = options.id ?? `notice-${++nextId}`;
   const notification = { ...options, id, message, type };
-  if (receive) receive(notification);
+  if (viewport) viewport.receive(notification);
   else setPending([...pending.filter((item) => item.id !== id), notification].slice(-3));
 }
 
@@ -32,20 +35,22 @@ export const toast = {
   error: (message: string, options?: ToastOptions) => publish('error', message, options),
   success: (message: string, options?: ToastOptions) => publish('success', message, options),
   info: (message: string, options?: ToastOptions) => publish('info', message, options),
+  dismiss: (id: string) => {
+    if (viewport) viewport.close(id);
+    else if (pending.some((item) => item.id === id)) {
+      setPending(pending.filter((item) => item.id !== id));
+    }
+  },
 };
 
-export function connectToasts(receiver: (notification: Notification) => void) {
-  receive = receiver;
+export function connectToasts(connection: NonNullable<typeof viewport>) {
+  viewport = connection;
   const queued = pending;
   setPending(empty);
-  for (const notification of queued) receiver(notification);
+  for (const notification of queued) connection.receive(notification);
   return () => {
-    if (receive === receiver) receive = undefined;
+    if (viewport === connection) viewport = undefined;
   };
-}
-
-export function dismissPendingToast(id: string) {
-  setPending(pending.filter((item) => item.id !== id));
 }
 
 export function subscribeToPendingToasts(listener: () => void) {

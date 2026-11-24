@@ -123,7 +123,7 @@ export default function TrainingWorkspace({
   const { engine } = useTrainingSession();
   const [selection, setSelection] = useState<TrainingStep>('images');
   const workspace = useTrainingWorkspace(selection, engine);
-  const { resources, data, dialogs } = workspace;
+  const { resources, data, dialogs, cardActions } = workspace;
   const canPredict = data.canTrain && resources.hasTrainedModel && !data.training.isTraining;
   const flow = useTrainingNavigation(data.canTrain, canPredict, selection, setSelection);
 
@@ -170,8 +170,14 @@ export default function TrainingWorkspace({
         classes={data.classes.classes}
         closeModal={dialogs.closeModal}
         removeImage={data.classes.removeImage}
-        clearClass={data.classes.clearClass}
-        removeClass={data.classes.removeClass}
+        clearClass={(id) => {
+          cardActions.onUploadResult(id, null);
+          data.classes.clearClass(id);
+        }}
+        removeClass={(id) => {
+          cardActions.onUploadResult(id, null);
+          data.classes.removeClass(id);
+        }}
       />
     </>
   );
