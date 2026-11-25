@@ -40,21 +40,42 @@ function getReturnFocusCandidates(opener: HTMLElement | null) {
     document.getElementById('main-content'),
   ];
 }
-export function useDialogReturnFocus(open: boolean) {
-  const candidates = useRef<(HTMLElement | null)[]>([]);
+export function revealReturnedFocus(ref: RefObject<HTMLElement | null>) {
+  const target = ref.current;
+  ref.current = null;
+  if (!target?.isConnected || document.activeElement !== target) return;
+  const bounds = target.getBoundingClientRect();
+  const headerBottom = document.querySelector('.site-header')?.getBoundingClientRect().bottom ?? 0;
+  if (bounds.top < headerBottom || bounds.bottom > innerHeight) {
+    target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+  }
+}
+
+export function useDialogReturnFocus(
+  open: boolean,
+  resolveReturnFocus?: () => HTMLElement | null,
+  restoredFocus?: RefObject<HTMLElement | null>,
+) {
+  const returnFocus = useRef<{
+    candidates: (HTMLElement | null)[];
+    resolve?: () => HTMLElement | null;
+  } | null>(null);
   const popup = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
-    if (open) {
-      candidates.current = getReturnFocusCandidates(document.activeElement as HTMLElement);
+    if (open && !returnFocus.current) {
+      returnFocus.current = {
+        candidates: getReturnFocusCandidates(document.activeElement as HTMLElement),
+        resolve: resolveReturnFocus,
+      };
     }
-  }, [open]);
+  }, [open, resolveReturnFocus]);
 
   useEffect(() => {
-    if (open || candidates.current.length === 0) return;
+    const target = returnFocus.current;
+    if (open || !target) return;
     const closingPopup = popup.current;
-    const targets = candidates.current;
-    candidates.current = [];
+    returnFocus.current = null;
     let pending = true;
     // Let Base UI release the surrounding accessibility tree before moving focus.
     queueMicrotask(() => {
@@ -67,13 +88,19 @@ export function useDialogReturnFocus(open: boolean) {
         (!nextDialog || nextDialog === closingPopup) &&
         (active === document.body || closingPopup?.contains(active))
       ) {
-        targets.find(canReturnFocus)?.focus({ preventScroll: true });
+        const preferred = target.resolve?.() ?? null;
+        if (canReturnFocus(preferred)) {
+          preferred.focus({ preventScroll: true });
+          if (restoredFocus) restoredFocus.current = preferred;
+        } else {
+          target.candidates.find(canReturnFocus)?.focus({ preventScroll: true });
+        }
       }
     });
     return () => {
       pending = false;
     };
-  }, [open]);
+  }, [open, restoredFocus]);
 
   return popup;
 }

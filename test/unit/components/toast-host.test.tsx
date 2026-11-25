@@ -50,6 +50,46 @@ describe('global notifications', () => {
     expect(notices.queryByText('Ältester Hinweis')).toBeNull();
   });
 
+  it('keeps class import errors beyond the visible limit through fallback and recovery', async () => {
+    const viewportModule =
+      Promise.withResolvers<Awaited<ReturnType<typeof toastLoader.loadToaster>>>();
+    vi.spyOn(toastLoader, 'loadToaster')
+      .mockRejectedValueOnce(new Error('Notification chunk unavailable'))
+      .mockReturnValue(viewportModule.promise);
+    for (const classId of [1, 2, 3, 4, 5]) {
+      toast.error(`Importfehler Klasse ${classId}`, {
+        id: `training-upload-${classId}`,
+        timeout: 0,
+      });
+    }
+
+    render(<ToastHost />);
+    expect(await screen.findAllByRole('alert')).toHaveLength(3);
+    expect(screen.queryByText('Importfehler Klasse 2')).toBeNull();
+    const fallback = screen
+      .getByText('Importfehler Klasse 5')
+      .closest<HTMLElement>('[role="alert"]')!;
+    fireEvent.click(within(fallback).getByRole('button', { name: 'Meldung schließen' }));
+    expect(screen.getByText('Importfehler Klasse 2')).toBeDefined();
+
+    act(() => toast.error('Neuer Importfehler Klasse 4', { id: 'training-upload-4', timeout: 0 }));
+    await act(async () => viewportModule.resolve(await import('@/components/ui/toast')));
+    const viewport = await screen.findByLabelText('Mitteilungen');
+    const notices = within(viewport);
+    const retained = (await notices.findByText('Importfehler Klasse 1')).closest(
+      '[role="dialog"]',
+    )!;
+    expect(retained.hasAttribute('inert')).toBe(true);
+    expect(notices.queryByText('Importfehler Klasse 4')).toBeNull();
+    expect(notices.queryByText('Importfehler Klasse 5')).toBeNull();
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'F6' });
+    expect(document.activeElement).toBe(viewport);
+    const newest = notices.getByRole('dialog', { name: 'Neuer Importfehler Klasse 4' });
+    fireEvent.click(within(newest).getByRole('button', { name: 'Meldung schließen' }));
+    await waitFor(() => expect(retained.hasAttribute('inert')).toBe(false));
+  });
+
   it('shows a readable fallback on chunk failure and recovers on the next notification', async () => {
     const loader = vi.spyOn(toastLoader, 'loadToaster');
     loader.mockRejectedValueOnce(new Error('Notification chunk unavailable'));

@@ -23,7 +23,9 @@ base and a verified simulated merge tree identical to the PR head tree. CI runs
 `test/e2e/security-headers.spec.ts`, `test/e2e/site.spec.ts` and the changed spec,
 deduplicating the selection if the changed file is already a core spec.
 Unfiltered Playwright discovery checks that every selected file contains runnable
-tests. Invalid discovery fails the browser job. Deletions, renames, multiple changes
+tests. Each execution is checked against native discovery; missing, duplicate,
+unexpected or unsuccessful results fail. A non-required test may be skipped only
+with a documented reason. Invalid discovery fails the browser job. Deletions, renames, multiple changes
 and missing eligibility evidence retain the full browser suite.
 
 Selection and the final result gate use `ubuntu-slim`. Selected quality and browser
@@ -96,10 +98,11 @@ existing seven-day inactivity eviction and 10 GB repository limit remain unchang
 
 PR cache configuration, restore and summary steps are optional; their failures
 never suppress `npm ci`. Per-job summaries distinguish exact and compatible
-restores, cold caches, errors and unknown outcomes. After trusted `main` seeding,
+restores, errors and unknown outcomes. A restore without a matched key is unknown,
+even when the action reports success. After trusted `main` seeding,
 the observation target is at least 95% confirmed restores over a rolling 30 days
 of eligible PR install opportunities with unchanged compatible inputs. Exact and
-compatible restores count as successes; cold, error and unknown outcomes remain
+compatible restores count as successes; error and unknown outcomes remain
 in the denominator. Initial and dependency-changing installs are tracked separately.
 This is a target, not a measured hit rate; retention and capacity remain unchanged
 pending workload evidence, without a separate keepalive job or a paid increase.
@@ -185,8 +188,11 @@ that Proxy remain forbidden.
 `npm run build` uses the native Next.js build and its CSP verification hooks.
 `npm run test:e2e` runs the complete browser suite against the native production
 server, including accessibility and keyboard contracts. The local command remains
-unfiltered with `CI=true`. The CI browser job validates the plan and limits
-Playwright to two workers to leave CPU headroom for WebGL and accessibility checks.
+unfiltered with `CI=true`. For the full suite, CI validates the plan and runs two
+Playwright shards on separate runners; the selected-spec plan uses one runner.
+Each runner installs dependencies, builds the application and limits Playwright to
+two workers. Full-suite shards use native discovery, and their results must match
+their discovered tests.
 It installs both lockfile-matched Chromium variants for
 [the browser tests](development.md#checks). Browser launch, host dependency
 validation and the selected suite are blocking. Lighthouse runs locally as

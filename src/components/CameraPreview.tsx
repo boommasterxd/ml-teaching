@@ -227,16 +227,13 @@ export default function CameraPreview(props: CameraPreviewProps) {
   }, [isRecording]);
   return (
     <>
-      <div
-        className={cn(
-          'col-span-full',
-          fileActions &&
-            'grid grid-cols-[minmax(max-content,2.4fr)_repeat(2,minmax(2.75rem,1fr))] gap-2 @md/training-class:grid-cols-[repeat(3,minmax(max-content,1fr))]',
-        )}
-      >
+      <div className={cn('col-span-full', fileActions && 'flex min-w-0 flex-wrap gap-2')}>
         <Button
           variant="outline"
-          className="h-auto min-h-11 px-2 py-1.5 has-[>svg]:px-2"
+          className={cn(
+            'h-auto min-h-11 min-w-0 max-w-full px-2 py-1.5 whitespace-normal has-[>svg]:px-2',
+            fileActions && 'flex-[2.4_1_max-content] @md/training-class:flex-[1_1_max-content]',
+          )}
           onPointerEnter={onCaptureIntent}
           onFocus={onCaptureIntent}
           onPointerDown={onCaptureIntent}
@@ -246,7 +243,8 @@ export default function CameraPreview(props: CameraPreviewProps) {
           }}
           disabled={disabled}
         >
-          <Upload data-icon="inline-start" aria-hidden="true" /> Bilder auswählen
+          <Upload data-icon="inline-start" aria-hidden="true" />
+          <span className="min-w-0 wrap-anywhere">Bilder auswählen</span>
         </Button>
         <Input
           type="file"

@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useState } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { CheckCircle2 } from '@/components/icons/check-circle2';
 import { X } from '@/components/icons/x';
@@ -19,6 +20,8 @@ import {
 
 export function KnnQuizInput({ state }: { state: KnnQuizState }) {
   const example = NETWORK_EXAMPLES[state.round.input];
+  const [draftK, setDraftK] = useState<number | null>(null);
+  const k = draftK ?? state.k;
   return (
     <KnnQuizInputLayout
       image={
@@ -35,12 +38,20 @@ export function KnnQuizInput({ state }: { state: KnnQuizState }) {
         <Slider
           id="knn-neighbor-count"
           aria-labelledby={neighborLabelId}
-          aria-valuetext={`${state.k} ${state.k === 1 ? 'Nachbar' : 'Nachbarn'}`}
+          aria-valuetext={`${k} ${k === 1 ? 'Nachbar' : 'Nachbarn'}`}
           min={KNN_MIN_NEIGHBORS}
           max={KNN_MAX_NEIGHBORS}
           step={1}
-          value={state.k}
-          onValueChange={state.changeK}
+          value={k}
+          onValueChange={setDraftK}
+          onValueCommitted={(value, { event }) => {
+            setDraftK(null);
+            if (event.type !== 'pointercancel' && event.type !== 'touchcancel') {
+              state.changeK(value);
+            }
+          }}
+          onPointerCancel={() => setDraftK(null)}
+          onTouchCancel={() => setDraftK(null)}
           className="min-h-11"
         />
       }

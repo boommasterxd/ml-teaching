@@ -1,4 +1,4 @@
-import { memo, useId, useRef, useState, type ReactNode, type Ref } from 'react';
+import { memo, useId, useState, type ReactNode, type Ref } from 'react';
 import { classColorClasses } from '@/lib/class-colors';
 import type { ProjectedPosition } from '@/lib/feature-projection';
 import { cn } from '@/lib/utils';
@@ -10,7 +10,7 @@ import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuTrigger } from './ui/dropdown-menu-trigger';
 import { Spinner } from './ui/spinner';
 import { Heading } from './ui/typography';
-import { useMenuModule, usePendingMenuDismissal } from './use-menu-module';
+import { useMenuActivationFocus, useMenuModule, usePendingMenuDismissal } from './use-menu-module';
 
 export const plotWidth = 320;
 export const plotHeight = 168;
@@ -120,7 +120,6 @@ function PredictionClassFilter({
   onChange: (ids: ReadonlySet<string>) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const focusOnOpen = useRef(false);
   const { module, failed, prepare } = useMenuModule(loadClassMenu);
   const Menu = module?.default;
   const pending = open && !Menu && !failed;
@@ -129,6 +128,7 @@ function PredictionClassFilter({
     popupSelector: '[data-prediction-class-menu]',
     onDismiss: () => setOpen(false),
   });
+  const { trackMenuActivation, focusFirstHighlightedItem } = useMenuActivationFocus(trigger);
   const visible = markers.filter(({ id }) => !hidden.has(id)).length;
   const summary =
     visible === markers.length ? 'Alle Klassen' : `${visible} von ${markers.length} Klassen`;
@@ -140,19 +140,11 @@ function PredictionClassFilter({
         modal={false}
         open={open}
         onOpenChange={(next, { event }) => {
-          focusOnOpen.current =
-            next &&
-            (event instanceof KeyboardEvent ||
-              (event instanceof MouseEvent && event.type === 'click' && event.detail === 0));
+          trackMenuActivation(next, event);
           setOpen(next);
           if (next) prepare();
         }}
-        onItemHighlighted={(item) => {
-          if (!focusOnOpen.current || !(item instanceof HTMLElement)) return;
-          focusOnOpen.current = false;
-          if (item.ownerDocument.activeElement === trigger.current)
-            item.focus({ preventScroll: true });
-        }}
+        onItemHighlighted={focusFirstHighlightedItem}
       >
         <DropdownMenuTrigger
           ref={trigger}

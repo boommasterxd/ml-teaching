@@ -30,3 +30,25 @@ test('slash redirects preserve path case and leave internal assets to Next.js', 
   const internal = await request.get('/_next/static/', { maxRedirects: 0 });
   expect(internal.headers().location).toBeUndefined();
 });
+
+test('the direct 404 response has strict CSP and cannot be stored', async ({ request }) => {
+  for (const method of ['GET', 'HEAD']) {
+    const response = await request.fetch('/404', { method });
+    expect(response.status()).toBe(404);
+    expect(response.headers()['cache-control']).toBe('no-store');
+    expect(response.headers()['content-type']).toContain('text/html');
+    const policies = response
+      .headersArray()
+      .filter(({ name }) => name.toLowerCase() === 'content-security-policy');
+    expect(policies).toHaveLength(1);
+    expect(policies[0].value).toContain("frame-ancestors 'none'");
+    if (method === 'GET') expect(await response.text()).toContain('Seite nicht gefunden');
+  }
+
+  const page = await request.get(learningPaths.hub);
+  expect(page.headers()['cache-control']).toBe('public, max-age=300, must-revalidate');
+  const payload = await request.get(learningPaths.hub, { headers: { RSC: '1' } });
+  expect(payload.status()).toBe(200);
+  expect(payload.headers()['content-type']).toContain('text/x-component');
+  expect(payload.headers()['cache-control']).not.toContain('max-age=300');
+});

@@ -116,6 +116,8 @@ or JavaScript measurements. Below `md`, Cards stack at their natural heights.
 These text-rich cards use the reading reveal, retaining full text contrast while
 their entry position animates.
 The shared header offers the same navigation on learning, information and home pages.
+With enlarged text or limited width, the header reflows the brand, navigation
+and appearance controls into multiple rows in keyboard order.
 The image explanation opens with the shared example photos on a borderless stage.
 Its Animate UI scan loops while visible, stays within the illustration, and can be
 paused. It respects reduced motion and document visibility. The title, photos and example
@@ -149,6 +151,9 @@ Destructive training confirmations use the Base Nova Alert Dialog with Animate U
 DialogFooter groups the actions and ModalContent sets the product width.
 The consent footer uses equal columns when each action has room for 7.5rem
 and stacks them when the available dialog width is smaller.
+The camera and model-error steps put their three actions in one row when the
+dialog content is wide enough. Otherwise they stack all three actions, keeping
+labels on one line wherever they fit at the current text size.
 DialogTitle places optional 1rem icons beside the first line of the heading.
 Confirmations use muted icons. Model loading, training and the appearance menu use
 the shared shadcn Spinner with its Animate UI glyph. Retryable gallery and example
@@ -171,7 +176,11 @@ workspace use this viewport. Import errors stay available without a timer. Image
 upload and camera retry remain in the workspace, and notifications do not move
 focus on arrival. The provider owns announcements, timers and
 dismissal. If the viewport chunk fails, pending notices use a lightweight alert
-and another notification retries the same module. Field errors, exercise results
+and another notification retries the same module. Both views show at most three
+notices; dismissing a visible notice reveals another pending one. Before the
+viewport connects, the queue bounds persistent notices by the class limit and
+other notices by the visible limit, replacing an older notice of the same lifetime
+when needed. Field errors, exercise results
 and recovery for a blocked step stay with their controls.
 
 The standalone appearance switch and consent checkboxes use Base UI Toggle
@@ -318,7 +327,9 @@ feedback.
 Pointer, keyboard focus and touch intent prepare the three legal items through
 one retryable module. If the menu opens while the module is still loading, a
 visible status with a spinner appears below the trigger. The portal owns focus
-and exit once the menu content mounts.
+and exit once the menu content mounts. Keyboard activation focuses the first
+highlighted item once the deferred content is ready if the trigger still has focus;
+the prediction class menu uses the same behavior.
 The appearance menu loads its popup and choice
 components on intent through a separate entry point from the shared trigger.
 `PageContent` composes Card, CardHeader and CardContent around one semantic article
@@ -521,6 +532,9 @@ The training setup focuses each new step's title and announces loading progress
 in place. On narrow screens the consent text uses the available width inside the
 dialog, which retains vertical scrolling for short viewports and zoom.
 Controlled dialogs restore focus when they close.
+Closing an image preview returns focus to its thumbnail when available, otherwise
+to its gallery or another valid return target. The class actions and legal toolbar
+wrap within the available width at narrow sizes and zoom.
 The gallery, dialog bodies, and menus share Animate UI's Scroll Fade. The fade
 appears at the edges with more content. The scroll containers keep their CSS
 overflow, scrollbars, and keyboard behavior. Only the content viewport fades,
@@ -819,7 +833,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   link's prefetch mode, key or motion owner. The
   [inline navigation feedback decision](decisions/inline-navigation-feedback.md)
   defines spinner placement on the activated link. The static 500 document uses the
-  Speculation Rules described above. Modal focus, entry playback and
+  Speculation Rules described above. A new eligible route activation skips an
+  active forward or backward route capture so the new navigation can proceed.
+  Modal focus, entry playback and
   consent-dependent effects remain tied to App Router navigation.
 - Training step activation uses the native Flow keyframes from route changes
   with a shorter glide and a crossfade for the workspace. Explicit step changes

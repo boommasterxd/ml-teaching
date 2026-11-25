@@ -86,25 +86,45 @@ function trackPreviewSteps(previews: Locator) {
       requestAnimationFrame(sample);
     }
 
+    function readTurn(overlay: Element, activeCount: number) {
+      const example = section.querySelector('[data-current-example="true"]');
+      const output = example?.querySelector('.home-signal-output')?.textContent ?? '';
+      const photo = example?.querySelector<HTMLImageElement>('img.home-example-photo');
+      const src = photo?.getAttribute('src') ?? '';
+      const image = src.includes('dog') ? 'dog' : src.includes('cat') ? 'cat' : '';
+      const panel = panelFor(overlay);
+      const goal = overlay.querySelector('[data-rewarded="true"]');
+      const destination = goal?.querySelector('rect') ? 'treasure' : goal ? 'star' : '';
+      return {
+        step: [panel, output, image, destination, activeCount],
+        readyDog:
+          panel === 'image' &&
+          output === 'Hund' &&
+          image === 'dog' &&
+          photo?.complete &&
+          photo.naturalWidth > 0,
+      };
+    }
+
     const record = () => {
       const active = section.querySelectorAll('[data-preview-active="true"]');
       const overlay = active[0];
+      if (overlay !== previous && previous) trackExit(previous);
+      if (!overlay) {
+        previous = undefined;
+        return;
+      }
+      const { step, readyDog } = readTurn(overlay, active.length);
+      // A lone visible card can play while the dog image is still being prepared.
+      if (!steps.length && !readyDog) return;
+
       const started = overlay !== previous;
-      if (started && previous) trackExit(previous);
       previous = overlay;
-      if (!overlay) return;
       const exit = exits.at(-1);
       if (started && exit && exit.removedAt !== null) {
         exit.pauseMs = performance.now() - exit.removedAt;
       }
 
-      const example = section.querySelector('[data-current-example="true"]');
-      const output = example?.querySelector('.home-signal-output')?.textContent ?? '';
-      const src = example?.querySelector('.home-example-photo')?.getAttribute('src') ?? '';
-      const image = src.includes('dog') ? 'dog' : src.includes('cat') ? 'cat' : '';
-      const goal = overlay.querySelector('[data-rewarded="true"]');
-      const destination = goal?.querySelector('rect') ? 'treasure' : goal ? 'star' : '';
-      const step = [panelFor(overlay), output, image, destination, active.length];
       if (started || step.some((value, index) => value !== steps.at(-1)?.[index])) steps.push(step);
     };
     const observer = new MutationObserver(record);
@@ -114,6 +134,7 @@ function trackPreviewSteps(previews: Locator) {
       characterData: true,
       attributeFilter: ['src', 'data-current-example', 'data-preview-active', 'data-rewarded'],
     });
+    section.addEventListener('load', record, true);
     record();
     return {
       steps,
@@ -121,6 +142,7 @@ function trackPreviewSteps(previews: Locator) {
       disconnect() {
         observing = false;
         observer.disconnect();
+        section.removeEventListener('load', record, true);
       },
     };
   });
@@ -172,7 +194,6 @@ test('desktop home previews alternate with a pause after each fade and without m
   const hero = page.getByRole('region', { name: 'Du probierst. Deine KI lernt.', exact: true });
   await hero.getByRole('link', { name: 'Mini-Experimente', exact: true }).focus();
   const previews = page.getByRole('region', { name: 'Zwei Arten, wie KI lernt', exact: true });
-  const playback = await trackPreviewSteps(previews);
   const scrollPositions = await page.evaluateHandle(() => {
     const positions = new Set<number>();
     function record() {
@@ -200,6 +221,10 @@ test('desktop home previews alternate with a pause after each fade and without m
   await expect(rewardAction).toHaveText('Coming Soon');
   await expect(images.getByRole('img')).toBeInViewport({ ratio: 1 });
   await expect(rewards.getByRole('img')).toBeInViewport({ ratio: 1 });
+  const playback = await trackPreviewSteps(previews);
+  await expect
+    .poll(() => playback.evaluate(({ steps }) => steps.length), { timeout: 22_000 })
+    .toBeGreaterThan(0);
   await expectAgentJourney(rewards.getByRole('img'), 'star');
   await expectAgentJourney(rewards.getByRole('img'), 'treasure');
   await expect

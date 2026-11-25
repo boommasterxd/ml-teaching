@@ -155,6 +155,22 @@
   .document-title {
     font-size: clamp(1.5rem, 7vw, 2rem);
   }
+  .legal-sidebar {
+    flex-wrap: wrap;
+  }
+  .legal-mobile-navigation {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .legal-mobile-navigation > [data-slot='button'] {
+    width: 100%;
+    height: auto;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .legal-mobile-navigation > :is([role='status'], [role='alert']) {
+    max-width: calc(100vw - 2 * clamp(0.85rem, 3vw, 2rem));
+  }
 }
 @variant lg {
   .legal-layout {

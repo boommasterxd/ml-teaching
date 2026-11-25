@@ -8,7 +8,7 @@ export function SetupDialogFixture(props: Partial<ComponentProps<typeof Training
       initialContent
       step="consent"
       loadingText=""
-      onWithdrawLoading={vi.fn()}
+      onWithdrawConsent={vi.fn()}
       onConfirmConsent={vi.fn()}
       onDeclineConsent={vi.fn()}
       onConfirmCamera={vi.fn()}

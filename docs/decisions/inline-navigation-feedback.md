@@ -25,4 +25,6 @@ when navigation completes quickly. Training setup uses the same icon slot
 with its own pending state. Links from the static 500 document show the same
 feedback after activation while the [native recovery flow](../architecture.md)
 continues. Fragment links, browser history traversal and external destinations
-follow their own browser behavior.
+follow their own browser behavior. Activating a header menu destination whose
+complete URL is already current closes the menu and restores focus to its trigger.
+Different queries or fragments and modified activations retain native navigation.
