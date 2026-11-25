@@ -1,17 +1,16 @@
 'use client';
 
-import { useCallback, useRef, type ComponentProps, type ReactNode, type RefObject } from 'react';
+import { useCallback, useRef, type ComponentProps, type RefObject } from 'react';
 import { NavigationMenu as Primitive } from '@animate-ui/react/primitives/base-ui/navigation-menu';
-import { Button as BaseButton } from '@base-ui/react/button';
 import { NavigationMenu as BaseNavigationMenu } from '@base-ui/react/navigation-menu';
 import { cn } from '@/lib/utils';
-import { ChevronDown } from '../icons/chevron-down';
+import {
+  NavigationMenuTriggerLabel,
+  navigationMenuListStyle,
+  navigationMenuTriggerStyle,
+} from './navigation-menu-trigger';
 import { MenuHighlight } from './menu-highlight';
 import { ScrollFadeViewport } from './scroll-fade-viewport';
-
-export const navigationMenuTriggerStyle =
-  'control-focus header-menu-trigger group relative inline-flex min-h-8 w-max items-center justify-center rounded-full px-2.5 py-1 text-sm font-medium aria-[current=page]:font-semibold';
-export const navigationMenuListStyle = 'group flex list-none items-center justify-center gap-1';
 
 export function NavigationMenu({
   className,
@@ -57,7 +56,10 @@ function HeaderMenuPopup({
   root: RefObject<HTMLDivElement | null>;
   mobile?: boolean;
 }) {
-  const mobileAnchor = useCallback(() => root.current?.parentElement ?? null, [root]);
+  const mobileAnchor = useCallback(
+    () => root.current?.closest('.site-header-inner') ?? null,
+    [root],
+  );
   return (
     <Primitive.Portal container={root}>
       <Primitive.Positioner
@@ -104,43 +106,6 @@ export function firstNavigationMenuLink(trigger: HTMLButtonElement) {
   return trigger.ownerDocument
     .getElementById(id)
     ?.querySelector<HTMLAnchorElement>('[data-slot="navigation-menu-content"][data-open] a[href]');
-}
-
-function NavigationMenuTriggerLabel({
-  children,
-  open = false,
-}: {
-  children: ReactNode;
-  open?: boolean;
-}) {
-  return (
-    <>
-      {children}
-      <ChevronDown
-        size={28}
-        animate={open}
-        className="ml-1 size-3 group-data-popup-open:rotate-180"
-        aria-hidden="true"
-      />
-    </>
-  );
-}
-
-/** The initial trigger can render before a breakpoint-specific menu root is mounted. */
-export function InitialNavigationMenuTrigger({
-  children,
-  ...props
-}: ComponentProps<typeof BaseButton>) {
-  return (
-    <BaseButton
-      type="button"
-      aria-expanded={false}
-      className={navigationMenuTriggerStyle}
-      {...props}
-    >
-      <NavigationMenuTriggerLabel>{children}</NavigationMenuTriggerLabel>
-    </BaseButton>
-  );
 }
 
 export function NavigationMenuTrigger({ children, onKeyDown, ...props }: Primitive.Trigger.Props) {

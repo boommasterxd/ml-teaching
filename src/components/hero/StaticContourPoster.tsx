@@ -42,7 +42,7 @@ export default function StaticContourPoster({
         width={sources.mobile.width}
         height={sources.mobile.height}
         fetchPriority="high"
-        decoding="sync"
+        decoding="async"
         alt=""
       />
     </picture>

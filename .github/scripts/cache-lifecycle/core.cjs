@@ -12,6 +12,10 @@ const {
   text,
 } = require("./planner.cjs");
 const { recoverReceipts } = require("./recovery.cjs");
+const deletionLimit = 100;
+const mainBatchLimit = 20;
+const pullRequestLimit = 100;
+const codeqlProofLimit = 25;
 /** @typedef {import('./types').Options} Options */
 /** @typedef {import('./types').Api} Api */
 /** @typedef {import('./types').Policy} Policy */
@@ -77,10 +81,7 @@ function context(options, rules, base) {
     options.repository !== rules.repository
   )
     throw new Error("Repository/default-branch identity mismatch");
-  const ref = object(
-    options.api.read(`${base}/git/ref/heads/${encodeURIComponent(rules.defaultBranch)}`),
-  );
-  const head = text(object(ref.object).sha);
+  const head = currentHead(options, base, rules);
   if (options.checkoutSha !== head)
     throw new Error("Cleanup must execute the current trusted default-branch checkout");
   if (["push", "workflow_dispatch"].includes(options.eventName)) {
@@ -141,122 +142,235 @@ function pullRequest(api, base, number) {
   return { state: value.state, sha: text(head.sha), branch: text(head.ref) };
 }
 
-/** @param {Cache[]} caches @param {Api} api @param {string} base @param {import('./types').Run[]} active */
-function closedPullRequests(caches, api, base, active) {
-  /** @type {Candidate[]} */
-  const result = [];
-  const numbers = new Set(
-    caches.map((c) => /^refs\/pull\/(\d+)\/(?:merge|head)$/.exec(c.ref)?.[1]).filter(Boolean),
-  );
-  if (numbers.size > 100)
-    throw new Error("Too many PR identities to verify in one bounded cleanup");
-  for (const raw of numbers) {
-    const number = Number(raw);
-    const pr = pullRequest(api, base, number);
-    const busy = active.some(
-      (r) =>
-        r.head_sha === pr.sha ||
-        r.head_branch === pr.branch ||
-        r.pull_requests?.some((q) => q.number === number),
+/** @param {string} ref */
+function pullRequestNumber(ref) {
+  const match = /^refs\/pull\/(\d+)\/(?:merge|head)$/.exec(ref);
+  return match ? identifier(Number(match[1])) : undefined;
+}
+
+/** @param {number[]} ids @param {number} limit @param {number} runNumber */
+function verificationWindow(ids, limit, runNumber) {
+  if (ids.length <= limit) return ids;
+  const start = ((runNumber - 1) % Math.ceil(ids.length / limit)) * limit;
+  return ids.slice(start, start + limit);
+}
+
+/** @param {Options} options @param {string} base @param {import('./types').Run[]} active */
+function closedWithoutActiveRun(options, base, active) {
+  /** @param {number} number */
+  return (number) => {
+    const pr = pullRequest(options.api, base, number);
+    return (
+      pr.state === "closed" &&
+      !active.some(
+        (r) =>
+          r.head_sha === pr.sha ||
+          r.head_branch === pr.branch ||
+          r.pull_requests?.some((q) => q.number === number),
+      )
     );
-    if (pr.state !== "closed" || busy) continue;
-    for (const cache of caches.filter((c) =>
-      [`refs/pull/${number}/merge`, `refs/pull/${number}/head`].includes(c.ref),
-    )) {
-      result.push({ cache, reason: "closed PR without active runs" });
-    }
-  }
-  return result;
+  };
+}
+
+/** @param {Cache[]} caches @param {Options} options @param {string} base @param {import('./types').Run[]} active */
+function planPullRequests(caches, options, base, active) {
+  const numbers = caches.map((c) => pullRequestNumber(c.ref));
+  const ids = [...new Set(numbers.filter((number) => number !== undefined))].sort((a, b) => a - b);
+  const current =
+    options.eventName === "pull_request_target"
+      ? identifier(object(options.event.pull_request).number)
+      : undefined;
+  const prioritize = current !== undefined && ids.includes(current);
+  const selected = new Set(
+    verificationWindow(
+      prioritize ? ids.filter((id) => id !== current) : ids,
+      prioritize ? pullRequestLimit - 1 : pullRequestLimit,
+      options.runNumber,
+    ),
+  );
+  if (prioritize) selected.add(current);
+  const eligible = new Set([...selected].filter(closedWithoutActiveRun(options, base, active)));
+  const candidates = caches.flatMap((cache, index) => {
+    const number = numbers[index];
+    return number !== undefined && eligible.has(number)
+      ? [{ cache, reason: "closed PR without active runs" }]
+      : [];
+  });
+  return { candidates, unverified: ids.length - selected.size };
 }
 
 /** @param {Cache[]} caches @param {Options} options @param {string} head @param {string} base */
-function codeqlProofs(caches, options, head, base) {
-  const ids = new Set(
-    caches
-      .filter((c) => c.ref === `refs/heads/${options.policy.defaultBranch}` && c.size_in_bytes > 0)
-      .map(codeqlIdentity)
-      .filter((c) => c?.sha === head)
-      .map((c) => c?.runId),
-  );
-  if (ids.size > 25) throw new Error("Too many CodeQL proofs");
-  return [...ids].map((id) => run(options.api.read(`${base}/actions/runs/${identifier(id)}`)));
+function planCodeql(caches, options, head, base) {
+  const ids = [
+    ...new Set(
+      caches
+        .filter(
+          (c) => c.ref === `refs/heads/${options.policy.defaultBranch}` && c.size_in_bytes > 0,
+        )
+        .map(codeqlIdentity)
+        .filter((c) => c?.sha === head)
+        .map((c) => identifier(c?.runId)),
+    ),
+  ].sort((a, b) => b - a);
+  const selected = verificationWindow(ids, codeqlProofLimit, options.runNumber);
+  const proofs = selected.map((id) => run(options.api.read(`${base}/actions/runs/${id}`)));
+  // An in-window proof can retire only older caches; any newer unchecked snapshot stays.
+  return {
+    candidates: codeql(caches, proofs, options.policy, head),
+    unverified: ids.length - selected.length,
+  };
 }
 
-/** @param {Candidate} candidate @param {Cache[]} fresh @param {Options} options @param {string} base @param {import('./types').Run[]} running */
-function stillValid(candidate, fresh, options, base, running) {
-  const current = fresh.find((c) => c.id === candidate.cache.id);
-  if (
-    !current ||
-    current.key !== candidate.cache.key ||
-    current.ref !== candidate.cache.ref ||
-    current.version !== candidate.cache.version ||
-    current.last_accessed_at !== candidate.cache.last_accessed_at
-  )
-    return false;
-  if (candidate.replacement) {
-    const replacement = fresh.find((c) => c.id === candidate.replacement?.id);
-    return Boolean(
-      replacement &&
-      replacement.key === candidate.replacement.key &&
-      replacement.version === candidate.replacement.version &&
-      replacement.size_in_bytes > 0,
-    );
-  }
-  const number = Number(/^refs\/pull\/(\d+)\//.exec(current.ref)?.[1]);
-  const pr = pullRequest(options.api, base, number);
+/** @param {Cache} expected @param {Cache[]} fresh */
+function unchangedCache(expected, fresh) {
+  const current = fresh.find(({ id }) => id === expected.id);
   return (
-    pr.state === "closed" &&
-    !running.some(
-      (r) =>
-        r.head_sha === pr.sha ||
-        r.head_branch === pr.branch ||
-        r.pull_requests?.some((q) => q.number === number),
-    )
+    current?.key === expected.key &&
+    current.ref === expected.ref &&
+    current.version === expected.version &&
+    current.last_accessed_at === expected.last_accessed_at
   );
+}
+
+/** @param {Candidate[]} candidates @param {Cache[]} fresh @param {Options} options @param {string} base @param {import('./types').Run[]} running */
+function selectPullRequestBatch(candidates, fresh, options, base, running) {
+  const recheck = closedWithoutActiveRun(options, base, running);
+  let remainingPrChecks = pullRequestLimit;
+  /** @type {Candidate[]} */
+  const batch = [];
+  for (const candidate of candidates) {
+    const number = pullRequestNumber(candidate.cache.ref);
+    if (number === undefined || !unchangedCache(candidate.cache, fresh)) continue;
+    remainingPrChecks -= 1;
+    if (recheck(number)) batch.push(candidate);
+    if (remainingPrChecks === 0 || batch.length === deletionLimit) break;
+  }
+  return batch;
+}
+
+/** @param {Options} options @param {string} base @param {Policy} rules */
+function currentHead(options, base, rules) {
+  const ref = object(
+    options.api.read(`${base}/git/ref/heads/${encodeURIComponent(rules.defaultBranch)}`),
+  );
+  return text(object(ref.object).sha);
+}
+
+/** @param {Options} options @param {string} base @param {{head:string, producer:boolean}} source */
+function mainReceipts(options, base, { head, producer }) {
+  if (!producer) return recoverReceipts(options, options.policy, base, head);
+  producerContext(options, options.policy, base, head);
+  return options.replacements;
+}
+
+/** @param {Candidate[]} batch @param {Cache[]} fresh @param {Options} options @param {string} base @param {{head:string, producer:boolean}} source */
+function recheckReplacements(batch, fresh, options, base, source) {
+  const codeqlIds = new Set(
+    batch.flatMap(({ replacement }) => {
+      const identity = replacement && codeqlIdentity(replacement);
+      return identity ? [identifier(identity.runId)] : [];
+    }),
+  );
+  const proofs = [...codeqlIds].map((id) => run(options.api.read(`${base}/actions/runs/${id}`)));
+  const verified = codeql(fresh, proofs, options.policy, source.head);
+  if (batch.some(({ replacement }) => replacement && !codeqlIdentity(replacement))) {
+    verified.push(...replacements(fresh, mainReceipts(options, base, source), options.policy));
+  }
+  return batch.filter(
+    ({ cache, replacement }) =>
+      replacement &&
+      verified.some(
+        (item) =>
+          item.cache.id === cache.id &&
+          item.replacement?.id === replacement.id &&
+          item.replacement.key === replacement.key &&
+          item.replacement.ref === replacement.ref &&
+          item.replacement.version === replacement.version,
+      ),
+  );
+}
+
+/** @param {Candidate[]} batch @param {Options} options */
+function processBatch(batch, options) {
+  return batch.map(({ cache, reason }) => {
+    if (!options.dryRun) options.api.remove(cache.id);
+    return { id: cache.id, bytes: cache.size_in_bytes, reason };
+  });
+}
+
+/** @param {Candidate[]} candidates @param {number} capacity @param {Options} options @param {string} base @param {{head:string, producer:boolean}} source */
+function processMainBatches(candidates, capacity, options, base, source) {
+  let pending = candidates;
+  const deleted = [];
+  let activeCount;
+  for (let budget = capacity; budget > 0 && pending.length; budget -= mainBatchLimit) {
+    const fresh = inventory(options.api, base);
+    pending = pending.filter(({ cache }) => unchangedCache(cache, fresh));
+    const batch = pending.slice(0, Math.min(mainBatchLimit, budget));
+    if (!batch.length) break;
+    const verified = recheckReplacements(batch, fresh, options, base, source);
+    const running = activeRuns(options.api, base, options.runId);
+    activeCount = running.length;
+    if (
+      blocksMainRotation(options, base, running) ||
+      currentHead(options, base, options.policy) !== source.head
+    )
+      break;
+    deleted.push(...processBatch(verified, options));
+    pending = pending.slice(batch.length);
+  }
+  return { deleted, activeCount };
 }
 
 /** @param {Options} options */
 function runLifecycle(options) {
+  identifier(options.runNumber);
   const rules = policy(options.policy);
   const base = `repos/${rules.repository}`;
-  const { head, producer } = context(options, rules, base);
+  const source = context(options, rules, base);
+  const { head, producer } = source;
   const caches = inventory(options.api, base);
   const active = activeRuns(options.api, base, options.runId);
-  let candidates = closedPullRequests(caches, options.api, base, active);
+  const prs = planPullRequests(caches, options, base, active);
   const receipts = producer ? options.replacements : recoverReceipts(options, rules, base, head);
-  candidates.push(...replacements(caches, receipts, rules));
-  candidates.push(...codeql(caches, codeqlProofs(caches, options, head, base), rules, head));
+  const codeql = planCodeql(caches, options, head, base);
+  /** @type {Candidate[]} */
+  const candidates = [
+    ...prs.candidates,
+    ...replacements(caches, receipts, rules),
+    ...codeql.candidates,
+  ];
   const unique = [...new Map(candidates.map((c) => [c.cache.id, c])).values()];
-  if (unique.length > 100) throw new Error("Cleanup deletion budget exceeded; no caches deleted");
   const fresh = inventory(options.api, base);
-  const latest = object(
-    options.api.read(`${base}/git/ref/heads/${encodeURIComponent(rules.defaultBranch)}`),
-  );
-  if (object(latest.object).sha !== head)
+  if (currentHead(options, base, rules) !== head)
     throw new Error("Default branch changed during planning; no caches deleted");
   const running = activeRuns(options.api, base, options.runId);
-  const mainRotationBlocked =
-    unique.some((candidate) => candidate.replacement) && blocksMainRotation(options, base, running);
-  const eligible = unique.filter(
-    (c) => (!c.replacement || !mainRotationBlocked) && stillValid(c, fresh, options, base, running),
+  const prBatch = selectPullRequestBatch(
+    unique.filter((candidate) => !candidate.replacement),
+    fresh,
+    options,
+    base,
+    running,
   );
-  const deleted = [];
-  for (const candidate of eligible) {
-    if (!options.dryRun) options.api.remove(candidate.cache.id);
-    deleted.push({
-      id: candidate.cache.id,
-      bytes: candidate.cache.size_in_bytes,
-      reason: candidate.reason,
-    });
-  }
+  const deleted = processBatch(prBatch, options);
+  const main = processMainBatches(
+    unique.filter((candidate) => candidate.replacement),
+    deletionLimit - deleted.length,
+    options,
+    base,
+    source,
+  );
+  deleted.push(...main.deleted);
   const remaining = inventory(options.api, base);
   if (!options.dryRun && deleted.some((c) => remaining.some((r) => r.id === c.id)))
     throw new Error("Cache deletion readback failed");
   return {
     dryRun: Boolean(options.dryRun),
     deleted,
-    deferred: unique.length - eligible.length,
-    activeRuns: running.length,
+    deferred: unique.length - deleted.length,
+    unverifiedPullRequests: prs.unverified,
+    unverifiedCodeqlRuns: codeql.unverified,
+    activeRuns: main.activeCount ?? running.length,
     remainingCount: remaining.length,
     remainingBytes: remaining.reduce((sum, c) => sum + c.size_in_bytes, 0),
   };

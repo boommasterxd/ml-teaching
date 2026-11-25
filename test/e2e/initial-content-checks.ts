@@ -25,9 +25,11 @@ export async function expectReadableLink(link: Locator, href: string) {
 async function expectHomeLearningAreas(main: Locator) {
   const learningAreas = main.getByRole('region', { name: 'Zwei Arten, wie KI lernt', exact: true });
   await expectReadable(learningAreas.getByRole('heading', { name: 'Zwei Arten, wie KI lernt' }));
+  await expect(learningAreas).toHaveAttribute('id', 'lernbereiche');
 
   const images = learningAreas.getByRole('region', { name: 'Bilderkennung', exact: true });
   await expectReadable(images.getByRole('heading', { name: 'Bilderkennung', exact: true }));
+  await expectReadable(images.getByRole('img', { name: 'Bilderkennung anhand von Bildmerkmalen' }));
   const practice = images.getByRole('link', { name: 'Eigenes Bildmodell trainieren', exact: true });
   await expectReadableLink(practice, learningPaths.imagePractice);
   await expect(practice).toBeEnabled();
@@ -39,6 +41,7 @@ async function expectHomeLearningAreas(main: Locator) {
   await expectReadable(
     rewards.getByRole('heading', { name: 'Lernen durch Belohnung', exact: true }),
   );
+  await expectReadable(rewards.getByRole('img', { name: /^Ein Agent, zwei mögliche Ziele/ }));
   const pending = rewards.getByRole('button', { name: 'Coming Soon', exact: true });
   await expectReadable(pending);
   await expect(pending).toBeDisabled();
@@ -56,6 +59,10 @@ async function expectHomeContent(main: Locator) {
   await expectReadableLink(
     main.getByRole('link', { name: 'Lernlabor', exact: true }),
     learningPaths.hub,
+  );
+  await expectReadableLink(
+    main.getByRole('link', { name: 'Mini-Experimente', exact: true }),
+    '#lernbereiche',
   );
   await expectSectionText(
     main,

@@ -44,13 +44,15 @@ describe('header navigation', () => {
   it('opens on activation and transfers keyboard focus between the trigger and its links', async () => {
     desktop = true;
     await renderNavigation();
-    const trigger = screen.getByRole('button', { name: 'Lernlabor' });
-    act(() => trigger.focus());
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(document.activeElement).toBe(trigger);
-    open(trigger);
+    const initialTrigger = screen.getByRole('button', { name: 'Lernlabor' });
+    act(() => initialTrigger.focus());
+    expect(initialTrigger.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(initialTrigger);
+    open(initialTrigger);
 
     const overview = await screen.findByRole('link', { name: 'Lernlabor-Übersicht' });
+    const trigger = screen.getByRole('button', { name: 'Lernlabor' });
+    expect(document.activeElement).toBe(trigger);
     fireEvent.keyDown(trigger, { key: 'ArrowDown' });
     expect(overview.getAttribute('aria-current')).toBe('page');
     expect(document.activeElement).toBe(overview);
@@ -65,9 +67,9 @@ describe('header navigation', () => {
   it('closes an open menu when the current page changes', async () => {
     const { default: SiteNavigation } = await import('@/components/SiteNavigation');
     const { rerender } = render(<SiteNavigation />);
-    const trigger = screen.getByRole('button', { name: 'Menü' });
-    open(trigger);
+    open(screen.getByRole('button', { name: 'Menü' }));
     expect(await screen.findByRole('link', { name: 'Impressum' })).toBeTruthy();
+    const trigger = screen.getByRole('button', { name: 'Menü' });
     route.pathname = '/impressum';
     rerender(<SiteNavigation />);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');

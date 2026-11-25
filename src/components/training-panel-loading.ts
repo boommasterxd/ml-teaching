@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import { createRetryableLoader } from '@/lib/create-retryable-loader';
 
 export type TrainingStep = 'images' | 'training' | 'prediction';
 type DeferredStep = Exclude<TrainingStep, 'images'>;
@@ -8,20 +9,11 @@ export interface TrainingPanelModules {
   prediction?: typeof import('./PredictionPanel').default;
 }
 
-function shareModule(load: () => Promise<TrainingPanelModules>) {
-  let pending: Promise<TrainingPanelModules> | undefined;
-  return () => {
-    pending ??= load().catch((error: unknown) => {
-      pending = undefined;
-      throw error;
-    });
-    return pending;
-  };
-}
-
 const loadPanel = {
-  training: shareModule(async () => ({ training: (await import('./TrainingControls')).default })),
-  prediction: shareModule(async () => ({
+  training: createRetryableLoader<TrainingPanelModules>(async () => ({
+    training: (await import('./TrainingControls')).default,
+  })),
+  prediction: createRetryableLoader<TrainingPanelModules>(async () => ({
     prediction: (await import('./PredictionPanel')).default,
   })),
 };

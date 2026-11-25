@@ -28,7 +28,7 @@
   font-size: 25px;
 }
 
-@media (width < 40rem) {
+@variant max-sm {
   .home-experiment-art .home-signal-label {
     font-size: 22px;
   }

@@ -113,8 +113,9 @@ navigation when preparation is unsupported or incomplete.
 The homepage waits for its static main content to be parsed before the browser
 can capture the incoming view of the document transition. This render hint
 applies when motion is allowed and does not wait for hydration or artwork.
-App Router recovery renders its text and actions immediately and uses the shared
-visibility-gated artwork lifecycle.
+App Router recovery renders its text, actions and static poster immediately.
+It loads the optional animated artwork when the recovery screen mounts, then
+uses the shared visibility-gated artwork lifecycle.
 
 The first stylesheet includes the small shared surface rules and homepage layout
 rules. Bundling them together avoids separate render-blocking requests on the

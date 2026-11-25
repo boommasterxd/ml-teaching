@@ -2,19 +2,11 @@
 
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type { LegalPage } from '@/content/site-navigation';
+import { createRetryableLoader } from '@/lib/create-retryable-loader';
 import { isLargeViewport, subscribeToLargeViewport } from '@/lib/media-queries';
 import { useMenuModule } from './use-menu-module';
 
-let pending: Promise<typeof import('./LegalNavigationLinks')> | undefined;
-
-function loadDesktopLinks() {
-  pending ??= import('./LegalNavigationLinks').catch((error: unknown) => {
-    pending = undefined;
-    throw error;
-  });
-  return pending;
-}
-
+const loadDesktopLinks = createRetryableLoader(() => import('./LegalNavigationLinks'));
 const staticViewport = () => false;
 
 /** Keep the server links usable until the visible desktop list can be enhanced. */

@@ -5,9 +5,10 @@
 ML Teaching uses red primary actions and rounded glass surfaces. Light mode pairs
 dark text with an off-white background and white panels. Dark mode uses light
 text, a black background and smoked glass panels. Local Geist defines both headings
-and interface text. `src/lib/fonts.ts` preloads its Latin WOFF2 asset through
-`next/font/local`, without a remote font request. An optional display policy
-keeps the fallback readable and prevents a late font swap during a slow visit.
+and interface text. `src/lib/fonts.ts` serves its Latin WOFF2 asset through
+`next/font/local`. The browser discovers the font from the stylesheet. The
+`font-display: optional` policy keeps the fallback readable when the font arrives
+too late for the initial paint.
 Shared colors, type and shell styles live in `src/site-foundation.css`. The App
 Router's `src/index.css` adds the content styles. The native 500 stylesheet
 `src/pages-error.css` scopes Tailwind detection to its error scene and shared shell,
@@ -330,8 +331,7 @@ visible status with a spinner appears below the trigger. The portal owns focus
 and exit once the menu content mounts. Keyboard activation focuses the first
 highlighted item once the deferred content is ready if the trigger still has focus;
 the prediction class menu uses the same behavior.
-The appearance menu loads its popup and choice
-components on intent through a separate entry point from the shared trigger.
+The appearance menu and the main navigation use the shared header menu module.
 `PageContent` composes Card, CardHeader and CardContent around one semantic article
 and one h1. The reading column has a bounded width. Documents use the neutral
 Card. Privacy-policy paragraphs and lists are left-aligned with automatic German
@@ -418,17 +418,19 @@ poster selection share the same 48rem source in `src/lib/media-queries.ts`.
 The shared navigation control uses a Base
 UI button for the initial trigger. It shares its label, chevron and styles with
 the trigger inside the interactive menu. Once the browser resolves the viewport,
-it mounts just the matching navigation tree. Focus carries over from the initial triggers.
-Crossing the breakpoint closes the old panel.
+it keeps just the matching trigger list. Both menus share one retryable module.
+The header prepares it after hydration on devices with a coarse pointer. Pointer
+and focus intent also prepare it, including a tap before preparation completes.
+The navigation hands off the active trigger, pending opening and keyboard focus
+when the module arrives. Crossing the breakpoint closes the old panel.
 Base UI owns keyboard navigation and the trigger-to-panel relationship.
 Animate UI owns the panel transitions and the moving row highlight.
 Each header trigger uses the shared Animate UI chevron with a static glyph through
 hydration. Its rotation follows popup state and reduced-motion rules.
-The header keeps its Base UI triggers and positioning shell stable. Pointer,
-keyboard and touch intent load the shared module for the navigation rows and
-their icons. Opening before it arrives shows a loading status in the existing
-popup. The popup supports dismissal while loading and retry after a failure.
-Link intent prepares destination routes.
+Opening during the download shows a loading status at the trigger. The visitor
+can dismiss the pending opening or retry a failed download. Base UI positions
+the loaded popup and manages its navigation rows. Link intent prepares
+destination routes.
 The header list applies isolation through CSS because Animate UI's list would
 emit an inline style in the static document.
 Header, footer and legal pages share the legal destinations.
@@ -460,8 +462,10 @@ selection controls so collecting the first image keeps the card height stable.
 Import errors are announced through the shared notification viewport, which is
 available with F6. Each class has one notification with the failed file details.
 A persistent live status announces the selected image count during selection mode.
-Holding a thumbnail enters selection mode and toggles that image. A short press
-opens its preview outside selection mode and toggles it inside selection mode.
+Holding a thumbnail and releasing it within the same target enters selection mode
+and toggles that image. Moving away or cancelling the gesture leaves selection
+unchanged. A short press opens its preview outside selection mode and toggles it
+inside selection mode.
 The toolbar also opens selection mode for keyboard and pointer users. The selected
 thumbnail uses the same primary red for its border and plain Animate UI checkmark.
 A neutral backing keeps the checkmark readable on arbitrary photos. The class
@@ -573,9 +577,9 @@ The static switch takes its initial position, track color and glyph from the
 bootstrapped root theme. React adopts that position as it reads the preference.
 The shared switch thumb and icons prepare Motion on pointer, touch or focus
 intent in the appearance controls. Press feedback and the switch node stay stable.
-The lightweight switch and menu trigger remain available initially. Pointer/focus
-intent prepares one deduplicated, retryable menu content module. The Base UI
-trigger opens on mouse hover with the same short delay as the desktop navigation.
+The switch and menu button remain available initially. The menu button uses the
+shared header menu loading behavior described above. Mouse hover opens
+the menu after a short delay and the loaded popup anchors to the same button.
 Hover leaves keyboard focus in place and allows the pointer to cross into the
 popup. Click, touch and keyboard activation also open it. The portal mounts the
 content on opening. During a pending opening, the chevron stays mounted and a small

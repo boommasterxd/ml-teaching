@@ -26,12 +26,14 @@ export default function GlassArtworkPlaceholder({
   sources,
   fallback,
   pending,
+  preloadMobile = true,
 }: {
   sources: ContourSources;
   fallback: boolean;
   pending: boolean;
+  preloadMobile?: boolean;
 }) {
-  preloadContourPoster(sources, ['mobile']);
+  if (preloadMobile) preloadContourPoster(sources, 'mobile');
   return (
     <>
       <StaticContourPoster sources={sources} desktopFallback={fallback} />

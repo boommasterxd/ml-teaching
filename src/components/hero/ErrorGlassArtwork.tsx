@@ -13,10 +13,18 @@ import { useGlassField } from './use-glass-field';
 interface ErrorGlassArtworkProps {
   deferStartup?: boolean;
   digits?: boolean;
+  initialPoster?: boolean;
+  preloadMobile?: boolean;
   sources: ContourSources;
 }
 
-function ErrorGlassScene({ deferStartup, digits, sources }: ErrorGlassArtworkProps) {
+function ErrorGlassScene({
+  deferStartup,
+  digits,
+  initialPoster,
+  preloadMobile,
+  sources,
+}: ErrorGlassArtworkProps) {
   const [paused, setPaused] = useState(false);
   const viewportReady = useEntryViewportReady();
   const {
@@ -42,8 +50,9 @@ function ErrorGlassScene({ deferStartup, digits, sources }: ErrorGlassArtworkPro
     <div className="error-glass">
       <ErrorGlassFrame
         sources={sources}
-        fallback={showPoster}
+        fallback={showPoster || (initialPoster && !rendered)}
         pending={pending}
+        preloadMobile={preloadMobile}
         ref={artwork}
         data-enhanced={(available && rendered) || undefined}
         data-paused={stopped || undefined}

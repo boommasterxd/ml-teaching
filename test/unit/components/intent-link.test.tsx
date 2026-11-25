@@ -110,6 +110,7 @@ describe('intent-only native navigation', () => {
     window.history.replaceState(null, '', '/lernen');
     render(
       <>
+        <IntentLink href="/lernen">Aktuelle Seite</IntentLink>
         <IntentLink href="/lernen?mode=bilder#hinweise">Hinweise</IntentLink>
         <IntentLink href="/impressum" onNavigate={(event) => event.preventDefault()}>
           Impressum
@@ -117,6 +118,8 @@ describe('intent-only native navigation', () => {
       </>,
       { wrapper: LinkActivationHost },
     );
+    fireEvent.click(screen.getByRole('link', { name: 'Aktuelle Seite' }));
+    expect(testRouter.push).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('link', { name: 'Hinweise' }));
     expect(testRouter.push).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole('link', { name: 'Impressum' }));
@@ -270,12 +273,13 @@ describe('intent-only native navigation', () => {
     expect(testRouter.prefetch).not.toHaveBeenCalled();
   });
 
-  it('warms first-view images for reduced motion with the destination’s responsive selectors', async () => {
+  it('warms the mobile and reduced-motion desktop posters with responsive selectors', async () => {
+    let matchingQuery = '(width < 48rem)';
     const media = vi.mocked(window.matchMedia);
     const actual = media.getMockImplementation()!;
     media.mockImplementation((query) => ({
       ...actual(query),
-      matches: query === '(prefers-reduced-motion: reduce)',
+      matches: query === matchingQuery,
     }));
     window.history.replaceState(null, '', '/impressum');
     render(
@@ -289,7 +293,13 @@ describe('intent-only native navigation', () => {
     const photos = 'link[rel="preload"][imagesrcset]:not([imagesrcset*="hero-glass"])';
     expect(document.head.querySelector(posters)).toBeNull();
     expect(document.head.querySelector(photos)).toBeNull();
-    fireEvent.focus(screen.getByRole('link', { name: 'Startseite' }));
+    const home = screen.getByRole('link', { name: 'Startseite' });
+    fireEvent.focus(home);
+    await waitFor(() =>
+      expect(document.head.querySelector(posters)?.getAttribute('media')).toBe(matchingQuery),
+    );
+    matchingQuery = '(prefers-reduced-motion: reduce)';
+    fireEvent.focus(home);
     await waitFor(() => {
       const hints = [...document.head.querySelectorAll(posters)];
       expect(hints.map((link) => link.getAttribute('media'))).toEqual([
@@ -302,7 +312,7 @@ describe('intent-only native navigation', () => {
     });
     fireEvent.pointerEnter(screen.getByRole('link', { name: 'Bilderkennung' }));
     await waitFor(() => expect(document.head.querySelectorAll(photos)).toHaveLength(2));
-    expect(testRouter.prefetch.mock.calls).toEqual([['/'], ['/lernen/bilderkennung']]);
+    expect(testRouter.prefetch.mock.calls).toEqual([['/'], ['/'], ['/lernen/bilderkennung']]);
   });
 
   it('prepares only other same-origin HTTP routes, retaining search and excluding fragments', () => {

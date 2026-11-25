@@ -30,12 +30,14 @@ interface PendingMenuDismissal {
   active: boolean;
   popupSelector: string;
   onDismiss: () => void;
+  restoreFocus?: boolean;
 }
 
 export function usePendingMenuDismissal({
   active,
   popupSelector,
   onDismiss,
+  restoreFocus = true,
 }: PendingMenuDismissal) {
   const area = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -48,7 +50,7 @@ export function usePendingMenuDismissal({
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       event.preventDefault();
       dismiss();
-      trigger.current?.focus({ preventScroll: true });
+      if (restoreFocus) trigger.current?.focus({ preventScroll: true });
     }
 
     function outside(event: Event) {
@@ -66,7 +68,7 @@ export function usePendingMenuDismissal({
       document.removeEventListener('pointerdown', outside);
       document.removeEventListener('focusin', outside);
     };
-  }, [active, popupSelector]);
+  }, [active, popupSelector, restoreFocus]);
 
   return { area, trigger };
 }

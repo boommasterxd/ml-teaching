@@ -87,11 +87,9 @@ export const PrivacyCollection = (
     </p>
     <h4>Download des KI-Modells</h4>
     <p>
-      Nach Ihrer Einwilligung lädt Ihr Browser ein vortrainiertes Modell, das die Lernfunktion zur
-      Bilderkennung benötigt. Der Browser fragt zuerst bei Google an und wird zu Kaggle
-      weitergeleitet. Kaggle leitet den Browser für den Download zu Google zurück. Beide erhalten
-      dabei Ihre IP-Adresse sowie technische Angaben wie Browserinformationen und den Zeitpunkt des
-      Abrufs.
+      Nach Ihrer Einwilligung lädt Ihr Browser über Google und Kaggle ein vortrainiertes Modell, das
+      die Lernfunktion zur Bilderkennung benötigt. Dabei erhalten beide Anbieter Ihre IP-Adresse
+      sowie technische Angaben wie Browserinformationen und den Zeitpunkt des Abrufs.
     </p>
     <p>
       Nach Googles Datenschutzerklärung ist Google Ireland Limited, Gordon House, Barrow Street,
@@ -254,6 +252,7 @@ export const PrivacyCollection = (
       Nachrichten nach eigenen Angaben bis zu 30 Tage wiederherstellen. Danach löscht Hostinger die
       Daten des gelöschten Postfachs endgültig.
     </p>
+    <h4>Zustellprotokolle für E-Mails</h4>
     <p>
       Hostinger erfasst bei eingehenden und ausgehenden E-Mails die E-Mail-Adressen von Absendern
       und Empfängern, den Zeitpunkt, den Zustellstatus und gegebenenfalls technische Rückmeldungen

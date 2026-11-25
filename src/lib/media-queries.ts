@@ -2,8 +2,8 @@
 const mediumWidth = '48rem';
 export const mediumViewport = `(width >= ${mediumWidth})`;
 export const belowMediumViewport = `(width < ${mediumWidth})`;
-/** Tailwind's lg breakpoint, shared with the two-column homepage previews. */
-const largeViewport = '(width >= 64rem)';
+/** Tailwind's lg breakpoint, shared by runtime layout and responsive images. */
+export const largeViewport = '(width >= 64rem)';
 export const reducedMotionMedia = '(prefers-reduced-motion: reduce)';
 
 export function subscribeToMediumViewport(notify: () => void) {

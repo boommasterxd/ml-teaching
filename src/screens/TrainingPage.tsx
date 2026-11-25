@@ -10,7 +10,7 @@ import {
   getPreparedTrainingWorkspace,
   loadTrainingWorkspace,
 } from '@/components/training/training-workspace-loader';
-import { useMenuModule } from '@/components/use-menu-module';
+import { useDeferredModule } from '@/hooks/use-deferred-module';
 import { useEntryViewportReady, useInitialEntry } from '@/components/ui/entry-policy';
 import { prepareRoute } from '@/components/prepare-route';
 import { learningPaths } from '@/lib/learning-paths';
@@ -154,7 +154,7 @@ function TrainingVisit({ initialWorkspace }: { initialWorkspace: boolean }) {
   const { error, consent, models } = engine;
   const initialDocument = useInitialEntry();
   const entryViewportReady = useEntryViewportReady();
-  const workspace = useMenuModule(loadTrainingWorkspace, getPreparedTrainingWorkspace());
+  const workspace = useDeferredModule(loadTrainingWorkspace, getPreparedTrainingWorkspace());
   const { prepare, module: workspaceModule } = workspace;
   useEffect(() => {
     if (consent.hasConsented) prepare();
