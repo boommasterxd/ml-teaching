@@ -133,7 +133,7 @@ export default function TrainingClassFrame({
           </div>
         </Field>
       </CardHeader>
-      <CardContent className="grid min-w-0 gap-3 px-4 @md/training-class:px-5 @xl/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]">
+      <CardContent className="grid min-w-0 gap-3 px-4 @md/training-class:px-5 @training-class-wide/training-class:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]">
         {children}
       </CardContent>
     </Card>

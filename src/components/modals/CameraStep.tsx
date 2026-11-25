@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { AlertCircle } from '../icons/alert-circle';
 import Button from '../Button';
 import { Alert, AlertDescription } from '../ui/alert';
+import { AnimatedFeedback } from '../ui/animated-feedback';
 import { DialogBody, DialogDescription, DialogTitle } from '../ui/dialog';
 import { Spinner } from '../ui/spinner';
 import SetupActionFooter from './SetupActionFooter';
@@ -46,12 +48,16 @@ export default function CameraStep({
         <p role="status" className="sr-only">
           {pending ? 'Warte auf die Kamerafreigabe im Browser …' : null}
         </p>
-        {error && !pending && (
-          <Alert variant="destructive" className="mt-5">
-            <AlertCircle aria-hidden="true" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        <AnimatePresence initial={false}>
+          {error && !pending && (
+            <AnimatedFeedback contentClassName="pt-5">
+              <Alert variant="destructive">
+                <AlertCircle aria-hidden="true" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            </AnimatedFeedback>
+          )}
+        </AnimatePresence>
       </DialogBody>
       <SetupActionFooter stacked={Boolean(error)}>
         <Button variant="secondary" onClick={onDecline}>

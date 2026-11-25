@@ -8,10 +8,51 @@ type ExpectCameraActivity = (
   requestPath?: string,
 ) => Promise<void>;
 
+async function observeCameraRetryCollapse(action: Locator) {
+  const probe = await action.evaluateHandle((button) => {
+    const surface = button.closest('[data-slot="dialog-content"]')!;
+    const alert = surface.querySelector('[role="alert"]')!;
+    const start = surface.getBoundingClientRect();
+    const startButton = button.getBoundingClientRect();
+    const bottomGap = start.bottom - startButton.bottom;
+    const observed = new Promise<boolean>((resolve) => {
+      const deadline = performance.now() + 1500;
+      const sample = () => {
+        const bounds = surface.getBoundingClientRect();
+        const currentGap = bounds.bottom - button.getBoundingClientRect().bottom;
+        let opacity = Number(alert.isConnected);
+        for (
+          let node: Element | null = alert;
+          node && node !== surface;
+          node = node.parentElement
+        ) {
+          opacity *= Number(getComputedStyle(node).opacity);
+        }
+        const collapsing = bounds.height < start.height - 4;
+        const fading = opacity > 0.05 && opacity < 0.95;
+        const footerMovesWithSurface = Math.abs(bottomGap - currentGap) < 4;
+        if (collapsing && fading && footerMovesWithSurface) resolve(true);
+        else if (!alert.isConnected || performance.now() >= deadline) resolve(false);
+        else requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    });
+    return { observed };
+  });
+  return async () => {
+    try {
+      expect(await probe.evaluate(({ observed }) => observed)).toBe(true);
+    } finally {
+      await probe.dispose();
+    }
+  };
+}
+
 export async function expectCameraDenialRetainsFocus(camera: Locator, requestNumber: number) {
   const page = camera.page();
   const action = camera.getByRole('button', { name: /^(Erlauben|Erneut versuchen)$/ });
   const requests = page.locator('html');
+  const expectCollapse = requestNumber > 1 ? await observeCameraRetryCollapse(action) : undefined;
   await action.press('Enter');
   await expect(requests).toHaveAttribute('data-camera-requests', String(requestNumber));
   await expect(action).toBeDisabled();
@@ -28,6 +69,7 @@ export async function expectCameraDenialRetainsFocus(camera: Locator, requestNum
     .toBe(true);
   await action.click({ force: true });
   await expect(action).toBeFocused();
+  await expectCollapse?.();
   await page.evaluate(() => window.dispatchEvent(new Event('test:deny-camera')));
   await expect(camera.getByRole('alert')).toContainText('Kamerazugriff verweigert');
   const retry = camera.getByRole('button', { name: 'Erneut versuchen', exact: true });

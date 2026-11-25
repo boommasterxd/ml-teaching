@@ -1,21 +1,10 @@
 @reference 'tailwindcss';
 
-:root {
-  --training-workspace-max-width: 82rem;
-  --training-workspace-padding: clamp(1rem, 4vw, 3.5rem);
-}
-
 :root:active-view-transition-type(training-forward, training-back) {
   --training-workspace-inset: calc(
-    max(0px, (100vw - var(--training-workspace-max-width)) / 2) + var(--training-workspace-padding)
+    max(0px, (100vw - var(--page-content-max-width)) / 2) + var(--page-content-padding)
   );
   --training-travel: max(clamp(36px, 8vw, 72px), calc(var(--training-workspace-inset) + 1rem));
-}
-
-.training-workspace {
-  max-width: var(--training-workspace-max-width);
-  margin-inline: auto;
-  padding-inline: var(--training-workspace-padding);
 }
 
 /* The inline consent dialog becomes natively modal when React hydrates it. */
@@ -68,7 +57,7 @@ body:has(dialog[data-slot='dialog-overlay'][open]:not(:modal))
   border-radius: 1.15rem;
   color: var(--muted-foreground);
 
-  @container training-steps (min-width: 22rem) {
+  @container training-steps (min-width: 21.75rem) {
     --step-scale: 1;
     --step-padding-inline: 0.75rem;
   }

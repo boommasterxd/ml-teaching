@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /** Ordered geometry and arrow directions must describe the same four-step process. */
 export async function expectNetworkLayout(page: Page, layout: 'column' | 'grid' | 'row') {
@@ -49,4 +49,29 @@ export async function expectNetworkLayout(page: Page, layout: 'column' | 'grid' 
     const header = await page.locator('.site-header').boundingBox();
     expect(card!.height + header!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
   }
+}
+
+export async function expectNetworkVoteFill(stages: Locator) {
+  const bars = stages.getByRole('progressbar', { name: /^Nachbarstimmen/ });
+  await expect(bars).toHaveCount(2);
+  const intermediateFills = await bars.evaluateAll(async (tracks) => {
+    const indicators = tracks.map((track) =>
+      track.querySelector('[data-slot="progress-indicator"]')!,
+    );
+    const observed = tracks.map(() => false);
+    const deadline = performance.now() + 5000;
+    while (performance.now() < deadline && !observed.every(Boolean)) {
+      await new Promise(requestAnimationFrame);
+      const settled = tracks.map((track, index) => {
+        const target = Number(track.getAttribute('aria-valuenow')) / 100;
+        const width = indicators[index].getBoundingClientRect().width;
+        const fill = width / track.getBoundingClientRect().width;
+        observed[index] ||= fill > target * 0.1 && fill < target * 0.9;
+        return target > 0 && fill >= target * 0.99;
+      });
+      if (settled.every(Boolean)) break;
+    }
+    return observed;
+  });
+  expect(intermediateFills).toEqual([true, true]);
 }

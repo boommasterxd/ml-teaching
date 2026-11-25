@@ -12,7 +12,7 @@ import { ANIMATION, NETWORK_STAGES } from '../../src/constants';
 import sharp from 'sharp';
 import { failSyntheticModel, routeSyntheticModel } from './synthetic-model';
 import modelContract from '../unit/lib/fixtures/mobilenet-v2-embedding.json' with { type: 'json' };
-import { expectNetworkLayout } from './network-layout';
+import { expectNetworkLayout, expectNetworkVoteFill } from './network-layout';
 import { classLayout, expectStableNameValidation } from './training-name-validation';
 import {
   expectCameraToggleKeepsImages,
@@ -158,6 +158,7 @@ test('educational examples start directly and keep the selected control focused'
   await cat.focus();
   await expect(stages.getByText('Input', { exact: true })).toBeVisible();
   await page.keyboard.press('Enter');
+  await expectNetworkVoteFill(stages);
   await expect(page.getByText('Katze erkannt', { exact: true })).toBeVisible();
   const status = page.locator('.landing-demo').getByRole('status');
   await expect(status).toContainText('2 von 3 Nachbarn stimmen für Katze.');
