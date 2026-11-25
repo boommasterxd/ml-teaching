@@ -45,10 +45,10 @@ export function replacementReceipt(key: string, prefix: string) {
 
 export function restoreOutcome(primary: string, matched: string, outcome: string) {
   if (outcome === 'failure') return 'error';
-  if (outcome !== 'success') return 'unknown';
+  // The cache action can report success after an internal restore error.
+  if (outcome !== 'success' || !matched) return 'unknown';
   const prefix = /^(mlteaching-npm-v1-Linux-x64-node26-npm\d+-)[a-f0-9]{64}$/.exec(primary)?.[1];
   if (!prefix) return 'unknown';
-  if (!matched) return 'cold';
   if (matched === primary) return 'exact';
   return matched.startsWith(prefix) && /^[a-f0-9]{64}$/.test(matched.slice(prefix.length))
     ? 'compatible fallback'

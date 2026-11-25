@@ -110,6 +110,11 @@ function HeaderMenu({ mobile, pathname, runtime, focusRef }: MenuProps) {
   const trainingEntry = useTrainingEntry();
   const pendingInMenu = Boolean(trainingEntry?.pendingTrigger?.closest(`.${menuClass}`));
 
+  function closeMenu() {
+    pendingFocus.current = null;
+    setOpen({ pathname, value: null });
+  }
+
   useEffect(() => {
     if (!Groups || !value) return;
     const trigger = pendingFocus.current;
@@ -165,12 +170,14 @@ function HeaderMenu({ mobile, pathname, runtime, focusRef }: MenuProps) {
                 <Groups
                   groups={groups}
                   current={containsCurrentPage(groups, pathname) ? pathname : null}
+                  onCurrentDestination={(link) => {
+                    if (pendingInMenu) trainingEntry?.cancelPendingEntry?.();
+                    closeMenu();
+                    findHeaderTrigger(link, menuClass, label)?.focus({ preventScroll: true });
+                  }}
                   onTrainingEntry={(link) => ({
                     opener: findHeaderTrigger(link, menuClass, label) ?? null,
-                    onReady: () => {
-                      pendingFocus.current = null;
-                      setOpen({ pathname, value: null });
-                    },
+                    onReady: closeMenu,
                   })}
                 />
               ) : (

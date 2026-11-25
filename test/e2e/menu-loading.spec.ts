@@ -1,6 +1,65 @@
 import { expect, test } from '@playwright/test';
 import { learningPaths } from '../../src/lib/learning-paths';
-import { diagnostics, expectAccessible } from './browser-checks';
+import { diagnostics, expectAccessible, observeViewTransitions } from './browser-checks';
+import { expectPageTransitions } from './intent-navigation-checks';
+
+for (const [surface, width, path, button, label] of [
+  ['desktop', 1280, '/datenschutz', 'Rechtliches', 'Datenschutz'],
+  ['mobile', 390, learningPaths.images, 'Menü', 'Wie KI Bilder erkennt'],
+] as const) {
+  test.describe(`current ${surface} header link`, () => {
+    test.use({ viewport: { width, height: 844 }, hasTouch: surface === 'mobile' });
+
+    test('closes the menu and restores focus without navigating', async ({ page }) => {
+      const transitions = await observeViewTransitions(page);
+      await page.goto(path);
+      const header = page.getByRole('navigation', { name: 'Hauptnavigation' });
+      const trigger = header.getByRole('button', { name: button, exact: true });
+      const link = header.getByRole('link', { name: label, exact: true });
+      await trigger.press('Enter');
+      await expect(link).toHaveAttribute('aria-current', 'page');
+      await expect(link).toHaveAttribute('href', path);
+      const navigationRequests: string[] = [];
+      page.on('request', (request) => {
+        if (request.isNavigationRequest() || request.headers().rsc === '1')
+          navigationRequests.push(request.url());
+      });
+
+      if (surface === 'mobile') await link.tap();
+      else await link.press('Enter');
+      await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+      await expect(trigger).toBeFocused();
+      await expect(link).toBeHidden();
+      await expect(page).toHaveURL(path);
+      await expectPageTransitions(page, transitions);
+      expect(navigationRequests).toEqual([]);
+      await expectAccessible(page);
+    });
+  });
+}
+
+for (const suffix of ['?from=menu', '#main-content']) {
+  test(`the same path remains navigable when the URL ends in ${suffix}`, async ({ page }) => {
+    await page.goto('/datenschutz' + suffix);
+    const header = page.getByRole('navigation', { name: 'Hauptnavigation' });
+    await header.getByRole('button', { name: 'Rechtliches', exact: true }).press('Enter');
+    await header.getByRole('link', { name: 'Datenschutz', exact: true }).press('Enter');
+    await expect(page).toHaveURL('/datenschutz');
+  });
+}
+
+test('a modified click on the current header link opens a new tab', async ({ page, context }) => {
+  await page.goto('/datenschutz');
+  const header = page.getByRole('navigation', { name: 'Hauptnavigation' });
+  await header.getByRole('button', { name: 'Rechtliches', exact: true }).press('Enter');
+  const newTab = context.waitForEvent('page');
+  await header.getByRole('link', { name: 'Datenschutz', exact: true }).click({
+    modifiers: ['ControlOrMeta'],
+  });
+  const destination = await newTab;
+  await expect(destination).toHaveURL('/datenschutz');
+  await expect(page).toHaveURL('/datenschutz');
+});
 
 for (const reducedMotion of ['no-preference', 'reduce'] as const) {
   test(`the spinner before an iconless link label respects ${reducedMotion}`, async ({ page }) => {

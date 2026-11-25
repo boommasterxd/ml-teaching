@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AnimateIcon } from '@animate-ui/react/icons';
 import type { HeaderNavGroup, HeaderNavLink } from '@/content/site-navigation';
 import IntentLink from './IntentLink';
@@ -11,15 +11,18 @@ import { NavigationMenuLink } from './ui/navigation-menu';
 import { MenuHighlight, MenuHighlightItem } from './ui/menu-highlight';
 import type { TrainingEntryOptions } from './training/TrainingEntryContext';
 
-interface TrainingEntryAction {
+interface HeaderMenuActions {
+  onCurrentDestination: (link: HTMLAnchorElement) => void;
   onTrainingEntry?: (link: HTMLAnchorElement) => TrainingEntryOptions;
 }
 
 function Destination({
   link,
   current,
+  onCurrentDestination,
   onTrainingEntry,
-}: { link: HeaderNavLink; current: string | null } & TrainingEntryAction) {
+}: { link: HeaderNavLink; current: string | null } & HeaderMenuActions) {
+  const anchor = useRef<HTMLAnchorElement>(null);
   const [focused, setFocused] = useState(false);
   const Icon = headerMenuIcons[link.id];
   const icon = <Icon size={16} aria-hidden="true" />;
@@ -53,8 +56,15 @@ function Destination({
         className="header-menu-row"
         render={
           <IntentLink
+            ref={anchor}
             href={link.href}
             data-overview={link.id === 'hub' ? '' : undefined}
+            onNavigate={(event) => {
+              const destination = anchor.current;
+              if (!destination || destination.href !== window.location.href) return;
+              event.preventDefault();
+              onCurrentDestination(destination);
+            }}
             onTrainingEntry={link.id === 'training' ? onTrainingEntry : undefined}
             navigationIcon={{ content: icon, position: 'start' }}
           />
@@ -70,11 +80,12 @@ function Destination({
 export function HeaderMenuGroups({
   groups,
   current,
+  onCurrentDestination,
   onTrainingEntry,
 }: {
   groups: readonly HeaderNavGroup[];
   current: string | null;
-} & TrainingEntryAction) {
+} & HeaderMenuActions) {
   return (
     <MenuHighlight current={current} insideAnimatedPopup>
       <div className="header-menu-groups">
@@ -84,7 +95,12 @@ export function HeaderMenuGroups({
             <ul aria-label={label || undefined}>
               {links.map((link) => {
                 const destination = (
-                  <Destination link={link} current={current} onTrainingEntry={onTrainingEntry} />
+                  <Destination
+                    link={link}
+                    current={current}
+                    onCurrentDestination={onCurrentDestination}
+                    onTrainingEntry={onTrainingEntry}
+                  />
                 );
                 return (
                   <li key={link.href}>

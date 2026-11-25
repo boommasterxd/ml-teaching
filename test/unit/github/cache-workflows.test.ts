@@ -83,6 +83,23 @@ it('replaces overlapping code runs per PR and isolates metadata edits and retrie
   );
 });
 
+it('allocates both full browser slots and passes their aggregate result to CI', () => {
+  const browser = ci.split('\n  browser:\n')[1]?.split('\n  CI:\n')[0] ?? '';
+  const slots = /fromJSON\('([^']+)'\)\[fromJSON\(needs\.plan\.outputs\.plan\)\.reason\]/.exec(
+    browser,
+  )?.[1];
+  const launcher = steps(browser).find((step) =>
+    step.includes('run: node .github/scripts/browser-ci.ts'),
+  );
+
+  expect(browser).toContain("if: needs.plan.outputs.browser == 'true'");
+  expect(browser).toContain('fail-fast: false');
+  expect(JSON.parse(slots ?? 'null')).toEqual({ full: [0, 1], 'browser-spec': [0] });
+  expect(launcher).toContain('CI_BROWSER_SLOT: ${{ strategy.job-index }}');
+  expect(launcher).toContain('CI_BROWSER_SLOTS: ${{ strategy.job-total }}');
+  expect(ci).toContain('"browser":"${{ needs.browser.result }}"');
+});
+
 describe('dependency-cache workflow contracts', () => {
   it('shares complete dependency identities and covers every producer input trigger', () => {
     const callers = [ci, producer, reconciliation].join('\n');

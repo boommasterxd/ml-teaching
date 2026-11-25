@@ -230,6 +230,42 @@ for (const [width, colorScheme] of [
   });
 }
 
+test('KNN keeps selected neighbors until a slider change is committed', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(learningPaths.images);
+  const exercise = page.getByRole('region', { name: 'Welche Nachbarn zählen?' });
+  await exercise.getByRole('heading', { name: 'Hund oder Katze?' }).scrollIntoViewIfNeeded();
+  const slider = exercise.getByRole('slider');
+  await expect(slider).toHaveAttribute('aria-valuenow', '3');
+  const [nearest] = await rankedAccessibleTargets(exercise);
+  await nearest.control.press('Enter');
+  await expect(nearest.control).toHaveAttribute('aria-pressed', 'true');
+
+  const track = exercise.locator('[data-slot="slider-control"]');
+  await track.scrollIntoViewIfNeeded();
+  const bounds = await track.boundingBox();
+  const thumb = await exercise.locator('[data-slot="slider-thumb"]').boundingBox();
+  if (!bounds || !thumb) throw new Error('KNN slider is not visible.');
+  const y = thumb.y + thumb.height / 2;
+  const newX = bounds.x + bounds.width * 0.85;
+
+  await page.mouse.move(newX, y);
+  await page.mouse.down();
+  await expect(slider).not.toHaveAttribute('aria-valuenow', '3');
+  await expect(nearest.control).toHaveAttribute('aria-pressed', 'true');
+  await page.mouse.move(thumb.x + thumb.width / 2, y);
+  await page.mouse.up();
+  await expect(slider).toHaveAttribute('aria-valuenow', '3');
+  await expect(nearest.control).toHaveAttribute('aria-pressed', 'true');
+
+  await page.mouse.click(newX, y);
+  await expect(slider).not.toHaveAttribute('aria-valuenow', '3');
+  await expect(nearest.control).toHaveAttribute('aria-pressed', 'false');
+  await slider.press('Home');
+  await expect(slider).toHaveAttribute('aria-valuenow', '1');
+  await expect(exercise.getByRole('status')).toContainText('Finde jetzt 1 Nachbarn.');
+});
+
 test('KNN exercise supports retries, voting limits, and new rounds', async ({ page }) => {
   const failures = diagnostics(page);
   const width = 800;

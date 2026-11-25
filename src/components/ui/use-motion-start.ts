@@ -1,7 +1,6 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { deferDecorativeMotion } from '@/lib/experimental-motion';
 
 const listeners = new Set<() => void>();
 let ready = false;
@@ -51,7 +50,7 @@ const deferredSnapshot = () => ready;
 const immediateSnapshot = () => true;
 const serverSnapshot = () => false;
 
-export function useMotionStart(deferStartup = deferDecorativeMotion) {
+export function useMotionStart(deferStartup = false) {
   return useSyncExternalStore(
     deferStartup ? subscribe : skip,
     deferStartup ? deferredSnapshot : immediateSnapshot,

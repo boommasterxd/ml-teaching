@@ -12,16 +12,20 @@ export const IMAGE_INPUT_LIMITS = {
 export const IMAGE_INPUT_ACCEPT =
   'image/jpeg,image/png,image/gif,image/webp,image/avif,image/heic,image/heif';
 
-function hasRasterSignature(bytes: Uint8Array): boolean {
+// image-dimensions reads at most 40 bytes for PNG (including CgBI), GIF, and WebP.
+const rasterHeaderLength = 40;
+
+function rasterHeaderKind(bytes: Uint8Array): 'fixed' | 'variable' | undefined {
   const ascii = (offset: number, length: number) =>
     String.fromCharCode(...bytes.subarray(offset, offset + length));
-  return (
+  if ((bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) || ascii(4, 4) === 'ftyp')
+    return 'variable';
+  if (
     [137, 80, 78, 71, 13, 10, 26, 10].every((value, index) => bytes[index] === value) ||
-    (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) ||
     ['GIF87a', 'GIF89a'].includes(ascii(0, 6)) ||
-    (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP') ||
-    ascii(4, 4) === 'ftyp'
-  );
+    (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP')
+  )
+    return 'fixed';
 }
 
 export function assertImageDimensions(width: number, height: number): void {
@@ -37,7 +41,7 @@ export function assertImageDimensions(width: number, height: number): void {
     );
 }
 
-function readFile(file: File, signal: AbortSignal): Promise<ArrayBuffer> {
+function readFile(file: Blob, signal: AbortSignal): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     const cleanup = () => {
@@ -70,10 +74,16 @@ function readFile(file: File, signal: AbortSignal): Promise<ArrayBuffer> {
 export async function validateImageInput(file: File, signal: AbortSignal): Promise<void> {
   if (file.size > IMAGE_INPUT_LIMITS.MAX_BYTES)
     throw new Error('Die Bilddatei ist größer als 32 MiB. Bitte verkleinere sie.');
-  const bytes = new Uint8Array(await readFile(file, signal));
+  const prefix = new Uint8Array(await readFile(file.slice(0, rasterHeaderLength), signal));
+  const headerKind = rasterHeaderKind(prefix);
+  const bytes =
+    headerKind === 'variable' && prefix.byteLength < file.size
+      ? new Uint8Array(await readFile(file, signal))
+      : prefix;
+  signal.throwIfAborted();
   let dimensions;
   try {
-    dimensions = hasRasterSignature(bytes) ? imageDimensionsFromData(bytes) : undefined;
+    dimensions = headerKind ? imageDimensionsFromData(bytes) : undefined;
   } catch {
     // Malformed headers receive the same public recovery message as unknown formats.
   }

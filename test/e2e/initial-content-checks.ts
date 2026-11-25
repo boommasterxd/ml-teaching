@@ -1,5 +1,6 @@
 import { expect, type Locator } from '@playwright/test';
 import { learningPaths } from '../../src/lib/learning-paths';
+import { INITIAL_QUIZ_ROUND } from '../../src/lib/recognition-quiz';
 
 export async function expectReadable(content: Locator) {
   await content.scrollIntoViewIfNeeded();
@@ -141,8 +142,14 @@ async function expectImageExercises(main: Locator, phase: 'static' | 'hydrated')
     /Wähle die drei Beispiele/,
   );
   const choices = everyday.getByRole('button', { name: /^Auswählen: / });
-  await expect(choices).toHaveCount(6);
-  for (const choice of await choices.all()) await expectReadable(choice);
+  await expect(choices).toHaveCount(INITIAL_QUIZ_ROUND.length);
+  for (const [index, example] of INITIAL_QUIZ_ROUND.entries()) {
+    const choice = choices.nth(index);
+    await expectReadable(choice);
+    await expect(choice).toHaveAccessibleName(`Auswählen: ${example.title}`);
+    await expect(choice).toHaveAccessibleDescription(example.description);
+  }
+  await expectReadable(everyday.getByText('0 von 3 gefunden', { exact: true }));
   const neighbors = await expectSectionText(
     main,
     'Welche Nachbarn zählen?',

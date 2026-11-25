@@ -54,6 +54,15 @@ function LinkActivationHost({ children }: { children: ReactNode }) {
   );
 }
 
+function observeActiveTransition(...types: string[]) {
+  const skipTransition = vi.fn();
+  Object.defineProperty(document, 'activeViewTransition', {
+    configurable: true,
+    value: { types: new Set(types), skipTransition },
+  });
+  return skipTransition;
+}
+
 beforeEach(() => {
   installBrowserHost();
   vi.clearAllMocks();
@@ -61,11 +70,60 @@ beforeEach(() => {
   window.history.replaceState(null, '', '/');
 });
 afterEach(() => {
+  Reflect.deleteProperty(document, 'activeViewTransition');
   vi.useRealTimers();
   restoreBrowserHost();
 });
 
 describe('intent-only native navigation', () => {
+  it.each(['nav-forward', 'nav-back'])(
+    'ends an active %s page transition only when a different route is activated',
+    (type) => {
+      const skipTransition = observeActiveTransition(type);
+      render(<IntentLink href="/lernen">Lernen</IntentLink>, { wrapper: LinkActivationHost });
+      const link = screen.getByRole('link', { name: 'Lernen' });
+
+      fireEvent.focus(link);
+      expect(skipTransition).not.toHaveBeenCalled();
+      fireEvent.click(link);
+      expect(skipTransition).toHaveBeenCalledOnce();
+      expect(testRouter.push).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each([
+    ['animate-ui-theme'],
+    ['nav-back', 'history-back'],
+    ['nav-forward', 'training-forward'],
+    ['error-recovery'],
+  ])('preserves active transition types %j when following a link', (...types) => {
+    const skipTransition = observeActiveTransition(...types);
+    render(<IntentLink href="/lernen">Lernen</IntentLink>, { wrapper: LinkActivationHost });
+
+    fireEvent.click(screen.getByRole('link', { name: 'Lernen' }));
+    expect(testRouter.push).toHaveBeenCalledOnce();
+    expect(skipTransition).not.toHaveBeenCalled();
+  });
+
+  it('preserves an active page transition for same-path and cancelled link actions', () => {
+    const skipTransition = observeActiveTransition('nav-forward');
+    window.history.replaceState(null, '', '/lernen');
+    render(
+      <>
+        <IntentLink href="/lernen?mode=bilder#hinweise">Hinweise</IntentLink>
+        <IntentLink href="/impressum" onNavigate={(event) => event.preventDefault()}>
+          Impressum
+        </IntentLink>
+      </>,
+      { wrapper: LinkActivationHost },
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Hinweise' }));
+    expect(testRouter.push).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('link', { name: 'Impressum' }));
+    expect(testRouter.push).toHaveBeenCalledOnce();
+    expect(skipTransition).not.toHaveBeenCalled();
+  });
+
   it('delays feedback for native navigation and keeps the same named link', () => {
     vi.useFakeTimers();
     const destination = () => <IntentLink href="/lernen">Lernen</IntentLink>;
@@ -264,6 +322,7 @@ describe('intent-only native navigation', () => {
   });
 
   it('retains ref forwarding, native modified clicks and props through the shared action wrapper', () => {
+    const skipTransition = observeActiveTransition('nav-forward');
     const ref = createRef<HTMLAnchorElement>();
     const clicked = vi.fn((event: { ctrlKey: boolean }) => {
       expect(event.ctrlKey).toBe(true);
@@ -291,9 +350,11 @@ describe('intent-only native navigation', () => {
     expect(fireEvent.click(link, { ctrlKey: true })).toBe(true);
     expect(clicked).toHaveBeenCalledOnce();
     expect(testRouter.prefetch).not.toHaveBeenCalled();
+    expect(skipTransition).not.toHaveBeenCalled();
   });
 
   it('prepares the training setup on intent and leaves modified activation to the browser', () => {
+    const skipTransition = observeActiveTransition('nav-forward');
     const entry = { prepareEntry: vi.fn(), openEntry: vi.fn() };
     render(
       <TrainingEntryContext value={entry}>
@@ -322,6 +383,7 @@ describe('intent-only native navigation', () => {
     expect(entry.openEntry).toHaveBeenCalledExactlyOnceWith(link);
     expect(testRouter.push).not.toHaveBeenCalled();
     expect(window.location.pathname).toBe('/');
+    expect(skipTransition).not.toHaveBeenCalled();
   });
 
   it('honors a caller that cancels training navigation', () => {

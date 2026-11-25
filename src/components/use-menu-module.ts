@@ -1,8 +1,30 @@
 'use client';
 
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef, type RefObject } from 'react';
 
 export { useDeferredModule as useMenuModule } from '@/hooks/use-deferred-module';
+
+export function useMenuActivationFocus(trigger: RefObject<HTMLButtonElement | null>) {
+  const focusOnOpen = useRef(false);
+
+  function trackMenuActivation(open: boolean, event: Event) {
+    focusOnOpen.current =
+      open &&
+      (event instanceof KeyboardEvent ||
+        (event instanceof MouseEvent && event.type === 'click' && event.detail === 0));
+  }
+
+  function focusFirstHighlightedItem(item: HTMLElement | undefined) {
+    if (!focusOnOpen.current || !item) return;
+    focusOnOpen.current = false;
+    // Focus the first native highlight once the deferred menu items exist.
+    if (item.ownerDocument.activeElement === trigger.current) {
+      item.focus({ preventScroll: true });
+    }
+  }
+
+  return { trackMenuActivation, focusFirstHighlightedItem };
+}
 
 interface PendingMenuDismissal {
   active: boolean;

@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useState, useSyncExternalStore, type ComponentType } from 'react';
-import { getInitialToasts, getPendingToasts, subscribeToPendingToasts, toast } from '@/lib/toast';
+import {
+  getInitialToasts,
+  getPendingToasts,
+  subscribeToPendingToasts,
+  toast,
+  TOAST_VISIBLE_LIMIT,
+} from '@/lib/toast';
 import { Alert, AlertDescription } from './ui/alert';
 import Button from './Button';
 import { X } from './icons/x';
@@ -39,7 +45,7 @@ export default function ToastHost() {
 
   return (
     <div className="app-toast-viewport flex flex-col gap-3">
-      {pending.map(({ id, message, description, type }) => (
+      {pending.slice(-TOAST_VISIBLE_LIMIT).map(({ id, message, description, type }) => (
         <Alert
           key={id}
           role={type === 'error' ? 'alert' : 'status'}

@@ -28,6 +28,32 @@ async function scrollViewport(viewport: Locator, position: 'start' | 'middle' | 
   }, position);
 }
 
+async function continueWithoutCamera(camera: Locator) {
+  const page = camera.page();
+  const skipCamera = camera.getByRole('button', { name: 'Ohne Kamera fortfahren' });
+  const withdraw = camera.getByRole('button', { name: 'Einwilligung widerrufen' });
+  const allowCamera = camera.getByRole('button', { name: 'Erlauben' });
+  for (const action of [skipCamera, withdraw, allowCamera])
+    await expect(action).toBeInViewport({ ratio: 1 });
+  await expectAccessible(page);
+  const labelFitsOnOneLine = await skipCamera.evaluate((button) => {
+    const label = document.createRange();
+    const text = document.createTreeWalker(button, NodeFilter.SHOW_TEXT).nextNode();
+    if (!text) return false;
+    label.selectNodeContents(text);
+    const { left, right } = label.getBoundingClientRect();
+    const bounds = button.getBoundingClientRect();
+    return label.getClientRects().length === 1 && left >= bounds.left && right <= bounds.right;
+  });
+  expect(labelFitsOnOneLine).toBe(true);
+  await allowCamera.focus();
+  await page.keyboard.press('Shift+Tab');
+  await expect(withdraw).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(skipCamera).toBeFocused();
+  await page.keyboard.press('Enter');
+}
+
 test('consent and the virtual gallery fade only while more content is available', async ({
   page,
   baseURL,
@@ -63,24 +89,7 @@ test('consent and the virtual gallery fade only while more content is available'
   await expect(firstChoice).toBeInViewport({ ratio: 1 });
   await expectAccessible(page);
   await grantModelConsent(page);
-  const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
-  const skipCamera = camera.getByRole('button', { name: 'Ohne Kamera fortfahren' });
-  const allowCamera = camera.getByRole('button', { name: 'Erlauben' });
-  await expect(skipCamera).toBeInViewport({ ratio: 1 });
-  await expect(allowCamera).toBeInViewport({ ratio: 1 });
-  await expectAccessible(page);
-  const labelFitsOnOneLine = await skipCamera.evaluate((button) => {
-    const label = document.createRange();
-    label.selectNodeContents(button);
-    const { left, right } = label.getBoundingClientRect();
-    const bounds = button.getBoundingClientRect();
-    return label.getClientRects().length === 1 && left >= bounds.left && right <= bounds.right;
-  });
-  expect(labelFitsOnOneLine).toBe(true);
-  await allowCamera.focus();
-  await page.keyboard.press('Shift+Tab');
-  await expect(skipCamera).toBeFocused();
-  await page.keyboard.press('Enter');
+  await continueWithoutCamera(page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' }));
 
   await page.setViewportSize({ width: 390, height: 844 });
   const gallery = page.getByRole('region', { name: /Trainingsbilder von Klasse 1:/ });

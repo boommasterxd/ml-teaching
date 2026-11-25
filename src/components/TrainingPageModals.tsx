@@ -15,17 +15,29 @@ interface TrainingPageModalsProps {
 }
 
 type ConfirmationKind = Exclude<ModalState['type'], 'none' | 'imagePreview'>;
+type ImagePreview = Extract<ModalState, { type: 'imagePreview' }>;
 
-function imagePreviewTitle(
-  classes: MLClass[],
-  preview: Extract<ModalState, { type: 'imagePreview' }> | null,
-) {
+function imagePreviewTitle(classes: MLClass[], preview: ImagePreview | null) {
   if (!preview) return 'Bildvorschau';
   const classIndex = classes.findIndex(({ id }) => id === preview.classId);
   const imageIndex = classes[classIndex]?.images.findIndex(({ id }) => id === preview.image.id);
   return imageIndex !== undefined && imageIndex >= 0
     ? `Bild ${imageIndex + 1} aus Klasse ${classIndex + 1}`
     : 'Bildvorschau';
+}
+
+function findPreviewReturnTarget(preview: ImagePreview | null) {
+  if (!preview) return null;
+  const gallery = document.querySelector<HTMLElement>(
+    `[data-training-class-id="${CSS.escape(preview.classId)}"] .gallery-region`,
+  );
+  return (
+    gallery?.querySelector<HTMLButtonElement>(
+      `[data-image-id="${CSS.escape(preview.image.id)}"] button`,
+    ) ??
+    gallery ??
+    null
+  );
 }
 
 function confirmation(kind: ConfirmationKind, className: string | undefined) {
@@ -77,6 +89,7 @@ export default function TrainingPageModals({
         isOpen={preview !== null}
         title={imagePreviewTitle(classes, preview)}
         image={preview?.image ?? null}
+        resolveReturnFocus={() => findPreviewReturnTarget(preview)}
         onClose={closeModal}
         onDelete={() => {
           if (!preview) return;

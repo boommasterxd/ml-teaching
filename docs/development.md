@@ -152,13 +152,6 @@ The report output includes the browser version, throttling profile, CPU benchmar
 Largest Contentful Paint and Total Blocking Time. A missed budget also prints the
 available LCP phases and up to five long tasks.
 
-For a local comparison, build with `NEXT_PUBLIC_DEFER_DECORATIVE_MOTION=1 npm run build`.
-Then restart the production server with the command above. The headline and static
-icons stay visible while the opt-in defers WebGL, parallax and animated icons until
-after the document loads and paints. Input over the artwork or its playback control
-can prepare and start the visible WebGL scene earlier. A regular `npm run build`
-restores the default startup schedule.
-
 ## Build and recovery
 
 Run `npm run ci` before the final production build. It includes `npm run typecheck`,

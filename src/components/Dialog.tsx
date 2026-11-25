@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactElement } from 'react';
+import { useRef, type ReactElement } from 'react';
 import { AnimatePresence } from 'motion/react';
 import {
   Dialog as DialogRoot,
@@ -11,7 +11,12 @@ import {
   InitialDialog,
   InitialDialogContent,
 } from './ui/dialog';
-import { DialogExitObserver, useDialogExitCallback, useDialogReturnFocus } from './dialog-state';
+import {
+  DialogExitObserver,
+  revealReturnedFocus,
+  useDialogExitCallback,
+  useDialogReturnFocus,
+} from './dialog-state';
 
 interface DialogProps {
   isOpen: boolean;
@@ -20,6 +25,7 @@ interface DialogProps {
   describedBy?: string;
   initialContent?: boolean;
   restoreFocus?: boolean;
+  resolveReturnFocus?: () => HTMLElement | null;
   onExited?: () => void;
   children: ReactElement<{ className?: string }>;
 }
@@ -32,11 +38,25 @@ export default function Dialog({
   describedBy,
   initialContent = false,
   restoreFocus = true,
+  resolveReturnFocus,
   onExited,
   children,
 }: DialogProps) {
-  const rememberOpener = useDialogReturnFocus(isOpen && restoreFocus);
-  const exitCallback = useDialogExitCallback(onExited);
+  const restoredFocus = useRef<HTMLElement | null>(null);
+  const rememberOpener = useDialogReturnFocus(
+    isOpen && restoreFocus,
+    resolveReturnFocus,
+    restoredFocus,
+  );
+  const exitCallback = useDialogExitCallback(
+    resolveReturnFocus
+      ? () => {
+          // The closing portal can still restore scroll after focus has moved.
+          requestAnimationFrame(() => revealReturnedFocus(restoredFocus));
+          onExited?.();
+        }
+      : onExited,
+  );
 
   const labels = {
     'aria-modal': true,
@@ -77,7 +97,7 @@ export default function Dialog({
       }}
     >
       <DialogPortal>
-        {onExited && <DialogExitObserver callback={exitCallback} />}
+        {(onExited || resolveReturnFocus) && <DialogExitObserver callback={exitCallback} />}
         <DialogBackdrop />
         <DialogViewport lockScroll>
           <DialogContent

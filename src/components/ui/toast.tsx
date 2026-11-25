@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Toast as Primitive } from '@animate-ui/react/primitives/base-ui/toast';
-import { connectToasts } from '@/lib/toast';
+import { connectToasts, TOAST_VISIBLE_LIMIT } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import Button from '../Button';
 import { AlertCircle } from '../icons/alert-circle';
@@ -99,7 +99,7 @@ function ToastIcon({ type }: { type: string | undefined }) {
 
 export function Toaster() {
   return (
-    <Primitive.Provider progressBar={false} limit={3} timeout={6000}>
+    <Primitive.Provider progressBar={false} limit={TOAST_VISIBLE_LIMIT} timeout={6000}>
       <ToastList />
     </Primitive.Provider>
   );

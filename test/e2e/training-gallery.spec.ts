@@ -260,6 +260,45 @@ test('a full training gallery keeps keyboard focus and selection across virtual 
   expect(failures).toEqual([]);
 });
 
+for (const width of [390, 1280]) {
+  test(`the enlarged gallery restores visible focus after preview at ${width}px`, async ({
+    page,
+    baseURL,
+  }) => {
+    await page.setViewportSize({ width, height: 740 });
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+    await routeSyntheticModel(page, baseURL!);
+    await page.goto(learningPaths.imagePractice);
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = '200%';
+    });
+    await grantModelConsent(page);
+    await page.getByRole('button', { name: 'Ohne Kamera fortfahren' }).press('Enter');
+    await collectGalleryImages(page, 20);
+    await expect(page.getByText('20 Bilder', { exact: true })).toBeVisible();
+    const gallery = page.getByRole('region', { name: /^Trainingsbilder von Klasse 1:/ });
+    await gallery.focus();
+    await gallery.press('Home');
+    const thumbnail = gallery.getByRole('button', { name: 'Bild 1 vergrößern', exact: true });
+    await thumbnail.press('Enter');
+    const preview = page.getByRole('dialog', { name: 'Bild 1 aus Klasse 1' });
+    await expect(preview).toBeVisible();
+    await expect(preview.getByRole('button', { name: 'Schließen' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(preview).toHaveCount(0);
+    const restoredFocus = thumbnail.or(gallery).and(page.locator(':focus'));
+    await expect(restoredFocus).toBeInViewport();
+
+    await thumbnail.press('Enter');
+    await expect(preview).toBeVisible();
+    await preview.getByRole('button', { name: 'Bild löschen' }).press('Enter');
+    await expect(preview).toHaveCount(0);
+    await expect(page.getByText('19 Bilder', { exact: true })).toBeVisible();
+    await expect(gallery).toBeFocused();
+    await expect(gallery).toBeInViewport();
+  });
+}
+
 const touchOptions = {
   hasTouch: true,
   isMobile: true,

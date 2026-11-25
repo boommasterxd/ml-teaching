@@ -91,6 +91,15 @@ function startsTraining(target: URL, current: Location) {
   );
 }
 
+function skipActivePageTransition(target: URL, current: Location) {
+  if (target.origin !== current.origin || target.pathname === current.pathname) return;
+  const transition = document.activeViewTransition;
+  if (!transition?.types?.size) return;
+  // React waits for its previous view transition before committing the next route.
+  if ([...transition.types].every((type) => type === 'nav-forward' || type === 'nav-back'))
+    transition.skipTransition();
+}
+
 function useLinkPreparation(
   router: ReturnType<typeof useRouter>,
   prepareOnIntent: boolean,
@@ -173,9 +182,12 @@ export default function IntentLink({
       },
     });
     if (cancelled || !anchor) return;
-    if (!entry || !startsTraining(new URL(anchor.href), window.location)) {
+    const target = new URL(anchor.href);
+    const current = window.location;
+    if (!entry || !startsTraining(target, current)) {
       // Next's Pages Router Link does not expose useLinkStatus.
       if (document.getElementById('error-recovery-speculation')) setDocumentPending(true);
+      else skipActivePageTransition(target, current);
       return;
     }
     event.preventDefault();

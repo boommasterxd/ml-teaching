@@ -64,8 +64,9 @@ origins. The decorative WebGL renderer permits the bundled same-origin worker
 through `worker-src 'self'`. It needs no blob or remote worker source and no WASM
 script permission.
 
-Public HTML has `public, max-age=300, must-revalidate`. Five minutes balances
-browser reuse with content freshness; native RSC/error/variant behavior remains
+Public HTML has `public, max-age=300, must-revalidate`. The explicit local `/404`
+HTML response instead uses `Cache-Control: no-store`; the rule excludes RSC
+requests. Five minutes balances browser reuse with content freshness; other native RSC/error/variant behavior remains
 under its own owner. Keep referenced assets available across that interval and
 rebuild HTML and CSP atomically for content or legal updates.
 

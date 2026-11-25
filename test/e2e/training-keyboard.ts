@@ -429,7 +429,8 @@ export async function expectPreviewDeletion(
   await expectAccessible(page);
   await preview.getByRole('button', { name: 'Bild löschen' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByRole('textbox', { name: 'Name für Klasse 2: Klasse 2' })).toBeFocused();
+  await expect(gallery).toBeFocused();
+  await expect(gallery).toBeInViewport();
   await expect(page.getByText('9 / 10 Bilder', { exact: true })).toHaveCount(1);
   await expect(page.getByText('10 Bilder', { exact: true })).toHaveCount(1);
 }
