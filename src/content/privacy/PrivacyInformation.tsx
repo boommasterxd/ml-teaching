@@ -49,10 +49,11 @@ export const PrivacyInformation = (
     <h4>Folgen einer Nichtbereitstellung</h4>
     <p>
       Ohne die zur Übertragung erforderlichen Verbindungsdaten kann die Website nicht bereitgestellt
-      werden. Ohne Zustimmung zum Modell-Download kann das Bildtraining nicht gestartet werden. Ohne
-      Bildbeispiele kann kein eigener Bildklassifikator trainiert werden. Ohne Kamerafreigabe bleibt
-      die Kamera ausgeschaltet. Ohne die für eine Antwort erforderlichen Kontaktangaben können wir
-      eine Anfrage gegebenenfalls nicht beantworten.
+      werden. Das Bildtraining startet nur, wenn Sie sowohl in die lokale Verarbeitung Ihrer Bilder
+      als auch in den Modell-Download einwilligen. Ohne Bildbeispiele kann kein eigener
+      Bildklassifikator trainiert werden. Ohne Kamerafreigabe bleibt die Kamera ausgeschaltet. Ohne
+      die für eine Antwort erforderlichen Kontaktangaben können wir eine Anfrage gegebenenfalls
+      nicht beantworten.
     </p>
     <h3>Speicherdauer</h3>
     <p>
@@ -86,7 +87,8 @@ export const PrivacyInformation = (
     <p>
       Ihre Einwilligung zur Lernfunktion können Sie jederzeit mit Wirkung für die Zukunft
       widerrufen. Öffnen Sie „Einstellungen zum Bildtraining“ und wählen Sie „Einwilligung
-      widerrufen“. Die Lernfunktion wird beendet, und die gemerkte Auswahl sowie der lokale
+      widerrufen“. Während die Lernfunktion den Arbeitsbereich vorbereitet, widerrufen Sie mit
+      „Abbrechen“. Die Lernfunktion wird beendet, und die gemerkte Auswahl sowie der lokale
       Trainingsstand werden gelöscht. Die Rechtmäßigkeit der bis zum Widerruf erfolgten Verarbeitung
       bleibt unberührt.
     </p>

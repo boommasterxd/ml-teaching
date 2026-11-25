@@ -21,15 +21,16 @@
 | ----------------------------- | ---------------------------------------------------------------------------------------- |
 | Explore image recognition     | Follow an illustrated example from image to predicted class.                             |
 | Try two exercises             | Find everyday uses of image recognition and classify points with KNN.                    |
-| Train your own classifier     | Collect webcam images or choose local files, then test predictions.                      |
+| Train your own classifier     | Train with webcam captures or local files, then try live predictions with the camera.    |
 | Preview reward-based learning | Watch two example paths on the homepage. The Q-learning lesson and exercise are planned. |
 
 ## Quick start
 
 Use Node.js 26.x LTS and npm. Training requires a browser with WebGL and access
 to the external MobileNet provider for the initial model download, including
-when running locally with your own image files. Camera access requires HTTPS
-or localhost and separate browser permission.
+when running locally with your own image files. You can collect images from files
+and train without a camera. Live predictions require an active camera. Camera
+access requires separate consent, browser permission and HTTPS or localhost.
 
 ```sh
 npm ci --no-audit
@@ -38,9 +39,10 @@ npm run dev
 
 Open [localhost:3000](http://localhost:3000), choose **Bilderkennung** in the
 learning lab and open the practice page. The model downloads after you consent.
+To train, collect at least ten images per class in at least two uniquely named classes.
 If it fails to load, check your connection and select **Erneut versuchen**.
 See [development checks](docs/development.md#checks) for the model-provider smoke
-test. You can supply local image files without enabling the camera.
+test.
 
 ## Data, providers and costs
 

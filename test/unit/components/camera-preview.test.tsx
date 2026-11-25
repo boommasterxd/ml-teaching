@@ -13,18 +13,24 @@ function CapturePreview({
   onFileUpload = vi.fn(),
   pending = false,
   onSwitchCamera = vi.fn(),
+  classLabel,
+  remainingCapacity,
 }: {
   disabled?: boolean;
   stream?: MediaStream | null;
   onFileUpload?: () => void;
   pending?: boolean;
   onSwitchCamera?: () => void;
+  classLabel?: string;
+  remainingCapacity?: number;
 }) {
   const [recording, setRecording] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   return (
     <CameraPreview
       disabled={disabled}
+      classLabel={classLabel}
+      remainingCapacity={remainingCapacity}
       camera={{
         stream,
         facingMode: 'user',
@@ -44,6 +50,24 @@ function CapturePreview({
 }
 
 describe('camera preview controls', () => {
+  it('associates the import capacity and camera actions with the selected class', async () => {
+    await act(async () => {
+      render(
+        <CapturePreview stream={{} as MediaStream} classLabel="Klasse 2" remainingCapacity={1} />,
+      );
+    });
+    const upload = screen.getByRole<HTMLButtonElement>('button', {
+      name: 'Bilder auswählen für Klasse 2',
+      description: 'Noch Platz für 1 Bild.',
+    });
+    const record = screen.getByRole('button', { name: 'Aufnehmen für Klasse 2' });
+    await act(async () => {
+      fireEvent.click(record);
+    });
+    expect(screen.getByRole('button', { name: 'Aufnahme stoppen für Klasse 2' })).toBe(record);
+    expect(upload.disabled).toBe(false);
+  });
+
   it('starts on button activation and keeps recording until the same button is activated again', () => {
     render(<CapturePreview stream={{} as MediaStream} />);
     const record = screen.getByRole('button', { name: 'Aufnehmen' });

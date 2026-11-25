@@ -20,30 +20,66 @@ export async function holdApplicationScripts(page: Page) {
   };
 }
 
-export async function observePositionShift(target: Locator, selector?: string) {
-  const movement = await target.evaluateHandle((root, selector) => {
-    const elements = selector ? [...root.querySelectorAll(selector)] : [root];
-    const initial = elements.flatMap((element) => {
-      const { x, y, top, bottom, width } = element.getBoundingClientRect();
-      return width > 0 && bottom > 0 && top < innerHeight ? [{ element, x, y: y + scrollY }] : [];
-    });
+export async function observePositionShift(target: Locator, selectors: readonly string[]) {
+  const movement = await target.evaluateHandle((root, selectors) => {
+    const readTargets = () => selectors.map((selector) => [...root.querySelectorAll(selector)]);
+    const initialGroups = readTargets();
+    const initial = initialGroups.flatMap((group, groupIndex) =>
+      group.flatMap((element, index) => {
+        const { x, y, top, bottom, width } = element.getBoundingClientRect();
+        return width > 0 && bottom > 0 && top < innerHeight
+          ? [{ element, id: element.id, groupIndex, index, x, y: y + scrollY }]
+          : [];
+      }),
+    );
+    if (!initial.length) throw new Error('No initially visible position targets.');
+
     let largestShift = 0;
-    let frame = requestAnimationFrame(sample);
+    let missingTarget = '';
     function sample() {
-      for (const { element, x, y } of initial) {
-        if (!element.isConnected) continue;
-        const rect = element.getBoundingClientRect();
+      const groups = readTargets();
+      for (const { element, id, groupIndex, index, x, y } of initial) {
+        const group = groups[groupIndex];
+        const originals = initialGroups[groupIndex];
+        let current = element;
+        if (!group.includes(element)) {
+          const replacement = id
+            ? group.find((candidate) => candidate.id === id)
+            : group.length === originals.length
+              ? group[index]
+              : undefined;
+          if (
+            !replacement ||
+            replacement.tagName !== element.tagName ||
+            originals.includes(replacement)
+          ) {
+            missingTarget = `${selectors[groupIndex]} at index ${index}`;
+            return;
+          }
+          current = replacement;
+        }
+        const rect = current.getBoundingClientRect();
+        if (!rect.width || !rect.height) {
+          missingTarget = `${selectors[groupIndex]} at index ${index}`;
+          return;
+        }
         largestShift = Math.max(largestShift, Math.abs(rect.x - x), Math.abs(rect.y + scrollY - y));
       }
-      frame = requestAnimationFrame(sample);
     }
+    function tick() {
+      sample();
+      if (!missingTarget) frame = requestAnimationFrame(tick);
+    }
+    let frame = requestAnimationFrame(tick);
     return {
       finish() {
         cancelAnimationFrame(frame);
+        if (!missingTarget) sample();
+        if (missingTarget) throw new Error(`Position target disappeared: ${missingTarget}.`);
         return largestShift;
       },
     };
-  }, selector);
+  }, selectors);
 
   return async () => {
     try {

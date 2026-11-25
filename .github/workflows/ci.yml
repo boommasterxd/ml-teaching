@@ -1,4 +1,9 @@
 name: CI
+run-name: >-
+  ${{ format('{0} PR {1} revisions {2} {3} {4}',
+  (github.event.action == 'edited' && !github.event.changes.base) && 'Metadata' || 'Check',
+  github.event.pull_request.number, github.event.pull_request.base.sha,
+  github.event.pull_request.head.sha, github.sha) }}
 
 on:
   pull_request:
@@ -23,7 +28,7 @@ jobs:
   plan:
     name: Select checks
     runs-on: ubuntu-slim
-    timeout-minutes: 5
+    timeout-minutes: 7
     outputs:
       plan: ${{ steps.plan.outputs.plan }}
       quality: ${{ steps.plan.outputs.quality }}
@@ -38,6 +43,7 @@ jobs:
         with:
           node-version: '26.x'
           check-latest: true
+          package-manager-cache: false
       - id: plan
         run: node .github/scripts/plan-ci.ts
         env:
@@ -163,6 +169,7 @@ jobs:
         with:
           node-version: '26.x'
           check-latest: true
+          package-manager-cache: false
       - name: Require every selected check
         run: node .github/scripts/validate-ci.ts --results
         env:

@@ -467,8 +467,14 @@ wrapped messages. A full-width row groups upload, reset and removal.
 Narrow cards retain more space for the upload label and show reset and removal
 as icons with accessible names. The gallery's fixed-height area includes its
 selection controls so collecting the first image keeps the card height stable.
-Import errors are announced through the shared notification viewport, which is
-available with F6. Each class has one notification with the failed file details.
+Each class card names its group and its upload and capture actions. The image
+counter announces the class and final count after an import or capture. Below
+`md`, reaching the image limit opens the shared Tooltip above the one-line count.
+It stays open while the class is full. Wider viewports show the limit in the badge. The
+upload action describes the remaining capacity. The shared notification viewport,
+available with F6, retains one notification per class for failed files and files
+skipped at the class limit. A capacity-only notice uses the neutral information
+variant with a one-line reason. File errors retain their details.
 A persistent live status announces the selected image count during selection mode.
 Holding a thumbnail and releasing it within the same target enters selection mode
 and toggles that image. Moving away or cancelling the gesture leaves selection
@@ -780,9 +786,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   and desktop WebP posters in `src/assets/hero/` show the shader's resting pose.
   They preserve the alpha channel so the themed stage shows through the glass.
   Next.js generates responsive optimizer URLs for the homepage, 404, 500 and
-  in-app recovery posters. The browser selects the still for reduced motion or
-  disabled scripting. With motion enabled, the initial artwork reserves space
-  and requests the optimized still only if playback fails.
+  in-app recovery posters. Below `md`, the initial markup requests the optimized
+  still even when motion is enabled. On wider screens the still is available for
+  reduced motion, disabled scripting or the playback fallback states below.
   Both themes use the same ruby glass material. The loop turns and the droplets
   drift with moving highlights at up to 30 frames per second during autonomous
   playback. Each droplet follows its own path with a visible gap from the loop.
@@ -799,8 +805,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   expires after 7.8 seconds of active playback, excluding pause and offscreen time.
   The artwork itself accepts Enter and Space and keeps
   the normal pointer cursor. The only separate control pauses or resumes playback.
-  The initial HTML reserves the artwork area and exposes the optimized still below
-  the shared medium breakpoint. The same picture remains mounted when the first
+  The initial markup reserves the artwork area and preloads the matching still
+  below the shared medium breakpoint. The native 500 page emits this preload in
+  its document head. The same picture remains mounted when the first
   successful draw takes over. The shared Spinner mounts after 500 ms of active
   waiting. The first successful draw or the end of waiting removes it.
   Where parallel compilation is available, the renderer checks the readiness of

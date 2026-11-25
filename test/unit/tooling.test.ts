@@ -111,6 +111,19 @@ describe('CI selection and required gate', () => {
     expect(() => createPlan({ ...revisions, head: 'truncated' })).toThrow();
   });
 
+  it('keeps quality and unit checks for local Lighthouse tooling and checks browsers for mixed changes', () => {
+    const tooling = ['scripts/check-lighthouse.ts', 'scripts/lighthouse-runtime.ts'];
+    const work = selectWork([...tooling, 'test/unit/scripts/check-lighthouse.test.ts']);
+    expect(work).toEqual({ quality: true, browser: false, reason: 'local-tooling' });
+    expect(selectWork([...tooling, 'src/app/page.tsx']).reason).toBe('full');
+    expect(selectWork([...tooling, 'scripts/ignore-build.ts']).reason).toBe('full');
+
+    const plan = { version: ciPlanVersion, ...revisions, ...work };
+    const results = { plan: 'success', quality: 'success', browser: 'skipped' };
+    expect(() => validateResults(plan, revisions, results)).not.toThrow();
+    expect(() => validateResults(plan, revisions, { ...results, quality: 'skipped' })).toThrow();
+  });
+
   it('selects one isolated spec on an up-to-date simulated merge and requires its browser job', () => {
     using directory = mkdtempDisposableSync(join(tmpdir(), 'ml-teaching-browser-plan-'));
     const plan = planBrowserFixture(directory.path, 'single');

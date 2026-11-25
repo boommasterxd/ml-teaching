@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { ML } from '@/constants';
 import { usePredictionSpacePreparation } from '@/hooks/usePredictionSpacePreparation';
 import { fitFeatureProjection } from '@/lib/feature-projection';
 import type { MLClass } from '@/types/ml';
@@ -20,6 +21,17 @@ function trainingClass(id: string, vectors: number[][]): MLClass {
       featureArray,
     })),
   };
+}
+
+function fullTrainingSet() {
+  const horizontal = Array.from({ length: 1280 }, (_, index) => Number(index === 0));
+  const vertical = Array.from({ length: 1280 }, (_, index) => Number(index === 1));
+  return Array.from({ length: ML.MAX_CLASSES }, (_, index) =>
+    trainingClass(
+      String(index),
+      Array<number[]>(ML.MAX_IMAGES_PER_CLASS).fill(index % 2 === 0 ? horizontal : vertical),
+    ),
+  );
 }
 
 describe('training feature projection', () => {
@@ -77,17 +89,18 @@ describe('training feature projection', () => {
     expect(result.project([1, 2, 3])).toEqual({ x: 0, y: 0 });
   });
 
-  it('stops fitting when the owner leaves while a large dataset is being prepared', async () => {
-    const horizontal = Array.from({ length: 1280 }, (_, index) => Number(index === 0));
-    const vertical = Array.from({ length: 1280 }, (_, index) => Number(index === 1));
-    const classes = Array.from({ length: 15 }, (_, index) =>
-      trainingClass(
-        String(index),
-        Array<number[]>(200).fill(index % 2 === 0 ? horizontal : vertical),
-      ),
+  it('projects every example at the supported training limit', async () => {
+    const classes = fullTrainingSet();
+    const result = await fitFeatureProjection(classes, new AbortController().signal);
+    expect(result.points.map(({ classId }) => classId)).toEqual(
+      classes.flatMap(({ id, images }) => images.map(() => id)),
     );
+    expect(result.points.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))).toBe(true);
+  });
+
+  it('stops fitting when the owner leaves while a large dataset is being prepared', async () => {
     const controller = new AbortController();
-    const fitting = fitFeatureProjection(classes, controller.signal);
+    const fitting = fitFeatureProjection(fullTrainingSet(), controller.signal);
     setTimeout(() => controller.abort(), 0);
     await expect(fitting).rejects.toHaveProperty('name', 'AbortError');
   });

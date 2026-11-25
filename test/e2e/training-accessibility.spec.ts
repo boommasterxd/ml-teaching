@@ -134,7 +134,15 @@ test('camera and class actions stay reachable when text size doubles', async ({
   await expectReachable(camera.getByRole('button', { name: 'Erlauben' }));
   await withoutCamera.press('Enter');
 
-  const upload = page.getByRole('button', { name: 'Bilder auswählen', exact: true }).first();
+  const firstClass = page.getByRole('group', { name: 'Klasse 1', exact: true });
+  const secondClass = page.getByRole('group', { name: 'Klasse 2', exact: true });
+  const upload = firstClass.getByRole('button', { name: 'Bilder auswählen für Klasse 1' });
+  await expect(upload).toHaveAccessibleDescription(
+    `Noch Platz für ${ML.MAX_IMAGES_PER_CLASS} Bilder.`,
+  );
+  await expect(
+    secondClass.getByRole('button', { name: 'Bilder auswählen für Klasse 2' }),
+  ).toBeEnabled();
   const reset = page.getByRole('button', { name: 'Bilder der Klasse 1: Klasse 1 zurücksetzen' });
   const remove = page.getByRole('button', { name: 'Klasse 1: Klasse 1 löschen' });
   for (const action of [upload, reset, remove]) await expectReachable(action);

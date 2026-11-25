@@ -125,11 +125,15 @@ async function renderWorkspace(step: TrainingStep = 'images') {
   };
 }
 
+function uploadImage(workspace: Workspace, classId: string, signal = new AbortController().signal) {
+  return workspace.cardActions.onAddImageExample(classId, document.createElement('img'), signal);
+}
+
 async function collectMinimumImages(result: { current: Workspace }) {
   await act(async () => {
     for (const cls of result.current.data.classes.classes) {
       for (let index = 0; index < ML.MIN_IMAGES_PER_CLASS; index++) {
-        await result.current.cardActions.onAddImageExample(cls.id, document.createElement('img'));
+        await uploadImage(result.current, cls.id);
       }
     }
   });
@@ -187,12 +191,12 @@ describe('local training workspace', () => {
     act(() => result.current.data.trainModel());
     expect(result.current.data.training.isTraining).toBe(false);
     await act(async () => {
-      await result.current.cardActions.onAddImageExample('class-1', document.createElement('img'));
+      await uploadImage(result.current, 'class-1');
       result.current.cardActions.onUploadEnd();
     });
     expect(result.current.data.canTrain).toBe(false);
     await act(async () => {
-      await result.current.cardActions.onAddImageExample('class-2', document.createElement('img'));
+      await uploadImage(result.current, 'class-2');
       result.current.cardActions.onUploadEnd();
     });
     expect(result.current.data.canTrain).toBe(true);
@@ -226,7 +230,7 @@ describe('local training workspace', () => {
           finish = resolve;
         }),
     );
-    let capture!: Promise<void>;
+    let capture!: ReturnType<typeof result.current.cardActions.onAddImageExample>;
     act(() => {
       capture = result.current.data.addImage('class-1', document.createElement('video'), false);
     });
@@ -251,9 +255,7 @@ describe('local training workspace', () => {
     expect(result.current.resources.consent.cameraConsent).toBe(false);
     expect(result.current.resources.showCameraPrompt).toBe(false);
     expect(result.current.resources.camera.stream).toBeNull();
-    await act(async () =>
-      result.current.cardActions.onAddImageExample('class-1', document.createElement('img')),
-    );
+    await act(() => uploadImage(result.current, 'class-1'));
     expect(result.current.data.classes.classes[0].images).toHaveLength(1);
     act(() => result.current.resources.camera.start());
     expect(result.current.resources.showCameraPrompt).toBe(true);
@@ -267,30 +269,33 @@ describe('local training workspace', () => {
     expect(result.current.resources.models.mobilenetModel).toBeNull();
     expect(result.current.resources.showCameraPrompt).toBe(false);
   });
-  it('never restores an in-flight image after clearing a class', async () => {
-    const { result } = await renderWorkspace();
-    const classId = result.current.data.classes.classes[0].id;
-    let finish!: (image: MLImage) => void;
-    mocks.extract.mockImplementationOnce(
-      () =>
-        new Promise<MLImage>((resolve) => {
-          finish = resolve;
-        }),
-    );
-    let capture!: void | Promise<void>;
-    act(() => {
-      capture = result.current.cardActions.onAddImageExample(
-        classId,
-        document.createElement('img'),
+  it.each(['clearing a class', 'replacing an import'])(
+    'never restores an in-flight image after %s',
+    async (action) => {
+      const { result } = await renderWorkspace();
+      const classId = result.current.data.classes.classes[0].id;
+      const controller = new AbortController();
+      const pending = Promise.withResolvers<MLImage>();
+      mocks.extract.mockReturnValueOnce(pending.promise);
+      let capture!: ReturnType<typeof result.current.cardActions.onAddImageExample>;
+      act(() => {
+        capture = uploadImage(result.current, classId, controller.signal);
+      });
+      if (action === 'clearing a class') act(() => result.current.data.classes.clearClass(classId));
+      else controller.abort();
+      await act(async () => {
+        pending.resolve(image('discarded'));
+        await capture;
+      });
+      expect(result.current.data.classes.classes.every((cls) => cls.images.length === 0)).toBe(
+        true,
       );
-    });
-    act(() => result.current.data.classes.clearClass(classId));
-    await act(async () => {
-      finish(image('late-image'));
-      await capture;
-    });
-    expect(result.current.data.classes.classes.every((cls) => cls.images.length === 0)).toBe(true);
-  });
+      await act(() => uploadImage(result.current, classId));
+      expect(result.current.data.classes.classes[0].images.map(({ id }) => id)).toEqual([
+        'image-0',
+      ]);
+    },
+  );
   it('keeps consent steps ordered and closes a preview when its image is deleted', async () => {
     const { result } = await renderWorkspace();
     expect(result.current.resources.consent.showConsentModal).toBe(true);
@@ -300,9 +305,7 @@ describe('local training workspace', () => {
     act(() => result.current.resources.consent.grantCameraConsent());
     expect(result.current.resources.consent.isFullyConsented).toBe(true);
     const classId = result.current.data.classes.classes[0].id;
-    await act(async () =>
-      result.current.cardActions.onAddImageExample(classId, document.createElement('img')),
-    );
+    await act(() => uploadImage(result.current, classId));
     const captured = result.current.data.classes.classes[0].images[0];
     act(() => result.current.dialogs.showImagePreview(classId, captured));
     expect(result.current.dialogs.modal.type).toBe('imagePreview');
@@ -321,9 +324,7 @@ describe('local training workspace', () => {
     expect(result.current.data.training.canTrain).toBe(true);
     act(() => result.current.data.trainModel());
     const countBefore = result.current.data.classes.classes[0].images.length;
-    await act(async () =>
-      result.current.cardActions.onAddImageExample('class-1', document.createElement('img')),
-    );
+    await act(() => uploadImage(result.current, 'class-1'));
     expect(result.current.data.classes.classes[0].images).toHaveLength(countBefore);
     await waitFor(() => expect(result.current.resources.hasTrainedModel).toBe(true));
     expect(result.current.resources.camera.stream).toBeNull();
@@ -398,7 +399,7 @@ describe('local training workspace', () => {
     });
     await waitFor(() => expect(result.current.resources.camera.stream).toBe(mocks.stream));
     const { cardActions: actions } = result.current;
-    await act(async () => actions.onAddImageExample('class-1', document.createElement('img')));
+    await act(() => uploadImage(result.current, 'class-1'));
     expect(result.current.cardActions).toBe(actions);
     const pending = Promise.withResolvers<MLImage>();
     mocks.extract.mockReturnValueOnce(pending.promise);
@@ -443,14 +444,12 @@ describe('local training workspace', () => {
     const { result } = await renderWorkspace();
     mocks.extract.mockRejectedValueOnce(new Error('Image unavailable'));
     await act(async () => {
-      await expect(
-        result.current.cardActions.onAddImageExample('class-1', document.createElement('img')),
-      ).rejects.toThrow('Das Bild konnte nicht verarbeitet werden');
+      await expect(uploadImage(result.current, 'class-1')).rejects.toThrow(
+        'Das Bild konnte nicht verarbeitet werden',
+      );
     });
     expect(mocks.toastError).not.toHaveBeenCalled();
-    await act(async () =>
-      result.current.cardActions.onAddImageExample('deleted-class', document.createElement('img')),
-    );
+    await act(() => uploadImage(result.current, 'deleted-class'));
     expect(mocks.extract).toHaveBeenCalledOnce();
     act(() => result.current.editSecondName('Klasse 1'));
     expect(result.current.data.hasDuplicateNames).toBe(true);

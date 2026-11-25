@@ -19,6 +19,7 @@ import { prepareTrainingDialogs, type PendingTrainingDialog } from './DeferredTr
 import ImageGallery, { prepareImageGallery } from './ImageGallery';
 import TrainingClassFrame, {
   ClassManagementActions,
+  trainingClassLabel,
   TrainingClassNameField,
   trainingGalleryLabel,
 } from './TrainingClassFrame';
@@ -29,8 +30,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
  * Callback actions for the ClassCard component, grouped to reduce prop count.
  */
 export interface ClassCardActions extends CaptureActions {
-  /** Called when a training image is added via file upload. */
-  onAddImageExample: (classId: string, img: HTMLImageElement) => void | Promise<void>;
   /** Called to request removal of the entire class. */
   onRemove: (classId: string) => void;
   /** Called to clear all images from the class without removing it. */
@@ -96,7 +95,7 @@ const ClassCard = memo(function ClassCard({
   const present = useIsPresent();
   const value = present ? field.value : cls.name;
   const nameError = present ? error : undefined;
-  const { videoRef, isRecording, startRecording, stopRecording, handleFileUpload } =
+  const { videoRef, isRecording, isUploading, startRecording, stopRecording, handleFileUpload } =
     useClassCapture(cls, actions);
 
   /** Forwards an image click to the parent with the current class ID. */
@@ -119,6 +118,7 @@ const ClassCard = memo(function ClassCard({
     <TrainingClassFrame
       cls={cls}
       position={position}
+      collectingImages={isRecording || isUploading}
       nameField={
         <EditableClassName
           {...field}
@@ -131,6 +131,8 @@ const ClassCard = memo(function ClassCard({
     >
       <CameraPreview
         camera={camera}
+        classLabel={trainingClassLabel(cls, position)}
+        remainingCapacity={ML.MAX_IMAGES_PER_CLASS - cls.images.length}
         disabled={actions.captureDisabled || cls.images.length >= ML.MAX_IMAGES_PER_CLASS}
         isRecording={isRecording}
         onStartRecording={startRecording}

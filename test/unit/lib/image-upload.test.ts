@@ -127,7 +127,7 @@ describe('local image upload', () => {
     hasCapacity.mockReturnValue(false);
     held.resolve();
 
-    await pending;
+    await expect(pending).resolves.toBe(1);
     await loaded(1);
     await Promise.all([active, next]);
     expect(sliceNext).toHaveBeenCalledExactlyOnceWith(0, 40);
@@ -135,6 +135,21 @@ describe('local image upload', () => {
     expect(read.mock.calls[0]?.[0]).toBe(sliceNext.mock.results[0]?.value);
     expect(discarded).not.toHaveBeenCalled();
     expect(onNext).toHaveBeenCalledOnce();
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it('counts remaining files when the class becomes full during feature extraction', async () => {
+    const extraction = Promise.withResolvers<'capacity'>();
+    const onImage = vi.fn(() => extraction.promise);
+    const onError = vi.fn();
+    const processing = processImageFiles(files(), onImage, onError, controller().signal);
+    await loaded(0);
+    await waitFor(() => expect(onImage).toHaveBeenCalledOnce());
+    extraction.resolve('capacity');
+
+    await expect(processing).resolves.toBe(2);
+    expect(images).toHaveLength(1);
+    expect(URL.revokeObjectURL).toHaveBeenCalledExactlyOnceWith('blob:first.png');
     expect(onError).not.toHaveBeenCalled();
   });
 

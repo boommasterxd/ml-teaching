@@ -203,11 +203,30 @@ test('a full training gallery keeps keyboard focus and selection across virtual 
   await page.goto(learningPaths.imagePractice);
   await grantModelConsent(page);
   await page.getByRole('button', { name: 'Ohne Kamera fortfahren' }).click();
-  await collectGalleryImages(page, limit);
+  await collectGalleryImages(page, limit + 1);
+  const firstClass = page.getByRole('group', { name: 'Klasse 1', exact: true });
+  const status = firstClass.getByRole('status').filter({ hasText: `Klasse 1, ${limit} Bilder` });
   // The full gallery processes each file sequentially before the next can start.
-  await expect(page.getByText(`${limit} Bilder · Limit erreicht`, { exact: true })).toBeVisible({
+  await expect(status.getByText(`${limit} Bilder`, { exact: true })).toBeVisible({
     timeout: 20_000,
   });
+  const inlineLimit = status.getByText('· Limit erreicht', { exact: true });
+  const limitTooltip = page
+    .getByRole('tooltip', { includeHidden: true })
+    .filter({ hasText: 'Upload-Limit erreicht' });
+  await expect(status).toHaveAttribute('aria-busy', 'false');
+  await expect(inlineLimit).toBeHidden();
+  await expect(limitTooltip).toBeVisible();
+  const viewport = page.getByRole('region', { name: 'Mitteilungen' });
+  const notice = viewport.getByRole('dialog', {
+    name: 'Ein Bild konnte nicht hinzugefügt werden.',
+  });
+  await expect(notice.getByText('Upload-Limit erreicht', { exact: true })).toBeVisible();
+  await page.keyboard.press('F6');
+  await expect(viewport).toBeFocused();
+  await expectAccessible(page);
+  await notice.getByRole('button', { name: 'Meldung schließen' }).press('Enter');
+  await expect(limitTooltip).toBeVisible();
   const gallery = page.getByRole('region', { name: /Trainingsbilder von Klasse 1:/ });
   const selection = page.getByRole('button', { name: 'Mehrere markieren', exact: true });
   await selection.press('Enter');
@@ -238,6 +257,8 @@ test('a full training gallery keeps keyboard focus and selection across virtual 
   await expectGalleryReentry(gallery, last);
 
   await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(inlineLimit).toBeVisible();
+  await expect(limitTooltip).toBeHidden();
   await expect(last).toBeInViewport();
   await expect(last).toBeFocused();
   await expect(last).toHaveAttribute('aria-pressed', 'true');
@@ -250,6 +271,8 @@ test('a full training gallery keeps keyboard focus and selection across virtual 
   await remove.press('Enter');
   await expect(page.getByText(`${limit - 2} Bilder`, { exact: true })).toBeVisible();
   await expect(selection).toBeFocused();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(limitTooltip).toBeHidden();
   const thumbnail = gallery.getByRole('button', { name: 'Bild 1 vergrößern', exact: true });
   await thumbnail.press('Enter');
   await expect(page.getByRole('dialog', { name: 'Bild 1 aus Klasse 1' })).toBeVisible();
@@ -382,7 +405,7 @@ test.describe('touch recording', () => {
       has: page.getByRole('textbox', { name: /^Name für Klasse 2:/ }),
     });
     const next = page.getByRole('button', { name: 'Weiter zum Training' }).last();
-    const record = second.getByRole('button', { name: 'Aufnehmen', exact: true });
+    const record = second.getByRole('button', { name: 'Aufnehmen für Klasse 2', exact: true });
     await collectGalleryImages(page, 1, 1);
     const existingImageCount = second.getByText(`1 / ${ML.MIN_IMAGES_PER_CLASS} Bilder`, {
       exact: true,

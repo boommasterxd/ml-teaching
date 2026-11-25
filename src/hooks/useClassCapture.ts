@@ -25,7 +25,11 @@ export interface CaptureActions {
     target?: CaptureTarget,
   ) => void | Promise<void>;
   onCommitCapture: (classId: string, frames: CapturedFrames) => void;
-  onAddImageExample: (classId: string, image: HTMLImageElement) => void | Promise<void>;
+  onAddImageExample: (
+    classId: string,
+    image: HTMLImageElement,
+    signal: AbortSignal,
+  ) => 'capacity' | void | Promise<'capacity' | void>;
   onError: (message: string) => void;
   onUploadResult: (classId: string, report: UploadFailureReport | null) => void;
 }
@@ -34,6 +38,7 @@ interface UploadFailureReport {
   className: string;
   total: number;
   details: string[];
+  capacitySkipped?: number;
 }
 
 const uploadFailureDetailLimit = 5;
@@ -162,18 +167,22 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
   }, [cls, actions]);
   const captureVersion = cls.captureVersion ?? 0;
   const recording = useCameraCapture(latest, captureVersion);
+  const [uploadingVersion, setUploadingVersion] = useState<number | null>(null);
   const uploadRef = useRef<UploadBatch | null>(null);
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { cls: current } = latest.current;
+    const selectedCount = event.target.files?.length ?? 0;
     const files = Array.from(event.target.files ?? []).slice(
       0,
       ML.MAX_IMAGES_PER_CLASS - current.images.length,
     );
     event.target.value = '';
-    if (!files.length || !latest.current.actions.onUploadStart()) return;
+    if (!selectedCount || !latest.current.actions.onUploadStart()) return;
     cancelUpload(uploadRef.current);
     const controller = new AbortController();
     const version = current.captureVersion ?? 0;
+    setUploadingVersion(version);
+    let capacitySkipped = selectedCount - files.length;
     const report: UploadFailureReport = {
       className: current.name,
       total: 0,
@@ -193,7 +202,7 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
     uploadRef.current = { controller, finish };
     void processImageFiles(
       files,
-      (image) => latest.current.actions.onAddImageExample(current.id, image),
+      (image) => latest.current.actions.onAddImageExample(current.id, image, controller.signal),
       reportFailure,
       controller.signal,
       () => {
@@ -205,6 +214,9 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
         );
       },
     )
+      .then((remaining) => {
+        capacitySkipped += remaining;
+      })
       .catch(() => {
         reportFailure('Die Bilder konnten nicht verarbeitet werden.');
       })
@@ -214,12 +226,14 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
           const { cls, actions } = latest.current;
           if ((cls.captureVersion ?? 0) === version) {
             report.className = cls.name;
-            actions.onUploadResult(current.id, report.total ? report : null);
+            if (capacitySkipped) report.capacitySkipped = capacitySkipped;
+            actions.onUploadResult(current.id, report.total || capacitySkipped ? report : null);
           }
+          setUploadingVersion(null);
         }
         finish();
       });
   }, []);
   useEffect(() => () => cancelUpload(uploadRef.current), [captureVersion]);
-  return { ...recording, handleFileUpload };
+  return { ...recording, isUploading: uploadingVersion === captureVersion, handleFileUpload };
 }

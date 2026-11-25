@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Camera } from './icons/camera';
 import { Square } from './icons/square';
 import { Upload } from './icons/upload';
@@ -12,6 +12,8 @@ import { IMAGE_INPUT_ACCEPT } from '../lib/image-input-policy';
 export interface CameraPreviewProps {
   disabled: boolean;
   camera: CameraView;
+  classLabel?: string;
+  remainingCapacity?: number;
   isRecording: boolean;
   onStartRecording: (hold?: boolean) => void;
   onStopRecording: (commitHold?: boolean) => void;
@@ -23,7 +25,12 @@ export interface CameraPreviewProps {
 
 type RecordButtonProps = Pick<
   CameraPreviewProps,
-  'isRecording' | 'onStartRecording' | 'onStopRecording' | 'disabled' | 'onCaptureIntent'
+  | 'isRecording'
+  | 'onStartRecording'
+  | 'onStopRecording'
+  | 'disabled'
+  | 'onCaptureIntent'
+  | 'classLabel'
 >;
 
 const touchHoldDelayMs = 350;
@@ -34,9 +41,11 @@ function RecordButton({
   onStartRecording,
   onStopRecording,
   onCaptureIntent,
+  classLabel,
 }: RecordButtonProps) {
   const touch = useRef<{ pointerId: number; timer: number; started: boolean } | null>(null);
   const suppressTouchClick = useRef(false);
+  const label = isRecording ? 'Aufnahme stoppen' : 'Aufnehmen';
   useEffect(() => () => window.clearTimeout(touch.current?.timer), []);
 
   const startPress = (event: React.PointerEvent<HTMLButtonElement>) => {
@@ -71,6 +80,7 @@ function RecordButton({
       variant={isRecording ? 'destructive' : 'default'}
       size="lg"
       disabled={disabled && !isRecording}
+      aria-label={classLabel ? `${label} für ${classLabel}` : undefined}
       className="min-h-11 w-full touch-manipulation select-none [-webkit-touch-callout:none]"
       onPointerEnter={onCaptureIntent}
       onFocus={onCaptureIntent}
@@ -108,7 +118,7 @@ function RecordButton({
       ) : (
         <Camera data-icon="inline-start" aria-hidden="true" />
       )}
-      {isRecording ? 'Aufnahme stoppen' : 'Aufnehmen'}
+      {label}
     </Button>
   );
 }
@@ -210,9 +220,12 @@ export default function CameraPreview(props: CameraPreviewProps) {
     disabled,
     fileActions,
     onCaptureIntent,
+    classLabel,
+    remainingCapacity,
   } = props;
   const { stream } = camera;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const capacityId = useId();
   const endCapture = useEffectEvent(onStopRecording);
   useEffect(() => {
     if (stream) return () => endCapture();
@@ -242,10 +255,19 @@ export default function CameraPreview(props: CameraPreviewProps) {
             fileInputRef.current?.click();
           }}
           disabled={disabled}
+          aria-label={classLabel ? `Bilder auswählen für ${classLabel}` : undefined}
+          aria-describedby={remainingCapacity === undefined ? undefined : capacityId}
         >
           <Upload data-icon="inline-start" aria-hidden="true" />
           <span className="min-w-0 wrap-anywhere">Bilder auswählen</span>
         </Button>
+        {remainingCapacity !== undefined && (
+          <span id={capacityId} className="sr-only">
+            {remainingCapacity === 1
+              ? 'Noch Platz für 1 Bild.'
+              : `Noch Platz für ${remainingCapacity} Bilder.`}
+          </span>
+        )}
         <Input
           type="file"
           disabled={disabled}

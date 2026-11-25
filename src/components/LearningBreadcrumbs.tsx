@@ -36,20 +36,23 @@ export default function LearningBreadcrumbs({ currentPath }: { currentPath: Imag
       <JsonLd data={structuredData} />
       <Breadcrumb aria-label="Seitenpfad" className="pt-3 sm:pt-4">
         <BreadcrumbList>
-          {items.map(({ name, path }) => (
-            <BreadcrumbItem key={path}>
-              {path === currentPath ? (
-                <BreadcrumbPage>{name}</BreadcrumbPage>
-              ) : (
-                <>
-                  <BreadcrumbLink href={path} transitionTypes={['nav-back']}>
-                    {name}
-                  </BreadcrumbLink>
-                  <BreadcrumbSeparator />
-                </>
-              )}
-            </BreadcrumbItem>
-          ))}
+          {items.map(({ name, path }) => {
+            const isCurrentPage = path === currentPath;
+            return (
+              <BreadcrumbItem key={path} animateSeparator={!isCurrentPage}>
+                {isCurrentPage ? (
+                  <BreadcrumbPage>{name}</BreadcrumbPage>
+                ) : (
+                  <>
+                    <BreadcrumbLink href={path} transitionTypes={['nav-back']}>
+                      {name}
+                    </BreadcrumbLink>
+                    <BreadcrumbSeparator />
+                  </>
+                )}
+              </BreadcrumbItem>
+            );
+          })}
         </BreadcrumbList>
       </Breadcrumb>
     </>

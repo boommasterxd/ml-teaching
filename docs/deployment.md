@@ -28,7 +28,7 @@ publication.
 
 Vercel evaluates commits from protected squash merges into `main` for native
 Production builds. Its Production Git policy allows the connected repository.
-Vercel automatically assigns the Production domains after a successful build.
+In normal operation, Vercel assigns the Production domains after a successful build.
 Commits skipped by the Ignore Build Step leave the current deployment in service.
 `vercel.json` limits automatic deployments to `main`, and Preview accepts only CLI
 and REST API deployments. Manual
@@ -98,6 +98,20 @@ The root `.codex-attachments/` directory is excluded from both Git and Vercel up
 Verify saved settings before releasing. Once the deployment is Ready, verify that
 the Production domain points to the intended commit. Check the native adapter,
 prerendered output, HTTPS, delivered headers, canonical URLs, RSC delivery and the
-browser consent/training flow on that deployment. Keep HTML, hashes, assets and
-headers from the same build during rollback, and retain assets for the configured
-five-minute browser HTML freshness.
+browser consent/training flow on that deployment.
+
+## Production recovery
+
+For an authorized rollback, use Vercel [Instant Rollback](https://vercel.com/docs/instant-rollback)
+to select an eligible, verified deployment that previously served the Production
+domain. Confirm the deployment and its commit before switching traffic. Verify the
+Production domain serves the selected build and repeat the publication checks on it.
+Use the complete deployment so HTML, CSP hashes, headers and assets come from the
+same build. Retain referenced assets for the five-minute browser HTML freshness window.
+
+Instant Rollback pauses automatic Production domain assignment. New builds from
+`main` can finish without replacing the restored version. After verifying a fixed
+Production deployment and obtaining release authorization, promote it in Vercel
+or with [`vercel promote`](https://vercel.com/docs/cli/promote). Promotion restores
+automatic assignment. Confirm the Production domain points to the promoted commit
+and repeat the publication checks.

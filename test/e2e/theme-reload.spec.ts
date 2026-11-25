@@ -74,9 +74,16 @@ test('the native error document restores a remembered theme without changing the
 }) => {
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   await page.goto('/lernen');
-  await page.getByRole('switch', { name: 'Dunkle Darstellung' }).press('Space');
+  const appearance = await openThemeMenu(page);
+  await appearance.getByRole('menuitemradio', { name: 'Dunkel', exact: true }).press('Enter');
+  await expect(appearance).toBeHidden();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
   const menu = await openThemeMenu(page);
-  await menu.getByRole('menuitemcheckbox', { name: 'Auswahl merken' }).click();
+  const remember = menu.getByRole('menuitemcheckbox', { name: 'Auswahl merken' });
+  await remember.press('Space');
+  await expect(remember).toBeChecked();
+  expect(await page.evaluate(() => localStorage.getItem('ml-teaching-theme'))).toBe('dark');
 
   const response = await page.goto('/500');
   expect(response?.status()).toBe(500);

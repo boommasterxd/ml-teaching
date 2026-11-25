@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import { learningPaths } from '../../src/lib/learning-paths';
 import { expectAccessible, expectNoStoredTrainingData } from './browser-checks';
 import { failSyntheticModel, routeSyntheticModel } from './synthetic-model';
@@ -33,6 +34,19 @@ async function withdrawFromSetup(dialog: Locator) {
   await expect(trainingSettingsTrigger(page)).toHaveCount(0);
   await expectNoStoredTrainingData(page);
   return confirmation;
+}
+
+function holdCamera(page: Page) {
+  return page.evaluateHandle(() => {
+    const stream = document.createElement('canvas').captureStream();
+    const request = Promise.withResolvers<MediaStream>();
+    const state = { started: false, stream, resolve: () => request.resolve(stream) };
+    navigator.mediaDevices.getUserMedia = () => {
+      state.started = true;
+      return request.promise;
+    };
+    return state;
+  });
 }
 
 test('withdraws remembered consent directly after a model load error', async ({
@@ -81,16 +95,7 @@ test('withdraws during camera setup and stops a stream that arrives late', async
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
   const network = await routeSyntheticModel(page, baseURL!);
   const opener = await openTrainingSetup(page);
-  const pending = await page.evaluateHandle(() => {
-    const stream = document.createElement('canvas').captureStream();
-    const request = Promise.withResolvers<MediaStream>();
-    const state = { started: false, stream, resolve: () => request.resolve(stream) };
-    navigator.mediaDevices.getUserMedia = () => {
-      state.started = true;
-      return request.promise;
-    };
-    return state;
-  });
+  const pending = await holdCamera(page);
 
   try {
     const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
@@ -112,6 +117,60 @@ test('withdraws during camera setup and stops a stream that arrives late', async
     expect(network.modelRequests).toEqual(['graph', 'weights']);
     expect(network.unexpectedRequests).toEqual([]);
   } finally {
+    await pending.evaluate(({ stream }) => stream.getTracks().forEach((track) => track.stop()));
+    await pending.dispose();
+  }
+});
+
+test('canceling a direct workspace failure forgets consent and stops the camera', async ({
+  page,
+  baseURL,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  const network = await routeSyntheticModel(page, baseURL!);
+  await page.goto(learningPaths.imagePractice);
+  const workspaceRequest = Promise.withResolvers<void>();
+  const pending = await holdCamera(page);
+  await page.route(`${baseURL}/_next/static/chunks/*.js`, async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    const source = await readFile(`.next${pathname.slice('/_next'.length)}`, 'utf8');
+    if (!source.includes('Die Ansicht konnte nicht geladen werden.')) return route.fallback();
+    await workspaceRequest.promise;
+    await route.abort();
+  });
+
+  try {
+    await grantModelConsent(page, true);
+    const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
+    await camera.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
+    await expect.poll(() => pending.evaluate(({ started }) => started)).toBe(true);
+    await pending.evaluate(({ resolve }) => resolve());
+    const workspace = page.getByRole('dialog', { name: 'Arbeitsbereich vorbereiten' });
+    await expect(workspace.getByRole('status')).toContainText('Arbeitsbereich wird geladen');
+    workspaceRequest.resolve();
+    await expect(workspace.getByRole('alert')).toContainText('konnte nicht geladen werden');
+    await expectAccessible(page);
+    await workspace.getByRole('button', { name: 'Abbrechen' }).press('Enter');
+    await expect(page).toHaveURL(learningPaths.images);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect
+      .poll(() =>
+        pending.evaluate(({ stream }) => stream.getTracks().map((track) => track.readyState)),
+      )
+      .toEqual(['ended']);
+
+    await page
+      .getByRole('link', { name: 'Eigenes Bildmodell trainieren', exact: true })
+      .press('Enter');
+    const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
+    await expect(consent).toBeVisible();
+    await expect(consent.getByRole('checkbox', { checked: true })).toHaveCount(0);
+    await expectNoStoredTrainingData(page);
+    expect(network.modelRequests).toEqual(['graph', 'weights']);
+    expect(network.unexpectedRequests).toEqual([]);
+  } finally {
+    workspaceRequest.resolve();
     await pending.evaluate(({ stream }) => stream.getTracks().forEach((track) => track.stop()));
     await pending.dispose();
   }

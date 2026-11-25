@@ -66,6 +66,17 @@ const publicRoutes = [
   '/barrierefreiheit',
 ];
 
+test('geometry observation follows a shifted replacement heading', async ({ page }) => {
+  await page.setContent('<main><h1 hidden>Hidden</h1><h1>Measured</h1></main>');
+  const measureShift = await observePositionShift(page.locator('main'), ['h1']);
+  await page.getByRole('heading', { name: 'Measured' }).evaluate((heading) => {
+    const replacement = heading.cloneNode(true) as HTMLElement;
+    replacement.style.marginLeft = '40px';
+    heading.replaceWith(replacement);
+  });
+  expect(await measureShift()).toBeGreaterThanOrEqual(40);
+});
+
 for (const path of publicRoutes) {
   test(`initial public content is readable before hydration at ${path}`, async ({ page }) => {
     await page.emulateMedia({
@@ -100,10 +111,10 @@ for (const path of publicRoutes) {
       }
       await scripts.expectHeld();
       await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
-      const measureShift = await observePositionShift(
-        page.locator('body'),
-        'main h1, [data-entry-reveal]',
-      );
+      const measureShift = await observePositionShift(page.locator('body'), [
+        'main h1',
+        '[data-entry-reveal]',
+      ]);
       scripts.release();
       await expect(main.getByRole('heading', { level: 1 })).toBeVisible();
       const appearance = page.getByRole('switch', { name: 'Dunkle Darstellung' });

@@ -184,12 +184,12 @@ export const PrivacyCollection = (
     <p>
       Mit „Für 30 Minuten in diesem Tab merken“ willigen Sie ein, dass die Anwendung Ihre
       Zustimmungen, die Kamerawahl und den Ablaufzeitpunkt vorübergehend im Arbeitsspeicher Ihres
-      Browsers hält. Die Auswahl gilt beim Wechsel innerhalb der Website im selben Tab und endet
-      spätestens nach 30 Minuten oder wenn Sie die Seite neu laden oder schließen. Die Anwendung
-      übermittelt diese Auswahl nicht an Server. Grundlage für das Merken ist Ihre Einwilligung nach
-      § 25 Abs. 1 TDDDG und, soweit dabei personenbezogene Daten verarbeitet werden, nach Art. 6
-      Abs. 1 lit. a DSGVO. Eine bereits laufende Nutzung kann nach Ablauf der 30 Minuten fortgesetzt
-      werden.
+      Browsers hält. Die Auswahl gilt bis zu 30 Minuten, solange Sie im selben Tab auf der Website
+      bleiben und sie nicht neu laden. Wenn Sie die Website verlassen, fragt die Lernfunktion bei
+      Ihrer Rückkehr erneut nach. Die Anwendung übermittelt diese Auswahl nicht an Server. Grundlage
+      für das Merken ist Ihre Einwilligung nach § 25 Abs. 1 TDDDG und, soweit dabei personenbezogene
+      Daten verarbeitet werden, nach Art. 6 Abs. 1 lit. a DSGVO. Eine bereits laufende Nutzung kann
+      nach Ablauf der 30 Minuten fortgesetzt werden.
     </p>
     <p>
       Wenn Sie die Kameranutzung erlaubt haben und Ihr Browser den Zugriff weiterhin erlaubt, kann

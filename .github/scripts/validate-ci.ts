@@ -1,10 +1,17 @@
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { ciPlanVersion, isBrowserSpec, type CiPlan, type CiRevisions } from './plan-ci.ts';
-import { isTextOnlyEdit, readEvent } from './pr-check-evidence.ts';
+import { canReuseCheckEvidence, readEvent } from './pr-check-evidence.ts';
 
 const revision = /^[a-f0-9]{40}$/;
-const reasons = new Set(['docs', 'unit-tests', 'browser-spec', 'full', 'verified-revision']);
+const qualityOnlyReasons = ['unit-tests', 'local-tooling'];
+const reasons = new Set([
+  'docs',
+  'browser-spec',
+  'full',
+  'verified-revision',
+  ...qualityOnlyReasons,
+]);
 
 export function validatePlan(input: unknown, expected: CiRevisions, allowReuse = false): CiPlan {
   if (!input || typeof input !== 'object') throw new Error('Invalid CI plan.');
@@ -18,14 +25,16 @@ export function validatePlan(input: unknown, expected: CiRevisions, allowReuse =
     }
   }
   if (plan.reason === 'verified-revision' && !allowReuse) {
-    throw new Error('CI evidence reuse requires a text-only pull request edit.');
+    throw new Error(
+      'CI evidence reuse requires the first attempt of a text-only pull request edit.',
+    );
   }
   const selectedSpec = plan.reason === 'browser-spec';
   if (selectedSpec ? !('spec' in plan && isBrowserSpec(plan.spec)) : 'spec' in plan) {
     throw new Error('Invalid browser selection for the CI plan.');
   }
   const browser = plan.reason === 'full' || selectedSpec;
-  const quality = browser || plan.reason === 'unit-tests';
+  const quality = browser || qualityOnlyReasons.includes(plan.reason);
   if (plan.quality !== quality || plan.browser !== browser) {
     throw new Error('CI work does not match its declared scope.');
   }
@@ -64,7 +73,7 @@ function main() {
   if (process.argv[2] === '--results') {
     const results = process.env.CI_RESULTS;
     if (!results) throw new Error('The final CI gate requires job results.');
-    validateResults(plan, expected, JSON.parse(results), isTextOnlyEdit(readEvent()));
+    validateResults(plan, expected, JSON.parse(results), canReuseCheckEvidence(readEvent()));
   } else validatePlan(plan, expected);
 }
 

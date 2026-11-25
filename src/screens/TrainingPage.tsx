@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, useTransition, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import TrainingError from '../components/TrainingError';
 import TrainingSetupDialog from '../components/modals/TrainingSetupDialog';
@@ -21,6 +21,7 @@ import CameraPreview from '@/components/CameraPreview';
 import type { CameraView } from '@/components/CameraControls';
 import TrainingClassFrame, {
   ClassManagementActions,
+  trainingClassLabel,
   trainingGalleryLabel,
 } from '@/components/TrainingClassFrame';
 import TrainingCollectionFrame, {
@@ -30,6 +31,7 @@ import TrainingCollectionFrame, {
   collectionGridClass,
 } from '@/components/TrainingCollectionFrame';
 import TrainingGalleryFrame from '@/components/TrainingGalleryFrame';
+import { ML } from '@/constants';
 import './training-workspace.css';
 
 const initialClasses = createInitialTrainingClasses();
@@ -71,6 +73,8 @@ function InitialTrainingWorkspace({ notice }: { notice?: ReactNode }) {
               <TrainingClassFrame key={cls.id} cls={cls} position={index + 1}>
                 <CameraPreview
                   camera={inactiveCamera}
+                  classLabel={trainingClassLabel(cls, index + 1)}
+                  remainingCapacity={ML.MAX_IMAGES_PER_CLASS - cls.images.length}
                   disabled
                   isRecording={false}
                   onStartRecording={ignoreCameraAction}
@@ -153,11 +157,13 @@ function TrainingVisit({
     engine,
     pendingArrival,
     revokeConsent,
+    clearTrainingConsent,
     grantConsent,
     setupSuppressed,
     prepareWithdrawal,
   } = useTrainingSession();
   const { error, consent, models } = engine;
+  const [leavingWorkspace, startLeavingWorkspace] = useTransition();
   const initialDocument = useInitialEntry();
   const entryViewportReady = useEntryViewportReady();
   const workspace = useDeferredModule(loadTrainingWorkspace, getPreparedTrainingWorkspace());
@@ -170,13 +176,19 @@ function TrainingVisit({
   const setupStep = getSetupStep(engine, Boolean(Workspace));
   const { initialSetup, focusRequests, ...setup } = useSetupPresentation(
     setupStep,
-    !setupSuppressed && (initialDocument || entryViewportReady),
+    !leavingWorkspace && !setupSuppressed && (initialDocument || entryViewportReady),
   );
   const blocked = setupStep !== null || setup.step !== null;
   const ready = !blocked && !initialSetup && engine.canUseModels && entryViewportReady;
   useCameraErrorNotice(error, entryViewportReady && setup.step === null);
   const prepareReturn = () => prepareRoute(router, learningPaths.images);
   const declineConsent = () => router.push(learningPaths.images, { transitionTypes: ['nav-back'] });
+  function dismissSetup(withdraw: boolean) {
+    if (withdraw) {
+      clearTrainingConsent();
+      startLeavingWorkspace(declineConsent);
+    } else declineConsent();
+  }
   const prepareConsent = () => {
     prepare();
     engine.prepareResources();
@@ -207,7 +219,7 @@ function TrainingVisit({
         initialContent={initialDocument && initialWorkspace && initialSetup}
         {...setup}
         loadingText={models.loadingText}
-        onDeclineConsent={declineConsent}
+        onDeclineConsent={dismissSetup}
         declineConsentHref={learningPaths.images}
         onConfirmConsentIntent={prepareConsent}
         onConfirmConsent={grantConsent}
