@@ -419,6 +419,8 @@ for (const width of [390, 1280]) {
   }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    // Keep font metrics identical across documents to isolate scroll restoration from font timing.
+    await page.route('**/_next/static/media/*.woff2', (route) => route.abort());
     await page.goto(learningPaths.images);
     const exercise = page.getByRole('region', { name: 'Welche Nachbarn zählen?' });
     const heading = exercise.getByRole('heading', { name: 'Hund oder Katze?' });
@@ -435,6 +437,7 @@ for (const width of [390, 1280]) {
       await scripts.expectHeld();
       await expect(exercise.getByText('Die Übung wird geladen …')).toBeVisible();
       await expect.poll(async () => Math.abs((await height()) - readyHeight)).toBeLessThan(1);
+      await expect.poll(() => page.evaluate((y) => Math.abs(scrollY - y), scroll)).toBeLessThan(1);
     } finally {
       scripts.release();
     }
