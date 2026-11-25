@@ -163,7 +163,7 @@ describe('CI browser execution', () => {
     expect(() => runBrowserChecks(selected, run)).toThrow('A selected test failed.');
   });
 
-  it('executes the full CI suite once across four workers without file filters', () => {
+  it('executes the full CI suite once with two workers and no file filters', () => {
     const files = [...coreCases, changed, other];
     const run = runner()
       .mockReturnValueOnce(report(files))
@@ -171,7 +171,7 @@ describe('CI browser execution', () => {
     runBrowserChecks(full, run);
     expect(run.mock.calls).toEqual([
       [list, true],
-      [['--workers=4', ...execute.slice(1)], false],
+      [execute, false],
     ]);
   });
 

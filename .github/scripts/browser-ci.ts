@@ -143,8 +143,7 @@ export function runBrowserChecks(plan: CiPlan, run = runPlaywright) {
       if (!requiredFiles.has(file)) selection.push(`^${RegExp.escape(file)}$:${line}:${column}`);
     }
   }
-  const workers = selected.length ? 2 : 4;
-  const args = [`--workers=${workers}`, '--forbid-only', '--reporter=line,json', ...selection];
+  const args = ['--workers=2', '--forbid-only', '--reporter=line,json', ...selection];
   checkExecution(selected.length ? required : all, readCases(run(args, false)), required);
 }
 

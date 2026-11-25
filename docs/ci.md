@@ -226,9 +226,10 @@ that Proxy remain forbidden.
 `npm run test:e2e` runs the complete browser suite against the native production
 server, including accessibility and keyboard contracts. The local command remains
 unfiltered with `CI=true`. The browser job validates the plan, installs dependencies
-and builds the application once. It runs Playwright with four workers for the full
-suite and two for the selected-spec plan. Every execution must match its expected
-test identities from native discovery.
+and builds the application once. It runs Playwright with two workers for both the
+full suite and the selected-spec plan to limit resource contention during browser
+ML tests. Every execution must match its expected test identities from native
+discovery.
 The job installs both lockfile-matched Chromium variants for
 [the browser tests](development.md#checks). Browser launch, host dependency
 validation and the selected suite are blocking. Lighthouse runs locally as
