@@ -14,13 +14,13 @@ export const PrivacyOverview = (
       Bilderkennung lesen und dir auf der Startseite die Beispiele zum Lernen mit Belohnung ansehen.
     </p>
     <p>
-      Wenn du „Für 30 Minuten in diesem Tab merken“ auswählst, hält die Website deine Einwilligungen
+      Wenn du ‚Für 30 Minuten in diesem Tab merken‘ auswählst, hält die Website deine Einwilligungen
       und die Kamerawahl vorübergehend im Arbeitsspeicher deines Browsers. Deine Auswahl gilt bis zu
-      30 Minuten, solange du im selben Tab auf der Website bleibst und sie nicht neu lädst. Wenn du
-      die Website verlässt, fragt die Lernfunktion bei deiner Rückkehr erneut nach. Wenn du die
-      Kamera erlaubt hast und dein Browser sie weiterhin freigibt, kann sie beim erneuten
-      Trainingsstart innerhalb dieser Zeit automatisch angehen. Dein Trainingsstand wird dabei nicht
-      gespeichert.
+      30 Minuten für weitere Trainingsstarts im selben Tab. Ein laufendes Training kann über diese
+      30 Minuten hinaus weitergehen. Wenn du die Website neu lädst oder verlässt, fragt die
+      Lernfunktion beim nächsten Start erneut nach. Wenn du die Kamera erlaubt hast und dein Browser
+      sie weiterhin freigibt, kann sie bei einem Start mit gemerkter Auswahl automatisch angehen.
+      Beim Merken speichert die Website nur deine Auswahl.
     </p>
     <p>
       Mit „Kamera ausschalten“ beendest du die Kameranutzung. Deine bereits gesammelten Bilder und

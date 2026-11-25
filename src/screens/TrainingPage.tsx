@@ -220,6 +220,7 @@ function TrainingVisit({
         {...setup}
         loadingText={models.loadingText}
         onDeclineConsent={dismissSetup}
+        onDeclineIntent={prepareReturn}
         declineConsentHref={learningPaths.images}
         onConfirmConsentIntent={prepareConsent}
         onConfirmConsent={grantConsent}

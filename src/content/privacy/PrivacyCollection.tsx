@@ -6,8 +6,9 @@ export const PrivacyCollection = (
       Ihr Browser kann Dateien für die Anzeige der Website zwischenspeichern. Weitere Speicher- und
       Auslesevorgänge betreffen eine gegebenenfalls erforderliche Sicherheitsprüfung durch Vercel,
       die von Ihnen gespeicherte Darstellungswahl und die freiwillige Lernfunktion. Wann dies
-      geschieht und welche Daten betroffen sind, steht in den Abschnitten „Vercel“,
-      „Darstellungseinstellungen“ und „Einsatz von KI auf der Website“.
+      geschieht und welche Daten betroffen sind, steht in den Abschnitten „
+      <a href="#vercel">Vercel</a>“, „<a href="#display-preferences">Darstellungseinstellungen</a>“
+      und „<a href="#ai-use">Einsatz von KI auf der Website</a>“.
     </p>
     <p>
       Die Speicherung und das Auslesen von Informationen auf Ihrem Gerät richten sich nach § 25
@@ -18,7 +19,7 @@ export const PrivacyCollection = (
       Verarbeitung personenbezogener Daten benötigen wir zusätzlich eine Rechtsgrundlage nach der
       DSGVO.
     </p>
-    <h3>Darstellungseinstellungen</h3>
+    <h3 id="display-preferences">Darstellungseinstellungen</h3>
     <h4>Auswahl und lokale Speicherung</h4>
     <p>
       Sie können diese Website hell, dunkel oder entsprechend der Systemeinstellung Ihres Geräts
@@ -47,7 +48,7 @@ export const PrivacyCollection = (
       zulässt, können Sie die Auswahl nur für den aktuellen Besuch verwenden.
     </p>
     <p>Die Darstellungseinstellung ist unabhängig von Ihrer Einwilligung zur KI-Lernfunktion.</p>
-    <h3>Server-Log-Dateien</h3>
+    <h3 id="server-logs">Server-Log-Dateien</h3>
     <h4>Protokolldaten, Zwecke und Rechtsgrundlage</h4>
     <p>
       Bei Aufrufen dieser Website verarbeitet Vercel technische Protokolldaten. Dazu gehören die
@@ -65,7 +66,8 @@ export const PrivacyCollection = (
     <h4>Empfänger und Speicherdauer</h4>
     <p>
       Empfänger ist Vercel als Hostinganbieter. Informationen zur Auftragsverarbeitung, zur eigenen
-      Verantwortlichkeit von Vercel und zu Drittlandübermittlungen finden Sie im Abschnitt ‚Vercel‘.
+      Verantwortlichkeit von Vercel und zu Drittlandübermittlungen finden Sie im Abschnitt ‚
+      <a href="#vercel">Vercel</a>‘.
     </p>
     <p>
       Vercel bewahrt die Protokolle über Seiten- und Dateiabrufe für dieses Projekt bis zu 30 Tage
@@ -79,13 +81,13 @@ export const PrivacyCollection = (
       Wir leiten diese Protokolle nicht an weitere Dienste weiter und speichern keine eigenen
       Kopien.
     </p>
-    <h3>Einsatz von KI auf der Website</h3>
+    <h3 id="ai-use">Einsatz von KI auf der Website</h3>
     <p>
       Wir setzen Künstliche Intelligenz (KI) auf dieser Website wie folgt ein: Mit der Lernfunktion
       können Sie anhand eigener Bildbeispiele einen Bildklassifikator trainieren und dessen
       Vorhersagen ausprobieren.
     </p>
-    <h4>Download des KI-Modells</h4>
+    <h4 id="model-download">Download des KI-Modells</h4>
     <p>
       Nach Ihrer Einwilligung lädt Ihr Browser über Google und Kaggle ein vortrainiertes Modell, das
       die Lernfunktion zur Bilderkennung benötigt. Dabei erhalten beide Anbieter Ihre IP-Adresse
@@ -201,7 +203,7 @@ export const PrivacyCollection = (
       Dieser Cache enthält keine von der Anwendung dorthin geschriebenen Trainingsbilder; seine
       Löschung können Sie über die Browsereinstellungen steuern.
     </p>
-    <h3>Anfrage per E-Mail oder Telefon</h3>
+    <h3 id="contact-inquiries">Anfrage per E-Mail oder Telefon</h3>
     <h4>Bearbeitung Ihrer Anfrage</h4>
     <p>
       Wenn Sie uns per E-Mail oder Telefon kontaktieren, verarbeiten wir die dabei mitgeteilten

@@ -132,6 +132,17 @@ test('canceling a direct workspace failure forgets consent and stops the camera'
   await page.goto(learningPaths.imagePractice);
   const workspaceRequest = Promise.withResolvers<void>();
   const pending = await holdCamera(page);
+  const foregroundReturns: string[] = [];
+  page.on('request', (request) => {
+    const headers = request.headers();
+    if (
+      new URL(request.url()).pathname === learningPaths.images &&
+      (request.isNavigationRequest() || headers.rsc === '1') &&
+      headers['next-router-prefetch'] !== '1'
+    ) {
+      foregroundReturns.push(request.url());
+    }
+  });
   await page.route(`${baseURL}/_next/static/chunks/*.js`, async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     const source = await readFile(`.next${pathname.slice('/_next'.length)}`, 'utf8');
@@ -151,8 +162,27 @@ test('canceling a direct workspace failure forgets consent and stops the camera'
     workspaceRequest.resolve();
     await expect(workspace.getByRole('alert')).toContainText('konnte nicht geladen werden');
     await expectAccessible(page);
-    await workspace.getByRole('button', { name: 'Abbrechen' }).press('Enter');
+    const cancel = workspace.getByRole('button', { name: 'Abbrechen' });
+    const prepared = page.waitForResponse((response) => {
+      const headers = response.request().headers();
+      return (
+        new URL(response.url()).pathname === learningPaths.images &&
+        headers['next-router-prefetch'] === '1' &&
+        Boolean(headers['next-router-segment-prefetch']?.endsWith('/__PAGE__'))
+      );
+    });
+    await cancel.focus();
+    await expect(cancel).toBeFocused();
+    const payload = await prepared;
+    expect(payload.ok()).toBe(true);
+    expect(await payload.text()).toContain('Bilderkennung verstehen');
+    await expect(page).toHaveURL(learningPaths.imagePractice);
+    await page.keyboard.press('Enter');
     await expect(page).toHaveURL(learningPaths.images);
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Du siehst eine Katze. Was sieht die KI?' }),
+    ).toBeVisible();
+    expect(foregroundReturns).toEqual([]);
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect
       .poll(() =>

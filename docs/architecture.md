@@ -305,7 +305,8 @@ after admission. The slot remains occupied through the existing feature-extracti
 pipeline, and errors release it so later valid files can continue. Object URLs,
 readers and image handlers are cleaned up on completion or cancellation. These
 limits bound input admission, not the browser's total memory or immediate native
-codec cancellation. HEIC/HEIF and other formats still require browser codec support.
+codec cancellation. Local imports support JPEG, PNG, GIF, WebP, AVIF, HEIC and
+HEIF. Each format requires a compatible native browser decoder.
 
 A model download is a consent-gated one-time asset load. TanStack Virtual owns
 thumbnail windowing. Empty galleries keep their server-rendered scroll region and

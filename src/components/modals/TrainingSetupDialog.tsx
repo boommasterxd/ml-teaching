@@ -25,6 +25,7 @@ interface TrainingSetupDialogProps {
   onWithdrawConsent: () => void;
   onWithdrawIntent?: () => void;
   onDeclineConsent: (withdraw: boolean) => void;
+  onDeclineIntent?: () => void;
   declineConsentHref?: string;
   onConfirmConsentIntent?: () => void;
   onConfirmConsent: (remember: boolean) => void;
@@ -135,6 +136,33 @@ function SetupWithdrawalAction({
   );
 }
 
+function SetupCancelAction({
+  href,
+  onIntent,
+  onCancel,
+}: {
+  href?: string;
+  onIntent?: () => void;
+  onCancel: () => void;
+}) {
+  return href ? (
+    <AnimatedLink href={href} variant="secondary" transitionTypes={['nav-back']}>
+      Abbrechen
+    </AnimatedLink>
+  ) : (
+    <Button
+      type="button"
+      variant="secondary"
+      onPointerEnter={onIntent}
+      onFocus={onIntent}
+      onPointerDown={onIntent}
+      onClick={onCancel}
+    >
+      Abbrechen
+    </Button>
+  );
+}
+
 export default function TrainingSetupDialog({
   initialContent,
   step,
@@ -145,6 +173,7 @@ export default function TrainingSetupDialog({
   onWithdrawConsent,
   onWithdrawIntent,
   onDeclineConsent,
+  onDeclineIntent,
   declineConsentHref,
   onConfirmConsentIntent,
   onConfirmConsent,
@@ -165,16 +194,13 @@ export default function TrainingSetupDialog({
     error: dismiss,
     workspace: dismiss,
   };
-  const declineAction =
-    declineConsentHref && step !== 'workspace' ? (
-      <AnimatedLink href={declineConsentHref} variant="secondary" transitionTypes={['nav-back']}>
-        Abbrechen
-      </AnimatedLink>
-    ) : (
-      <Button type="button" variant="secondary" onClick={dismiss}>
-        Abbrechen
-      </Button>
-    );
+  const declineAction = (
+    <SetupCancelAction
+      href={step === 'workspace' ? undefined : declineConsentHref}
+      onIntent={onDeclineIntent}
+      onCancel={dismiss}
+    />
+  );
   const withdrawAction = (
     <SetupWithdrawalAction
       showIcon={step === 'loading'}

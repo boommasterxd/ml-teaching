@@ -16,12 +16,18 @@ afterEach(() => {
 describe('KNN chunk failure', () => {
   it('explains a failed download and permits an explicit retry', async () => {
     render(<DeferredKnnQuiz />);
-    expect(await screen.findByText('Die Übung konnte nicht geladen werden.')).toBeTruthy();
+    const error = 'Die Übung konnte nicht geladen werden.';
+    expect(screen.getByRole('status').textContent).toBe('Die Übung wird geladen …');
+    expect((await screen.findByRole('alert')).textContent).toBe(error);
+    expect(screen.getByRole('status').textContent).toBe('');
     const retry = screen.getByRole('button', { name: 'Erneut versuchen' });
     retry.focus();
     fireEvent.click(retry);
-    expect(screen.queryByText('Die Übung konnte nicht geladen werden.')).toBeNull();
-    expect(await screen.findByText('Die Übung konnte nicht geladen werden.')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('status').textContent).toBe('Die Übung wird geladen …');
+    expect(retry.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(retry);
+    expect((await screen.findByRole('alert')).textContent).toBe(error);
     expect(document.activeElement).toBe(retry);
     expect(screen.queryByRole('slider')).toBeNull();
   });

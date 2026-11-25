@@ -36,10 +36,11 @@ export const PrivacyInformation = (
       Die Nutzung der Lernfunktion und die Kontaktaufnahme sind freiwillig. Damit wir Ihnen die
       angeforderte Seite oder Datei senden können, benötigt Vercel die IP-Adresse Ihrer Verbindung
       und die Angabe, welche Seite oder Datei Ihr Browser anfordert. Die zusätzliche Protokollierung
-      für den sicheren Betrieb erläutern wir im Abschnitt „Server-Log-Dateien“. Für das Bildtraining
-      können Sie Bilddateien auswählen oder mit Ihrer Kamera Bilder aufnehmen. Die Bildbeispiele
-      verbleiben in Ihrem Browser. Für eine Antwort auf eine E-Mail-Anfrage benötigen wir eine
-      erreichbare E-Mail-Adresse und die zur Bearbeitung Ihres Anliegens erforderlichen Angaben.
+      für den sicheren Betrieb erläutern wir im Abschnitt „
+      <a href="#server-logs">Server-Log-Dateien</a>“. Für das Bildtraining können Sie Bilddateien
+      auswählen oder mit Ihrer Kamera Bilder aufnehmen. Die Bildbeispiele verbleiben in Ihrem
+      Browser. Für eine Antwort auf eine E-Mail-Anfrage benötigen wir eine erreichbare
+      E-Mail-Adresse und die zur Bearbeitung Ihres Anliegens erforderlichen Angaben.
     </p>
     <p>
       Es besteht keine gesetzliche oder vertragliche Pflicht, Bildbeispiele für die Lernfunktion zu
@@ -80,8 +81,9 @@ export const PrivacyInformation = (
       abzusichern. Wenn Sie dem Modell-Download zustimmen, erhalten Google und Kaggle beim Abruf
       Verbindungsdaten. Für E-Mail-Anfragen nutzen wir Hostinger. Bei Anrufen erhalten die
       beteiligten Telekommunikationsanbieter Verbindungsdaten. Einzelheiten zu den Rechtsgrundlagen
-      und Datenschutzrollen finden Sie in den Abschnitten „Vercel“, „Download des KI-Modells“ und
-      „Anfrage per E-Mail oder Telefon“.
+      und Datenschutzrollen finden Sie in den Abschnitten „<a href="#vercel">Vercel</a>“, „
+      <a href="#model-download">Download des KI-Modells</a>“ und „
+      <a href="#contact-inquiries">Anfrage per E-Mail oder Telefon</a>“.
     </p>
     <h3 id="widerruf-der-einwilligung">Widerruf Ihrer Einwilligung zur Datenverarbeitung</h3>
     <p>

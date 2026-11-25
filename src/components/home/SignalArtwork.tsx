@@ -1,5 +1,16 @@
 import { useId, type ReactNode } from 'react';
 import ExamplePhoto from '@/components/network/ExamplePhoto';
+import { largeViewport } from '@/lib/media-queries';
+
+const artworkWidth = 600;
+const photoWidth = 108;
+const photoScale = photoWidth / artworkWidth;
+// Match the landing container, experiment grid gap and CardContent padding.
+const contentWidth = 'min(100vw, 80rem) - 2 * clamp(1.25rem, 5vw, 4rem)';
+const photoSizes = [
+  `${largeViewport} calc(((${contentWidth} - clamp(1rem, 2.3vw, 2rem)) / 2 - 3rem) * ${photoScale})`,
+  `calc((${contentWidth} - 3rem) * ${photoScale})`,
+].join(', ');
 
 export const examples = [
   {
@@ -21,8 +32,13 @@ export function SignalExampleContent({ example }: { example: Example }) {
   const patternOffset = examples.indexOf(example);
   return (
     <>
-      <foreignObject x="35" y="80" width="108" height="108">
-        <ExamplePhoto signal={example.id} decorative className="home-example-photo" />
+      <foreignObject x="35" y="80" width={photoWidth} height={photoWidth}>
+        <ExamplePhoto
+          signal={example.id}
+          decorative
+          className="home-example-photo"
+          sizes={photoSizes}
+        />
       </foreignObject>
       <g className="home-signal-cells">
         {Array.from({ length: 16 }, (_, index) => (
@@ -55,7 +71,7 @@ export function SignalArtwork({ children, overlay }: { children: ReactNode; over
 
   return (
     <svg
-      viewBox="0 0 600 250"
+      viewBox={`0 0 ${artworkWidth} 250`}
       fill="none"
       className="home-signal-artwork"
       role="img"

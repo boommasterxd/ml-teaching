@@ -97,7 +97,7 @@ Quiz cards inset the outline to keep it visible within clipped surfaces; thumbna
 add a contrasting edge against image content.
 The `mobile-action-pair` rule gives related example actions equal-width columns
 across the available space, with wrapping labels and 44px minimum touch height.
-The reward experiment places its separate reset action across both columns.
+The prepared Q-learning exercise places its reset action across both columns.
 Each comparison topic groups its heading, opportunity and accessible caution.
 From `lg`, the three topics share grid rows so wrapped text keeps the columns
 aligned. On narrower screens each topic stacks at its natural height.
@@ -157,7 +157,10 @@ dialog content is wide enough. Otherwise they stack all three actions, keeping
 labels on one line wherever they fit at the current text size.
 DialogTitle places optional 1rem icons beside the first line of the heading.
 Confirmations use muted icons. Model loading, training and the appearance menu use
-the shared shadcn Spinner with its Animate UI glyph. Retryable gallery and example
+the shared shadcn Spinner with its Animate UI glyph. Animate UI repeats one finite
+rotation while the glyph is in view and the tab is visible. With reduced motion,
+the same glyph pulses in opacity without rotating. Its static SVG, status semantics
+and occupied space stay in place when playback stops. Retryable gallery and example
 loading errors use the shared Alert, as do camera setup errors and the
 training-panel retry fallback.
 The everyday quiz composes standard
@@ -966,8 +969,9 @@ official generated variants from `src/components/animate-ui/icons/`.
 instead of copying their markup, preserving geometry and animation.
 `src/components/icons/animated-circle-check-big.tsx` adds a declarative draw-in
 variant for the client-loaded training illustration and preserves the default
-registry gesture for the shared icon entry. Both adapted producers remain outside
-vendor exclusions, with no additional size exception.
+registry gesture for the shared icon entry. The Loader Circle adaptation keeps
+the registry glyph and delegates finite spin and pulse playback to Animate UI.
+These adapted producers remain outside vendor exclusions.
 
 Generated registry scaffolding is vendor code. Duplication scanning excludes only
 that directory; application code retains the five-percent threshold. The unchanged

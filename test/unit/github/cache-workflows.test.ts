@@ -83,20 +83,22 @@ it('replaces overlapping code runs per PR and isolates metadata edits and retrie
   );
 });
 
-it('allocates both full browser slots and passes their aggregate result to CI', () => {
+it('sets up one browser job for the selected plan and requires its result in CI', () => {
   const browser = ci.split('\n  browser:\n')[1]?.split('\n  CI:\n')[0] ?? '';
-  const slots = /fromJSON\('([^']+)'\)\[fromJSON\(needs\.plan\.outputs\.plan\)\.reason\]/.exec(
-    browser,
-  )?.[1];
-  const launcher = steps(browser).find((step) =>
-    step.includes('run: node .github/scripts/browser-ci.ts'),
-  );
-
   expect(browser).toContain("if: needs.plan.outputs.browser == 'true'");
-  expect(browser).toContain('fail-fast: false');
-  expect(JSON.parse(slots ?? 'null')).toEqual({ full: [0, 1], 'browser-spec': [0] });
-  expect(launcher).toContain('CI_BROWSER_SLOT: ${{ strategy.job-index }}');
-  expect(launcher).toContain('CI_BROWSER_SLOTS: ${{ strategy.job-total }}');
+  expect(browser).not.toMatch(/^    strategy:/m);
+  expect(
+    [
+      ...browser.matchAll(
+        /\brun: (npm ci --no-audit|npm run build|npx --no-install playwright install chromium|node \.github\/scripts\/browser-ci\.ts)$/gm,
+      ),
+    ].map(([, command]) => command),
+  ).toEqual([
+    'npm ci --no-audit',
+    'npm run build',
+    'npx --no-install playwright install chromium',
+    'node .github/scripts/browser-ci.ts',
+  ]);
   expect(ci).toContain('"browser":"${{ needs.browser.result }}"');
 });
 
