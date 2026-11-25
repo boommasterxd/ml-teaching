@@ -20,14 +20,20 @@ async function expectPublicShell(page: Page, mobile = false) {
   if (mobile) {
     await expectReadable(navigation.getByRole('button', { name: 'Menü', exact: true }));
   } else {
+    await expectReadableLink(
+      navigation.getByRole('link', { name: 'Startseite', exact: true }),
+      '/',
+    );
     await expectReadable(navigation.getByRole('button', { name: 'Lernlabor', exact: true }));
     await expectReadable(navigation.getByRole('button', { name: 'Rechtliches', exact: true }));
   }
-  const footer = page
-    .getByRole('contentinfo')
-    .getByRole('navigation', { name: 'Rechtliche Links' });
+  await expectReadable(navigation.getByRole('button', { name: 'Darstellung einstellen' }));
+  const footer = page.getByRole('contentinfo');
+  await expectReadableLink(footer.getByRole('link', { name: 'ML Teaching – Startseite' }), '/');
+  await expectReadable(footer.getByText(/^© \d{4} .+$/));
+  const legal = footer.getByRole('navigation', { name: 'Rechtliche Links' });
   for (const { href, label } of headerLegalLinks) {
-    await expectReadableLink(footer.getByRole('link', { name: label, exact: true }), href);
+    await expectReadableLink(legal.getByRole('link', { name: label, exact: true }), href);
   }
 }
 
@@ -76,6 +82,16 @@ for (const path of publicRoutes) {
       const main = page.getByRole('main');
       await expectPublicShell(page);
       await expectPublicMain(main, path, 'static');
+      if (path === learningPaths.images) {
+        const trail = main.getByRole('navigation', { name: 'Seitenpfad', exact: true });
+        await expectReadable(trail);
+        await expect(trail.getByRole('listitem')).toHaveText([
+          'Lernlabor',
+          'Bilderkennung verstehen',
+        ]);
+        await expectReadableLink(trail.getByRole('link', { name: 'Lernlabor' }), learningPaths.hub);
+        await expect(trail.locator('[aria-current="page"]')).toHaveText('Bilderkennung verstehen');
+      }
       if (path === learningPaths.qLearning) {
         await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
       }
@@ -379,6 +395,9 @@ test.describe('training entry with JavaScript disabled', () => {
     await page.goto(learningPaths.imagePractice);
     const workspace = page.locator('.training-workspace');
     await expect(workspace).toHaveAttribute('inert', '');
+    await expect(
+      workspace.locator('nav[aria-label="Seitenpfad"] [aria-current="page"]'),
+    ).toHaveText('Bildmodell trainieren');
     await expect(workspace.locator('#training-images')).toBeVisible();
     await expect(workspace.locator('#class-name-class-1')).toHaveValue('Klasse 1');
     await expect(workspace.locator('#class-name-class-2')).toHaveValue('Klasse 2');
@@ -419,6 +438,13 @@ test('a reload or a new tab never restores a remembered camera choice', async ({
   const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
   await camera.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
   await expect(page.getByLabel('Kameravorschau für Trainingsaufnahme').first()).toBeVisible();
+  const trail = page.getByRole('main').getByRole('navigation', { name: 'Seitenpfad', exact: true });
+  await expectReadableLink(trail.getByRole('link', { name: 'Lernlabor' }), learningPaths.hub);
+  await expectReadableLink(
+    trail.getByRole('link', { name: 'Bilderkennung verstehen' }),
+    learningPaths.images,
+  );
+  await expect(trail.locator('[aria-current="page"]')).toHaveText('Bildmodell trainieren');
   await expectNoStoredTrainingData(page);
   expect(network.modelRequests).toEqual(['graph', 'weights']);
 

@@ -1,11 +1,11 @@
 import { memo, useId, useState, type ReactNode, type Ref } from 'react';
 import { classColorClasses } from '@/lib/class-colors';
-import type { ProjectedPosition } from '@/lib/feature-projection';
 import { cn } from '@/lib/utils';
 import type { MLClass } from '@/types/ml';
 import { KnnQuery } from './network/KnnArtwork';
 import { DeferredMenuLoadError } from './DeferredMenuLoadError';
 import { ChevronDown } from './icons/chevron-down';
+import { getMarkerStyles, markerPath, type ClassMarker } from './prediction-class-markers';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuTrigger } from './ui/dropdown-menu-trigger';
 import { Spinner } from './ui/spinner';
@@ -15,32 +15,10 @@ import { useMenuActivationFocus, useMenuModule, usePendingMenuDismissal } from '
 export const plotWidth = 320;
 export const plotHeight = 168;
 export const plotViewBox = `0 0 ${plotWidth} ${plotHeight}`;
-const shapes = ['circle', 'square', 'triangle'] as const;
-type MarkerShape = (typeof shapes)[number];
+const inlineLegendLimit = 3;
 const filterRowClass =
   'relative flex min-h-11 min-w-0 flex-wrap items-center justify-between gap-2';
 
-const fixed = (value: number) => Math.round(value * 10) / 10;
-
-export function markerPath({ x, y }: ProjectedPosition, shape: MarkerShape, radius: number) {
-  const diameter = radius * 2;
-  if (shape === 'square')
-    return `M${fixed(x - radius)} ${fixed(y - radius)}h${diameter}v${diameter}h-${diameter}Z`;
-  if (shape === 'triangle')
-    return `M${fixed(x)} ${fixed(y - radius)}l${radius} ${diameter}h-${diameter}Z`;
-  return `M${fixed(x - radius)} ${fixed(y)}a${radius} ${radius} 0 1 0 ${diameter} 0a${radius} ${radius} 0 1 0 -${diameter} 0Z`;
-}
-
-export function getMarkerStyles(classes: readonly MLClass[]) {
-  return classes.map(({ id, name, color }, index) => ({
-    id,
-    name,
-    color,
-    shape: shapes[index % shapes.length],
-  }));
-}
-
-export type ClassMarker = ReturnType<typeof getMarkerStyles>[number];
 const loadClassMenu = () => import('./PredictionClassMenu');
 
 export function PredictionPlot({
@@ -85,6 +63,7 @@ function LegendGlyph({ color, shape }: ClassMarker) {
     <svg viewBox="-9 -9 18 18" className="size-4 shrink-0" aria-hidden="true">
       <path
         d={markerPath({ x: 0, y: 0 }, shape, 4)}
+        data-class-marker={shape}
         className={cn('fill-(--class-on-surface)', classColorClasses(color))}
       />
     </svg>
@@ -200,7 +179,7 @@ export const PredictionLegend = memo(function PredictionLegend({
   hidden?: ReadonlySet<string>;
   onChange?: (ids: ReadonlySet<string>) => void;
 }) {
-  if (markers.length > shapes.length) {
+  if (markers.length > inlineLegendLimit) {
     return hidden && onChange ? (
       <PredictionClassFilter markers={markers} hidden={hidden} onChange={onChange} />
     ) : (

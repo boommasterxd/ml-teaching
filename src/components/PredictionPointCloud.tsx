@@ -8,9 +8,8 @@ import type { ProjectedExample, ProjectedPosition } from '@/lib/feature-projecti
 import { cn } from '@/lib/utils';
 import type { MLClass } from '@/types/ml';
 import { KnnQuery } from './network/KnnArtwork';
+import { getMarkerStyles, markerPath, type ClassMarker } from './prediction-class-markers';
 import {
-  getMarkerStyles,
-  markerPath,
   PredictionLegend,
   PredictionPlot,
   plotHeight as height,
@@ -28,11 +27,7 @@ interface PointCloudProps {
   position: ProjectedPosition | null;
 }
 
-interface PointSeries {
-  id: string;
-  color: string;
-  path: string;
-}
+type PointSeries = Pick<ClassMarker, 'id' | 'color' | 'shape'> & { path: string };
 
 type CameraMarker = ProjectedPosition & { outside: boolean };
 
@@ -60,7 +55,7 @@ function getScale(points: readonly ProjectedExample[]) {
 }
 
 function getSeries(
-  markers: ReturnType<typeof getMarkerStyles>,
+  markers: readonly ClassMarker[],
   points: readonly ProjectedExample[],
   scale: number,
 ): PointSeries[] {
@@ -74,6 +69,7 @@ function getSeries(
   return markers.map(({ id, color, shape }) => ({
     id,
     color,
+    shape,
     path: (byClass.get(id) ?? []).map((point) => markerPath(point, shape, 2.6)).join(''),
   }));
 }
@@ -90,10 +86,11 @@ const TrainingPointLayer = memo(function TrainingPointLayer({
       className="absolute inset-0 size-full"
       aria-hidden="true"
     >
-      {series.map(({ id, color, path }) => (
+      {series.map(({ id, color, shape, path }) => (
         <path
           key={id}
           d={path}
+          data-class-marker={shape}
           className={cn('fill-(--class-on-surface)', classColorClasses(color))}
         />
       ))}

@@ -1,4 +1,5 @@
 import JsonLd from '@/components/JsonLd';
+import LearningBreadcrumbs from '@/components/LearningBreadcrumbs';
 import TrainingPage from '@/screens/TrainingPage';
 import { learningPaths } from '@/lib/learning-paths';
 import { learningResourceId, pageMetadata, siteConfig, webApplicationId } from '@/lib/site';
@@ -28,7 +29,9 @@ export default function ImagePracticePage() {
   return (
     <>
       <JsonLd data={structuredData} />
-      <TrainingPage />
+      <TrainingPage
+        breadcrumbs={<LearningBreadcrumbs currentPath={learningPaths.imagePractice} />}
+      />
     </>
   );
 }

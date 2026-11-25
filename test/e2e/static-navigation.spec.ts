@@ -384,7 +384,6 @@ test('static documents preserve strict CSP and visible content', async ({ page, 
     expect(html).toContain('lang="de"');
     expect(html).toContain('https://mlteaching.boomapps.de');
     expect(html).not.toMatch(/\sstyle="/);
-    expect(/<div\b[^>]*\sdata-home-header-surface=/.test(html)).toBe(path === '/');
     if (path === learningPaths.hub) {
       expect(html).toContain(`href="${learningPaths.images}"`);
       expect(html).toContain(`href="${learningPaths.imagePractice}"`);

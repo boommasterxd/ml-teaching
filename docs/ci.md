@@ -10,18 +10,24 @@ The dependency-free planner reads the complete merge-base-to-head Git diff. Rena
 include both endpoints, and deletions remain part of the scope. Its plan records the
 base, head and merge revisions. Consumers reject a different checked-out revision.
 
-| Complete changed scope                                                                                 | Selected work                                                                         |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| Nonempty root `docs/` files only                                                                       | Real successful final gate; no dependency installation, tests or build                |
-| Only `*.test.ts`, `*.test.tsx` or `*.test.mjs` files under `test/unit/`                                | Static quality, production dependency audit and full unit coverage                    |
-| One eligible added or modified `test/e2e/*.spec.ts`                                                    | Full quality checks, native production build, core browser specs and the changed spec |
-| Application, test fixtures, browser tests, assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and browser suite                         |
-| Empty diff or unavailable Git history                                                                  | All checks                                                                            |
+| Complete changed scope                                                                                 | Selected work                                                                              |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Nonempty root `docs/` files only                                                                       | Real successful final gate; no dependency installation, tests or build                     |
+| Only `*.test.ts`, `*.test.tsx` or `*.test.mjs` files under `test/unit/`                                | Static quality, production dependency audit and full unit coverage                         |
+| One eligible added or modified `test/e2e/*.spec.ts`                                                    | Full quality checks, native production build, five core browser specs and the changed spec |
+| Application, test fixtures, browser tests, assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and browser suite                              |
+| Empty diff or unavailable Git history                                                                  | All checks                                                                                 |
 
-The single-spec selection requires a regular file, a branch up to date with its
-base and a verified simulated merge tree identical to the PR head tree. CI runs
-`test/e2e/security-headers.spec.ts`, `test/e2e/site.spec.ts` and the changed spec,
-deduplicating the selection if the changed file is already a core spec.
+The single-spec selection applies only when the complete diff is one regular
+added or modified `test/e2e/<lowercase-name>.spec.ts` file, the branch is up to
+date with its base, and the verified simulated merge tree matches the PR head
+tree. Other browser-test changes select the full browser suite; docs-only and
+unit-test-only scopes follow their rows in the table. The five mandatory core specs in
+`.github/scripts/browser-ci.ts` are `test/e2e/security-headers.spec.ts`,
+`test/e2e/site.spec.ts`, `test/e2e/initial-content.spec.ts`,
+`test/e2e/intent-navigation.spec.ts` and `test/e2e/training-bfcache.spec.ts`.
+For an eligible single-spec change, CI runs these five plus the changed spec,
+deduplicating it when the changed spec is already in the core set.
 Unfiltered Playwright discovery checks that every selected file contains runnable
 tests. Each execution is checked against native discovery; missing, duplicate,
 unexpected or unsuccessful results fail. A non-required test may be skipped only
@@ -235,7 +241,7 @@ GitHub Secret Scanning, repository push protection and CodeQL default setup are
 enabled alongside the required Gitleaks check. Secret Scanning detects supported
 secrets on GitHub, and push protection blocks supported secrets during pushes. The
 [visibility decision](decisions/public-repository-visibility.md) records the
-accepted exposure of existing history.
+maintainer's decision to keep the repository public.
 
 `Validate PR Title` checks Conventional Commit titles with the intentional Dependabot
 actor exception. Dependabot auto-merge reads metadata without executing PR code and

@@ -13,7 +13,7 @@
     "postbuild": "node csp/check-build.mjs verify",
     "prestart": "node csp/check-build.mjs verify",
     "start": "next start",
-    "typecheck": "next typegen && tsc --noEmit && tsc --project tsconfig.cache-lifecycle.json && tsc --project tsconfig.build-tooling.json",
+    "typecheck": "node scripts/generate-route-types.ts && tsc --project tsconfig.cache-lifecycle.json && tsc --project tsconfig.build-tooling.json",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

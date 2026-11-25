@@ -5,7 +5,14 @@ import { ciPlanVersion, type CiPlan } from '../../../.github/scripts/plan-ci.ts'
 
 const changed = 'test/e2e/quiz.spec.ts';
 const other = 'test/e2e/knn-quiz.spec.ts';
-const core = ['test/e2e/security-headers.spec.ts', 'test/e2e/site.spec.ts'];
+const requiredConsent = 'test/e2e/training-bfcache.spec.ts';
+const core = [
+  'test/e2e/security-headers.spec.ts',
+  'test/e2e/site.spec.ts',
+  'test/e2e/initial-content.spec.ts',
+  'test/e2e/intent-navigation.spec.ts',
+  requiredConsent,
+];
 const full = {
   version: ciPlanVersion,
   base: 'a'.repeat(40),
@@ -86,8 +93,11 @@ describe('CI browser execution', () => {
   });
 
   it.each([full, selected])('rejects a missing core file in the $reason plan', (plan) => {
-    const run = runner().mockReturnValueOnce(report([core[0], changed]));
-    expect(() => runBrowserChecks(plan, run)).toThrow(/No runnable browser tests in .*site\.spec/);
+    const files = [...core, changed].filter((file) => file !== requiredConsent);
+    const run = runner().mockReturnValueOnce(report(files));
+    expect(() => runBrowserChecks(plan, run)).toThrow(
+      /No runnable browser tests in .*training-bfcache\.spec/,
+    );
     expect(run).toHaveBeenCalledTimes(1);
   });
 
@@ -130,7 +140,7 @@ describe('CI browser execution', () => {
       .mockReturnValueOnce(report(core))
       .mockReturnValueOnce(
         report([
-          ...passed(core.slice(0, 1)),
+          ...passed(core.filter((file) => file !== core[1])),
           { file: core[1], title: 'different test', result: 'passed' },
         ]),
       );
@@ -142,11 +152,17 @@ describe('CI browser execution', () => {
       .mockReturnValueOnce(report(core))
       .mockReturnValueOnce(
         report([
-          ...passed(core.slice(0, 1)),
-          { file: core[1], result: 'skipped', skipReason: 'Browser capability unavailable' },
+          ...passed(core.filter((file) => file !== requiredConsent)),
+          {
+            file: requiredConsent,
+            result: 'skipped',
+            skipReason: 'Browser capability unavailable',
+          },
         ]),
       );
-    expect(() => runBrowserChecks(full, run)).toThrow('Browser test did not pass: site.spec.ts.');
+    expect(() => runBrowserChecks(full, run)).toThrow(
+      'Browser test did not pass: training-bfcache.spec.ts.',
+    );
   });
 
   it('permits only documented skips outside the required specs', () => {

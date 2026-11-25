@@ -306,12 +306,16 @@ test('KNN exercise supports retries, voting limits, and new rounds', async ({ pa
   await page.keyboard.press('Enter');
   const feedback = exercise.locator('[data-slot="alert"]');
   await expect(feedback).toContainText('Zähle noch einmal.');
-  await expect(exercise.getByRole('status')).toContainText('wie viele Stimmen');
+  const status = exercise.getByRole('status');
+  await expect(status).toContainText('Fehlversuch 1: Zähle noch einmal');
   await expect(
     exercise.locator(
       ':is([role="alert"], [role="status"], [aria-live="assertive"], [aria-live="polite"])',
     ),
   ).toHaveCount(1);
+  await expect(wrongAnswer).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(status).toContainText('Fehlversuch 2: Zähle noch einmal');
   await expect(wrongAnswer).toBeFocused();
   await exercise.getByRole('button', { name: winner, exact: true }).focus();
   await page.keyboard.press('Enter');

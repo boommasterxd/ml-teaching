@@ -14,7 +14,7 @@ afterEach(() => {
   restoreThemeHost();
 });
 
-it('distinguishes classes by shape and marks a camera point beyond the plot edge', () => {
+it('matches plotted class shapes with the legend and marks an off-plot camera point', () => {
   const props = {
     area: createRef<HTMLDivElement>(),
     classes: makeClasses(2),
@@ -29,14 +29,30 @@ it('distinguishes classes by shape and marks a camera point beyond the plot edge
   );
   const legend = within(screen.getByRole('list', { name: 'Legende' }));
   const [, red, blue] = legend.getAllByRole('listitem');
-  expect(red.querySelector('path')?.getAttribute('d')).not.toBe(
-    blue.querySelector('path')?.getAttribute('d'),
+  expect(red.querySelector('[data-class-marker]')?.getAttribute('data-class-marker')).toBe(
+    'circle',
   );
+  expect(blue.querySelector('[data-class-marker]')?.getAttribute('data-class-marker')).toBe(
+    'square',
+  );
+  expect(
+    Array.from(
+      container.querySelectorAll('[data-slot="prediction-training-points"] path'),
+      (marker) => marker.getAttribute('data-class-marker'),
+    ),
+  ).toEqual(['circle', 'square']);
   const edgeMarker = () => container.querySelector('[data-slot="prediction-live-point"] circle');
   expect(edgeMarker()).toBeNull();
 
-  rerender(<PredictionPointCloud {...props} position={{ x: 5, y: 0 }} />);
+  const renamed = props.classes.map((item) =>
+    item.id === 'red' ? { ...item, name: 'Umbenannte Klasse' } : item,
+  );
+  rerender(<PredictionPointCloud {...props} classes={renamed} position={{ x: 5, y: 0 }} />);
   expect(edgeMarker()).not.toBeNull();
+  const renamedEntry = legend.getByText('Umbenannte Klasse').closest('li');
+  expect(
+    renamedEntry?.querySelector('[data-class-marker]')?.getAttribute('data-class-marker'),
+  ).toBe('circle');
 });
 
 it('shows the selected classes together and keeps the camera point when none are selected', async () => {
@@ -46,8 +62,9 @@ it('shows the selected classes together and keeps the camera point when none are
     id: `class-${index + 1}`,
     name: `Klasse ${index + 1}`,
   }));
-  const points = classes.flatMap(({ id, images }, index) =>
-    images.map((_, imageIndex) => ({ classId: id, x: index, y: imageIndex })),
+  // Place every class at the same coordinates so differences in the paths come from shape alone.
+  const points = classes.flatMap(({ id, images }) =>
+    images.map((_, imageIndex) => ({ classId: id, x: 0, y: imageIndex })),
   );
   const { container } = render(
     <PredictionPointCloud
@@ -64,6 +81,13 @@ it('shows the selected classes together and keeps the camera point when none are
     );
   const all = paths();
   expect(all).toHaveLength(ML.MAX_CLASSES);
+  expect(new Set(all).size).toBe(ML.MAX_CLASSES);
+  const plottedShapes = () =>
+    Array.from(
+      container.querySelectorAll('[data-slot="prediction-training-points"] [data-class-marker]'),
+      (marker) => marker.getAttribute('data-class-marker'),
+    );
+  expect(plottedShapes().slice(0, 3)).toEqual(['circle', 'square', 'triangle']);
   const camera = container.querySelector('[data-slot="prediction-live-point"]');
   expect(camera).not.toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Klassenfilter: Alle Klassen' }));
@@ -76,6 +100,9 @@ it('shows the selected classes together and keeps the camera point when none are
   expect(container.querySelector('[data-slot="prediction-live-point"]')).toBe(camera);
   fireEvent.click(choice);
   expect(paths()).toEqual([all.at(-1)]);
+  expect(plottedShapes()).toEqual([
+    choice.querySelector('[data-class-marker]')?.getAttribute('data-class-marker'),
+  ]);
   fireEvent.click(other);
   expect(paths()).toEqual([all[0], all.at(-1)]);
   expect(allClasses.getAttribute('aria-checked')).toBe('mixed');
