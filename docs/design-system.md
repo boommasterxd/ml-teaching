@@ -74,7 +74,7 @@ The previews use small, fixed SVGs and require no ML model or simulation.
 The homepage and learning hub share their topics and destinations through
 `src/content/learning-areas.ts`; route actions use the native intent links.
 The homepage and learning hub use `LearningPracticeAction` for both subjects.
-A pending exercise displays “Coming Soon” as the visible name of a disabled button.
+A pending exercise displays “Noch nicht verfügbar” as the visible name of a disabled button.
 On the homepage, both actions follow the question “Willst du es selbst ausprobieren?”.
 The reward board remains visible during the shared preview cycle.
 The hero's fragment link focuses the combined experiments section and uses smooth
@@ -97,7 +97,7 @@ Quiz cards inset the outline to keep it visible within clipped surfaces; thumbna
 add a contrasting edge against image content.
 The `mobile-action-pair` rule gives related example actions equal-width columns
 across the available space, with wrapping labels and 44px minimum touch height.
-The reward experiment places its separate reset action across both columns.
+The prepared Q-learning exercise places its reset action across both columns.
 Each comparison topic groups its heading, opportunity and accessible caution.
 From `lg`, the three topics share grid rows so wrapped text keeps the columns
 aligned. On narrower screens each topic stacks at its natural height.
@@ -130,7 +130,7 @@ Photographic inputs use these assets rather than animal glyphs; decorative SVG
 scenes embed the same style-free image through a fixed-size foreignObject.
 The image explanation keeps the original six-section learning journey below its
 hero, with technique before the explanatory animation and training steps. Its workspace
-lives on a separate practice route. The hub displays one inactive Coming Soon action
+lives on a separate practice route. The hub displays one inactive “Noch nicht verfügbar” action
 for Q-learning while its explanation and practice are pending.
 The shared Lucide Brain glyph defines the brand. Its stroke uses the local primary color.
 The SVG favicon and PNG Apple icon use the same glyph.
@@ -157,7 +157,10 @@ dialog content is wide enough. Otherwise they stack all three actions, keeping
 labels on one line wherever they fit at the current text size.
 DialogTitle places optional 1rem icons beside the first line of the heading.
 Confirmations use muted icons. Model loading, training and the appearance menu use
-the shared shadcn Spinner with its Animate UI glyph. Retryable gallery and example
+the shared shadcn Spinner with its Animate UI glyph. Animate UI repeats one finite
+rotation while the glyph is in view and the tab is visible. With reduced motion,
+the same glyph pulses in opacity without rotating. Its static SVG, status semantics
+and occupied space stay in place when playback stops. Retryable gallery and example
 loading errors use the shared Alert, as do camera setup errors and the
 training-panel retry fallback.
 The everyday quiz composes standard
@@ -889,8 +892,8 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   The strict SSG hash CSP blocks that style element. Sync presence preserves one
   motion owner without adding an empty-style hash, nonce, custom geometry engine
   or relaxed policy.
-- The educational illustration has four ordered stages: an Input placeholder replaced by a 112px image after selection,
-  labeled conceptual feature maps, a nearest-neighbor diagram and a separate vote
+- The educational illustration has four ordered stages: an empty placeholder replaced
+  by a 112px image after selection, labeled conceptual feature maps, a nearest-neighbor diagram and a separate vote
   readout. Animate UI Shine scans the selected example; Effect reveals edges,
   patterns and a feature vector, draws neighbor connections and introduces the result.
   The three nearest synthetic points determine both highlighted neighbors and the
@@ -972,8 +975,9 @@ official generated variants from `src/components/animate-ui/icons/`.
 instead of copying their markup, preserving geometry and animation.
 `src/components/icons/animated-circle-check-big.tsx` adds a declarative draw-in
 variant for the client-loaded training illustration and preserves the default
-registry gesture for the shared icon entry. Both adapted producers remain outside
-vendor exclusions, with no additional size exception.
+registry gesture for the shared icon entry. The Loader Circle adaptation keeps
+the registry glyph and delegates finite spin and pulse playback to Animate UI.
+These adapted producers remain outside vendor exclusions.
 
 Generated registry scaffolding is vendor code. Duplication scanning excludes only
 that directory; application code retains the five-percent threshold. The unchanged
@@ -998,7 +1002,7 @@ unrelated glyphs and animation producers stay out of their route graph. The
 server-neutral `icons.tsx` facade preserves the named import API for compatibility.
 Pure icon factory annotations permit unused producers to be removed without
 changing the mounted components or their motion owners.
-The static educational illustration shows an Input placeholder, labeled feature
+The static educational illustration shows an empty image placeholder, labeled feature
 maps, neighbor points, connecting paths and class labels. Selecting a dog or cat
 replaces the placeholder with the decoded example photo in the interactive diagram.
 These integrations preserve the initial content and the existing CSP with

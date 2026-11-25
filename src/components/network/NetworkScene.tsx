@@ -116,7 +116,7 @@ export function NetworkScene({
         ) : (
           <Empty className="network-example-media border p-0 md:p-0">
             <EmptyHeader>
-              <Text variant="muted">Input</Text>
+              <Text variant="muted">Kein Bild gewählt</Text>
             </EmptyHeader>
           </Empty>
         )}
@@ -142,7 +142,7 @@ export function NetworkScene({
       <NetworkStation
         step="04 / Ausgabe"
         title="Mehrheit gewinnt"
-        description="Die Klasse mit den meisten Stimmen wird ausgegeben."
+        description="Das Bild bekommt den Namen mit den meisten Stimmen."
         terminal
       >
         {effects.result ?? <ResultPlaceholder />}

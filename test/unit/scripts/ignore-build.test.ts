@@ -16,7 +16,7 @@ function history(paths: string[], manifests = ['{}', '{}']) {
 
 describe('Vercel build admission', () => {
   it.each([
-    ['docs/deployment.md'],
+    ['docs/deployment.md', 'docs/decisions/example.md'],
     ['README.md', 'AGENTS.md'],
     ['test/unit/hooks/useModelLoader.test.ts', 'test/setup.ts'],
     ['.github/workflows/ci.yml', '.github/scripts/plan-ci.ts'],
@@ -42,6 +42,7 @@ describe('Vercel build admission', () => {
     ['docs/guide.md', 'src/app/page.tsx'],
     ['docs/guide.md', 'scripts/unknown.ts'],
     ['docs/guide.md', 'docs/model.json'],
+    ['scripts/docs-path.ts'],
     ['.github/scripts/unknown.ts'],
     ['.github/scripts/cache-lifecycle/unknown.cjs'],
     ['.github/workflows/dependency-cache-deploy.yml'],

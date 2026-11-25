@@ -26,7 +26,7 @@ function SpinnerBeforeLabel() {
       <span
         data-icon="inline-start"
         aria-hidden="true"
-        className="inline-flex overflow-clip align-[-0.125em]"
+        className="relative -top-[0.09em] inline-flex overflow-clip align-middle"
       >
         <Spinner aria-hidden="true" />
       </span>

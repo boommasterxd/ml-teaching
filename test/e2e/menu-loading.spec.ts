@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { learningPaths } from '../../src/lib/learning-paths';
 import { diagnostics, expectAccessible, observeViewTransitions } from './browser-checks';
 import { expectPageTransitions } from './intent-navigation-checks';
-
+import { expectVisibleSpinnerMotion } from './spinner-motion';
 for (const [surface, width, path, button, label] of [
   ['desktop', 1280, '/datenschutz', 'Rechtliches', 'Datenschutz'],
   ['mobile', 390, learningPaths.images, 'Menü', 'Wie KI Bilder erkennt'],
@@ -118,11 +118,11 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
       });
       await link.press('Enter');
       await expect(link).toBeFocused();
-      await expect(slot.locator('[data-slot="spinner"]')).toBeVisible();
       await expect.poll(() => slot.evaluate((element) => element.clientWidth)).toBeGreaterThan(16);
       const samples = await widths.jsonValue();
       await widths.dispose();
       expect(samples.some((width) => width > 0 && width < 16)).toBe(reducedMotion !== 'reduce');
+      await expectVisibleSpinnerMotion(link, reducedMotion === 'reduce');
       await expectAccessible(page);
       payload.resolve();
       await expect(page).toHaveURL(learningPaths.images);

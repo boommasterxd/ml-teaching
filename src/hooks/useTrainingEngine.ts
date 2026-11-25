@@ -10,7 +10,7 @@ const initialResources: TrainingResources = {
     classifier: null,
     mobilenetModel: null,
     isModelLoading: true,
-    loadingText: 'Initialisiere TensorFlow.js...',
+    loadingText: 'Das Bildtraining wird vorbereitet.',
     setClassifier: () => {},
   },
   camera: {

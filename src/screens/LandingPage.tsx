@@ -15,7 +15,6 @@ import {
   HomeQuestions,
 } from '@/content/landing/home-content';
 import HomeLearningSections from '@/content/landing/home-learning-sections';
-import { rewardPracticeComingSoon } from '@/content/learning-areas';
 
 /** The introduction and learning choices remain complete in build-time HTML. */
 export default function LandingPage() {
@@ -31,8 +30,8 @@ export default function LandingPage() {
                 <HeroAccent text="Deine KI lernt." />
               </Heading>
               <Text variant="lead" className="hero-description">
-                Probiere aus, wie KI Bilder erkennt und wie sie durch Belohnungen lernt
-                {rewardPracticeComingSoon && <span lang="en"> (Coming Soon)</span>}.
+                Trainiere eine KI mit deinen Bildern. Schau dir an, wie eine Spielfigur aus Punkten
+                lernt.
               </Text>
               <div className="hero-actions">
                 <AnimatedLink

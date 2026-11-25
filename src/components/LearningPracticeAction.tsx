@@ -17,12 +17,11 @@ export default function LearningPracticeAction({
       <Button
         id={id}
         disabled
-        lang="en"
         variant="secondary"
         size="lg"
         className={`${actionClass} learning-action-pending`}
       >
-        Coming Soon
+        Noch nicht verfügbar
       </Button>
     );
   }

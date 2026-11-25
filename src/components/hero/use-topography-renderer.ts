@@ -5,7 +5,7 @@ import { cancelFrame, frame, type MotionValue } from 'motion/react';
 import type { GlassImpulses } from './glass-impulses';
 import { contourMedia } from './contour-poster';
 import type { GlassShape } from './topography-gl';
-import { createTopographyRenderer } from './topography-renderer';
+import type { createTopographyRenderer } from './topography-renderer';
 import { createTopographyQuality, type TopographyQuality } from './topography-quality';
 import { createTopographyWorker } from './topography-worker-client';
 
@@ -202,28 +202,47 @@ export function useTopographyRenderer(
     const canvas = document.createElement('canvas');
     canvasRef.current = canvas;
     target.append(canvas);
+    let active = true;
+    let stop: (() => void) | undefined;
+    const removeCanvas = () => {
+      canvasRef.current = null;
+      canvas.remove();
+    };
+    const start = (renderer: TopographyRenderer, localRaster: HTMLCanvasElement | null) => {
+      stop = playField(
+        canvas,
+        localRaster,
+        renderer,
+        values,
+        { onUnavailable, onRendered },
+        sharpDesktopStart,
+      );
+    };
+    const fallbackUnavailable = () => {
+      if (!active) return;
+      removeCanvas();
+      onUnavailable();
+    };
     const worker = createTopographyWorker(canvas, shape, () => {
-      stop();
+      if (!active) return;
+      stop?.();
       onUnavailable();
     });
-    const renderer = worker ?? createTopographyRenderer(canvas, shape);
-    if (!renderer) {
-      canvasRef.current = null;
-      canvas.remove();
-      return onUnavailable();
+    if (worker) {
+      start(worker, null);
+    } else {
+      // Keep shader code out of the document when the worker owns rendering.
+      void import('./topography-renderer').then(({ createTopographyRenderer }) => {
+        if (!active) return;
+        const renderer = createTopographyRenderer(canvas, shape);
+        if (renderer) start(renderer, canvas);
+        else fallbackUnavailable();
+      }, fallbackUnavailable);
     }
-    const stop = playField(
-      canvas,
-      worker ? null : canvas,
-      renderer,
-      values,
-      { onUnavailable, onRendered },
-      sharpDesktopStart,
-    );
     return () => {
-      stop();
-      canvasRef.current = null;
-      canvas.remove();
+      active = false;
+      stop?.();
+      removeCanvas();
     };
   }, [surface, values, onUnavailable, onRendered, shape, sharpDesktopStart]);
   return canvasRef;

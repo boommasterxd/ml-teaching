@@ -1,6 +1,6 @@
 'use client';
 
-import { LoaderCircle as AnimatedIcon } from '../animate-ui/icons/loader-circle';
+import { LoaderCircle as AnimatedIcon } from './animated-loader-circle';
 import { Loader2 as StaticIcon } from 'lucide-react';
 import { clientIcon } from './client-icon';
 

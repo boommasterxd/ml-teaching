@@ -436,10 +436,14 @@ describe('cache lifecycle', () => {
       cache(5, codeqlKey(opts.sha), 'refs/heads/main', true),
     );
     api.prs[1] = { state: 'closed', head: { sha: previousHead, ref: 'merged-branch' } };
-    const nativeApi = createGhApi(opts.repository);
-    vi.spyOn(nativeApi, 'list').mockReturnValue([
-      { name: 'cache-lifecycle-receipts-1', expired: true, size_in_bytes: 277 },
-    ]);
+    const expired = {
+      id: 2,
+      name: 'cache-lifecycle-receipts-1',
+      expired: true,
+      size_in_bytes: 277,
+    };
+    const pages = [{ id: 1 }, expired].map((item) => ({ total_count: 2, artifacts: [item] }));
+    const nativeApi = createGhApi(opts.repository, () => JSON.stringify(pages));
     vi.spyOn(api, 'readReceipts').mockImplementation(nativeApi.readReceipts);
 
     expect(runLifecycle(opts).deleted.map(({ id }) => id)).toEqual([3, 4]);
@@ -461,5 +465,36 @@ describe('cache lifecycle', () => {
     opts.sha = previousHead;
     expect(() => runLifecycle(opts)).toThrow(/untrusted producer/i);
     expect(api.removed).toEqual([]);
+  });
+});
+
+describe('GitHub cache adapter', () => {
+  const endpoint = 'repos/owner/repo/actions/runs?status=queued&per_page=100';
+  const page = (total_count: number, id: unknown) => ({ total_count, workflow_runs: [{ id }] });
+  const capped = Array.from({ length: 10 }, (_, index) => ({
+    total_count: 1000,
+    workflow_runs: Array.from({ length: 100 }, (_, row) => ({ id: index * 100 + row + 1 })),
+  }));
+
+  it.each([
+    ['missing total', [{ workflow_runs: [] }]],
+    ['negative total', [page(-1, 1)]],
+    ['inconsistent totals', [page(2, 1), page(3, 2)]],
+    ['missing rows', [page(2, 1)]],
+    ['duplicate IDs', [page(2, 1), page(2, 1)]],
+    ['non-numeric ID', [page(1, '1')]],
+    ['capped search', capped],
+  ])('rejects an unverifiable workflow inventory with %s', (_reason, pages) => {
+    const api = createGhApi('owner/repo', () => JSON.stringify(pages));
+    expect(() => api.list(endpoint, 'workflow_runs')).toThrow();
+  });
+
+  it('reports fixed failures for CLI errors and invalid response content', () => {
+    const api = createGhApi('owner/repo', (args) => {
+      if (args.includes('DELETE')) throw Object.assign(new Error('stderr'), { code: 'ETIMEDOUT' });
+      return 'private response body';
+    });
+    expect(() => api.remove(2)).toThrow(/^GitHub delete cache failed \(timeout\)$/);
+    expect(() => api.read(endpoint)).toThrow(/^GitHub read metadata failed \(invalid JSON\)$/);
   });
 });

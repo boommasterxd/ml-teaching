@@ -25,6 +25,7 @@ interface TrainingSetupDialogProps {
   onWithdrawConsent: () => void;
   onWithdrawIntent?: () => void;
   onDeclineConsent: (withdraw: boolean) => void;
+  onDeclineIntent?: () => void;
   declineConsentHref?: string;
   onConfirmConsentIntent?: () => void;
   onConfirmConsent: (remember: boolean) => void;
@@ -51,17 +52,17 @@ function WorkspaceStep({
   return (
     <>
       <DialogTitle id="workspace-modal-title" tabIndex={-1}>
-        Arbeitsbereich vorbereiten
+        Bildtraining vorbereiten
       </DialogTitle>
       <DialogBody>
         <div id="workspace-modal-desc">
           {failed ? (
             <Alert variant="destructive" role="alert">
-              <AlertDescription>Der Arbeitsbereich konnte nicht geladen werden.</AlertDescription>
+              <AlertDescription>Das Bildtraining konnte nicht starten.</AlertDescription>
             </Alert>
           ) : (
             <DialogDescription className="flex items-center gap-2" role="status">
-              <Spinner aria-hidden="true" /> Arbeitsbereich wird geladen …
+              <Spinner aria-hidden="true" /> Das Bildtraining wird vorbereitet …
             </DialogDescription>
           )}
         </div>
@@ -100,9 +101,7 @@ function ModelLoadError({
         KI-Modell konnte nicht geladen werden
       </DialogTitle>
       <DialogBody tabIndex={0} role="region" aria-labelledby="error-modal-title">
-        <DialogDescription id="error-modal-desc">
-          Überprüfe deine Verbindung und versuche es erneut.
-        </DialogDescription>
+        <DialogDescription id="error-modal-desc">Prüfe deine Internetverbindung.</DialogDescription>
       </DialogBody>
       <SetupActionFooter>
         {declineAction}
@@ -135,6 +134,33 @@ function SetupWithdrawalAction({
   );
 }
 
+function SetupCancelAction({
+  href,
+  onIntent,
+  onCancel,
+}: {
+  href?: string;
+  onIntent?: () => void;
+  onCancel: () => void;
+}) {
+  return href ? (
+    <AnimatedLink href={href} variant="secondary" transitionTypes={['nav-back']}>
+      Abbrechen
+    </AnimatedLink>
+  ) : (
+    <Button
+      type="button"
+      variant="secondary"
+      onPointerEnter={onIntent}
+      onFocus={onIntent}
+      onPointerDown={onIntent}
+      onClick={onCancel}
+    >
+      Abbrechen
+    </Button>
+  );
+}
+
 export default function TrainingSetupDialog({
   initialContent,
   step,
@@ -145,6 +171,7 @@ export default function TrainingSetupDialog({
   onWithdrawConsent,
   onWithdrawIntent,
   onDeclineConsent,
+  onDeclineIntent,
   declineConsentHref,
   onConfirmConsentIntent,
   onConfirmConsent,
@@ -165,16 +192,13 @@ export default function TrainingSetupDialog({
     error: dismiss,
     workspace: dismiss,
   };
-  const declineAction =
-    declineConsentHref && step !== 'workspace' ? (
-      <AnimatedLink href={declineConsentHref} variant="secondary" transitionTypes={['nav-back']}>
-        Abbrechen
-      </AnimatedLink>
-    ) : (
-      <Button type="button" variant="secondary" onClick={dismiss}>
-        Abbrechen
-      </Button>
-    );
+  const declineAction = (
+    <SetupCancelAction
+      href={step === 'workspace' ? undefined : declineConsentHref}
+      onIntent={onDeclineIntent}
+      onCancel={dismiss}
+    />
+  );
   const withdrawAction = (
     <SetupWithdrawalAction
       showIcon={step === 'loading'}

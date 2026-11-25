@@ -16,11 +16,6 @@ const coreSpecs = [
 ];
 const coreQuizSpecs = ['test/e2e/quiz.spec.ts', 'test/e2e/knn-quiz.spec.ts'];
 
-interface BrowserSlot {
-  index: number;
-  total: 1 | 2;
-}
-
 type BrowserCase = JSONReportTest & {
   file: string;
   title: string;
@@ -29,18 +24,6 @@ type BrowserCase = JSONReportTest & {
   column: number;
 };
 type BrowserCases = Map<string, BrowserCase>;
-
-export function readBrowserSlot(
-  plan: CiPlan,
-  environment: Readonly<Record<string, string | undefined>> = process.env,
-): BrowserSlot {
-  const total = plan.reason === 'full' ? 2 : 1;
-  const { CI_BROWSER_SLOT: index, CI_BROWSER_SLOTS: count } = environment;
-  if (count !== String(total) || (index !== '0' && !(total === 2 && index === '1'))) {
-    throw new Error('Invalid browser job slot for the CI plan.');
-  }
-  return { index: Number(index), total };
-}
 
 function collectCases(suites: JSONReportSuite[], root: string, cases: BrowserCases) {
   for (const suite of suites) {
@@ -143,37 +126,29 @@ function runPlaywright(args: string[], discovery: boolean) {
   }
 }
 
-export function runBrowserChecks(plan: CiPlan, run = runPlaywright, slot?: BrowserSlot) {
+export function runBrowserChecks(plan: CiPlan, run = runPlaywright) {
   if (!plan.browser) throw new Error('Browser checks are required to run this job.');
   const selected = plan.reason === 'browser-spec' ? [...new Set([...coreSpecs, plan.spec])] : [];
   const requiredFiles = new Set(
     (selected.length ? selected : coreSpecs).map((file) => resolve(file)),
   );
-  const discover = (filters: string[] = []) =>
-    readCases(run(['--list', '--reporter=json', '--forbid-only', ...filters], true));
   // Discover without file filters so Playwright can reject imports between specs.
-  const all = discover();
+  const all = readCases(run(['--list', '--reporter=json', '--forbid-only'], true));
   const quizzes = requireQuizCases(all);
   const required = requireRunnableCases(all, requiredFiles, quizzes);
 
-  const shard = slot?.total === 2 ? [`--shard=${slot.index + 1}/${slot.total}`] : [];
   const selection = selected.map((file) => `(^|/)${RegExp.escape(file)}$`);
   if (selected.length) {
     for (const { file, line, column } of quizzes.values()) {
       if (!requiredFiles.has(file)) selection.push(`^${RegExp.escape(file)}$:${line}:${column}`);
     }
   }
-  const expected = shard.length ? discover(shard) : selected.length ? required : all;
-  if ([...expected.keys()].some((key) => !all.has(key))) {
-    throw new Error('Browser shard discovery did not match the full suite.');
-  }
-
-  const args = ['--workers=2', '--forbid-only', '--reporter=line,json', ...shard, ...selection];
-  checkExecution(expected, readCases(run(args, false)), required);
+  const args = ['--workers=2', '--forbid-only', '--reporter=line,json', ...selection];
+  checkExecution(selected.length ? required : all, readCases(run(args, false)), required);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { plan, expected } = checkoutPlanInput();
   const validatedPlan = validatePlan(plan, expected);
-  runBrowserChecks(validatedPlan, undefined, readBrowserSlot(validatedPlan));
+  runBrowserChecks(validatedPlan);
 }

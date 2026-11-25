@@ -7,7 +7,7 @@ export default function QLearningPage() {
   return (
     <div className="learning-hub landing-container">
       <LearningChapterIntro title="Q-Learning verstehen">
-        Die Einführung erscheint demnächst.
+        Die Einführung ist noch nicht verfügbar.
       </LearningChapterIntro>
       <AnimatedLink
         href={learningPaths.hub}

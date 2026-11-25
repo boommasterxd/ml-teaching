@@ -212,7 +212,7 @@ describe('useModelLoader', () => {
       await act(async () => knn.resolve());
       expect(result.current.loadingText).toBe('MobileNet...');
       await act(async () => mobileNet.resolve());
-      expect(result.current.loadingText).toBe('Optimiere GPU-Performance...');
+      expect(result.current.loadingText).toBe('Das KI-Modell wird vorbereitet.');
       expect(result.current.isModelLoading).toBe(true);
       expect(result.current.mobilenetModel).toBeNull();
       await act(async () => warmup.resolve());

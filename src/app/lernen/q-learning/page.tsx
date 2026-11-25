@@ -6,7 +6,7 @@ export const dynamic = 'error';
 export const metadata = {
   ...pageMetadata(
     'Q-Learning verstehen',
-    'Die Erklärung zu Q-Learning erscheint demnächst im Lernlabor von ML Teaching.',
+    'Die Einführung zu Q-Learning ist noch nicht verfügbar.',
     learningPaths.qLearning,
   ),
   robots: { index: false, follow: true },

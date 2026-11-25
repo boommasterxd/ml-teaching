@@ -103,8 +103,8 @@ export default function TrainingCollectionFrame({
           controls.canContinue && 'invisible',
         )}
       >
-        Mindestens {ML.MIN_CLASSES} Klassen, eindeutige Namen und je {ML.MIN_IMAGES_PER_CLASS}{' '}
-        Bilder.
+        Du brauchst {ML.MIN_CLASSES} oder mehr Klassen. Jede braucht einen eigenen Namen und
+        mindestens {ML.MIN_IMAGES_PER_CLASS} Bilder.
       </Text>
       {children}
       {actions}
@@ -140,7 +140,7 @@ export function CollectionActionsFrame({
       {children}
       {atLimit && (
         <Text id={limitDescription} variant="muted" className="w-full text-sm">
-          Maximale Klassenanzahl von {ML.MAX_CLASSES} erreicht.
+          Du kannst höchstens {ML.MAX_CLASSES} Klassen anlegen.
         </Text>
       )}
     </div>
@@ -171,7 +171,7 @@ export function TrainingWorkspaceHeader({
   return (
     <PageHeader
       title="Dein Bildmodell"
-      description="Welche Motive soll dein Modell unterscheiden? Benenne die Klassen zum Beispiel „Tasse“ und „Stift“."
+      description="Benenne die Klassen nach den Motiven, zum Beispiel „Tasse“ und „Stift“."
       rightSlot={
         <nav
           aria-label="Trainingsablauf"

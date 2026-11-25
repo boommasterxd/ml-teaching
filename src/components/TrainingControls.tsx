@@ -30,11 +30,11 @@ interface TrainingControlsProps {
 
 const statusMessages = {
   preparing: 'Das Modell wird vorbereitet.',
-  training: 'Das Modell ordnet die Bildmerkmale deinen Klassen zu.',
-  uploading: 'Bitte warte, bis alle ausgewählten Bilder vollständig verarbeitet sind.',
-  emptyNames: 'Bitte gib allen Klassen einen Namen.',
-  duplicateNames: 'Bitte gib allen Klassen einen eindeutigen Namen.',
-  missingImages: `Du brauchst mindestens ${ML.MIN_CLASSES} Klassen und mindestens ${ML.MIN_IMAGES_PER_CLASS} Bilder pro Klasse.`,
+  training: 'Das Modell lernt aus deinen Bildern.',
+  uploading: 'Die Bilder werden noch geladen.',
+  emptyNames: 'Gib jeder Klasse einen Namen.',
+  duplicateNames: 'Gib jeder Klasse einen eigenen Namen.',
+  missingImages: `Lege mindestens ${ML.MIN_CLASSES} Klassen mit je ${ML.MIN_IMAGES_PER_CLASS} oder mehr Bildern an.`,
   trained: 'Du kannst jetzt neue Kamerabilder zuordnen.',
   ready: 'Bereit zum Trainieren.',
 };

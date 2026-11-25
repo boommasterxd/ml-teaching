@@ -23,8 +23,8 @@ const techniques = [
       label: 'Originalarbeit zur MobileNetV2-Architektur',
     },
     descriptions: [
-      'Ein Foto besteht für den Computer aus vielen farbigen Bildpunkten. MobileNet verarbeitet sie in mehreren Schritten: Zuerst erfasst es einfache Merkmale wie helle und dunkle Kanten. Spätere Schichten verbinden solche Merkmale zu komplizierteren Mustern. Die Kästchen bei „Kanten“ und „Muster“ zeigen das vereinfacht.',
-      'Am Ende entsteht eine Liste von Zahlen, der sogenannte Merkmalsvektor. Er beschreibt die gefundenen Bildmerkmale. Dafür stehen die kleinen Balken bei „Zahlen“. MobileNet berechnet diese Liste direkt in deinem Browser. Ob dein Bild zu „Hund“ oder „Katze“ gehört, entscheidet anschließend KNN.',
+      'MobileNet erkennt zuerst Kanten und setzt sie zu Mustern zusammen. Das zeigen die Kästchen bei „Kanten“ und „Muster“.',
+      'Daraus entsteht eine Liste von Zahlen, der Merkmalsvektor. Die Balken bei „Zahlen“ stehen für diese Liste. KNN nutzt sie, um das Bild zuzuordnen.',
     ],
   },
   {
@@ -35,8 +35,8 @@ const techniques = [
       label: 'KNN-Klassifikation in TensorFlow.js',
     },
     descriptions: [
-      'KNN heißt „K-Nearest Neighbors“, auf Deutsch etwa „die K nächsten Nachbarn“. Hier ist K gleich drei: KNN sucht die drei Trainingsbilder, deren Zahlenlisten dem neuen Bild am ähnlichsten sind. Jedes dieser Beispiele hat von dir bereits einen Namen bekommen, etwa „Hund“ oder „Katze“.',
-      'Im Diagramm stehen die Kreise und Quadrate für solche Beispiele. Die Raute ist das neue Bild. Die Linien verbinden es mit seinen drei nächsten Nachbarn. Sind zwei davon Hunde und einer eine Katze, gewinnt „Hund“ mit zwei Stimmen. Genau das zeigen die Balken bei „Ausgabe“. Die Lage der Punkte ist ein vereinfachtes Beispiel, keine echte Messung von MobileNet.',
+      'KNN heißt „K-Nearest Neighbors“. K gibt an, wie viele Nachbarn zählen. Hier sucht KNN die drei Trainingsbilder, deren Zahlenlisten der Liste des neuen Bildes am ähnlichsten sind.',
+      'Die Raute steht für das neue Bild. Die Linien führen zu seinen nächsten Nachbarn. Sind zwei Hunde und einer eine Katze, gewinnt „Hund“ mit zwei Stimmen. Die Balken bei „Ausgabe“ zeigen die Stimmen. Das Diagramm zeigt ein vereinfachtes Beispiel.',
     ],
   },
 ];
@@ -86,20 +86,15 @@ export function ImageTechniqueSection() {
           </EntryReveal>
           <EntryReveal kind="reading" index={1} asChild>
             <Text variant="muted">
-              MobileNet wurde schon mit vielen Bildern trainiert. Du nutzt seine bereits gelernten
-              Bildmerkmale und gibst eigene Beispiele für deine Gruppen hinzu. Eine solche Gruppe
-              heißt Klasse, zum Beispiel „Hund“. Das Nutzen eines vortrainierten Netzes nennt man
-              Transfer Learning. MobileNet selbst wird hier nicht neu trainiert.
+              MobileNet kennt schon viele Bildmerkmale. Du nutzt sie und gibst eigene Beispiele
+              hinzu. Eine Gruppe wie „Hund“ heißt Klasse. Ein vortrainiertes Netz so
+              weiterzuverwenden heißt Transfer Learning.
             </Text>
           </EntryReveal>
           <EntryReveal kind="reading" index={2} asChild>
             <Text variant="muted">
-              Bilderkennung kennt viele Verfahren. Tiefe neuronale Netze können auch direkt lernen,
-              ein Bild einer Klasse zuzuordnen. MobileNet ist selbst ein solches Netz; hier nutzen
-              wir seine Bildmerkmale und lassen KNN die Klasse bestimmen. Wir wählen KNN, weil du
-              den Vergleich mit den nächsten Beispielen gut nachvollziehen kannst. Eine verwandte
-              Aufgabe ist Anomalieerkennung, auf Englisch „Anomaly Detection“: Sie sucht
-              Abweichungen vom Gewohnten, etwa einen Riss in einem Bauteil.
+              Bilderkennung kann auch Abweichungen finden, etwa einen Riss in einem Bauteil. Das
+              heißt Anomalieerkennung.
             </Text>
           </EntryReveal>
         </div>

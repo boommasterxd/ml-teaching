@@ -105,7 +105,7 @@ function useClassNames(onWarning?: (message: string) => void) {
   const addName = useCallback(() => {
     const current = getValues('names');
     if (current.length >= ML.MAX_CLASSES) {
-      onWarning?.(`Maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht.`);
+      onWarning?.(`Du kannst höchstens ${ML.MAX_CLASSES} Klassen anlegen.`);
       return;
     }
     const nextNum = getNextClassNumber(current);

@@ -2,8 +2,8 @@
 
 ## Runtime and installation
 
-Use Node.js 26.x, the current approved LTS major, with npm and the committed
-lockfile. TypeScript 6.0 satisfies the installed lint toolchain's upper peer bound
+Use Node.js 26.x, the current approved LTS major, with npm 11 or npm 12 and the
+committed lockfile. TypeScript 6.0 satisfies the installed lint toolchain's upper peer bound
 of 6.1. The lockfile selects ESLint 10.15.0 because
 [ESLint 9 is end of life](https://eslint.org/version-support/).
 [Next.js 16.4.6 tests its lint configuration with ESLint 10.11.0](https://github.com/vercel/next.js/blob/v16.4.6/test/production/eslint-config-next/eslint-config-next.test.ts).
@@ -11,12 +11,12 @@ npm 12 installs the locked tree with peer warnings for `eslint-plugin-import`,
 `eslint-plugin-jsx-a11y` and `eslint-plugin-react`, whose declared ranges end at
 ESLint 9. These peer gaps remain a compatibility risk. Keep the blocking lint
 check when changing any part of the toolchain.
-Transitive low/moderate advisories remain in development lint and UI tooling.
-npm's proposed forced fixes replace the selected tools with incompatible major
-versions, so they are not applied automatically. The separate
-production audit remains blocking. `npm ci --no-audit` is the reproducible installation command; dependency
-auditing is enforced separately. No application secrets or environment file are
-required. Standard Next.js `PORT` and CLI hostname/port options are sufficient.
+Install the locked dependencies with `npm ci --no-audit`. Run dependency audits
+separately. `npm run audit:production` blocks high and critical production
+findings, and `npm run audit` also checks development dependencies. Review
+dependency changes for compatibility before applying audit fixes. No application
+secrets or environment file are required. Standard Next.js `PORT` and CLI
+hostname/port options are sufficient.
 
 `npm run dev` starts native Next.js development. `src/proxy.dev.ts` supplies a fresh
 cryptographic nonce and CSP Report-Only header for development document requests.
@@ -107,6 +107,24 @@ the full Chromium browser. Install both with `npx playwright install chromium`.
 OS dependency setup is separate and must respond to actual missing requirements.
 Playwright starts `npm start` on
 127.0.0.1:3100 and refuses to reuse an unrelated server. Build once first.
+
+To measure the complete local verification time, install the locked dependencies
+and both Chromium variants beforehand. Start with port 3100 free and no previous
+`.next/` cache. Use the default Playwright configuration with one worker. Run
+the following in Bash.
+
+```bash
+time (npm run ci && npm run build && npm run test:e2e)
+```
+
+Record the revision, Node.js, npm and Chromium versions, host OS, CPU and RAM, and
+the inputs used, including the lockfile, build settings and test fixtures. Record
+total wall time, including production server startup and teardown. Record
+dependency and browser installation time separately. The reference host runs
+Fedora Linux 45 on an AMD Ryzen AI Max+ 395 with 125 GiB of RAM visible to Linux.
+Other systems can run the same procedure. Target under five minutes. Stop early
+enough to terminate the check's processes and complete cleanup within ten minutes.
+A partial or interrupted run leaves the full duration unverified.
 
 Run `npm run test:e2e:model` separately from the required browser suite when you
 need to verify the public MobileNet provider. This opt-in check is not part of

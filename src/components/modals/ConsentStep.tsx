@@ -128,9 +128,11 @@ export default function ConsentStep({
                   Für 30 Minuten in diesem Tab merken
                 </span>
                 <FieldDescription id="remember-training-consent-description" render={<span />}>
-                  Deine Auswahl gilt bis zu 30 Minuten, solange du im selben Tab auf der Website
-                  bleibst und sie nicht neu lädst. Wenn du die Kamera erlaubst und dein Browser sie
-                  weiterhin freigibt, kann sie beim erneuten Trainingsstart automatisch angehen.
+                  Deine Auswahl gilt bis zu 30 Minuten für weitere Trainingsstarts im selben Tab.
+                  Ein laufendes Training kann über diese 30 Minuten hinaus weitergehen. Wenn du die
+                  Website neu lädst oder verlässt, fragen wir beim nächsten Start erneut. Wenn du
+                  die Kamera erlaubt hast und dein Browser sie weiterhin freigibt, kann sie bei
+                  einem Start mit gemerkter Auswahl automatisch angehen.
                 </FieldDescription>
               </FieldLabel>
             </Field>

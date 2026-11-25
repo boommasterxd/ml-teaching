@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { isDocumentationPath } from '../../scripts/docs-path.ts';
 import { reusableCheck } from './pr-check-evidence.ts';
 
 const revision = /^[a-f0-9]{40}$/;
@@ -37,7 +38,7 @@ export function isBrowserSpec(path: unknown): path is string {
 }
 
 export function selectWork(paths: readonly string[]): GeneralWork {
-  if (paths.length > 0 && paths.every((path) => path.startsWith('docs/'))) {
+  if (paths.length > 0 && paths.every(isDocumentationPath)) {
     return { quality: false, browser: false, reason: 'docs' };
   }
   if (paths.length > 0 && paths.every((path) => unitTest.test(path))) {

@@ -169,11 +169,13 @@ export function ClassManagementActions({
         onFocus={onPrepare}
         onPointerDown={onPrepare}
         onClick={onClear}
-        title="Bilder dieser Klasse zurücksetzen"
-        aria-label={`Bilder der Klasse ${position}: ${name} zurücksetzen`}
+        title="Alle Bilder löschen"
+        aria-label={`Alle Bilder löschen: Klasse ${position}, ${name}`}
       >
         <ClearIcon data-icon="inline-start" aria-hidden="true" />
-        <span className="hidden min-w-0 wrap-anywhere @md/training-class:inline">Zurücksetzen</span>
+        <span className="hidden min-w-0 wrap-anywhere @md/training-class:inline">
+          Bilder löschen
+        </span>
       </Button>
       <Button
         variant="outline"

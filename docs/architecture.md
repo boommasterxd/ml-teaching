@@ -151,7 +151,7 @@ from the same animation time. Leaving the page, hiding the tab or requesting
 reduced motion releases the canvas and renderer. See the
 [playback decision](decisions/error-artwork-and-menus.md#shader-playback).
 This renderer is independent of consent-gated ML WebGL and processes no training
-data. The educational illustration starts with a server-rendered Input placeholder,
+data. The educational illustration starts with a server-rendered empty image placeholder,
 labeled feature maps, neighbor points and class labels. Intent loads its animation module, prepares a
 hidden React Activity and warms the selected native optimized image. Persistent
 dog/cat Buttons record the choice; the sequence starts after image decoding and
@@ -305,7 +305,8 @@ after admission. The slot remains occupied through the existing feature-extracti
 pipeline, and errors release it so later valid files can continue. Object URLs,
 readers and image handlers are cleaned up on completion or cancellation. These
 limits bound input admission, not the browser's total memory or immediate native
-codec cancellation. HEIC/HEIF and other formats still require browser codec support.
+codec cancellation. Local imports support JPEG, PNG, GIF, WebP, AVIF, HEIC and
+HEIF. Each format requires a compatible native browser decoder.
 
 A model download is a consent-gated one-time asset load. TanStack Virtual owns
 thumbnail windowing. Empty galleries keep their server-rendered scroll region and

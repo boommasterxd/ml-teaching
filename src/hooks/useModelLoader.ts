@@ -123,7 +123,7 @@ function loadModelWithDeadline(
 async function prepareClassifier(): Promise<LoadingStep<Classifier>> {
   const { create } = await loadClassifierModule();
   return async (setText, signal) => {
-    setText('Erstelle KNN Klassifikator...');
+    setText('Das Bildtraining wird vorbereitet.');
     signal.throwIfAborted();
     return create();
   };
@@ -132,7 +132,7 @@ async function prepareClassifier(): Promise<LoadingStep<Classifier>> {
 async function prepareMobileNet(): Promise<LoadingStep<FeatureExtractor>> {
   const { loadMobileNetEmbedding } = await import('../lib/mobilenet-embedding');
   return (setText, signal) => {
-    setText('Lade MobileNet (Feature Extractor)...');
+    setText('Das KI-Modell wird geladen.');
     return loadWithRetry(
       () => loadMobileNetEmbedding(signal),
       {
@@ -174,7 +174,7 @@ function loadAndWarmModel(
     const model = await load(setText, signal);
     try {
       signal.throwIfAborted();
-      setText('Optimiere GPU-Performance...');
+      setText('Das KI-Modell wird vorbereitet.');
       await warmup(model, signal);
       signal.throwIfAborted();
       return model;
@@ -199,7 +199,7 @@ export function useModelLoader(
   attempt = 0,
 ) {
   const [isModelLoading, setIsModelLoading] = useState(true);
-  const [loadingText, setLoadingText] = useState('Initialisiere TensorFlow.js...');
+  const [loadingText, setLoadingText] = useState('Das Bildtraining wird vorbereitet.');
   const [classifier, updateClassifier] = useState<Classifier | null>(null);
   const [mobilenetModel, setMobilenetModel] = useState<FeatureExtractor | null>(null);
   const classifierRef = useRef<Classifier | null>(null);
@@ -229,7 +229,7 @@ export function useModelLoader(
     async function initModels() {
       const releaseWork = retainBackendWork();
       try {
-        if (backend) setText('Lade TensorFlow.js Backend...');
+        if (backend) setText('Das Bildtraining wird vorbereitet.');
         // Resources remain consent-gated. Only local code can load in parallel with backend setup.
         const [, loadClassifier, loadFeatureExtractor] = await Promise.all([
           backend?.ready ?? loaders?.initBackend?.(setText, signal),

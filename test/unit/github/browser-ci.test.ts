@@ -1,6 +1,6 @@
 import { basename, resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { readBrowserSlot, runBrowserChecks } from '../../../.github/scripts/browser-ci.ts';
+import { runBrowserChecks } from '../../../.github/scripts/browser-ci.ts';
 import { ciPlanVersion, type CiPlan } from '../../../.github/scripts/plan-ci.ts';
 
 const changed = 'test/e2e/hero-entry.spec.ts';
@@ -163,7 +163,7 @@ describe('CI browser execution', () => {
     expect(() => runBrowserChecks(selected, run)).toThrow('A selected test failed.');
   });
 
-  it('executes the full local suite without file filters or a shard', () => {
+  it('executes the full CI suite once with two workers and no file filters', () => {
     const files = [...coreCases, changed, other];
     const run = runner()
       .mockReturnValueOnce(report(files))
@@ -217,45 +217,5 @@ describe('CI browser execution', () => {
     expect(() => runBrowserChecks(full, run)).toThrow(
       'Browser test did not pass: error-recovery-navigation.spec.ts.',
     );
-  });
-
-  it.each([0, 1])('validates only native discovery results for shard slot %s', (index) => {
-    const shardFiles = [
-      core[index],
-      index === 0 ? everyday : neighbors,
-      index === 0 ? changed : other,
-    ];
-    const shard = `--shard=${index + 1}/2`;
-    const run = runner()
-      .mockReturnValueOnce(report([...coreCases, changed, other, otherKnn]))
-      .mockReturnValueOnce(report(shardFiles))
-      .mockReturnValueOnce(report(passed(shardFiles)));
-    runBrowserChecks(full, run, { index, total: 2 });
-
-    expect(run.mock.calls).toEqual([
-      [list, true],
-      [[...list, shard], true],
-      [[...execute, shard], false],
-    ]);
-  });
-
-  it('requires the GitHub job count and zero-based slot to match the plan', () => {
-    expect(readBrowserSlot(full, { CI_BROWSER_SLOT: '1', CI_BROWSER_SLOTS: '2' })).toEqual({
-      index: 1,
-      total: 2,
-    });
-    expect(readBrowserSlot(selected, { CI_BROWSER_SLOT: '0', CI_BROWSER_SLOTS: '1' })).toEqual({
-      index: 0,
-      total: 1,
-    });
-    for (const [plan, environment] of [
-      [full, {}],
-      [full, { CI_BROWSER_SLOT: '2', CI_BROWSER_SLOTS: '2' }],
-      [full, { CI_BROWSER_SLOT: '0', CI_BROWSER_SLOTS: '1' }],
-      [selected, { CI_BROWSER_SLOT: '1', CI_BROWSER_SLOTS: '1' }],
-      [selected, { CI_BROWSER_SLOT: '0', CI_BROWSER_SLOTS: '2' }],
-    ] as const) {
-      expect(() => readBrowserSlot(plan, environment)).toThrow('Invalid browser job slot');
-    }
   });
 });

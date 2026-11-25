@@ -99,11 +99,6 @@ jobs:
     name: Production browser checks
     needs: plan
     if: needs.plan.outputs.browser == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        slot: >-
-          ${{ fromJSON('{"full":[0,1],"browser-spec":[0]}')[fromJSON(needs.plan.outputs.plan).reason] }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -149,8 +144,6 @@ jobs:
         run: node .github/scripts/browser-ci.ts
         env:
           CI_PLAN: ${{ needs.plan.outputs.plan }}
-          CI_BROWSER_SLOT: ${{ strategy.job-index }}
-          CI_BROWSER_SLOTS: ${{ strategy.job-total }}
           CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           CHANGE_MERGE_SHA: ${{ github.sha }}

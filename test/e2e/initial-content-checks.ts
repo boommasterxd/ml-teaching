@@ -42,7 +42,7 @@ async function expectHomeLearningAreas(main: Locator) {
     rewards.getByRole('heading', { name: 'Lernen durch Belohnung', exact: true }),
   );
   await expectReadable(rewards.getByRole('img', { name: /^Ein Agent, zwei mögliche Ziele/ }));
-  const pending = rewards.getByRole('button', { name: 'Coming Soon', exact: true });
+  const pending = rewards.getByRole('button', { name: 'Noch nicht verfügbar', exact: true });
   await expectReadable(pending);
   await expect(pending).toBeDisabled();
   await expect(rewards.getByRole('link')).toHaveCount(0);
@@ -55,7 +55,7 @@ async function expectSectionText(main: Locator, name: string, text: RegExp) {
 }
 
 async function expectHomeContent(main: Locator) {
-  await expectReadable(main.getByText(/Probiere aus, wie KI Bilder erkennt/));
+  await expectReadable(main.getByText(/Trainiere eine KI mit deinen Bildern/));
   await expectReadableLink(
     main.getByRole('link', { name: 'Lernlabor', exact: true }),
     learningPaths.hub,
@@ -67,9 +67,9 @@ async function expectHomeContent(main: Locator) {
   await expectSectionText(
     main,
     'Was ist künstliche Intelligenz?',
-    /umfasst Verfahren, mit denen Computer Muster erkennen/,
+    /können Computer zum Beispiel Bilder zuordnen/,
   );
-  await expectSectionText(main, 'Warum Kinder KI kennenlernen sollten.', /KI prägt mit/);
+  await expectSectionText(main, 'Warum Kinder KI kennenlernen sollten.', /Warum kommt die KI/);
   await expectHomeLearningAreas(main);
   for (const name of ['Was KI kann und wo sie Grenzen hat.', 'KI lernen, ohne Vorwissen.']) {
     const section = main.getByRole('region', { name, exact: true });
@@ -82,7 +82,7 @@ async function expectHomeContent(main: Locator) {
 }
 
 async function expectLearningHub(main: Locator) {
-  await expectReadable(main.getByText(/Wie lernt eine KI, was du von ihr willst/));
+  await expectReadable(main.getByText(/Trainiere eine KI mit deinen Bildern/));
   await expectReadableLink(
     main.getByRole('link', { name: 'Bilderkennung verstehen' }),
     learningPaths.images,
@@ -91,7 +91,7 @@ async function expectLearningHub(main: Locator) {
     main.getByRole('link', { name: 'Eigenes Bildmodell trainieren' }),
     learningPaths.imagePractice,
   );
-  const pending = main.getByRole('button', { name: 'Coming Soon' });
+  const pending = main.getByRole('button', { name: 'Noch nicht verfügbar' });
   await expectReadable(pending);
   await expect(pending).toBeDisabled();
   const prompts = await expectSectionText(
@@ -160,7 +160,7 @@ async function expectImageExercises(main: Locator, phase: 'static' | 'hydrated')
   const neighbors = await expectSectionText(
     main,
     'Welche Nachbarn zählen?',
-    /Finde die nächsten Nachbarn der Raute/,
+    /Wähle die Punkte, die der Raute am nächsten sind/,
   );
   await expectReadable(neighbors.getByRole('heading', { name: 'Hund oder Katze?' }));
   if (phase === 'static') {
@@ -228,7 +228,7 @@ export async function expectPublicMain(main: Locator, path: string, phase: 'stat
       break;
     case learningPaths.qLearning:
       await expect(main.getByRole('heading', { level: 1 })).toHaveText('Q-Learning verstehen');
-      await expectReadable(main.getByText('Die Einführung erscheint demnächst.'));
+      await expectReadable(main.getByText('Die Einführung ist noch nicht verfügbar.'));
       await expectReadableLink(
         main.getByRole('link', { name: 'Zum Lernlabor' }),
         learningPaths.hub,

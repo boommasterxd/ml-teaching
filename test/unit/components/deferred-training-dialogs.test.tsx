@@ -54,7 +54,7 @@ function TrainingReset() {
 
 it('can cancel a cold opening, reuse the same chunk and reopen without losing the trigger', async () => {
   render(<TrainingReset />);
-  const trigger = screen.getByRole('button', { name: 'Bilder der Klasse 1: Rot zurücksetzen' });
+  const trigger = screen.getByRole('button', { name: 'Alle Bilder löschen: Klasse 1, Rot' });
   const remove = screen.getByRole('button', { name: 'Klasse 1: Rot löschen' });
   expect(chunk.request).not.toHaveBeenCalled();
   fireEvent.click(trigger);

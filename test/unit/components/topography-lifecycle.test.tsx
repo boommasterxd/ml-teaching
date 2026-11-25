@@ -51,6 +51,14 @@ beforeEach(() => {
 });
 afterEach(restoreBrowserHost);
 
+async function renderField(
+  element = <TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />,
+) {
+  const view = render(element);
+  await act(() => vi.dynamicImportSettled());
+  return view;
+}
+
 function activeFrame() {
   return host.render.mock.calls[0]![0] as (frame: { timestamp: number }) => void;
 }
@@ -62,7 +70,7 @@ async function finishGlassWaves(first: number, end?: number) {
 }
 
 describe('active glass field ownership', () => {
-  it('bounds raster memory and GPU dimensions through mobile, 4K and ultrawide resizing', () => {
+  it('bounds raster memory and GPU dimensions through mobile, 4K and ultrawide resizing', async () => {
     vi.stubGlobal('devicePixelRatio', 4);
     let resize = () => {};
     vi.stubGlobal(
@@ -80,7 +88,7 @@ describe('active glass field ownership', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockImplementation(
       () => rect as DOMRect,
     );
-    const { container } = render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+    const { container } = await renderField();
     const canvas = container.querySelector('canvas')!;
     expect([canvas.width, canvas.height]).toEqual([195, 422]);
     rect.width = 3840;
@@ -100,11 +108,11 @@ describe('active glass field ownership', () => {
     expect(host.draw.mock.lastCall![0].width).toBe(15360);
   });
 
-  it('starts a wave at the tapped glass or at its center for keyboard activation', () => {
+  it('starts a wave at the tapped glass or at its center for keyboard activation', async () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(
       DOMRect.fromRect({ x: 20, y: 10, width: 400, height: 320 }),
     );
-    render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+    await renderField();
     const glass = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
     const tick = activeFrame();
     fireEvent.pointerDown(glass, { pointerType: 'touch' });
@@ -121,10 +129,10 @@ describe('active glass field ownership', () => {
     expect(host.animations).toHaveLength(2);
   });
 
-  it('reads geometry once per pointer frame and discards work after exit or pause', () => {
+  it('reads geometry once per pointer frame and discards work after exit or pause', async () => {
     const bounds = vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect');
     const callbacks = { onUnavailable: vi.fn(), onRendered: vi.fn() };
-    const { rerender } = render(<TopographyField {...callbacks} />);
+    const { rerender } = await renderField(<TopographyField {...callbacks} />);
     const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
     bounds.mockClear();
 
@@ -150,8 +158,8 @@ describe('active glass field ownership', () => {
     expect(bounds).toHaveBeenCalledTimes(1);
   });
 
-  it('paces autonomous GPU work by scene time and draws each display frame during an impulse', () => {
-    render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+  it('paces autonomous GPU work by scene time and draws each display frame during an impulse', async () => {
+    await renderField();
     const tick = activeFrame();
     for (let i = 0; i <= 120; i++) tick({ timestamp: (1000 * i) / 120 });
     expect(host.draw).toHaveBeenCalledTimes(31);
@@ -163,7 +171,7 @@ describe('active glass field ownership', () => {
 
   it.each([false, true])(
     'adjusts both passes around sustained load with desktop start %s',
-    (desktop) => {
+    async (desktop) => {
       vi.stubGlobal('devicePixelRatio', 3);
       const match = vi.mocked(window.matchMedia);
       const media = match.getMockImplementation()!;
@@ -174,7 +182,7 @@ describe('active glass field ownership', () => {
       vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(
         DOMRect.fromRect({ width: 580, height: 550 }),
       );
-      const { container } = render(
+      const { container } = await renderField(
         <TopographyField sharpDesktopStart onUnavailable={vi.fn()} onRendered={vi.fn()} />,
       );
       const canvas = container.querySelector('canvas')!;
@@ -215,7 +223,7 @@ describe('active glass field ownership', () => {
     },
   );
 
-  it('freezes the same GPU image and wave controls, then continues without counting paused time', () => {
+  it('freezes the same GPU image and wave controls, then continues without counting paused time', async () => {
     let resize = () => {};
     vi.stubGlobal(
       'ResizeObserver',
@@ -230,7 +238,7 @@ describe('active glass field ownership', () => {
     );
     const onUnavailable = vi.fn();
     const onRendered = vi.fn();
-    const { container, rerender } = render(
+    const { container, rerender } = await renderField(
       <TopographyField onUnavailable={onUnavailable} onRendered={onRendered} />,
     );
     const canvas = container.querySelector('canvas');
@@ -294,7 +302,7 @@ describe('active glass field ownership', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(
       DOMRect.fromRect({ width: 400, height: 320 }),
     );
-    const { unmount } = render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+    const { unmount } = await renderField();
     const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
     const tick = activeFrame();
     const taps = Array.from({ length: 10 }, (_, i) => [20 + i, 80 - i, 0, 1]);
@@ -325,7 +333,7 @@ describe('active glass field ownership', () => {
 
   it('limits delayed waves after a burst of repeated and distinct presses', async () => {
     vi.spyOn(performance, 'now').mockReturnValue(0);
-    render(<TopographyField onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+    await renderField();
     const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
     for (let index = 0; index < 64; index++) {
       const clientX = index % 2 === 0 ? 25 : 30 + index;
@@ -348,7 +356,7 @@ describe('active glass field ownership', () => {
     const clock = vi.spyOn(performance, 'now').mockReturnValue(0);
     const onRendered = vi.fn();
     const onUnavailable = vi.fn();
-    const { rerender } = render(
+    const { rerender } = await renderField(
       <TopographyField onUnavailable={onUnavailable} onRendered={onRendered} />,
     );
     const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
@@ -376,7 +384,9 @@ describe('active glass field ownership', () => {
   it('bounds raster density and retires active and waiting waves with the frame owner', async () => {
     vi.stubGlobal('devicePixelRatio', 4);
     const onRendered = vi.fn();
-    const { unmount } = render(<TopographyField onUnavailable={vi.fn()} onRendered={onRendered} />);
+    const { unmount } = await renderField(
+      <TopographyField onUnavailable={vi.fn()} onRendered={onRendered} />,
+    );
     expect(onRendered).toHaveBeenCalledWith(true);
     expect(host.draw.mock.calls[0]![0].dpr).toBe(0.5);
     const field = screen.getByRole('button', { name: 'Lichtimpuls im Glas auslösen' });
@@ -392,9 +402,9 @@ describe('active glass field ownership', () => {
     expect(onRendered).toHaveBeenLastCalledWith(false);
   });
 
-  it('stops rendering immediately on GPU context loss and requests the static fallback', () => {
+  it('stops rendering immediately on GPU context loss and requests the static fallback', async () => {
     const unavailable = vi.fn();
-    const { container } = render(
+    const { container } = await renderField(
       <TopographyField onUnavailable={unavailable} onRendered={vi.fn()} />,
     );
     const event = new Event('webglcontextlost', { cancelable: true });
@@ -405,11 +415,11 @@ describe('active glass field ownership', () => {
     expect(unavailable).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the fallback authoritative when the first GPU draw cannot run', () => {
+  it('keeps the fallback authoritative when the first GPU draw cannot run', async () => {
     host.draw.mockReturnValue(false);
     const unavailable = vi.fn();
     const onRendered = vi.fn();
-    render(<TopographyField onUnavailable={unavailable} onRendered={onRendered} />);
+    await renderField(<TopographyField onUnavailable={unavailable} onRendered={onRendered} />);
     expect(onRendered).not.toHaveBeenCalledWith(true);
     expect(onRendered).toHaveBeenCalledWith(false);
     expect(unavailable).toHaveBeenCalledTimes(1);
@@ -417,12 +427,12 @@ describe('active glass field ownership', () => {
     expect(host.dispose).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the poster during compilation and suspends polling until playback resumes', () => {
+  it('keeps the poster during compilation and suspends polling until playback resumes', async () => {
     host.draw.mockReturnValue('pending');
     const onRendered = vi.fn();
     const onUnavailable = vi.fn();
     const props = { onRendered, onUnavailable };
-    const { rerender } = render(<TopographyField {...props} />);
+    const { rerender } = await renderField(<TopographyField {...props} />);
     const tick = activeFrame();
     act(() => tick({ timestamp: 30 }));
     expect(onRendered).not.toHaveBeenCalled();
@@ -439,10 +449,15 @@ describe('active glass field ownership', () => {
     expect(onUnavailable).not.toHaveBeenCalled();
   });
 
-  it('retires an unfinished link when the decorative scene unmounts', () => {
+  it('abandons renderer loading and retires an unfinished link when the scene unmounts', async () => {
     host.draw.mockReturnValue('pending');
     const onRendered = vi.fn();
-    const { unmount } = render(<TopographyField onRendered={onRendered} onUnavailable={vi.fn()} />);
+    const field = <TopographyField onRendered={onRendered} onUnavailable={vi.fn()} />;
+    render(field).unmount();
+    await act(() => vi.dynamicImportSettled());
+    expect(host.draw).not.toHaveBeenCalled();
+    expect(onRendered).not.toHaveBeenCalled();
+    const { unmount } = await renderField(field);
     const tick = activeFrame();
     unmount();
     expect(host.dispose).toHaveBeenCalledTimes(1);
@@ -452,10 +467,10 @@ describe('active glass field ownership', () => {
     expect(onRendered).not.toHaveBeenCalledWith(true);
   });
 
-  it('retires GPU work and restores the fallback if a later raster allocation fails', () => {
+  it('retires GPU work and restores the fallback if a later raster allocation fails', async () => {
     const unavailable = vi.fn();
     const onRendered = vi.fn();
-    render(<TopographyField onUnavailable={unavailable} onRendered={onRendered} />);
+    await renderField(<TopographyField onUnavailable={unavailable} onRendered={onRendered} />);
     expect(onRendered).toHaveBeenCalledWith(true);
     const tick = activeFrame();
     tick({ timestamp: 0 });
@@ -468,7 +483,7 @@ describe('active glass field ownership', () => {
   });
 
   it('keeps the paused glass frame when the surrounding theme changes', async () => {
-    render(<TopographyField paused onUnavailable={vi.fn()} onRendered={vi.fn()} />);
+    await renderField(<TopographyField paused onUnavailable={vi.fn()} onRendered={vi.fn()} />);
     expect(host.draw).toHaveBeenCalledTimes(1);
     try {
       await act(async () => {

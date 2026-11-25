@@ -173,7 +173,7 @@ export function trainingSettingsTrigger(page: Page) {
 }
 
 export async function confirmTrainingWithdrawal(page: Page) {
-  const loading = page.getByRole('dialog', { name: /Lade KI-Modelle/ });
+  const loading = page.getByRole('dialog', { name: /Bildtraining startet/ });
   const settings = page.getByRole('alertdialog', { name: 'Einstellungen zum Bildtraining' });
   const settingUp = await loading.isVisible();
   if (!settingUp) {
@@ -458,7 +458,7 @@ export async function expectPreviewDeletion(
 }
 
 export async function expectCancelledResetKeepsImages(page: Page) {
-  const reset = page.getByRole('button', { name: /^Bilder der Klasse 1:/ });
+  const reset = page.getByRole('button', { name: /^Alle Bilder löschen: Klasse 1,/ });
   await reset.click();
   await expect(
     page.getByRole('alertdialog', { name: 'Bilder dieser Klasse löschen?' }),

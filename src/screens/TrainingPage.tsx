@@ -140,7 +140,9 @@ function useSetupPresentation(step: SetupStep | null, canShow: boolean) {
 function useCameraErrorNotice(error: AppError | null, canNotify: boolean) {
   useEffect(() => {
     if (canNotify && error?.category === 'camera') {
-      toast.error(`${error.message} Du kannst Bilder hochladen.`, { id: 'training-camera' });
+      toast.error(`${error.message} Du kannst stattdessen Bilder auswählen.`, {
+        id: 'training-camera',
+      });
     }
   }, [canNotify, error]);
 }
@@ -220,6 +222,7 @@ function TrainingVisit({
         {...setup}
         loadingText={models.loadingText}
         onDeclineConsent={dismissSetup}
+        onDeclineIntent={prepareReturn}
         declineConsentHref={learningPaths.images}
         onConfirmConsentIntent={prepareConsent}
         onConfirmConsent={grantConsent}

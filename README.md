@@ -39,7 +39,8 @@ npm run dev
 
 Open [localhost:3000](http://localhost:3000), choose **Bilderkennung** in the
 learning lab and open the practice page. The model downloads after you consent.
-To train, collect at least ten images per class in at least two uniquely named classes.
+Training requires at least two classes. Give every class a unique name and add at
+least ten images to each one.
 If it fails to load, check your connection and select **Erneut versuchen**.
 See [development checks](docs/development.md#checks) for the model-provider smoke
 test.

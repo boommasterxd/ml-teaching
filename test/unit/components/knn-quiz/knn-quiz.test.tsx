@@ -66,12 +66,14 @@ describe('KNN neighbor exercise', () => {
     expect(distant.getAttribute('aria-invalid')).toBe('true');
     expect(status.textContent).toMatch(/^Fehlversuch 1: Punkt \d+ gehört nicht/);
     expect((await screen.findByRole('tooltip')).textContent).toContain(
-      'Dieser Punkt gehört nicht zu den 3 nächsten.',
+      'Wähle einen Punkt näher an der Raute.',
     );
     fireEvent.click(distant);
     expect(status.textContent).toMatch(/^Fehlversuch 2: Punkt \d+ gehört nicht/);
     fireEvent.scroll(document);
-    expect(screen.getByRole('tooltip').textContent).toContain('Suche näher an der Raute.');
+    expect(screen.getByRole('tooltip').textContent).toContain(
+      'Wähle einen Punkt näher an der Raute.',
+    );
     expect(distant.getAttribute('aria-invalid')).toBe('true');
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('tooltip')).toBeNull();

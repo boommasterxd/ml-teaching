@@ -96,10 +96,7 @@ function TrainingPanelFeedback({
       <AlertDescription>
         <p>Die Ansicht konnte nicht geladen werden.</p>
         {status.needsReload ? (
-          <p>
-            Lade die Seite neu, wenn du fortfahren möchtest. Dabei gehen deine Trainingsdaten
-            verloren.
-          </p>
+          <p>Lade die Seite neu. Dabei gehen deine Trainingsdaten verloren.</p>
         ) : (
           <Button variant="outline" size="sm" onClick={() => retry(status.step)}>
             Erneut versuchen

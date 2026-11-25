@@ -79,12 +79,10 @@ test('the brand scrolls to the top of an already open homepage without a page tr
   const brand = header.getByRole('link', { name: 'ML Teaching – Startseite', exact: true });
   await brand.click();
   await page.evaluate(() => scrollTo({ top: 120, behavior: 'instant' }));
-  const surface = header.locator('.site-header-surface');
-  await expect(surface).toHaveCSS('opacity', '1');
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
   await brand.press('Enter');
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
-  await expect(surface).toHaveCSS('opacity', '0');
-  expect(await transitions()).toEqual([]);
+  await expectPageTransitions(page, transitions);
 
   const previews = page.getByRole('region', { name: 'Zwei Arten, wie KI lernt', exact: true });
   await page.getByRole('link', { name: 'Mini-Experimente', exact: true }).click();
@@ -93,14 +91,11 @@ test('the brand scrolls to the top of an already open homepage without a page tr
   await expect
     .poll(() => previews.evaluate((node) => node.getBoundingClientRect().top))
     .toBeLessThan(300);
-  await settleEntryAnimations(page);
-  await expect(surface).toHaveCSS('opacity', '1');
-  expect(await transitions()).toEqual([]);
+  await expectPageTransitions(page, transitions);
   await brand.press('Enter');
   await expect(page).toHaveURL((url) => url.pathname === '/' && url.hash === '');
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
-  await expect(surface).toHaveCSS('opacity', '0');
-  expect(await transitions()).toEqual([]);
+  await expectPageTransitions(page, transitions);
 });
 
 for (const reducedMotion of ['no-preference', 'reduce'] as const) {
@@ -295,7 +290,7 @@ function expectStrictCsp(response: APIResponse) {
 
 async function expectQLearningPlaceholder(page: Page) {
   const main = page.getByRole('main');
-  await expect(main.getByText('Die Einführung erscheint demnächst.')).toBeVisible();
+  await expect(main.getByText('Die Einführung ist noch nicht verfügbar.')).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex,\s*follow/);
   await main.getByRole('link', { name: 'Zum Lernlabor', exact: true }).press('Enter');
   await expect(page).toHaveURL(learningPaths.hub);

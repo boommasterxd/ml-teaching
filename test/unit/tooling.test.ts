@@ -85,7 +85,7 @@ function planBrowserFixture(cwd: string, change: string) {
 
 describe('CI selection and required gate', () => {
   it('skips costly work only for a complete nonempty documentation diff', () => {
-    expect(selectWork(['docs/architecture.md'])).toEqual({
+    expect(selectWork(['docs/architecture.md', 'docs/decisions/example.md'])).toEqual({
       quality: false,
       browser: false,
       reason: 'docs',
@@ -100,6 +100,12 @@ describe('CI selection and required gate', () => {
     expect(
       selectWork(['test/unit/hooks/useModelLoader.test.ts', 'package-lock.json']).browser,
     ).toBe(true);
+  });
+
+  it('runs all checks when the diff changes non-Markdown documentation or its filter', () => {
+    expect(selectWork(['docs/guide.ts']).reason).toBe('full');
+    expect(selectWork(['docs/guide.md', 'docs/data.json']).reason).toBe('full');
+    expect(selectWork(['scripts/docs-path.ts']).reason).toBe('full');
   });
 
   it('selects all work for missing history and rejects incomplete revisions', () => {

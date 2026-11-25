@@ -47,7 +47,8 @@ SOFTWARE.
 The installed `@animate-ui/react` package and generated files in
 `src/components/animate-ui/icons/` use the MIT license with the Commons Clause
 condition below. The same license covers the adapted
-`src/components/icons/animated-circle-check-big.tsx` and
+`src/components/icons/animated-circle-check-big.tsx`,
+`src/components/icons/animated-loader-circle.tsx`, and
 `src/components/animate-ui/components/page-transition.tsx` with its CSS. The
 original SVG paths and default icon variants come from the official Animate UI
 registry. The source uses application formatting and import paths and omits

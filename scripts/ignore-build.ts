@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { isDeepStrictEqual } from 'node:util';
 import { pathToFileURL } from 'node:url';
+import { isDocumentationPath } from './docs-path.ts';
 
 const revision = /^[a-f0-9]{40}$/;
 const qualityScripts = new Set([
@@ -25,7 +26,6 @@ const qualityScripts = new Set([
   'skills:list',
 ]);
 const nonRuntime = [
-  /^docs\/.+\.md$/,
   /^(?:README|AGENTS)\.md$/,
   /^test\/(?:unit|e2e)\/.+\.(?:ts|tsx|mjs)$/,
   /^test\/setup\.ts$/,
@@ -114,7 +114,11 @@ function classifyBuild(previous: string, current: string, readGit: ReadGit) {
           readGit(['show', `${current}:package.json`]),
         );
       }
-      return ciOnlyPaths.has(path) || nonRuntime.some((pattern) => pattern.test(path));
+      return (
+        isDocumentationPath(path) ||
+        ciOnlyPaths.has(path) ||
+        nonRuntime.some((pattern) => pattern.test(path))
+      );
     });
     return safe ? 'non-runtime-diff' : 'unclassified-or-runtime-change';
   } catch {

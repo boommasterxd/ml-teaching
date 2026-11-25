@@ -12,7 +12,7 @@ base, head and merge revisions. Consumers reject a different checked-out revisio
 
 | Complete changed scope                                                                                 | Selected work                                                                                                   |
 | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| Nonempty root `docs/` files only                                                                       | Real successful final gate; no dependency installation, tests or build                                          |
+| Nonempty diff of Markdown files under root `docs/` only                                                | Real successful final gate; no dependency installation, tests or build                                          |
 | Only `*.test.ts`, `*.test.tsx` or `*.test.mjs` files under `test/unit/`                                | Static quality, production dependency audit and full unit coverage                                              |
 | Only allowlisted local Lighthouse scripts, optionally with unit tests                                  | Static quality, production dependency audit and full unit coverage                                              |
 | One eligible added or modified `test/e2e/*.spec.ts`                                                    | Full quality checks, native production build, five core browser specs, two core quiz cases and the changed spec |
@@ -22,6 +22,8 @@ base, head and merge revisions. Consumers reject a different checked-out revisio
 The local-tooling allowlist contains `scripts/check-lighthouse.ts` and
 `scripts/lighthouse-runtime.ts`. Either or both can change with unit tests and
 still select the quality job alone. Other mixed scopes select the full suite.
+The Markdown rule uses the same path predicate as the Vercel build filter.
+Other file types under `docs/` select full CI.
 
 The single-spec selection applies only when the complete diff is one regular
 added or modified `test/e2e/<lowercase-name>.spec.ts` file, the branch is up to
@@ -105,6 +107,9 @@ replacement receipts and active runs, reads and validates the returned inventory
 and refreshes the inventory, active runs and trusted branch identity before
 deletion. Each run deletes up to 100 revalidated cache IDs and checks the
 inventory again to confirm their removal.
+Inventory checks require complete counts and unique identities. Uncertain API
+results stop the affected cleanup. Diagnostics include the operation and error
+class without logging the underlying command or response.
 After pull request cache cleanup, each group of up to 20 default-branch cache
 deletions rechecks the cache inventory, replacement provenance, active workflow
 runs and current default-branch revision.
@@ -220,12 +225,12 @@ that Proxy remain forbidden.
 `npm run build` uses the native Next.js build and its CSP verification hooks.
 `npm run test:e2e` runs the complete browser suite against the native production
 server, including accessibility and keyboard contracts. The local command remains
-unfiltered with `CI=true`. For the full suite, CI validates the plan and runs two
-Playwright shards on separate runners; the selected-spec plan uses one runner.
-Each browser runner installs dependencies, builds the application independently and
-limits Playwright to two workers. Full-suite shards use native discovery, and their
-results must match their discovered tests.
-Each browser runner installs both lockfile-matched Chromium variants for
+unfiltered with `CI=true`. The browser job validates the plan, installs dependencies
+and builds the application once. It runs Playwright with two workers for both the
+full suite and the selected-spec plan to limit resource contention during browser
+ML tests. Every execution must match its expected test identities from native
+discovery.
+The job installs both lockfile-matched Chromium variants for
 [the browser tests](development.md#checks). Browser launch, host dependency
 validation and the selected suite are blocking. Lighthouse runs locally as
 described in the [performance audit decision](decisions/performance-audits.md).

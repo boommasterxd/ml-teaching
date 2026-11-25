@@ -48,11 +48,10 @@ function confirmation(kind: ConfirmationKind, className: string | undefined) {
       title: 'Bilder dieser Klasse löschen?',
       description: (
         <>
-          Möchten Sie wirklich alle Bilder der Klasse <strong>„{className}“</strong> unwiderruflich
-          löschen?
+          Alle Bilder in <strong>„{className}“</strong> werden gelöscht. Die Klasse bleibt.
         </>
       ),
-      confirmLabel: 'Zurücksetzen',
+      confirmLabel: 'Alle Bilder löschen',
       icon: <RotateCcw />,
     };
   return {
@@ -61,8 +60,7 @@ function confirmation(kind: ConfirmationKind, className: string | undefined) {
     title: 'Klasse löschen?',
     description: (
       <>
-        Möchten Sie die Klasse <strong>„{className}“</strong> und alle zugehörigen Bilder wirklich
-        entfernen?
+        Die Klasse <strong>„{className}“</strong> und ihre Bilder werden gelöscht.
       </>
     ),
     confirmLabel: 'Löschen',

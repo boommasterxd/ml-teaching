@@ -3,6 +3,7 @@ import { PathnameContext } from 'next/dist/shared/lib/hooks-client-context.share
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TrainingEntryProvider from '@/components/training/TrainingEntryProvider';
 import { useTrainingEntry, useTrainingSession } from '@/components/training/TrainingEntryContext';
+import * as documentVisibility from '@/lib/document-visibility';
 import { learningPaths } from '@/lib/learning-paths';
 import TrainingPage from '@/screens/TrainingPage';
 import {
@@ -229,9 +230,10 @@ describe('training entry across routes', () => {
     fireEvent.click(camera.getByRole('button', { name: 'Ohne Kamera fortfahren' }));
 
     const workspace = within(
-      await screen.findByRole('dialog', { name: 'Arbeitsbereich vorbereiten' }),
+      await screen.findByRole('dialog', { name: 'Bildtraining vorbereiten' }),
     );
-    expect(workspace.getByRole('alert').textContent).toContain('konnte nicht geladen werden');
+    const alert = workspace.getByRole('alert');
+    expect(alert.textContent).toContain('Das Bildtraining konnte nicht starten.');
     expect(testRouter.push).not.toHaveBeenCalled();
     expect(browser.model).toHaveBeenCalledOnce();
 
@@ -259,9 +261,9 @@ describe('training entry across routes', () => {
       const camera = within(await screen.findByRole('dialog', { name: cameraName }));
       fireEvent.click(camera.getByRole('button', { name: 'Ohne Kamera fortfahren' }));
       const workspace = within(
-        await screen.findByRole('dialog', { name: 'Arbeitsbereich vorbereiten' }),
+        await screen.findByRole('dialog', { name: 'Bildtraining vorbereiten' }),
       );
-      expect(workspace.getByRole('status').textContent).toContain('wird geladen');
+      expect(workspace.getByRole('status').textContent).toContain('wird vorbereitet');
       if (action === 'Abbrechen') fireEvent.click(workspace.getByRole('button', { name: action }));
       else fireEvent(window, new Event(action));
       await act(async () => pending.resolve(prepared));
@@ -274,27 +276,25 @@ describe('training entry across routes', () => {
   );
 
   it('prepares the training host on focus without starting its subscriptions before activation', async () => {
-    const subscribe = vi.spyOn(document, 'addEventListener');
-    const visibilitySubscriptions = () =>
-      subscribe.mock.calls.filter(([event]) => event === 'visibilitychange');
+    const subscribe = vi.spyOn(documentVisibility, 'subscribeToVisibility');
     showPage(learningPaths.images);
     const opener = screen.getByRole('button', { name: 'Bildmodell trainieren' });
-    expect(visibilitySubscriptions()).toHaveLength(0);
+    expect(subscribe).not.toHaveBeenCalled();
 
     act(() => opener.focus());
     await act(() => vi.dynamicImportSettled());
-    expect(visibilitySubscriptions()).toHaveLength(0);
+    expect(subscribe).not.toHaveBeenCalled();
     expect(screen.queryByRole('dialog')).toBeNull();
 
     fireEvent.click(opener);
     await screen.findByRole('dialog', { name: consentName });
-    expect(visibilitySubscriptions()).toHaveLength(0);
+    expect(subscribe).not.toHaveBeenCalled();
     expect(browser.model).not.toHaveBeenCalled();
     expect(browser.getUserMedia).not.toHaveBeenCalled();
 
     await agreeToTraining();
     await screen.findByRole('dialog', { name: cameraName });
-    expect(visibilitySubscriptions()).toHaveLength(1);
+    expect(subscribe).toHaveBeenCalledOnce();
   });
 
   it('closes the source-page dialog with Escape and returns focus without starting any resources', async () => {
@@ -335,7 +335,7 @@ describe('training entry across routes', () => {
     );
     fireEvent.click(failure.getByRole('button', { name: 'Erneut versuchen' }));
     await waitFor(() => expect(browser.model).toHaveBeenCalledTimes(2));
-    const loading = within(await screen.findByRole('dialog', { name: /Lade KI-Modelle/ }));
+    const loading = within(await screen.findByRole('dialog', { name: /Bildtraining startet/ }));
     expect(readRememberedTrainingConsent()?.camera).toBe('pending');
     fireEvent.click(loading.getByRole('button', { name: 'Einwilligung widerrufen' }));
     const confirmation = within(

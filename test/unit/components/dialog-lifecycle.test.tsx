@@ -142,7 +142,7 @@ describe('dialog close lifecycle', () => {
     fireEvent.click(opener);
     const confirmation = screen.getByRole('alertdialog', { name: 'Fortfahren?' });
     fireEvent.click(within(confirmation).getByRole('button', { name: 'Laden' }));
-    const loading = screen.getByRole('dialog', { name: 'Lade KI-Modelle...' });
+    const loading = screen.getByRole('dialog', { name: 'Bildtraining startet' });
     await waitFor(() => expect(loading.contains(document.activeElement)).toBe(true));
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => expect(confirmation.isConnected).toBe(false));

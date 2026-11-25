@@ -350,17 +350,13 @@ describe('training page integration', () => {
     expect(trainAgain.disabled).toBe(false);
     expect(screen.queryByRole('button', { name: 'Weiter zur Vorhersage' })).toBeNull();
     fireEvent.click(steps.getByRole('button', { name: 'Bilder sammeln' }));
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Bilder der Klasse 1: Tasse zurücksetzen' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Alle Bilder löschen: Klasse 1, Tasse' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Abbrechen' }));
     await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect(screen.getAllByText('10 Bilder')).toHaveLength(2);
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Bilder der Klasse 1: Tasse zurücksetzen' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Alle Bilder löschen: Klasse 1, Tasse' }));
     const clear = await screen.findByRole('alertdialog', { name: 'Bilder dieser Klasse löschen?' });
-    fireEvent.click(within(clear).getByRole('button', { name: 'Zurücksetzen' }));
+    fireEvent.click(within(clear).getByRole('button', { name: 'Alle Bilder löschen' }));
     await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect(screen.getByText('0 / 10 Bilder')).toBeTruthy();
     const removeClass = screen.getByRole('button', { name: 'Klasse 1: Tasse löschen' });
@@ -386,7 +382,7 @@ describe('training page integration', () => {
     boundary.load.mockReturnValueOnce(download.promise);
     render(<TrainingFixture />);
     confirmGeneralConsent();
-    await screen.findByText('Lade MobileNet (Feature Extractor)...');
+    await screen.findByText('Das KI-Modell wird geladen.');
     download.reject(new DOMException('Model network timeout', 'TimeoutError'));
     const error = await screen.findByRole('alert');
     expect(error.textContent).toContain('Fehler beim Laden der KI-Modelle');
@@ -416,13 +412,13 @@ describe('training page integration', () => {
     await waitFor(
       () =>
         expect(boundary.toastError).toHaveBeenCalledWith(
-          expect.stringContaining('Kamerazugriff verweigert oder keine Kamera gefunden.'),
+          expect.stringContaining('Die Kamera konnte nicht starten.'),
           { id: 'training-camera' },
         ),
       { timeout: 3000 },
     );
     expect(screen.queryByRole('alert')).toBeNull();
-    const [retry] = screen.getAllByRole('button', { name: 'Kamera erneut verbinden' });
+    const [retry] = screen.getAllByRole('button', { name: 'Kamera erneut starten' });
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
     fireEvent.change(input, { target: { files: selectedImages('valid', 1) } });
     await screen.findByText('1 / 10 Bilder');

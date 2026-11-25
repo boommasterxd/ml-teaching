@@ -169,7 +169,7 @@ describe('useModelTraining', () => {
       await act(async () => {
         await result.current.trainModel();
       });
-      expect(onError).toHaveBeenCalledWith('validation', expect.stringContaining('eindeutigen'));
+      expect(onError).toHaveBeenCalledWith('validation', 'Gib jeder Klasse einen eigenen Namen.');
       expect(setClassifier).not.toHaveBeenCalled();
     });
     it('calls onError when the minimum class count is not reached', async () => {

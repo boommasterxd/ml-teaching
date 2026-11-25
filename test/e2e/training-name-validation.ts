@@ -30,9 +30,9 @@ export async function expectStableNameValidation(page: Page) {
 
   await first.fill('');
   await first.press('Tab');
-  await expect(first).toHaveAccessibleDescription('Name darf nicht leer sein');
+  await expect(first).toHaveAccessibleDescription('Gib der Klasse einen Namen');
   await expect(second).not.toHaveAttribute('aria-invalid', 'true');
-  const emptyError = tooltips.filter({ hasText: 'Name darf nicht leer sein' });
+  const emptyError = tooltips.filter({ hasText: 'Gib der Klasse einen Namen' });
   await expect(emptyError).toBeVisible();
   await expect
     .poll(async () => {
@@ -45,9 +45,9 @@ export async function expectStableNameValidation(page: Page) {
   await first.fill(await second.inputValue());
   await first.press('Tab');
   await expect(page.getByRole('button', { name: 'Bilder auswählen' }).first()).toBeFocused();
-  await expect(first).toHaveAccessibleDescription('Name muss eindeutig sein');
-  await expect(second).toHaveAccessibleDescription('Name muss eindeutig sein');
-  const errors = tooltips.filter({ hasText: 'Name muss eindeutig sein' });
+  await expect(first).toHaveAccessibleDescription('Dieser Name wird schon verwendet');
+  await expect(second).toHaveAccessibleDescription('Dieser Name wird schon verwendet');
+  const errors = tooltips.filter({ hasText: 'Dieser Name wird schon verwendet' });
   await expect(errors).toHaveCount(2);
   for (const error of await errors.all()) {
     await expect(error).toBeVisible();

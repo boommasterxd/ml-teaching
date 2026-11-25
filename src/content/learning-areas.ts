@@ -13,8 +13,8 @@ export const learningAreas = [
     id: 'images',
     title: 'Bilderkennung',
     explanation:
-      'Bilderkennung soll automatisch erkennen, was auf einem Bild zu sehen ist, etwa ein Tier oder ein Gegenstand. Häufig lernt ein Modell aus Beispielbildern mit bekannten Kategorien, welche Merkmale zu welcher Kategorie passen. So kann es neue Bilder zuordnen.',
-    description: 'Trainiere ein Modell mit eigenen Beispielbildern und teste es mit neuen Bildern.',
+      'Ein Modell lernt aus Beispielen, woran es etwa Hunde und Katzen erkennt. Dann kann es neue Bilder zuordnen.',
+    description: 'Trainiere ein Modell mit deinen Bildern. Teste es mit neuen Bildern.',
     introduction: {
       href: learningPaths.images,
       label: 'Bilderkennung verstehen',
@@ -28,7 +28,7 @@ export const learningAreas = [
     id: 'q-learning',
     title: 'Lernen durch Belohnung',
     explanation:
-      'Ziel ist es, mit einer Folge von Aktionen möglichst viel Belohnung zu bekommen. Dazu probiert ein Agent, etwa eine Spielfigur, verschiedene Aktionen in seiner Umgebung aus und lernt aus den Rückmeldungen, welche Entscheidungen sich auf Dauer lohnen.',
+      'Eine Spielfigur probiert verschiedene Wege aus. Aus den Punkten lernt sie, welche Wege sich lohnen.',
     description: 'Eine Spielfigur lernt aus Punkten, welche Wege sich lohnen.',
     introduction: rewardIntroduction,
     href: learningPaths.qLearningPractice,

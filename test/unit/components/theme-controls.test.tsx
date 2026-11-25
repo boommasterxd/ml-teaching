@@ -35,6 +35,7 @@ async function openMenu() {
   const button = trigger();
   act(() => button.focus());
   activate(button);
+  await act(() => vi.dynamicImportSettled());
   return screen.findByRole('menu', { name: 'Darstellung einstellen' });
 }
 

@@ -73,8 +73,8 @@ export function KnnQuizInputLayout({
       <div className="flex items-center gap-3 lg:gap-4">
         {image ?? <div className={knnQuizImageClass} />}
         <div className="flex flex-col gap-1">
-          <Text variant="small">Dein Eingabebild</Text>
-          <Text variant="muted">Die Raute ist sein neuer Datenpunkt.</Text>
+          <Text variant="small">Neues Bild</Text>
+          <Text variant="muted">Die Raute steht für dieses Bild.</Text>
         </div>
       </div>
       <Field className="gap-1 lg:gap-3">
@@ -153,8 +153,8 @@ export function KnnQuizChoices({
       </div>
       <Text variant="muted">
         {ready
-          ? 'Zähle die Klassen der umkreisten Nachbarn.'
-          : 'Wähle zuerst die nächsten Punkte im Diagramm.'}
+          ? 'Zähle die markierten Hunde und Katzen.'
+          : 'Wähle zuerst die Punkte, die der Raute am nächsten sind.'}
       </Text>
     </FieldSet>
   );

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useInView } from 'motion/react';
 import Button from '@/components/Button';
 import { RotateCcw } from '@/components/icons/rotate-ccw';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Text } from '@/components/ui/typography';
 import { createRetryableLoader } from '@/lib/create-retryable-loader';
 import {
@@ -66,12 +67,15 @@ export default function DeferredKnnQuiz() {
             <KnnQuizFigure
               plot={
                 <div className="knn-quiz-plot grid place-items-center">
-                  <div className="flex flex-col items-center gap-3 p-2 text-center">
-                    <Text role="status" variant="muted">
-                      {failed
-                        ? 'Die Übung konnte nicht geladen werden.'
-                        : 'Die Übung wird geladen …'}
+                  <div className="flex min-w-0 max-w-full flex-col items-center gap-3 p-2 text-center">
+                    <Text role="status" variant="muted" className={failed ? 'sr-only' : undefined}>
+                      {!failed && 'Die Übung wird geladen …'}
                     </Text>
+                    {failed && (
+                      <Alert variant="destructive">
+                        <AlertDescription>Die Übung konnte nicht geladen werden.</AlertDescription>
+                      </Alert>
+                    )}
                     {failedAttempt !== null && (
                       <Button
                         ref={retry}

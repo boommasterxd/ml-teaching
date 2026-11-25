@@ -41,7 +41,7 @@ function connectCamera(
   onFailed: (message: string) => void,
 ) {
   const startedAt = performance.now();
-  const disconnectedMessage = 'Die Kameraverbindung wurde unterbrochen.';
+  const disconnectedMessage = 'Die Kameraverbindung ist unterbrochen.';
   let active = true;
   let ownedStream: MediaStream | null = null;
   let tracks: MediaStreamTrack[] = [];
@@ -69,7 +69,7 @@ function connectCamera(
   async function requestCamera() {
     const mediaStream = await openCamera(facingMode).catch(() => null);
     if (!mediaStream) {
-      if (active) failOpening('Kamerazugriff verweigert oder keine Kamera gefunden.');
+      if (active) failOpening('Die Kamera konnte nicht starten.');
       return;
     }
     if (!active) {
