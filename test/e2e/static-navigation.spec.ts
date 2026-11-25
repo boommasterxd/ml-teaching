@@ -290,7 +290,7 @@ function expectStrictCsp(response: APIResponse) {
 
 async function expectQLearningPlaceholder(page: Page) {
   const main = page.getByRole('main');
-  await expect(main.getByText('Die Einführung erscheint demnächst.')).toBeVisible();
+  await expect(main.getByText('Die Einführung ist noch nicht verfügbar.')).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex,\s*follow/);
   await main.getByRole('link', { name: 'Zum Lernlabor', exact: true }).press('Enter');
   await expect(page).toHaveURL(learningPaths.hub);

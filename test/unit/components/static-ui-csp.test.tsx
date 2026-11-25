@@ -113,8 +113,8 @@ describe('strict-CSP static UI', () => {
     );
     const rewardButton = reinforcement.querySelector('button[disabled]');
     assert.ok(rewardButton);
-    expect(rewardButton.textContent?.trim()).toBe('Coming Soon');
-    expect(reinforcement.textContent?.match(/Coming Soon/g)).toHaveLength(1);
+    expect(rewardButton.textContent?.trim()).toBe('Noch nicht verfügbar');
+    expect(reinforcement.textContent?.match(/Noch nicht verfügbar/g)).toHaveLength(1);
     expect(experiments.querySelector(`a[href="${learningPaths.qLearningPractice}"]`)).toBeNull();
     expect(
       experiments.querySelector('button:not([disabled]), [role="status"], [aria-live]'),
@@ -134,13 +134,15 @@ describe('strict-CSP static UI', () => {
     }
     expect(document.querySelector(`a[href="${learningPaths.qLearning}"]`)).toBeNull();
     expect(document.querySelector(`a[href="${learningPaths.qLearningPractice}"]`)).toBeNull();
-    expect(document.querySelector('button[disabled]')?.textContent?.trim()).toBe('Coming Soon');
+    expect(document.querySelector('button[disabled]')?.textContent?.trim()).toBe(
+      'Noch nicht verfügbar',
+    );
   });
 
   it('shows the reward availability notice and return link before hydration', () => {
     const markup = renderToStaticMarkup(<RewardPracticePage />);
     const document = new DOMParser().parseFromString(markup, 'text/html');
-    expect(document.body.textContent).toContain('Coming Soon');
+    expect(document.body.textContent).toContain('Die Übung ist noch nicht verfügbar.');
     expect(document.querySelector('button, [role="button"]')).toBeNull();
     expect(document.querySelector(`a[href="${learningPaths.hub}"]`)?.textContent?.trim()).toBe(
       'Zum Lernlabor',
@@ -180,7 +182,9 @@ describe('strict-CSP static UI', () => {
     const quiz = document.querySelector('section[aria-labelledby="section-examples"]');
     expect(quiz?.querySelectorAll('button[aria-label^="Auswählen: "]')).toHaveLength(6);
     expect(document.querySelector('.landing-demo img')).toBeNull();
-    expect(document.querySelector('.landing-demo [data-slot="empty"]')?.textContent).toBe('Input');
+    expect(document.querySelector('.landing-demo [data-slot="empty"]')?.textContent).toBe(
+      'Kein Bild gewählt',
+    );
     expect(document.querySelector('button[data-signal=dog]')?.getAttribute('aria-label')).toContain(
       'Hundebild zeigen',
     );
@@ -241,7 +245,7 @@ describe('strict-CSP static UI', () => {
     const document = new DOMParser().parseFromString(markup, 'text/html');
     expect(document.querySelector('[style], style, script')).toBeNull();
     expect(document.querySelector('img')).toBeNull();
-    expect(document.querySelector('[data-slot="empty"]')?.textContent).toBe('Input');
+    expect(document.querySelector('[data-slot="empty"]')?.textContent).toBe('Kein Bild gewählt');
     const selectedMarkup = renderToStaticMarkup(<NetworkScene signal="dog" />);
     const selected = new DOMParser().parseFromString(selectedMarkup, 'text/html');
     expect(selected.querySelector('[style], style, script')).toBeNull();

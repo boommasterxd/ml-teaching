@@ -12,7 +12,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'sound',
     title: 'Sprachnachrichten abtippen',
     description: 'Ein Handy wandelt eine gesprochene Nachricht in Text um.',
-    explanation: 'Hier wird Ton ausgewertet. Das ist Spracherkennung, keine Bilderkennung.',
+    explanation: 'Das Handy macht aus gesprochener Sprache Text.',
     correct: false,
   },
   {
@@ -20,8 +20,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'traffic',
     title: 'Verkehrsschilder erkennen',
     description: 'Eine Kamera erkennt ein Tempolimit-Schild am Straßenrand.',
-    explanation:
-      'Das System erkennt Form, Zeichen und Zahlen im Kamerabild. Es kann sich dabei irren.',
+    explanation: 'Die Kamera erkennt Form und Zahl des Schilds im Bild.',
     correct: true,
   },
   {
@@ -29,7 +28,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'numbers',
     title: '12 × 8 ausrechnen',
     description: 'Tasten geben die Zahlen in einen einfachen Taschenrechner ein.',
-    explanation: 'Der Rechner verarbeitet eingegebene Zahlen. Dafür wertet er keine Bilder aus.',
+    explanation: 'Der Rechner rechnet mit den Zahlen, die du eingibst.',
     correct: false,
   },
   {
@@ -37,8 +36,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'text',
     title: 'Text aus einem Foto lesen',
     description: 'Ein Handy macht gedruckten Text auf einem Foto kopierbar.',
-    explanation:
-      'Die Buchstaben werden im Bild erkannt. Das heißt optische Zeichenerkennung, kurz OCR.',
+    explanation: 'Das Handy erkennt Buchstaben im Foto.',
     correct: true,
   },
   {
@@ -46,7 +44,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'time',
     title: 'Einen Timer stellen',
     description: 'Ein Timer klingelt nach fünf Minuten.',
-    explanation: 'Hier wird Zeit gezählt. Dafür müssen keine Bilder erkannt werden.',
+    explanation: 'Der Timer zählt die Zeit.',
     correct: false,
   },
   {
@@ -62,7 +60,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'camera',
     title: 'Eine Blume bestimmen',
     description: 'Eine App schlägt zu deinem Blumenfoto einen Pflanzennamen vor.',
-    explanation: 'Die App vergleicht sichtbare Merkmale der Blume. Ihr Vorschlag kann falsch sein.',
+    explanation: 'Die App nutzt Form und Farbe der Blume im Foto.',
     correct: true,
   },
   {
@@ -111,7 +109,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'camera',
     title: 'Verpackungen im Foto erkennen',
     description: 'Eine App erkennt eine leere Getränkedose auf einem Foto.',
-    explanation: 'Die Dose wird anhand sichtbarer Merkmale im Bild erkannt.',
+    explanation: 'Die App erkennt die Dose an ihrer Form im Bild.',
     correct: true,
   },
   {
@@ -175,7 +173,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'camera',
     title: 'Essen auf einem Foto erkennen',
     description: 'Eine App schlägt für ein Foto des Mittagessens das Wort Pizza vor.',
-    explanation: 'Die App wertet das Bild aus. Sie kann dabei auch etwas falsch erkennen.',
+    explanation: 'Die App erkennt die Pizza an Merkmalen wie Form und Belag.',
     correct: true,
   },
   {
@@ -183,7 +181,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'time',
     title: 'Morgens geweckt werden',
     description: 'Ein Wecker klingelt jeden Morgen um sieben Uhr.',
-    explanation: 'Der Wecker vergleicht Uhrzeiten. Er muss dafür keine Bilder auswerten.',
+    explanation: 'Der Wecker vergleicht Uhrzeiten.',
     correct: false,
   },
   {
@@ -191,7 +189,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'sound',
     title: 'Musik lauter stellen',
     description: 'Du drückst die Lauter-Taste am Handy und die Musik wird lauter.',
-    explanation: 'Die Taste verändert die Lautstärke. Dabei wird kein Bild erkannt.',
+    explanation: 'Die Taste ändert die Lautstärke.',
     correct: false,
   },
   {
@@ -199,7 +197,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'sound',
     title: 'Ein Lied am Klang erkennen',
     description: 'Eine App hört Musik über das Mikrofon und nennt den Liedtitel.',
-    explanation: 'Hier wird ein Tonsignal erkannt. Ein Bild wird dafür nicht gebraucht.',
+    explanation: 'Die App erkennt das Lied am Ton.',
     correct: false,
   },
   {
@@ -207,7 +205,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'phone',
     title: 'Eine PIN eingeben',
     description: 'Du entsperrst ein Handy mit einer eingegebenen Zahl.',
-    explanation: 'Das Handy prüft die eingegebenen Ziffern. Es untersucht dabei kein Kamerabild.',
+    explanation: 'Das Handy prüft die Zahlen, die du eintippst.',
     correct: false,
   },
   {
@@ -215,7 +213,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'phone',
     title: 'Die Temperatur anzeigen',
     description: 'Ein digitales Thermometer zeigt die gemessene Temperatur an.',
-    explanation: 'Ein Sensor misst die Temperatur. Dafür braucht er keine Bilderkennung.',
+    explanation: 'Ein Sensor misst die Temperatur.',
     correct: false,
   },
   {
@@ -223,7 +221,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'phone',
     title: 'Schritte am Handgelenk zählen',
     description: 'Eine Uhr zählt deine Schritte mit ihrem Bewegungssensor.',
-    explanation: 'Die Uhr wertet Bewegungsdaten aus. Sie sieht dabei keine Bilder an.',
+    explanation: 'Die Uhr erkennt Schritte an der Bewegung deines Handgelenks.',
     correct: false,
   },
   {
@@ -231,8 +229,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'text',
     title: 'Getippte Wörter korrigieren',
     description: 'Eine Text-App markiert einen Tippfehler in deinem eingegebenen Satz.',
-    explanation:
-      'Die App prüft bereits eingegebenen Text. Sie muss keine Buchstaben in Bildern finden.',
+    explanation: 'Die App prüft den Text, den du eintippst.',
     correct: false,
   },
   {
@@ -240,7 +237,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'text',
     title: 'Getippten Text übersetzen',
     description: 'Du tippst ein deutsches Wort ein und erhältst die englische Übersetzung.',
-    explanation: 'Hier wird eingegebener Text verarbeitet. Ein Foto wird nicht ausgewertet.',
+    explanation: 'Die App übersetzt den Text, den du eintippst.',
     correct: false,
   },
   {
@@ -248,7 +245,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'sound',
     title: 'Eine Wiedergabeliste abspielen',
     description: 'Ein Musikspieler spielt deine gespeicherten Lieder der Reihe nach ab.',
-    explanation: 'Der Musikspieler folgt einer Liste. Dazu muss er keine Bilder erkennen.',
+    explanation: 'Der Musikspieler spielt die Lieder in der Reihenfolge der Liste.',
     correct: false,
   },
   {
@@ -256,7 +253,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'numbers',
     title: 'Digital würfeln',
     description: 'Ein Spiel erzeugt zufällig eine Zahl von eins bis sechs.',
-    explanation: 'Die Zahl wird erzeugt und angezeigt. Es wird kein Foto eines Würfels untersucht.',
+    explanation: 'Das Spiel wählt eine Zahl per Zufall.',
     correct: false,
   },
   {
@@ -264,7 +261,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'phone',
     title: 'Helligkeit mit einem Regler ändern',
     description: 'Du schiebst einen Regler und dein Bildschirm wird heller.',
-    explanation: 'Der Bildschirm folgt deiner Eingabe. Dafür wird kein Bild ausgewertet.',
+    explanation: 'Der Bildschirm wird heller, wenn du den Regler verschiebst.',
     correct: false,
   },
   {
@@ -272,7 +269,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'phone',
     title: 'Eine Nachricht verschicken',
     description: 'Du tippst einen Gruß und sendest ihn an einen Freund.',
-    explanation: 'Die App überträgt deinen Text. Sie erkennt dabei keine Gegenstände in Bildern.',
+    explanation: 'Die App verschickt den Text, den du eintippst.',
     correct: false,
   },
   {
@@ -288,7 +285,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'time',
     title: 'Bis zum Geburtstag zählen',
     description: 'Ein Kalender berechnet, wie viele Tage bis zu deinem Geburtstag fehlen.',
-    explanation: 'Der Kalender rechnet mit Datumsangaben. Dafür muss er keine Bilder erkennen.',
+    explanation: 'Der Kalender berechnet den Abstand zwischen zwei Daten.',
     correct: false,
   },
   {
@@ -296,7 +293,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'sound',
     title: 'Musik auf Zuruf starten',
     description: 'Ein Lautsprecher hört deinen Sprachbefehl und startet ein Lied.',
-    explanation: 'Hier wird gesprochene Sprache ausgewertet. Die Eingabe ist Ton und kein Bild.',
+    explanation: 'Der Lautsprecher erkennt deinen Befehl an deiner Stimme.',
     correct: false,
   },
   {
@@ -304,7 +301,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'text',
     title: 'Ein Wort im Text suchen',
     description: 'Eine Suchfunktion findet ein Wort in einer bereits getippten Geschichte.',
-    explanation: 'Die Suche vergleicht Textzeichen. Sie muss keine Schrift aus einem Bild lesen.',
+    explanation: 'Die Suche vergleicht das gesuchte Wort mit dem getippten Text.',
     correct: false,
   },
   {
@@ -312,7 +309,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'time',
     title: 'Eine Laufzeit stoppen',
     description: 'Du startest und stoppst eine Stoppuhr mit einer Taste.',
-    explanation: 'Die Stoppuhr misst die vergangene Zeit. Sie wertet keine Kamerabilder aus.',
+    explanation: 'Die Stoppuhr misst, wie viel Zeit vergeht.',
     correct: false,
   },
   {
@@ -320,7 +317,7 @@ export const QUIZ_EXAMPLES = [
     icon: 'numbers',
     title: 'Spielpunkte zusammenzählen',
     description: 'Ein Brettspiel-Helfer addiert die Punkte, die du eintippst.',
-    explanation: 'Die App rechnet mit deinen Eingaben. Bilderkennung ist dafür nicht nötig.',
+    explanation: 'Die App zählt die Punkte zusammen, die du eintippst.',
     correct: false,
   },
 ] as const;

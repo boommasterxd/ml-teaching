@@ -74,7 +74,7 @@ The previews use small, fixed SVGs and require no ML model or simulation.
 The homepage and learning hub share their topics and destinations through
 `src/content/learning-areas.ts`; route actions use the native intent links.
 The homepage and learning hub use `LearningPracticeAction` for both subjects.
-A pending exercise displays “Coming Soon” as the visible name of a disabled button.
+A pending exercise displays “Noch nicht verfügbar” as the visible name of a disabled button.
 On the homepage, both actions follow the question “Willst du es selbst ausprobieren?”.
 The reward board remains visible during the shared preview cycle.
 The hero's fragment link focuses the combined experiments section and uses smooth
@@ -130,7 +130,7 @@ Photographic inputs use these assets rather than animal glyphs; decorative SVG
 scenes embed the same style-free image through a fixed-size foreignObject.
 The image explanation keeps the original six-section learning journey below its
 hero, with technique before the explanatory animation and training steps. Its workspace
-lives on a separate practice route. The hub displays one inactive Coming Soon action
+lives on a separate practice route. The hub displays one inactive “Noch nicht verfügbar” action
 for Q-learning while its explanation and practice are pending.
 The shared Lucide Brain glyph defines the brand. Its stroke uses the local primary color.
 The SVG favicon and PNG Apple icon use the same glyph.
@@ -892,8 +892,8 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   The strict SSG hash CSP blocks that style element. Sync presence preserves one
   motion owner without adding an empty-style hash, nonce, custom geometry engine
   or relaxed policy.
-- The educational illustration has four ordered stages: an Input placeholder replaced by a 112px image after selection,
-  labeled conceptual feature maps, a nearest-neighbor diagram and a separate vote
+- The educational illustration has four ordered stages: an empty placeholder replaced
+  by a 112px image after selection, labeled conceptual feature maps, a nearest-neighbor diagram and a separate vote
   readout. Animate UI Shine scans the selected example; Effect reveals edges,
   patterns and a feature vector, draws neighbor connections and introduces the result.
   The three nearest synthetic points determine both highlighted neighbors and the
@@ -1002,7 +1002,7 @@ unrelated glyphs and animation producers stay out of their route graph. The
 server-neutral `icons.tsx` facade preserves the named import API for compatibility.
 Pure icon factory annotations permit unused producers to be removed without
 changing the mounted components or their motion owners.
-The static educational illustration shows an Input placeholder, labeled feature
+The static educational illustration shows an empty image placeholder, labeled feature
 maps, neighbor points, connecting paths and class labels. Selecting a dog or cat
 replaces the placeholder with the decoded example photo in the interactive diagram.
 These integrations preserve the initial content and the existing CSP with

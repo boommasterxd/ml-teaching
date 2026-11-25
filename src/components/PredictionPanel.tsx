@@ -115,9 +115,7 @@ function UntrainedPrediction() {
         <EmptyMedia variant="icon" className="mb-0">
           <Camera aria-hidden="true" />
         </EmptyMedia>
-        <EmptyDescription>
-          Trainiere zuerst dein Modell, um neue Kamerabilder zuzuordnen.
-        </EmptyDescription>
+        <EmptyDescription>Trainiere zuerst dein Modell.</EmptyDescription>
       </EmptyHeader>
     </Empty>
   );

@@ -22,17 +22,17 @@ describe('optional educational demo', () => {
   it('prepares on intent without starting and keeps the focused control through activation', async () => {
     render(<DeferredNetworkDemo />);
     const dog = screen.getByRole('button', { name: 'Hundebild zeigen' });
-    expect(screen.getByText('Input')).toBeTruthy();
+    expect(screen.getByText('Kein Bild gewählt')).toBeTruthy();
     expect(screen.queryByRole('img')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Demo starten' })).toBeNull();
     await act(async () => dog.focus());
-    expect(screen.getByText('Input')).toBeTruthy();
+    expect(screen.getByText('Kein Bild gewählt')).toBeTruthy();
     expect(screen.queryByRole('img')).toBeNull();
     expect(screen.queryByText('Signal wird verarbeitet…')).toBeNull();
     fireEvent.click(dog);
     await screen.findByText('Signal wird verarbeitet…');
     expect(screen.getByRole('img', { name: 'Generiertes Beispielbild eines Hundes' })).toBeTruthy();
-    expect(screen.queryByText('Input')).toBeNull();
+    expect(screen.queryByText('Kein Bild gewählt')).toBeNull();
     expect(screen.getByRole('button', { name: 'Hundebild zeigen' })).toBe(dog);
     expect(document.activeElement).toBe(dog);
     expect(dog.getAttribute('data-active')).toBe('true');

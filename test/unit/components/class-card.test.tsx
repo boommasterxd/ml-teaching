@@ -50,20 +50,20 @@ describe('class card', () => {
     render(<EditableClassCard actions={actions} camera={camera} />);
     const name = screen.getByRole('textbox', { name: 'Name für Klasse 1: Klasse 1' });
     fireEvent.change(name, { target: { value: '' } });
-    await screen.findByText('Name darf nicht leer sein', { selector: '[role="status"]' });
+    await screen.findByText('Gib der Klasse einen Namen', { selector: '[role="status"]' });
     fireEvent.blur(name);
     const empty = screen.getByRole('textbox', { name: 'Name für Klasse 1: ohne Namen' });
     expect(empty).toBe(name);
     expect(empty.getAttribute('aria-invalid')).toBe('true');
     expect(document.getElementById(empty.getAttribute('aria-describedby')!)?.textContent).toBe(
-      'Name darf nicht leer sein',
+      'Gib der Klasse einen Namen',
     );
     fireEvent.change(name, { target: { value: 'Klasse 2' } });
-    await screen.findByText('Name muss eindeutig sein', { selector: '[role="status"]' });
+    await screen.findByText('Dieser Name wird schon verwendet', { selector: '[role="status"]' });
     fireEvent.change(name, { target: { value: 'Rot' } });
     await screen.findByRole('textbox', { name: 'Name für Klasse 1: Rot' });
     expect(name.getAttribute('aria-invalid')).toBe('false');
-    fireEvent.click(screen.getByRole('button', { name: 'Bilder der Klasse 1: Rot zurücksetzen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Alle Bilder löschen: Klasse 1, Rot' }));
     fireEvent.click(screen.getByRole('button', { name: 'Klasse 1: Rot löschen' }));
     expect(actions.onClear).toHaveBeenCalledWith('class-1');
     expect(actions.onRemove).toHaveBeenCalledWith('class-1');

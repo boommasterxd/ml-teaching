@@ -36,9 +36,7 @@ function Destination({
     return (
       <span aria-disabled="true" className="header-menu-row text-sm text-muted-foreground">
         {contents}
-        <Badge variant="secondary" lang="en">
-          Coming Soon
-        </Badge>
+        <Badge variant="secondary">Noch nicht verfügbar</Badge>
       </span>
     );
   }

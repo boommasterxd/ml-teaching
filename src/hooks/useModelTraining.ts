@@ -119,11 +119,11 @@ function validateClasses(
     return false;
   }
   if (hasInvalidNames) {
-    onError('validation', 'Bitte gib allen Klassen einen Namen.');
+    onError('validation', 'Gib jeder Klasse einen Namen.');
     return false;
   }
   if (hasDuplicateNames) {
-    onError('validation', 'Bitte gib allen Klassen einen eindeutigen Namen.');
+    onError('validation', 'Gib jeder Klasse einen eigenen Namen.');
     return false;
   }
   return true;

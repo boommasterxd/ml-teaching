@@ -17,7 +17,7 @@ const tips = [
   {
     Icon: ImagePlus,
     title: 'Mehr Ansichten',
-    text: 'Sammle mindestens 15–20 Bilder pro Klasse. Zeige dein Objekt von vorne, von oben und von der Seite.',
+    text: 'Sammle pro Klasse möglichst 15 bis 20 Bilder. Fotografiere das Objekt von vorn, von oben und von der Seite.',
   },
   {
     Icon: Lightbulb,
@@ -76,7 +76,7 @@ export function LearningContent() {
               <Text variant="muted">05 / Im Alltag</Text>
               <Heading id="section-examples">Wo steckt Bilderkennung drin?</Heading>
               <Text variant="lead">
-                Wähle die drei Beispiele aus, bei denen Bilderkennung zum Einsatz kommt.
+                Wähle die drei Beispiele, bei denen eine App etwas im Bild erkennt.
               </Text>
             </div>
           </ScrollReveal>
@@ -89,8 +89,8 @@ export function LearningContent() {
             <Text variant="muted">06 / KNN ausprobieren</Text>
             <Heading id="section-knn-quiz">Welche Nachbarn zählen?</Heading>
             <Text variant="lead">
-              Finde die nächsten Nachbarn der Raute. Entscheide danach, welche Klasse die meisten
-              Stimmen bekommt.
+              Wähle die Punkte, die der Raute am nächsten sind. Entscheide dann, ob Hund oder Katze
+              gewinnt.
             </Text>
           </div>
         </ScrollReveal>

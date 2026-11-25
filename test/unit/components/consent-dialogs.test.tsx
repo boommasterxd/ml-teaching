@@ -90,7 +90,7 @@ describe('consent dialogs', () => {
     const { rerender } = render(<SetupDialogFixture />);
     rerender(<SetupDialogFixture step="loading" loadingText="Modell wird geladen" />);
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.getByRole('dialog', { name: 'Lade KI-Modelle...' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Bildtraining startet' })).toBeTruthy();
     const progress = screen.getByText('Modell wird geladen');
     expect(progress.closest('[aria-live="polite"]')).not.toBeNull();
     const withdrawal = screen.getByRole('button', { name: /Einwilligung widerrufen/ });

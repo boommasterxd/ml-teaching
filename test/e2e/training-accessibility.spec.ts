@@ -52,7 +52,7 @@ test('the add-class action keeps its name at the class limit', async ({ page, ba
   }
   await expect(add).toBeDisabled();
   await expect(add).toHaveAccessibleDescription(
-    `Maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht.`,
+    `Du kannst höchstens ${ML.MAX_CLASSES} Klassen anlegen.`,
   );
 });
 
@@ -143,7 +143,7 @@ test('camera and class actions stay reachable when text size doubles', async ({
   await expect(
     secondClass.getByRole('button', { name: 'Bilder auswählen für Klasse 2' }),
   ).toBeEnabled();
-  const reset = page.getByRole('button', { name: 'Bilder der Klasse 1: Klasse 1 zurücksetzen' });
+  const reset = page.getByRole('button', { name: 'Alle Bilder löschen: Klasse 1, Klasse 1' });
   const remove = page.getByRole('button', { name: 'Klasse 1: Klasse 1 löschen' });
   for (const action of [upload, reset, remove]) await expectReachable(action);
 

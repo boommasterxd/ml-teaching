@@ -220,12 +220,12 @@ export default function PredictionDiagram({
   return (
     <figure aria-labelledby={title} aria-describedby={description} className="grid min-w-0 gap-2">
       <Heading as="h3" id={title} className="text-sm">
-        Merkmalsraum (2D-Projektion)
+        Merkmalsraum
       </Heading>
       {children || <PredictionPlotPlaceholder classes={classes} />}
       <figcaption id={description} className="sr-only">
-        Der Klassifikator vergleicht alle Bildmerkmale. Eine gestrichelte Markierung am Rand zeigt
-        ein Kamerabild außerhalb des Ausschnitts.
+        Ähnliche Bilder liegen meist nah beieinander. Eine gestrichelte Markierung am Rand zeigt ein
+        Kamerabild außerhalb des Ausschnitts.
       </figcaption>
     </figure>
   );

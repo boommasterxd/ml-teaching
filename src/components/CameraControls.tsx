@@ -28,7 +28,7 @@ export default function CameraControls({
   const label = active
     ? 'Kamera pausieren'
     : failed
-      ? 'Kamera erneut verbinden'
+      ? 'Kamera erneut starten'
       : 'Kamera aktivieren';
   const Icon = active ? Pause : Play;
   const prepare = active ? undefined : onStartIntent;

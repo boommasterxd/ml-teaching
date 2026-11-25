@@ -242,7 +242,7 @@ function useTrainingData(resources: ReturnType<typeof useTrainingResources>) {
   const images = useTrainingImages(resources, classes, activity, training.isTrainingActive);
   const trainModel = (completionFeedbackMs?: number) => {
     if (activity.isBusy()) {
-      notifyError('Bitte warte, bis alle Bilder vollständig verarbeitet sind.');
+      notifyError('Die Bilder werden noch geladen.');
       return;
     }
     prediction.stopPredicting();

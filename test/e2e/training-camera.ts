@@ -71,7 +71,7 @@ export async function expectCameraDenialRetainsFocus(camera: Locator, requestNum
   await expect(action).toBeFocused();
   await expectCollapse?.();
   await page.evaluate(() => window.dispatchEvent(new Event('test:deny-camera')));
-  await expect(camera.getByRole('alert')).toContainText('Kamerazugriff verweigert');
+  await expect(camera.getByRole('alert')).toContainText('Die Kamera konnte nicht starten.');
   const retry = camera.getByRole('button', { name: 'Erneut versuchen', exact: true });
   await expect(retry).toBeEnabled();
   await expect(retry).toBeFocused();

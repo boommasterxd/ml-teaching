@@ -324,7 +324,7 @@ test('a denied camera request keeps setup on the source page until the user cont
     page.getByRole('button', { name: 'Bilder auswählen für Klasse 1', exact: true }),
   ).toBeEnabled();
   const notices = page.getByRole('region', { name: 'Mitteilungen' });
-  const notice = notices.getByRole('dialog', { name: /Kamerazugriff verweigert/ });
+  const notice = notices.getByRole('dialog', { name: /Die Kamera konnte nicht starten/ });
   await expect(notice).toBeVisible();
   await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Bilder sammeln', exact: true })).toBeFocused();
@@ -375,7 +375,7 @@ test('a missing camera leaves the direct-entry dialog visible through its fade b
   try {
     await camera.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
     const notices = page.getByRole('region', { name: 'Mitteilungen' });
-    const notice = notices.getByRole('dialog', { name: /Kamerazugriff verweigert/ });
+    const notice = notices.getByRole('dialog', { name: /Die Kamera konnte nicht starten/ });
     await expect(notice).toBeVisible();
     const frames = await samples.evaluate(({ frames, stop }) => {
       stop();
@@ -394,7 +394,7 @@ test('a missing camera leaves the direct-entry dialog visible through its fade b
     await expect(notice).toBeHidden();
 
     const preview = page.locator('[data-slot="camera-preview"]').first();
-    await preview.getByRole('button', { name: 'Kamera erneut verbinden' }).press('Enter');
+    await preview.getByRole('button', { name: 'Kamera erneut starten' }).press('Enter');
     const spinner = preview.locator('[data-slot="spinner"]');
     await expect(spinner).toBeVisible();
     const [frameBounds, spinnerBounds, labelBounds] = await Promise.all([
@@ -438,7 +438,7 @@ test('the first model download keeps keyboard focus inside the loading dialog', 
   );
   try {
     await grantModelConsent(page);
-    const loading = page.getByRole('dialog', { name: 'Lade KI-Modelle...' });
+    const loading = page.getByRole('dialog', { name: 'Bildtraining startet' });
     await expect(loading).toBeVisible();
     await expect(loading).toHaveAttribute('aria-modal', 'true');
     await expect(page.getByRole('dialog')).toHaveCount(1);

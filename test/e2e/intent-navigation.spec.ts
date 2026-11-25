@@ -190,7 +190,10 @@ test('the mobile navigation keeps the current page marked and supports keyboard 
   await focusByKeyboard(page, trigger);
   await page.keyboard.press('Enter');
   const reward = navigation.getByRole('list', { name: 'Reinforcement Learning', exact: true });
-  for (const label of [/^Lernen durch Belohnung\s*Coming Soon$/, /^Simulation\s*Coming Soon$/]) {
+  for (const label of [
+    /^Lernen durch Belohnung\s*Noch nicht verfügbar$/,
+    /^Simulation\s*Noch nicht verfügbar$/,
+  ]) {
     const unavailable = reward.getByText(label);
     await expect(unavailable).toBeVisible();
     await expect(unavailable).toHaveAttribute('aria-disabled', 'true');

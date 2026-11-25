@@ -18,7 +18,6 @@ export default function KnnQuizPoint({
   selected,
   disabled,
   errorAttempt,
-  k,
   onChoose,
   onDismiss,
 }: {
@@ -28,7 +27,6 @@ export default function KnnQuizPoint({
   selected: boolean;
   disabled: boolean;
   errorAttempt: number;
-  k: number;
   onChoose: (id: string) => void;
   onDismiss: () => void;
 }) {
@@ -102,7 +100,7 @@ export default function KnnQuizPoint({
         }
       />
       <TooltipContent sideOffset={6} collisionPadding={12}>
-        Dieser Punkt gehört nicht zu den {k} nächsten. Suche näher an der Raute.
+        Wähle einen Punkt näher an der Raute.
       </TooltipContent>
     </Tooltip>
   );

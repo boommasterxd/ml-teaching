@@ -214,11 +214,11 @@ test('desktop home previews alternate with a pause after each fade and without m
   const images = previews.getByRole('region', { name: 'Bilderkennung', exact: true });
   const rewards = previews.getByRole('region', { name: 'Lernen durch Belohnung', exact: true });
   const rewardAction = rewards.getByRole('button', {
-    name: 'Coming Soon',
+    name: 'Noch nicht verfügbar',
     exact: true,
   });
   await expect(rewardAction).toBeDisabled();
-  await expect(rewardAction).toHaveText('Coming Soon');
+  await expect(rewardAction).toHaveText('Noch nicht verfügbar');
   await expect(images.getByRole('img')).toBeInViewport({ ratio: 1 });
   await expect(rewards.getByRole('img')).toBeInViewport({ ratio: 1 });
   const playback = await trackPreviewSteps(previews);
@@ -297,7 +297,9 @@ test('the unpublished reward practice explains its availability and returns to t
   const failures = diagnostics(page);
   await page.goto(learningPaths.qLearningPractice);
   const main = page.getByRole('main');
-  await expect(main.getByText('Coming Soon', { exact: true })).toBeVisible();
+  await expect(
+    main.getByText('Die Übung ist noch nicht verfügbar.', { exact: true }),
+  ).toBeVisible();
   await expect(main.getByRole('button')).toHaveCount(0);
   const robots = page.locator('meta[name="robots"]');
   await expect
@@ -308,9 +310,9 @@ test('the unpublished reward practice explains its availability and returns to t
 
   await main.getByRole('link', { name: 'Zum Lernlabor', exact: true }).press('Enter');
   await expect(page).toHaveURL(learningPaths.hub);
-  const unavailable = main.getByRole('button', { name: 'Coming Soon', exact: true });
+  const unavailable = main.getByRole('button', { name: 'Noch nicht verfügbar', exact: true });
   await expect(unavailable).toBeDisabled();
-  await expect(unavailable).toHaveText('Coming Soon');
-  await expect(main.getByText('Coming Soon', { exact: true })).toHaveCount(1);
+  await expect(unavailable).toHaveText('Noch nicht verfügbar');
+  await expect(main.getByText('Noch nicht verfügbar', { exact: true })).toHaveCount(1);
   expect(failures).toEqual([]);
 });

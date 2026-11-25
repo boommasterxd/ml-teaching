@@ -132,7 +132,7 @@ async function observeControlPosition(control: Locator) {
 
 async function expectStableRequirementsToggle(name: Locator, next: Locator) {
   const page = name.page();
-  const hint = page.getByText(/^Mindestens \d+ Klassen, eindeutige Namen/);
+  const hint = page.getByText(/^Du brauchst \d+ oder mehr Klassen/);
   const original = await name.inputValue();
   await expect(hint).toBeHidden();
   await name.focus();
@@ -213,7 +213,7 @@ test('a full training gallery keeps keyboard focus and selection across virtual 
   const inlineLimit = status.getByText('· Limit erreicht', { exact: true });
   const limitTooltip = page
     .getByRole('tooltip', { includeHidden: true })
-    .filter({ hasText: 'Upload-Limit erreicht' });
+    .filter({ hasText: 'Lösche ein Bild, um ein neues hinzuzufügen.' });
   await expect(status).toHaveAttribute('aria-busy', 'false');
   await expect(inlineLimit).toBeHidden();
   await expect(limitTooltip).toBeVisible();
@@ -221,7 +221,9 @@ test('a full training gallery keeps keyboard focus and selection across virtual 
   const notice = viewport.getByRole('dialog', {
     name: 'Ein Bild konnte nicht hinzugefügt werden.',
   });
-  await expect(notice.getByText('Upload-Limit erreicht', { exact: true })).toBeVisible();
+  await expect(
+    notice.getByText('Lösche ein Bild, um ein neues hinzuzufügen.', { exact: true }),
+  ).toBeVisible();
   await page.keyboard.press('F6');
   await expect(viewport).toBeFocused();
   await expectAccessible(page);

@@ -157,10 +157,12 @@ test('canceling a direct workspace failure forgets consent and stops the camera'
     await camera.getByRole('button', { name: 'Erlauben', exact: true }).press('Enter');
     await expect.poll(() => pending.evaluate(({ started }) => started)).toBe(true);
     await pending.evaluate(({ resolve }) => resolve());
-    const workspace = page.getByRole('dialog', { name: 'Arbeitsbereich vorbereiten' });
-    await expect(workspace.getByRole('status')).toContainText('Arbeitsbereich wird geladen');
+    const workspace = page.getByRole('dialog', { name: 'Bildtraining vorbereiten' });
+    await expect(workspace.getByRole('status')).toContainText('Das Bildtraining wird vorbereitet');
     workspaceRequest.resolve();
-    await expect(workspace.getByRole('alert')).toContainText('konnte nicht geladen werden');
+    await expect(workspace.getByRole('alert')).toContainText(
+      'Das Bildtraining konnte nicht starten.',
+    );
     await expectAccessible(page);
     const cancel = workspace.getByRole('button', { name: 'Abbrechen' });
     const prepared = page.waitForResponse((response) => {

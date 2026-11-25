@@ -284,7 +284,7 @@ test('KNN exercise supports retries, voting limits, and new rounds @ci', async (
   await points.at(-1)!.control.focus();
   await page.keyboard.press('Enter');
   await expect(points.at(-1)!.control).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.getByRole('tooltip')).toContainText('Suche näher an der Raute.');
+  await expect(page.getByRole('tooltip')).toContainText('Wähle einen Punkt näher an der Raute.');
   await expectAccessible(page);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('tooltip')).toHaveCount(0);

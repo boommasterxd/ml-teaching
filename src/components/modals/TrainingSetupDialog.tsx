@@ -52,17 +52,17 @@ function WorkspaceStep({
   return (
     <>
       <DialogTitle id="workspace-modal-title" tabIndex={-1}>
-        Arbeitsbereich vorbereiten
+        Bildtraining vorbereiten
       </DialogTitle>
       <DialogBody>
         <div id="workspace-modal-desc">
           {failed ? (
             <Alert variant="destructive" role="alert">
-              <AlertDescription>Der Arbeitsbereich konnte nicht geladen werden.</AlertDescription>
+              <AlertDescription>Das Bildtraining konnte nicht starten.</AlertDescription>
             </Alert>
           ) : (
             <DialogDescription className="flex items-center gap-2" role="status">
-              <Spinner aria-hidden="true" /> Arbeitsbereich wird geladen …
+              <Spinner aria-hidden="true" /> Das Bildtraining wird vorbereitet …
             </DialogDescription>
           )}
         </div>
@@ -101,9 +101,7 @@ function ModelLoadError({
         KI-Modell konnte nicht geladen werden
       </DialogTitle>
       <DialogBody tabIndex={0} role="region" aria-labelledby="error-modal-title">
-        <DialogDescription id="error-modal-desc">
-          Überprüfe deine Verbindung und versuche es erneut.
-        </DialogDescription>
+        <DialogDescription id="error-modal-desc">Prüfe deine Internetverbindung.</DialogDescription>
       </DialogBody>
       <SetupActionFooter>
         {declineAction}

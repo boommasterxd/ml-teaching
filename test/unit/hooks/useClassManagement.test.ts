@@ -142,7 +142,7 @@ describe('useClassManagement', () => {
         hasDuplicateNames: false,
       });
       expect(result.current.editors[0].error).toBeUndefined();
-      expect(result.current.editors[1].error).toBe('Name darf nicht leer sein');
+      expect(result.current.editors[1].error).toBe('Gib der Klasse einen Namen');
 
       await act(async () => result.current.editors[1].edit('Hund'));
       expect(result.current.nameValidity.hasInvalidNames).toBe(false);
@@ -157,8 +157,8 @@ describe('useClassManagement', () => {
         result.current.editors[1].edit(` ${first.name} `);
       });
       await waitFor(() => {
-        expect(result.current.editors[0].error).toBe('Name muss eindeutig sein');
-        expect(result.current.editors[1].error).toBe('Name muss eindeutig sein');
+        expect(result.current.editors[0].error).toBe('Dieser Name wird schon verwendet');
+        expect(result.current.editors[1].error).toBe('Dieser Name wird schon verwendet');
       });
 
       await act(async () => result.current.removeClass(first.id));

@@ -17,7 +17,7 @@ export default function LoadingStep({
           tabIndex={-1}
           icon={<Spinner aria-hidden="true" className="text-primary" />}
         >
-          Lade KI-Modelle...
+          Bildtraining startet
         </DialogTitle>
         <DialogBody tabIndex={0} role="region" aria-labelledby="loading-modal-title">
           <DialogDescription id="loading-modal-desc" aria-live="polite">

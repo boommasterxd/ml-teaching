@@ -153,10 +153,10 @@ test('educational examples start directly and keep the selected control focused'
     await expect(stages.getByRole('heading', { name, exact: true })).toBeVisible();
   }
   const cat = page.getByRole('button', { name: 'Katzenbild zeigen', exact: true });
-  await expect(stages.getByText('Input', { exact: true })).toBeVisible();
+  await expect(stages.getByText('Kein Bild gewählt', { exact: true })).toBeVisible();
   await expect(stages.getByRole('img')).toHaveCount(0);
   await cat.focus();
-  await expect(stages.getByText('Input', { exact: true })).toBeVisible();
+  await expect(stages.getByText('Kein Bild gewählt', { exact: true })).toBeVisible();
   await page.keyboard.press('Enter');
   await expectNetworkVoteFill(stages);
   await expect(page.getByText('Katze erkannt', { exact: true })).toBeVisible();
@@ -286,7 +286,7 @@ test('consent can be withdrawn while a model download is pending', async ({ page
     const { expectSameDialog } = await captureSetupDialog(page);
     expect(pending).toHaveLength(0);
     await grantModelConsent(page);
-    const loading = page.getByRole('dialog', { name: 'Lade KI-Modelle...' });
+    const loading = page.getByRole('dialog', { name: 'Bildtraining startet' });
     await expect(loading).toBeVisible();
     await expect.poll(() => pending.length).toBeGreaterThan(0);
     await expectSameDialog();
@@ -483,9 +483,9 @@ test('local images train a real browser classifier, predict and reset without up
   await steps.getByRole('button', { name: 'Bilder sammeln', exact: true }).click();
   await expectPreviewDeletion(page, expectAccessible);
   await expect(predictionStep).toBeDisabled();
-  const resetClass = page.getByRole('button', { name: /^Bilder der Klasse 1:/ });
+  const resetClass = page.getByRole('button', { name: /^Alle Bilder löschen: Klasse 1,/ });
   await resetClass.click();
-  await page.getByRole('alertdialog').getByRole('button', { name: 'Zurücksetzen' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Alle Bilder löschen' }).click();
   await expect(next.first()).toBeDisabled();
   await expectKeyboardCapture(page);
   expect(failures).toEqual([]);

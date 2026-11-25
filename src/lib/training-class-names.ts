@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { ML } from '@/constants';
 
 const trainingClassNameErrors = {
-  empty: 'Name darf nicht leer sein',
-  duplicate: 'Name muss eindeutig sein',
-  tooLong: `Name darf höchstens ${ML.MAX_CLASS_NAME_LENGTH} Zeichen haben`,
+  empty: 'Gib der Klasse einen Namen',
+  duplicate: 'Dieser Name wird schon verwendet',
+  tooLong: `Kürze den Namen auf höchstens ${ML.MAX_CLASS_NAME_LENGTH} Zeichen`,
 };
 
 const classNameEntry = z.object({

@@ -10,7 +10,7 @@ export default function NotFoundPage() {
       artwork={<ErrorGlassArtwork digits sources={errorDigitsPosterImages} />}
       code="404"
       title="Seite nicht gefunden"
-      description="Vielleicht wurde die Seite verschoben oder der Link ist veraltet."
+      description="Prüfe die Adresse oder geh zur Startseite."
     >
       <AnimatedLink
         href="/"

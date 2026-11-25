@@ -151,7 +151,7 @@ from the same animation time. Leaving the page, hiding the tab or requesting
 reduced motion releases the canvas and renderer. See the
 [playback decision](decisions/error-artwork-and-menus.md#shader-playback).
 This renderer is independent of consent-gated ML WebGL and processes no training
-data. The educational illustration starts with a server-rendered Input placeholder,
+data. The educational illustration starts with a server-rendered empty image placeholder,
 labeled feature maps, neighbor points and class labels. Intent loads its animation module, prepares a
 hidden React Activity and warms the selected native optimized image. Persistent
 dog/cat Buttons record the choice; the sequence starts after image decoding and

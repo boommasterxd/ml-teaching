@@ -28,11 +28,11 @@ describe('training and prediction controls', () => {
     expect(
       (screen.getByRole('button', { name: 'Modell trainieren' }) as HTMLButtonElement).disabled,
     ).toBe(true);
-    expect(screen.getByText(/alle ausgewählten Bilder vollständig/)).toBeTruthy();
+    expect(screen.getByText('Die Bilder werden noch geladen.')).toBeTruthy();
     rerender(<TrainingControls {...base} hasPendingUploads={false} hasInvalidNames />);
-    expect(screen.getByText('Bitte gib allen Klassen einen Namen.')).toBeTruthy();
+    expect(screen.getByText('Gib jeder Klasse einen Namen.')).toBeTruthy();
     rerender(<TrainingControls {...base} hasPendingUploads={false} hasDuplicateNames />);
-    expect(screen.getByText('Bitte gib allen Klassen einen eindeutigen Namen.')).toBeTruthy();
+    expect(screen.getByText('Gib jeder Klasse einen eigenen Namen.')).toBeTruthy();
     rerender(<TrainingControls {...base} hasPendingUploads={false} canTrain />);
     const train = screen.getByRole<HTMLButtonElement>('button', { name: 'Modell trainieren' });
     train.focus();
