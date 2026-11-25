@@ -121,14 +121,18 @@ describe('local image upload', () => {
       hasCapacity,
     );
     const onNext = vi.fn();
-    const next = processImageFiles([file('next.png')], onNext, onError, controller().signal);
+    const nextFile = file('next.png');
+    const sliceNext = vi.spyOn(nextFile, 'slice');
+    const next = processImageFiles([nextFile], onNext, onError, controller().signal);
     hasCapacity.mockReturnValue(false);
     held.resolve();
 
     await pending;
     await loaded(1);
     await Promise.all([active, next]);
-    expect(read.mock.calls.map(([original]) => (original as File).name)).toEqual(['next.png']);
+    expect(sliceNext).toHaveBeenCalledExactlyOnceWith(0, 40);
+    expect(read).toHaveBeenCalledOnce();
+    expect(read.mock.calls[0]?.[0]).toBe(sliceNext.mock.results[0]?.value);
     expect(discarded).not.toHaveBeenCalled();
     expect(onNext).toHaveBeenCalledOnce();
     expect(onError).not.toHaveBeenCalled();

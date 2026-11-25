@@ -45,7 +45,10 @@ export default function TrainingClassFrame({
   const enoughImages = count >= ML.MIN_IMAGES_PER_CLASS;
   const atLimit = count >= ML.MAX_IMAGES_PER_CLASS;
   return (
-    <Card className="@container/training-class gap-4 py-4 lg:h-full">
+    <Card
+      data-training-class-id={cls.id}
+      className="@container/training-class gap-4 py-4 lg:h-full"
+    >
       <CardHeader className="items-center px-4 @md/training-class:px-5">
         <Field className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
@@ -102,10 +105,10 @@ export function ClassManagementActions({
   const ClearIcon = pendingAction === 'clearClass' ? Spinner : RotateCcw;
   const RemoveIcon = pendingAction === 'removeClass' ? Spinner : Trash2;
   return (
-    <>
+    <div className="flex min-w-0 max-w-full flex-[2_0_auto] flex-wrap gap-2">
       <Button
         variant="outline"
-        className="h-auto min-h-11 min-w-0 px-2"
+        className="h-auto min-h-11 min-w-11 max-w-full flex-1 px-2 whitespace-normal"
         aria-haspopup="dialog"
         aria-busy={pendingAction === 'clearClass' || undefined}
         onPointerEnter={onPrepare}
@@ -116,11 +119,11 @@ export function ClassManagementActions({
         aria-label={`Bilder der Klasse ${position}: ${name} zurücksetzen`}
       >
         <ClearIcon data-icon="inline-start" aria-hidden="true" />
-        <span className="hidden @md/training-class:inline">Zurücksetzen</span>
+        <span className="hidden min-w-0 wrap-anywhere @md/training-class:inline">Zurücksetzen</span>
       </Button>
       <Button
         variant="outline"
-        className="h-auto min-h-11 min-w-0 px-2 text-destructive hover:text-destructive"
+        className="h-auto min-h-11 min-w-11 max-w-full flex-1 px-2 whitespace-normal text-destructive hover:text-destructive"
         aria-haspopup="dialog"
         aria-busy={pendingAction === 'removeClass' || undefined}
         onPointerEnter={onPrepare}
@@ -131,8 +134,8 @@ export function ClassManagementActions({
         aria-label={`Klasse ${position}: ${name} löschen`}
       >
         <RemoveIcon data-icon="inline-start" aria-hidden="true" />
-        <span className="hidden @md/training-class:inline">Löschen</span>
+        <span className="hidden min-w-0 wrap-anywhere @md/training-class:inline">Löschen</span>
       </Button>
-    </>
+    </div>
   );
 }

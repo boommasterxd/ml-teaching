@@ -77,11 +77,25 @@ async function expectPrerenderActivation(page: Page, ready: boolean) {
   expect(activationStart).toBeGreaterThan(0);
 }
 
+async function disableSpeculationRules(page: Page) {
+  await page.addInitScript(() => {
+    const supports = HTMLScriptElement.supports.bind(HTMLScriptElement);
+    HTMLScriptElement.supports = (type) => type !== 'speculationrules' && supports(type);
+  });
+}
+
 test('the native browser activates the homepage prepared by the HTTP 500 recovery link', async ({
   baseURL,
 }) => {
   if (!baseURL) throw new Error('The production server URL is required.');
   await expectNativeRecoveryPrerender(baseURL);
+});
+
+test('native recovery prerenders and activates training consent without model or camera use', async ({
+  baseURL,
+}) => {
+  if (!baseURL) throw new Error('The production server URL is required.');
+  await expectNativeRecoveryPrerender(baseURL, learningPaths.imagePractice);
 });
 
 test('the HTTP 500 recovery animates only the document crossing to the homepage', async ({
@@ -133,11 +147,7 @@ test('the static 500 header link replaces its icon while a document response wai
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(() => {
-    // Exercise browsers without speculation rules so recovery needs a document request.
-    const supports = HTMLScriptElement.supports.bind(HTMLScriptElement);
-    HTMLScriptElement.supports = (type) => type !== 'speculationrules' && supports(type);
-  });
+  await disableSpeculationRules(page);
   await observeDocumentTransitions(page);
   await open500(page);
   const action = page
@@ -182,7 +192,7 @@ test('the static 500 header link replaces its icon while a document response wai
   await expectHomepage(page);
 });
 
-test('training recovery prepares the public consent page without using model or camera resources', async ({
+test('training recovery falls back to a fresh consent page without model or camera use', async ({
   baseURL,
   context,
   page,
@@ -205,23 +215,26 @@ test('training recovery prepares the public consent page without using model or 
     });
   });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await disableSpeculationRules(page);
   await observeDocumentTransitions(page);
-  const prerenders = await observePrerenders(page, learningPaths.imagePractice);
   await open500(page);
-  expect(prerenders).toEqual([]);
 
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
   await navigation.getByRole('button', { name: 'Lernlabor', exact: true }).hover();
   const link = navigation.getByRole('link', { name: 'Bildmodell trainieren', exact: true });
   await link.focus();
   await expect(link).toBeFocused();
-  await expect.poll(() => prerenders.at(-1)).toMatch(/^(Ready|PrerenderingDisabledByDevTools)$/);
-  const prerenderReady = prerenders.at(-1) === 'Ready';
   await expect(page).toHaveURL('/500');
 
   await link.press('Enter');
   await expect(page).toHaveURL(learningPaths.imagePractice);
-  await expectPrerenderActivation(page, prerenderReady);
+  expect(
+    await page.evaluate(
+      () =>
+        (performance.getEntriesByType('navigation')[0] as { activationStart?: number })
+          .activationStart,
+    ),
+  ).toBe(0);
   const consent = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
   await expect(consent).toBeVisible();
   await expect(consent.getByRole('button', { name: 'Zustimmen', exact: true })).toBeDisabled();

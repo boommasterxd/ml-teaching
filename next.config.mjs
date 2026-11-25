@@ -43,6 +43,11 @@ const nextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
         ],
       },
+      {
+        source: '/404',
+        missing: [{ type: 'header', key: 'rsc' }],
+        headers: [{ key: 'Cache-Control', value: 'no-store' }],
+      },
     ];
   },
 };

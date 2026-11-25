@@ -1,16 +1,13 @@
+import type { ReactNode } from 'react';
 import { DialogBody, DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
 import { Spinner } from '../ui/spinner';
-import Button from '../Button';
-import { RotateCcw } from '../icons/rotate-ccw';
 
 export default function LoadingStep({
   loadingText,
-  onWithdraw,
-  onWithdrawIntent,
+  withdrawAction,
 }: {
   loadingText: string;
-  onWithdraw: () => void;
-  onWithdrawIntent?: () => void;
+  withdrawAction: ReactNode;
 }) {
   return (
     <div className="grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto] gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:grid-rows-1 sm:items-center sm:gap-6">
@@ -28,18 +25,7 @@ export default function LoadingStep({
           </DialogDescription>
         </DialogBody>
       </div>
-      <DialogFooter layout="auto-fit">
-        <Button
-          variant="outline"
-          onClick={onWithdraw}
-          onPointerEnter={onWithdrawIntent}
-          onPointerDown={onWithdrawIntent}
-          onFocus={onWithdrawIntent}
-        >
-          <RotateCcw data-icon="inline-start" aria-hidden="true" />
-          Einwilligung widerrufen
-        </Button>
-      </DialogFooter>
+      <DialogFooter layout="auto-fit">{withdrawAction}</DialogFooter>
     </div>
   );
 }

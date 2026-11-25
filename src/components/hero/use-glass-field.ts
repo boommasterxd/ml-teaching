@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefCallback } from 'react';
 import { useInView } from 'motion/react';
 import { usePageVisible } from '@animate-ui/react/utils/use-page-visible';
-import { deferDecorativeMotion } from '@/lib/experimental-motion';
 import { useMotionStart } from '../ui/use-motion-start';
 import { useMotionPreference } from '../ui/use-motion-preference';
 
@@ -27,11 +26,7 @@ function afterFirstPaint(prepare: () => void) {
   return () => cancelAnimationFrame(frame);
 }
 
-export function useGlassField(
-  paused: boolean,
-  viewportReady: boolean,
-  deferStartup = deferDecorativeMotion,
-) {
+export function useGlassField(paused: boolean, viewportReady: boolean, deferStartup = false) {
   const artwork = useRef<HTMLDivElement>(null);
   const inView = useInView(artwork);
   const visible = usePageVisible();

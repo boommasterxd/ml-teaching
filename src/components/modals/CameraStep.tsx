@@ -1,9 +1,10 @@
+import type { ReactNode } from 'react';
 import { AlertCircle } from '../icons/alert-circle';
-import { Camera } from '../icons/camera';
 import Button from '../Button';
 import { Alert, AlertDescription } from '../ui/alert';
-import { DialogBody, DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
+import { DialogBody, DialogDescription, DialogTitle } from '../ui/dialog';
 import { Spinner } from '../ui/spinner';
+import SetupActionFooter from './SetupActionFooter';
 
 interface CameraStepProps {
   onDecline: () => void;
@@ -11,6 +12,7 @@ interface CameraStepProps {
   pending?: boolean;
   error?: string;
   onRetry?: () => void;
+  withdrawAction: ReactNode;
 }
 
 export default function CameraStep({
@@ -19,6 +21,7 @@ export default function CameraStep({
   pending,
   error,
   onRetry,
+  withdrawAction,
 }: CameraStepProps) {
   return (
     <>
@@ -50,10 +53,11 @@ export default function CameraStep({
           </Alert>
         )}
       </DialogBody>
-      <DialogFooter className="[&>button]:h-auto [&>button]:min-h-9 [&>button]:whitespace-normal">
+      <SetupActionFooter stacked={Boolean(error)}>
         <Button variant="secondary" onClick={onDecline}>
-          Ohne Kamera fortfahren
+          <span className="min-w-0">Ohne Kamera fortfahren</span>
         </Button>
+        {withdrawAction}
         <Button
           variant="default"
           onClick={error ? onRetry : onConfirm}
@@ -61,14 +65,10 @@ export default function CameraStep({
           focusableWhenDisabled
           className="aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:hover:bg-primary aria-disabled:focus-visible:opacity-100"
         >
-          {pending ? (
-            <Spinner data-icon="inline-start" aria-hidden="true" />
-          ) : (
-            <Camera data-icon="inline-start" aria-hidden="true" />
-          )}
-          {error ? 'Erneut versuchen' : 'Erlauben'}
+          {pending && <Spinner data-icon="inline-start" aria-hidden="true" />}
+          <span className="min-w-0">{error ? 'Erneut versuchen' : 'Erlauben'}</span>
         </Button>
-      </DialogFooter>
+      </SetupActionFooter>
     </>
   );
 }

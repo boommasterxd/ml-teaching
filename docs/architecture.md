@@ -241,8 +241,10 @@ how Article 8 GDPR applies to the current private educational offer.
    After the last hold ends, TensorFlow.js removes the backend. A later session
    initializes it again if it was released, using the already loaded code. The
    model error step can retry the resource host import or restart model loading.
-   Same-document reentry with valid remembered consent opens on the loading step,
-   where consent can still be withdrawn.
+   Same-document reentry with valid remembered consent opens on the loading step.
+   Consent can be withdrawn during loading, after a model error or at the camera
+   choice, including on direct entry. Withdrawal uses the shared cleanup and
+   confirmation flow.
 3. When the models are ready, the dialog presents the optional camera choice.
    Camera access starts only after separate camera consent and browser permission.
    The resource host stays mounted when source-page setup hands off to the training
@@ -286,7 +288,9 @@ Images, features, class names and classifier state are never sent to an app serv
 Local file preparation shares one global FIFO slot across classes, with at most
 15 waiting files. Before native decoding, bounded file bytes and header dimensions
 must satisfy 32 MiB, 64 million pixels and 16,384 pixels per axis; decoded dimensions
-are checked again. Header reading and decoding have a combined 15-second deadline
+are checked again. PNG, GIF and WebP dimensions use at most the first 40 bytes;
+JPEG and ISO-based formats can require reading the bounded original file.
+Header reading and decoding have a combined 15-second deadline
 after admission. The slot remains occupied through the existing feature-extraction
 pipeline, and errors release it so later valid files can continue. Object URLs,
 readers and image handlers are cleaned up on completion or cancellation. These

@@ -204,7 +204,7 @@ function TrainingVisit({ initialWorkspace }: { initialWorkspace: boolean }) {
         declineConsentHref={learningPaths.images}
         onConfirmConsentIntent={prepareConsent}
         onConfirmConsent={grantConsent}
-        onWithdrawLoading={revokeConsent}
+        onWithdrawConsent={revokeConsent}
         onWithdrawIntent={prepareWithdrawal}
         onDeclineCamera={consent.declineCameraConsent}
         onConfirmCamera={consent.grantCameraConsent}

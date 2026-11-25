@@ -1,3 +1,5 @@
+import { ML } from '@/constants';
+
 interface ToastOptions {
   id?: string;
   description?: string;
@@ -12,6 +14,8 @@ export interface Notification extends ToastOptions {
   type: ToastType;
 }
 
+export const TOAST_VISIBLE_LIMIT = 3;
+
 const empty: readonly Notification[] = [];
 let pending = empty;
 let nextId = 0;
@@ -24,11 +28,20 @@ function setPending(notifications: readonly Notification[]) {
   for (const listener of listeners) listener();
 }
 
+function enqueuePending(notification: Notification) {
+  const persistent = notification.timeout === 0;
+  const limit = persistent ? ML.MAX_CLASSES : TOAST_VISIBLE_LIMIT;
+  const queue = pending.filter(({ id }) => id !== notification.id);
+  const sameLifetime = queue.filter(({ timeout }) => (timeout === 0) === persistent);
+  const evicted = sameLifetime.length >= limit ? sameLifetime[0] : undefined;
+  setPending([...queue.filter((item) => item !== evicted), notification]);
+}
+
 function publish(type: ToastType, message: string, options: ToastOptions = {}) {
   const id = options.id ?? `notice-${++nextId}`;
   const notification = { ...options, id, message, type };
   if (viewport) viewport.receive(notification);
-  else setPending([...pending.filter((item) => item.id !== id), notification].slice(-3));
+  else enqueuePending(notification);
 }
 
 export const toast = {

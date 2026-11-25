@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import type { LegalPage } from '@/content/site-navigation';
 import { DeferredMenuLoadError } from './DeferredMenuLoadError';
 import { ChevronDown } from './icons/chevron-down';
@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuTrigger } from './ui/dropdown-menu-trigger';
 import { Spinner } from './ui/spinner';
-import { useMenuModule, usePendingMenuDismissal } from './use-menu-module';
+import { useMenuActivationFocus, useMenuModule, usePendingMenuDismissal } from './use-menu-module';
 
 type MenuContent = typeof import('./LegalMobileMenu').default;
 let menuRequest: Promise<MenuContent> | undefined;
@@ -29,7 +29,6 @@ function loadMenu() {
 
 /** Keep the SSG trigger stable while the optional popup prepares. */
 export default function LegalMobileNavigation({ selectedValue }: { selectedValue: LegalPage }) {
-  const focusOnOpen = useRef(false);
   const [open, setOpen] = useState(false);
   const { module: Menu, failed, prepare } = useMenuModule(loadMenu, loadedMenu);
   const pending = open && !Menu && !failed;
@@ -38,6 +37,7 @@ export default function LegalMobileNavigation({ selectedValue }: { selectedValue
     popupSelector: '[data-legal-mobile-menu]',
     onDismiss: () => setOpen(false),
   });
+  const { trackMenuActivation, focusFirstHighlightedItem } = useMenuActivationFocus(trigger);
 
   return (
     <div ref={area} className="legal-mobile-navigation relative">
@@ -45,21 +45,11 @@ export default function LegalMobileNavigation({ selectedValue }: { selectedValue
         modal={false}
         open={open}
         onOpenChange={(next, { event }) => {
-          focusOnOpen.current =
-            next &&
-            (event instanceof KeyboardEvent ||
-              (event instanceof MouseEvent && event.type === 'click' && event.detail === 0));
+          trackMenuActivation(next, event);
           setOpen(next);
           if (next) prepare();
         }}
-        onItemHighlighted={(item) => {
-          if (!focusOnOpen.current || !(item instanceof HTMLElement)) return;
-          focusOnOpen.current = false;
-          // Make the native initial highlight usable before the next arrow key.
-          if (item.ownerDocument.activeElement === trigger.current) {
-            item.focus({ preventScroll: true });
-          }
-        }}
+        onItemHighlighted={focusFirstHighlightedItem}
       >
         <DropdownMenuTrigger
           ref={trigger}

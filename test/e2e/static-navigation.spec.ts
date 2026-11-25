@@ -296,6 +296,35 @@ async function expectQLearningPlaceholder(page: Page) {
   await expect(page).toHaveURL(learningPaths.hub);
 }
 
+async function expectInlineScriptBlocked(page: Page) {
+  await page.addInitScript(() => {
+    globalThis.document.addEventListener('securitypolicyviolation', (event) => {
+      if (
+        event.disposition === 'enforce' &&
+        event.blockedURI === 'inline' &&
+        event.effectiveDirective === 'script-src-elem'
+      ) {
+        const root = globalThis.document.documentElement;
+        root.dataset.cspProbeViolations = String(Number(root.dataset.cspProbeViolations ?? 0) + 1);
+      }
+    });
+  });
+  // Inject at the response boundary; DevTools evaluation has privileged CSP behavior.
+  await page.route(new URL('/', page.url()).href, async (route) => {
+    const response = await route.fetch();
+    const html = (await response.text()).replace(
+      '</body>',
+      '<script id="inline-csp-probe">document.documentElement.dataset.injected = "executed"</script></body>',
+    );
+    await route.fulfill({ response, body: html });
+  });
+  await page.goto('/');
+  await expect(page.locator('script#inline-csp-probe')).toHaveCount(1);
+  const document = page.locator('html');
+  await expect(document).toHaveAttribute('data-csp-probe-violations', '1');
+  await expect(document).not.toHaveAttribute('data-injected');
+}
+
 test('static documents preserve strict CSP and visible content', async ({ page, request }) => {
   const failures = diagnostics(page);
   const routes: [string, string | RegExp][] = [
@@ -381,18 +410,7 @@ test('static documents preserve strict CSP and visible content', async ({ page, 
   } finally {
     await serverError.close();
   }
-  // Inject at the response boundary; DevTools evaluation has privileged CSP behavior.
-  await page.route(new URL('/', page.url()).href, async (route) => {
-    const response = await route.fetch();
-    const html = (await response.text()).replace(
-      '</body>',
-      '<script>document.documentElement.dataset.injected = "executed"</script></body>',
-    );
-    await route.fulfill({ response, body: html });
-  });
-  await page.goto('/');
-  const injectedRan = await page.locator('html').getAttribute('data-injected');
-  expect(injectedRan).toBeNull();
+  await expectInlineScriptBlocked(page);
   // The intentionally injected script is expected to be rejected by CSP.
   expect(
     failures.filter((message) => !message.includes('Executing inline script violates')),

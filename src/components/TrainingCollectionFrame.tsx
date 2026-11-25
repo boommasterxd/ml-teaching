@@ -1,4 +1,4 @@
-import type { MouseEventHandler, ReactNode, Ref } from 'react';
+import { useId, type MouseEventHandler, type ReactNode, type Ref } from 'react';
 import { ArrowRight } from './icons/arrow-right';
 import { Plus } from './icons/plus';
 import { ML } from '../constants';
@@ -121,25 +121,28 @@ export function CollectionActionsFrame({
   onAdd?: MouseEventHandler<HTMLButtonElement>;
   children: ReactNode;
 }) {
-  const addLabel = atLimit
-    ? `Klasse hinzufügen deaktiviert, maximale Klassenanzahl von ${ML.MAX_CLASSES} erreicht`
-    : 'Neue Klasse hinzufügen';
+  const limitDescription = useId();
 
   return (
-    <div className="mt-5 flex items-center justify-between gap-2 sm:gap-3">
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
       <Button
         variant="secondary"
         size="lg"
-        className="min-h-11 max-sm:min-w-0 max-sm:flex-1 max-sm:px-3"
+        className="h-auto min-h-11 min-w-0 max-w-full whitespace-normal max-sm:flex-[1_1_max-content] max-sm:px-3"
         disabled={atLimit}
-        title={addLabel}
-        aria-label={addLabel}
+        aria-label="Neue Klasse hinzufügen"
+        aria-describedby={atLimit ? limitDescription : undefined}
         onClick={onAdd}
       >
         <Plus data-icon="inline-start" aria-hidden="true" />
-        Neue Klasse
+        <span className="min-w-0 wrap-anywhere">Neue Klasse</span>
       </Button>
       {children}
+      {atLimit && (
+        <Text id={limitDescription} variant="muted" className="w-full text-sm">
+          Maximale Klassenanzahl von {ML.MAX_CLASSES} erreicht.
+        </Text>
+      )}
     </div>
   );
 }

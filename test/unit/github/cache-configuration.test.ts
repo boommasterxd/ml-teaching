@@ -67,12 +67,12 @@ describe('npm cache adapter', () => {
     expect(() => replacementReceipt(key, 'node-cache-')).toThrow();
   });
 
-  it('keeps misses, failed and unknown restorations distinct from confirmed reuse', () => {
+  it('counts only confirmed exact and compatible cache restorations as reuse', () => {
     expect(restoreOutcome(key, key, 'success')).toBe('exact');
     expect(restoreOutcome(key, `${prefix}${'b'.repeat(64)}`, 'success')).toBe(
       'compatible fallback',
     );
-    expect(restoreOutcome(key, '', 'success')).toBe('cold');
+    expect(restoreOutcome(key, '', 'success')).toBe('unknown');
     expect(restoreOutcome(key, '', 'failure')).toBe('error');
     expect(restoreOutcome('', '', 'skipped')).toBe('unknown');
     expect(restoreOutcome(key, `other-${hash}`, 'success')).toBe('unknown');

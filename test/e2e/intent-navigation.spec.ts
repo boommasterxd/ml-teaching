@@ -2,7 +2,6 @@ import { expect, test, type Locator, type Page, type Request } from '@playwright
 import {
   diagnostics,
   expectAccessible,
-  expectMenuHighlight,
   observeViewTransitions,
   settleEntryAnimations,
 } from './browser-checks';
@@ -175,7 +174,7 @@ for (const intent of ['hover', 'keyboard', 'touch'] as const) {
   });
 }
 
-test('the mobile navigation marks the current page and moves its highlight on hover', async ({
+test('the mobile navigation keeps the current page marked and supports keyboard navigation', async ({
   page,
 }) => {
   const failures = diagnostics(page);
@@ -207,17 +206,14 @@ test('the mobile navigation marks the current page and moves its highlight on ho
   await expect(navigation.getByRole('link', { name: 'Startseite', exact: true })).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Impressum', exact: true })).toBeVisible();
   const panel = navigation.locator('[data-slot="navigation-menu-content"]:visible');
-  await expectMenuHighlight(current);
   for (const name of ['Startseite', 'Lernlabor-Übersicht', 'Impressum']) {
     const row = panel.getByRole('link', { name, exact: true });
     await row.hover();
-    await expectMenuHighlight(row);
     await expect(row).not.toHaveAttribute('aria-current', 'page');
     await expect(current).toHaveAttribute('aria-current', 'page');
   }
   await panel.getByText('Rechtliches', { exact: true }).hover();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  await expectMenuHighlight(current);
   await expect(current).toHaveAttribute('aria-current', 'page');
 
   await navigation.getByRole('link', { name: 'Barrierefreiheit', exact: true }).focus();

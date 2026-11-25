@@ -398,7 +398,7 @@ function TrainingEntryOverlay({ flow }: { flow: ReturnType<typeof useTrainingEnt
         open={open}
         onExited={flow.finishClose}
         loadingText={engine.models.loadingText}
-        onWithdrawLoading={() => flow.revokeConsent()}
+        onWithdrawConsent={() => flow.revokeConsent()}
         onWithdrawIntent={flow.withdrawal.prepare}
         onDeclineConsent={flow.closeEntry}
         onConfirmConsentIntent={engine.prepareResources}

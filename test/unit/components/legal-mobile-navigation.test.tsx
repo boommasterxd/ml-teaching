@@ -32,6 +32,7 @@ it('opens the pending information menu with keyboard focus and reuses the intent
   render(
     <AppRouterHost>
       <LegalMobileNavigation selectedValue="privacy" />
+      <button type="button">Nächste Aktion</button>
     </AppRouterHost>,
   );
   const trigger = screen.getByRole('button', { name: 'Informationen' });
@@ -46,6 +47,13 @@ it('opens the pending information menu with keyboard focus and reuses the intent
   expect(document.activeElement).toBe(trigger);
   expect(screen.queryByRole('menu')).toBeNull();
 
+  fireEvent.click(trigger, { detail: 0 });
+  const outside = screen.getByRole('button', { name: 'Nächste Aktion' });
+  act(() => outside.focus());
+  expect(document.activeElement).toBe(outside);
+  expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+  act(() => trigger.focus());
   fireEvent.click(trigger, { detail: 0 });
   await act(async () => {
     chunk.release();

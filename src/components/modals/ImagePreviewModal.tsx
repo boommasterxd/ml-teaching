@@ -28,6 +28,7 @@ interface ImagePreviewModalProps {
   image: MLImage | null;
   /** Callback invoked when the user confirms deletion of the previewed image. */
   onDelete: () => void;
+  resolveReturnFocus: () => HTMLElement | null;
 }
 
 /**
@@ -39,6 +40,7 @@ interface ImagePreviewModalProps {
  * @param onClose - Called when the close button is clicked.
  * @param image - The MLImage to display, or null if none is selected.
  * @param onDelete - Called when the delete button is clicked.
+ * @param resolveReturnFocus - Finds the thumbnail or its gallery when the preview closes.
  */
 export default function ImagePreviewModal({
   isOpen,
@@ -46,6 +48,7 @@ export default function ImagePreviewModal({
   onClose,
   image,
   onDelete,
+  resolveReturnFocus,
 }: ImagePreviewModalProps) {
   return (
     <Dialog
@@ -53,6 +56,7 @@ export default function ImagePreviewModal({
       onClose={onClose}
       labelledBy="image-modal-title"
       describedBy="image-modal-desc"
+      resolveReturnFocus={resolveReturnFocus}
     >
       <ModalContent maxWidth="sm">
         <div className="flex justify-between items-center">

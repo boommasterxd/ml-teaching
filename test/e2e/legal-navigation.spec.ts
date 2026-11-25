@@ -2,7 +2,6 @@ import { expect, test, type Page, type Request } from '@playwright/test';
 import {
   diagnostics,
   expectAccessible,
-  expectMenuHighlight,
   observeViewTransitions,
   settleEntryAnimations,
 } from './browser-checks';
@@ -51,6 +50,29 @@ async function observeBackFlow(page: Page) {
   return () => page.evaluate(() => Promise.all((window as PageBackObserver).observedBackFlow));
 }
 
+test('the mobile information menu stays reachable when text size doubles', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await page.goto('/barrierefreiheit');
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%';
+  });
+  const sidebar = page.locator('.legal-sidebar');
+  const trigger = sidebar.getByRole('button', { name: 'Informationen', exact: true });
+  await expect(trigger).toBeInViewport({ ratio: 1 });
+  await trigger.click({ trial: true });
+  await trigger.press('Enter');
+
+  const menu = page.getByRole('menu');
+  await expect(menu.getByRole('menuitem', { name: 'Datenschutz' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+  await expect(trigger).toBeInViewport({ ratio: 1 });
+  await page.keyboard.press('Enter');
+  await menu.getByRole('menuitem', { name: 'Datenschutz' }).press('Enter');
+  await expect(page).toHaveURL(/\/datenschutz$/);
+});
+
 test('desktop legal navigation stays reachable while the document scrolls', async ({ page }) => {
   const failures = diagnostics(page);
   await page.setViewportSize({ width: 2325, height: 1291 });
@@ -69,7 +91,6 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
   const imprint = sidebar.getByRole('link', { name: 'Impressum', exact: true });
   const current = sidebar.getByRole('link', { name: 'Datenschutz' });
   await expect(current).toHaveAttribute('aria-current', 'page');
-  await expectMenuHighlight(current);
   const rightEdge = await navigation.evaluate((card) => {
     const style = getComputedStyle(card);
     return (
@@ -83,19 +104,13 @@ test('desktop legal navigation stays reachable while the document scrolls', asyn
     const { top, height } = link.getBoundingClientRect();
     return top + height / 2;
   });
-  await page.mouse.move(rightEdge, rowMiddle);
-  await expectMenuHighlight(imprint);
-  await expect(current).toHaveAttribute('aria-current', 'page');
   const imprintBottom = await imprint.evaluate((link) => link.getBoundingClientRect().bottom);
-  await page.mouse.move(rightEdge, imprintBottom + 1);
   expect(
     await page.evaluate(
       ({ x, y }) => document.elementFromPoint(x, y)?.closest('a')?.getAttribute('href'),
       { x: rightEdge, y: imprintBottom + 1 },
     ),
   ).toBe('/impressum');
-  await expectMenuHighlight(imprint);
-  await page.mouse.move(rightEdge, rowMiddle);
   await page.mouse.click(rightEdge, rowMiddle);
   await expect(page).toHaveURL(/\/impressum$/);
   await expect(page.getByRole('heading', { name: 'Impressum', exact: true })).toBeVisible();

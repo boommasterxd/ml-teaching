@@ -8,9 +8,11 @@ import ModalContent from '../ModalContent';
 import { DialogBody, DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Spinner } from '../ui/spinner';
+import { RotateCcw } from '../icons/rotate-ccw';
 import CameraStep from './CameraStep';
 import ConsentStep from './ConsentStep';
 import LoadingStep from './LoadingStep';
+import SetupActionFooter from './SetupActionFooter';
 import SetupStepTransition, { type SetupStep } from './SetupStepTransition';
 
 interface TrainingSetupDialogProps {
@@ -20,7 +22,7 @@ interface TrainingSetupDialogProps {
   restoreFocus?: boolean;
   onExited?: () => void;
   loadingText: string;
-  onWithdrawLoading: () => void;
+  onWithdrawConsent: () => void;
   onWithdrawIntent?: () => void;
   onDeclineConsent: () => void;
   declineConsentHref?: string;
@@ -86,9 +88,11 @@ function WorkspaceStep({
 function ModelLoadError({
   declineAction,
   onRetryModel,
+  withdrawAction,
 }: {
   declineAction: ReactNode;
   onRetryModel?: () => void;
+  withdrawAction: ReactNode;
 }) {
   return (
     <>
@@ -100,11 +104,34 @@ function ModelLoadError({
           Überprüfe deine Verbindung und versuche es erneut.
         </DialogDescription>
       </DialogBody>
-      <DialogFooter>
+      <SetupActionFooter>
         {declineAction}
+        {withdrawAction}
         <Button onClick={onRetryModel}>Erneut versuchen</Button>
-      </DialogFooter>
+      </SetupActionFooter>
     </>
+  );
+}
+
+function SetupWithdrawalAction({
+  showIcon,
+  onWithdrawConsent,
+  onWithdrawIntent,
+}: Pick<TrainingSetupDialogProps, 'onWithdrawConsent' | 'onWithdrawIntent'> & {
+  showIcon: boolean;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onWithdrawConsent}
+      onPointerEnter={onWithdrawIntent}
+      onPointerDown={onWithdrawIntent}
+      onFocus={onWithdrawIntent}
+    >
+      {showIcon && <RotateCcw data-icon="inline-start" aria-hidden="true" />}
+      Einwilligung widerrufen
+    </Button>
   );
 }
 
@@ -115,7 +142,7 @@ export default function TrainingSetupDialog({
   onExited,
   restoreFocus = !onExited,
   loadingText,
-  onWithdrawLoading,
+  onWithdrawConsent,
   onWithdrawIntent,
   onDeclineConsent,
   declineConsentHref,
@@ -146,6 +173,13 @@ export default function TrainingSetupDialog({
       Abbrechen
     </Button>
   );
+  const withdrawAction = (
+    <SetupWithdrawalAction
+      showIcon={step === 'loading'}
+      onWithdrawConsent={onWithdrawConsent}
+      onWithdrawIntent={onWithdrawIntent}
+    />
+  );
 
   return (
     <Dialog
@@ -157,7 +191,7 @@ export default function TrainingSetupDialog({
       restoreFocus={restoreFocus}
       onExited={onExited}
     >
-      <ModalContent className="max-w-xl [--dialog-padding:1rem] sm:[--dialog-padding:1.5rem]">
+      <ModalContent className="@container/training-setup max-w-xl [--dialog-padding:1rem] sm:[--dialog-padding:1.5rem]">
         {step && (
           <SetupStepTransition step={step}>
             {step === 'consent' && (
@@ -168,11 +202,7 @@ export default function TrainingSetupDialog({
               />
             )}
             {step === 'loading' && (
-              <LoadingStep
-                loadingText={loadingText}
-                onWithdraw={onWithdrawLoading}
-                onWithdrawIntent={onWithdrawIntent}
-              />
+              <LoadingStep loadingText={loadingText} withdrawAction={withdrawAction} />
             )}
             {step === 'camera' && (
               <CameraStep
@@ -181,10 +211,15 @@ export default function TrainingSetupDialog({
                 pending={cameraPending}
                 error={cameraError}
                 onRetry={onRetryCamera}
+                withdrawAction={withdrawAction}
               />
             )}
             {step === 'error' && (
-              <ModelLoadError declineAction={declineAction} onRetryModel={onRetryModel} />
+              <ModelLoadError
+                declineAction={declineAction}
+                onRetryModel={onRetryModel}
+                withdrawAction={withdrawAction}
+              />
             )}
             {step === 'workspace' && (
               <WorkspaceStep

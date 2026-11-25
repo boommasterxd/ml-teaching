@@ -151,32 +151,6 @@ export function diagnostics(page: Page, expectedMissingDocument?: string) {
   return failures;
 }
 
-export async function expectMenuHighlight(row: Locator) {
-  await expect
-    .poll(() =>
-      row.evaluate((item) => {
-        const container = item.closest('[data-slot="motion-highlight-container"]');
-        if (!container) throw new Error('The item has no menu highlight container.');
-        const rowBounds = item.getBoundingClientRect();
-        return Array.from(
-          container.querySelectorAll('[data-slot="motion-highlight"]'),
-          (surface) => {
-            const bounds = surface.getBoundingClientRect();
-            return {
-              opacity: getComputedStyle(surface).opacity,
-              onRow:
-                Math.abs(bounds.left - rowBounds.left) <= 2 &&
-                Math.abs(bounds.top - rowBounds.top) <= 2 &&
-                Math.abs(bounds.width - rowBounds.width) <= 2 &&
-                Math.abs(bounds.height - rowBounds.height) <= 2,
-            };
-          },
-        );
-      }),
-    )
-    .toEqual([{ opacity: '1', onRow: true }]);
-}
-
 export async function expectLiveSystemThemeChanges(page: Page, theme: Locator) {
   await theme.focus();
   await page.emulateMedia({ colorScheme: 'dark' });
