@@ -26,6 +26,7 @@ export const TrainingSessionContext = createContext<{
   setupSuppressed: boolean;
   prepareWithdrawal: () => void;
   revokeConsent: () => void;
+  clearTrainingConsent: () => void;
   grantConsent: (remember: boolean) => void;
 } | null>(null);
 

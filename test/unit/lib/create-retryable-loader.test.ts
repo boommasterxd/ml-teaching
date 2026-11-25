@@ -8,16 +8,21 @@ it('shares a module request, then retries a failure and reuses the loaded module
   load.mockReturnValueOnce(initial.promise).mockResolvedValueOnce(loadedModule);
   const request = createRetryableLoader(load);
 
+  expect(request.getLoaded()).toBeUndefined();
   expect(load).not.toHaveBeenCalled();
   const first = request();
   const concurrent = request();
+  expect(concurrent).toBe(first);
+  expect(request.getLoaded()).toBeUndefined();
   expect(load).toHaveBeenCalledTimes(1);
   const failure = new Error('Module unavailable');
   initial.reject(failure);
   await expect(first).rejects.toBe(failure);
   await expect(concurrent).rejects.toBe(failure);
+  expect(request.getLoaded()).toBeUndefined();
 
   await expect(request()).resolves.toBe(loadedModule);
+  expect(request.getLoaded()).toBe(loadedModule);
   await expect(request()).resolves.toBe(loadedModule);
   expect(load).toHaveBeenCalledTimes(2);
 });

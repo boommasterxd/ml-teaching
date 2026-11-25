@@ -24,7 +24,7 @@ interface TrainingSetupDialogProps {
   loadingText: string;
   onWithdrawConsent: () => void;
   onWithdrawIntent?: () => void;
-  onDeclineConsent: () => void;
+  onDeclineConsent: (withdraw: boolean) => void;
   declineConsentHref?: string;
   onConfirmConsentIntent?: () => void;
   onConfirmConsent: (remember: boolean) => void;
@@ -157,22 +157,24 @@ export default function TrainingSetupDialog({
   workspaceFailed = false,
   onRetryWorkspace,
 }: TrainingSetupDialogProps) {
+  const dismiss = () => onDeclineConsent(step === 'workspace');
   const decline = {
-    consent: onDeclineConsent,
+    consent: dismiss,
     camera: onDeclineCamera,
     loading: undefined,
-    error: onDeclineConsent,
-    workspace: onDeclineConsent,
+    error: dismiss,
+    workspace: dismiss,
   };
-  const declineAction = declineConsentHref ? (
-    <AnimatedLink href={declineConsentHref} variant="secondary" transitionTypes={['nav-back']}>
-      Abbrechen
-    </AnimatedLink>
-  ) : (
-    <Button variant="secondary" onClick={onDeclineConsent}>
-      Abbrechen
-    </Button>
-  );
+  const declineAction =
+    declineConsentHref && step !== 'workspace' ? (
+      <AnimatedLink href={declineConsentHref} variant="secondary" transitionTypes={['nav-back']}>
+        Abbrechen
+      </AnimatedLink>
+    ) : (
+      <Button type="button" variant="secondary" onClick={dismiss}>
+        Abbrechen
+      </Button>
+    );
   const withdrawAction = (
     <SetupWithdrawalAction
       showIcon={step === 'loading'}

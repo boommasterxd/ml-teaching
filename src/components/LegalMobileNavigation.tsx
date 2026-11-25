@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { LegalPage } from '@/content/site-navigation';
+import { createRetryableLoader } from '@/lib/create-retryable-loader';
 import { DeferredMenuLoadError } from './DeferredMenuLoadError';
 import { ChevronDown } from './icons/chevron-down';
 import { Alert, AlertDescription } from './ui/alert';
@@ -10,27 +11,12 @@ import { DropdownMenu, DropdownMenuTrigger } from './ui/dropdown-menu-trigger';
 import { Spinner } from './ui/spinner';
 import { useMenuActivationFocus, useMenuModule, usePendingMenuDismissal } from './use-menu-module';
 
-type MenuContent = typeof import('./LegalMobileMenu').default;
-let menuRequest: Promise<MenuContent> | undefined;
-let loadedMenu: MenuContent | undefined;
-
-function loadMenu() {
-  menuRequest ??= import('./LegalMobileMenu')
-    .then(({ default: Menu }) => {
-      loadedMenu = Menu;
-      return Menu;
-    })
-    .catch((error: unknown) => {
-      menuRequest = undefined;
-      throw error;
-    });
-  return menuRequest;
-}
+const loadMenu = createRetryableLoader(async () => (await import('./LegalMobileMenu')).default);
 
 /** Keep the SSG trigger stable while the optional popup prepares. */
 export default function LegalMobileNavigation({ selectedValue }: { selectedValue: LegalPage }) {
   const [open, setOpen] = useState(false);
-  const { module: Menu, failed, prepare } = useMenuModule(loadMenu, loadedMenu);
+  const { module: Menu, failed, prepare } = useMenuModule(loadMenu, loadMenu.getLoaded());
   const pending = open && !Menu && !failed;
   const { area, trigger } = usePendingMenuDismissal({
     active: open && !Menu,

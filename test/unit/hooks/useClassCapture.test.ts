@@ -6,7 +6,7 @@ import { CAMERA, ML } from '@/constants';
 import type { MLClass } from '@/types/ml';
 import type React from 'react';
 
-vi.mock('@/lib/image-upload', () => ({ processImageFiles: vi.fn(async () => {}) }));
+vi.mock('@/lib/image-upload', () => ({ processImageFiles: vi.fn(async () => 0) }));
 
 const makeClass = (count = 0): MLClass => ({
   id: 'class-one',
@@ -21,7 +21,7 @@ const makeClass = (count = 0): MLClass => ({
 const actions = () => ({
   onAddExample: vi.fn<CaptureActions['onAddExample']>(),
   onCommitCapture: vi.fn<CaptureActions['onCommitCapture']>(),
-  onAddImageExample: vi.fn(),
+  onAddImageExample: vi.fn<CaptureActions['onAddImageExample']>(),
   onError: vi.fn(),
   onUploadResult: vi.fn<CaptureActions['onUploadResult']>(),
   captureDisabled: false,
@@ -53,19 +53,22 @@ describe('class image capture', () => {
     let completeOldBatch!: () => void;
     vi.mocked(processImageFiles).mockImplementationOnce(
       (_files, _onImage, onError) =>
-        new Promise<void>((resolve) => {
+        new Promise<number>((resolve) => {
           completeOldBatch = () => {
             onError('Outdated error');
-            resolve();
+            resolve(1);
           };
         }),
     );
     vi.mocked(processImageFiles).mockImplementationOnce(async (selected, _onImage, onError) => {
       for (const file of selected) onError(`Invalid file: ${file.name}`);
+      return 0;
     });
     act(() => result.current.handleFileUpload(event));
+    expect(result.current.isUploading).toBe(true);
     await act(async () => result.current.handleFileUpload(event));
     await act(async () => completeOldBatch());
+    expect(result.current.isUploading).toBe(false);
     expect(callbacks.onUploadResult).toHaveBeenCalledExactlyOnceWith(cls.id, {
       className: cls.name,
       total: 7,
@@ -80,8 +83,8 @@ describe('class image capture', () => {
     let finish!: () => void;
     vi.mocked(processImageFiles).mockImplementationOnce(
       () =>
-        new Promise<void>((resolve) => {
-          finish = resolve;
+        new Promise<number>((resolve) => {
+          finish = () => resolve(0);
         }),
     );
     const callbacks = actions();
@@ -106,6 +109,33 @@ describe('class image capture', () => {
       finish();
     });
     expect(callbacks.onUploadEnd).toHaveBeenCalledOnce();
+  });
+
+  it('combines files skipped at selection and processing into one capacity report', async () => {
+    const cls = makeClass(ML.MAX_IMAGES_PER_CLASS - 2);
+    const callbacks = actions();
+    const { result } = renderHook(() => useClassCapture(cls, callbacks));
+    const files = ['first.png', 'second.png', 'third.png'].map((name) => new File(['a'], name));
+    const event = {
+      target: { files, value: 'selected' },
+    } as unknown as React.ChangeEvent<HTMLInputElement>;
+    vi.mocked(processImageFiles).mockResolvedValueOnce(1);
+
+    await act(async () => result.current.handleFileUpload(event));
+
+    expect(processImageFiles).toHaveBeenCalledWith(
+      files.slice(0, 2),
+      expect.any(Function),
+      expect.any(Function),
+      expect.any(AbortSignal),
+      expect.any(Function),
+    );
+    expect(callbacks.onUploadResult).toHaveBeenCalledExactlyOnceWith(cls.id, {
+      className: cls.name,
+      total: 0,
+      details: [],
+      capacitySkipped: 2,
+    });
   });
 
   it('does not begin recording or an explicitly rejected file batch during training', () => {
@@ -314,7 +344,14 @@ describe('class image capture', () => {
       expect.any(Function),
     );
     expect(event.target.value).toBe('');
-    const firstSignal = vi.mocked(processImageFiles).mock.calls[0][3];
+    const [, onImage, , firstSignal] = vi.mocked(processImageFiles).mock.calls[0];
+    const selectedImage = document.createElement('img');
+    void onImage(selectedImage);
+    expect(callbacks.onAddImageExample).toHaveBeenCalledExactlyOnceWith(
+      cls.id,
+      selectedImage,
+      firstSignal,
+    );
     act(() => result.current.handleFileUpload(event));
     expect(firstSignal.aborted).toBe(true);
     const currentSignal = vi.mocked(processImageFiles).mock.calls[1][3];

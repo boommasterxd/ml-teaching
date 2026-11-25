@@ -5,9 +5,10 @@ import { reusableCheck } from './pr-check-evidence.ts';
 
 const revision = /^[a-f0-9]{40}$/;
 const unitTest = /^test\/unit\/.+\.test\.(?:ts|tsx|mjs)$/;
+const localTools = new Set(['scripts/check-lighthouse.ts', 'scripts/lighthouse-runtime.ts']);
 const browserSpec = /^test\/e2e\/[a-z0-9][a-z0-9-]*\.spec\.ts$/;
 const rawChange = /^:([0-7]{6}) ([0-7]{6}) [a-f0-9]{40} [a-f0-9]{40} ([ADMT])$/;
-export const ciPlanVersion = 2;
+export const ciPlanVersion = 3;
 
 export interface CiRevisions {
   base: string;
@@ -18,7 +19,7 @@ export interface CiRevisions {
 interface GeneralWork {
   quality: boolean;
   browser: boolean;
-  reason: 'docs' | 'unit-tests' | 'full' | 'verified-revision';
+  reason: 'docs' | 'unit-tests' | 'local-tooling' | 'full' | 'verified-revision';
 }
 
 interface SelectedBrowserWork {
@@ -41,6 +42,9 @@ export function selectWork(paths: readonly string[]): GeneralWork {
   }
   if (paths.length > 0 && paths.every((path) => unitTest.test(path))) {
     return { quality: true, browser: false, reason: 'unit-tests' };
+  }
+  if (paths.length > 0 && paths.every((path) => localTools.has(path) || unitTest.test(path))) {
+    return { quality: true, browser: false, reason: 'local-tooling' };
   }
   return { quality: true, browser: true, reason: 'full' };
 }

@@ -11,6 +11,7 @@ export const IMAGE_INPUT_LIMITS = {
 
 export const IMAGE_INPUT_ACCEPT =
   'image/jpeg,image/png,image/gif,image/webp,image/avif,image/heic,image/heif';
+export const IMAGE_UPLOAD_LIMIT_MESSAGE = 'Upload-Limit erreicht';
 
 // image-dimensions reads at most 40 bytes for PNG (including CgBI), GIF, and WebP.
 const rasterHeaderLength = 40;

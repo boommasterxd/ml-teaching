@@ -1,34 +1,23 @@
 import { useEffect, useState } from 'react';
 import type { ModalState } from '@/hooks/useModalState';
+import { createRetryableLoader } from '@/lib/create-retryable-loader';
 import { toast } from '@/lib/toast';
 
 type DialogsComponent = typeof import('./TrainingPageModals').default;
 export type PendingTrainingDialog = Exclude<ModalState, { type: 'none' }>;
 
-let pendingDialogs: Promise<DialogsComponent> | undefined;
-let readyDialogs: DialogsComponent | undefined;
-
-function loadTrainingDialogs() {
-  pendingDialogs ??= import('./TrainingPageModals')
-    .then(({ default: Dialogs }) => {
-      readyDialogs = Dialogs;
-      return Dialogs;
-    })
-    .catch((error: unknown) => {
-      pendingDialogs = undefined;
-      throw error;
-    });
-  return pendingDialogs;
-}
+const loadTrainingDialogs = createRetryableLoader(
+  async () => (await import('./TrainingPageModals')).default,
+);
 
 export function prepareTrainingDialogs() {
-  if (!pendingDialogs) void loadTrainingDialogs().catch(() => {});
+  void loadTrainingDialogs().catch(() => {});
 }
 
 /** Mount on first activation and retain the dialog owner through its exits. */
 export function useDeferredTrainingDialogs(modal: ModalState, closeModal: () => void) {
   const [Dialogs, setDialogs] = useState<DialogsComponent>();
-  const prepared = readyDialogs;
+  const prepared = loadTrainingDialogs.getLoaded();
   if (!Dialogs && modal.type !== 'none' && prepared) setDialogs(() => prepared);
   const pendingDialog = !Dialogs && modal.type !== 'none' ? modal : undefined;
 

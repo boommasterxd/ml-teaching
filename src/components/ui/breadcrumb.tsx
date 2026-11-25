@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
-import { ChevronRightIcon } from 'lucide-react';
+import { AnimateIcon } from '@animate-ui/react/icons';
 import IntentLink from '@/components/IntentLink';
+import { ChevronRight } from '@/components/icons/chevron-right';
 import { cn } from '@/lib/utils';
 
 function Breadcrumb({ className, ...props }: ComponentProps<'nav'>) {
@@ -20,13 +21,24 @@ function BreadcrumbList({ className, ...props }: ComponentProps<'ol'>) {
   );
 }
 
-function BreadcrumbItem({ className, ...props }: ComponentProps<'li'>) {
-  return (
+function BreadcrumbItem({
+  className,
+  animateSeparator = false,
+  ...props
+}: ComponentProps<'li'> & { animateSeparator?: boolean }) {
+  const item = (
     <li
       data-slot="breadcrumb-item"
       className={cn('inline-flex min-w-0 items-center gap-1', className)}
       {...props}
     />
+  );
+  return animateSeparator ? (
+    <AnimateIcon asChild animateOnHover animateOnTap>
+      {item}
+    </AnimateIcon>
+  ) : (
+    item
   );
 }
 
@@ -57,7 +69,7 @@ function BreadcrumbPage({ className, ...props }: ComponentProps<'span'>) {
 function BreadcrumbSeparator() {
   return (
     <span data-slot="breadcrumb-separator" aria-hidden="true" className="shrink-0">
-      <ChevronRightIcon className="size-3.5 rtl:rotate-180" />
+      <ChevronRight size={24} fill="none" className="size-3.5 rtl:rotate-180" />
     </span>
   );
 }

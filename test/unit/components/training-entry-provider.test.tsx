@@ -246,29 +246,32 @@ describe('training entry across routes', () => {
     expect(browser.getUserMedia).not.toHaveBeenCalled();
   });
 
-  it('discards a source setup when the document is hidden with its workspace still loading', async () => {
-    const prepared = getPreparedTrainingWorkspace()!;
-    const pending = Promise.withResolvers<typeof prepared>();
-    vi.mocked(getPreparedTrainingWorkspace).mockReturnValueOnce(undefined);
-    vi.mocked(loadTrainingWorkspace).mockReturnValueOnce(pending.promise);
-    showPage(learningPaths.images);
-    startTraining();
-    await agreeToTraining(true);
-    const camera = within(await screen.findByRole('dialog', { name: cameraName }));
-    fireEvent.click(camera.getByRole('button', { name: 'Ohne Kamera fortfahren' }));
-    const workspace = within(
-      await screen.findByRole('dialog', { name: 'Arbeitsbereich vorbereiten' }),
-    );
-    expect(workspace.getByRole('status').textContent).toContain('wird geladen');
-    expect(testRouter.push).not.toHaveBeenCalled();
-
-    fireEvent(window, new Event('pagehide'));
-    await act(async () => pending.resolve(prepared));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(testRouter.push).not.toHaveBeenCalled();
-    expect(browser.disposeModel).toHaveBeenCalledOnce();
-    expect(readRememberedTrainingConsent()).toBeNull();
-  });
+  it.each(['Abbrechen', 'pagehide'])(
+    'discards a pending source workspace on %s',
+    async (action) => {
+      const prepared = getPreparedTrainingWorkspace()!;
+      const pending = Promise.withResolvers<typeof prepared>();
+      vi.mocked(getPreparedTrainingWorkspace).mockReturnValueOnce(undefined);
+      vi.mocked(loadTrainingWorkspace).mockReturnValueOnce(pending.promise);
+      showPage(learningPaths.images);
+      const opener = startTraining();
+      await agreeToTraining(true);
+      const camera = within(await screen.findByRole('dialog', { name: cameraName }));
+      fireEvent.click(camera.getByRole('button', { name: 'Ohne Kamera fortfahren' }));
+      const workspace = within(
+        await screen.findByRole('dialog', { name: 'Arbeitsbereich vorbereiten' }),
+      );
+      expect(workspace.getByRole('status').textContent).toContain('wird geladen');
+      if (action === 'Abbrechen') fireEvent.click(workspace.getByRole('button', { name: action }));
+      else fireEvent(window, new Event(action));
+      await act(async () => pending.resolve(prepared));
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      if (action === 'Abbrechen') await waitFor(() => expect(document.activeElement).toBe(opener));
+      expect(testRouter.push).not.toHaveBeenCalled();
+      expect(browser.disposeModel).toHaveBeenCalledOnce();
+      expect(readRememberedTrainingConsent()).toBeNull();
+    },
+  );
 
   it('prepares the training host on focus without starting its subscriptions before activation', async () => {
     const subscribe = vi.spyOn(document, 'addEventListener');

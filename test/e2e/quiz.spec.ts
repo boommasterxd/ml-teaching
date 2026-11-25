@@ -40,7 +40,7 @@ async function clickChoiceTitle(quiz: Locator, titleText: string) {
   });
 }
 
-test('everyday quiz explains answers locally and resets keyboard focus', async ({ page }) => {
+test('everyday quiz explains answers locally and resets keyboard focus @ci', async ({ page }) => {
   const failures = diagnostics(page);
   const external: string[] = [];
   page.on('request', (request) => {

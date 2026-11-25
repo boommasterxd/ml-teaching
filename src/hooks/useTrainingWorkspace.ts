@@ -1,10 +1,12 @@
 /** Composes browser resources and local training data for the static training route. */
 import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 import { subscribeToVisibility } from '@/lib/document-visibility';
+import { IMAGE_UPLOAD_LIMIT_MESSAGE } from '@/lib/image-input-policy';
 import { toast } from '@/lib/toast';
 import type { TrainingStep } from '@/components/training-panel-loading';
 import { ML } from '../constants';
 import type { ErrorCategory } from '../types/errors';
+import type { MLClass } from '../types/ml';
 import { useModalState } from './useModalState';
 import { useImageFeatureExtraction } from './useImageFeatureExtraction';
 import type { TrainingEngine } from './useTrainingEngine';
@@ -133,6 +135,13 @@ function isCurrentCameraStream(
   return Boolean(expected) && expected === current && !document.hidden;
 }
 
+function findCurrentImageClass(classes: MLClass[], target: MLClass, signal?: AbortSignal) {
+  if (signal?.aborted) return;
+  return classes.find(
+    ({ id, captureVersion }) => id === target.id && captureVersion === target.captureVersion,
+  );
+}
+
 function useTrainingImages(
   { models, camera, invalidateModel }: ReturnType<typeof useTrainingResources>,
   classes: ReturnType<typeof useClassManagement>,
@@ -167,15 +176,11 @@ function useTrainingImages(
       classId: string,
       source: HTMLVideoElement | HTMLImageElement,
       mirror: boolean,
-      target?: CaptureTarget,
+      target?: { signal: AbortSignal; receive?: CaptureTarget['receive'] },
     ) => {
       const targetClass = currentClasses.current.find((cls) => cls.id === classId);
-      if (
-        target?.signal.aborted ||
-        !targetClass ||
-        targetClass.images.length >= ML.MAX_IMAGES_PER_CLASS
-      )
-        return;
+      if (target?.signal.aborted || !targetClass) return;
+      if (targetClass.images.length >= ML.MAX_IMAGES_PER_CLASS) return 'capacity' as const;
       const sourceStream = source instanceof HTMLVideoElement ? camera.streamRef.current : null;
       if (source instanceof HTMLVideoElement && (!sourceStream || document.hidden)) return;
       if (isTrainingActive()) {
@@ -185,15 +190,18 @@ function useTrainingImages(
       beginImage();
       try {
         const image = await extractFeatures(source, mirror, source instanceof HTMLImageElement);
-        const currentClass = currentClasses.current.find((cls) => cls.id === classId);
+        const currentClass = findCurrentImageClass(
+          currentClasses.current,
+          targetClass,
+          target?.signal,
+        );
         if (
           image &&
-          !target?.signal.aborted &&
-          (!sourceStream || isCurrentCameraStream(sourceStream, camera.streamRef.current)) &&
           currentClass &&
-          currentClass.captureVersion === targetClass.captureVersion
+          (!sourceStream || isCurrentCameraStream(sourceStream, camera.streamRef.current))
         ) {
-          if (target) target.receive(image);
+          if (currentClass.images.length >= ML.MAX_IMAGES_PER_CLASS) return 'capacity' as const;
+          if (target?.receive) target.receive(image);
           else {
             appendImage(classId, image, targetClass.captureVersion ?? 0);
             invalidateModel();
@@ -267,17 +275,21 @@ function useUploadNotifications() {
       if (active.current.delete(id)) toast.dismiss(id);
       return;
     }
+    const skipped = report.capacitySkipped ?? 0;
+    const total = report.total + skipped;
     const title =
-      report.total === 1
+      total === 1
         ? 'Ein Bild konnte nicht hinzugefügt werden.'
-        : `${report.total} Bilder konnten nicht hinzugefügt werden.`;
+        : `${total} Bilder konnten nicht hinzugefügt werden.`;
     const details = [...report.details];
     const remaining = report.total - details.length;
     if (remaining === 1) details.push('Eine weitere Datei ist fehlgeschlagen.');
     if (remaining > 1) details.push(`${remaining} weitere Dateien sind fehlgeschlagen.`);
-    if (report.className.trim()) details.unshift(report.className.trim());
+    if (skipped) details.push(IMAGE_UPLOAD_LIMIT_MESSAGE);
+    if (report.total && report.className.trim()) details.unshift(report.className.trim());
     active.current.add(id);
-    toast.error(title, { id, timeout: 0, description: details.join('\n') });
+    const showNotice = report.total ? toast.error : toast.info;
+    showNotice(title, { id, timeout: 0, description: details.join('\n') });
   }, []);
 }
 
@@ -310,10 +322,12 @@ export function useTrainingWorkspace(step: TrainingStep, engine: TrainingEngine)
   const captureDisabled = data.training.isTraining;
   const cardActions = useMemo(
     () => ({
-      onAddExample: (id: string, video: HTMLVideoElement, target?: CaptureTarget) =>
-        addImage(id, video, facingMode === 'user', target),
+      onAddExample: async (id: string, video: HTMLVideoElement, target?: CaptureTarget) => {
+        await addImage(id, video, facingMode === 'user', target);
+      },
       onCommitCapture: commitCapture,
-      onAddImageExample: (id: string, image: HTMLImageElement) => addImage(id, image, false),
+      onAddImageExample: (id: string, image: HTMLImageElement, signal: AbortSignal) =>
+        addImage(id, image, false, { signal }),
       onRemove: showRemoveClass,
       onClear: showClearClass,
       onRemoveImages: handleRemoveImages,

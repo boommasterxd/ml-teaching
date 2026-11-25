@@ -15,11 +15,12 @@ export const PrivacyOverview = (
     </p>
     <p>
       Wenn du „Für 30 Minuten in diesem Tab merken“ auswählst, hält die Website deine Einwilligungen
-      und die Kamerawahl vorübergehend im Arbeitsspeicher deines Browsers. Deine Auswahl gilt beim
-      Wechsel innerhalb der Website bis zu 30 Minuten. Wenn du die Seite neu lädst oder schließt,
-      endet sie früher. Wenn du die Kamera erlaubt hast und dein Browser sie weiterhin freigibt,
-      kann sie beim erneuten Trainingsstart innerhalb dieser Zeit automatisch angehen. Dein
-      Trainingsstand wird dabei nicht gespeichert.
+      und die Kamerawahl vorübergehend im Arbeitsspeicher deines Browsers. Deine Auswahl gilt bis zu
+      30 Minuten, solange du im selben Tab auf der Website bleibst und sie nicht neu lädst. Wenn du
+      die Website verlässt, fragt die Lernfunktion bei deiner Rückkehr erneut nach. Wenn du die
+      Kamera erlaubt hast und dein Browser sie weiterhin freigibt, kann sie beim erneuten
+      Trainingsstart innerhalb dieser Zeit automatisch angehen. Dein Trainingsstand wird dabei nicht
+      gespeichert.
     </p>
     <p>
       Mit „Kamera ausschalten“ beendest du die Kameranutzung. Deine bereits gesammelten Bilder und

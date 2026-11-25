@@ -255,18 +255,20 @@ function useTrainingEntryFlow() {
     return () => window.removeEventListener('pagehide', handlePageHide);
   }, []);
 
-  function revokeConsent(waitForSettings = false) {
+  function clearTrainingConsent() {
     clearRememberedTrainingConsent();
     setRemembered(null);
     if (activeEntry) closeEntry();
     else {
       consent.cancel();
       clearError();
-      if (inTraining) {
-        clearHandoff();
-        setWorkspaceVersion((version) => version + 1);
-      }
+      if (inTraining) clearHandoff();
     }
+  }
+
+  function revokeConsent(waitForSettings = false) {
+    clearTrainingConsent();
+    if (inTraining) setWorkspaceVersion((version) => version + 1);
     withdrawal.begin(
       waitForSettings || Boolean(activeEntry && module),
       activeEntry?.opener ?? null,
@@ -293,6 +295,7 @@ function useTrainingEntryFlow() {
     pendingArrival: visit.handoff,
     workspaceVersion,
     revokeConsent,
+    clearTrainingConsent,
     withdrawal,
     grantConsent: (remember: boolean) =>
       acceptTrainingConsent(remember, consent.grantConsent, setRemembered),
@@ -329,6 +332,7 @@ export default function TrainingEntryProvider({ children }: { children: ReactNod
           pendingArrival,
           workspaceVersion,
           revokeConsent: () => revokeConsent(),
+          clearTrainingConsent: flow.clearTrainingConsent,
           prepareWithdrawal: withdrawal.prepare,
           setupSuppressed: Boolean(withdrawal.active),
           grantConsent,
@@ -400,7 +404,10 @@ function TrainingEntryOverlay({ flow }: { flow: ReturnType<typeof useTrainingEnt
         loadingText={engine.models.loadingText}
         onWithdrawConsent={() => flow.revokeConsent()}
         onWithdrawIntent={flow.withdrawal.prepare}
-        onDeclineConsent={flow.closeEntry}
+        onDeclineConsent={(withdraw) => {
+          if (withdraw) flow.clearTrainingConsent();
+          else flow.closeEntry();
+        }}
         onConfirmConsentIntent={engine.prepareResources}
         onConfirmConsent={flow.grantConsent}
         onDeclineCamera={consent.declineCameraConsent}

@@ -14,13 +14,20 @@ const coreSpecs = [
   'test/e2e/intent-navigation.spec.ts',
   'test/e2e/training-bfcache.spec.ts',
 ];
+const coreQuizSpecs = ['test/e2e/quiz.spec.ts', 'test/e2e/knn-quiz.spec.ts'];
 
 interface BrowserSlot {
   index: number;
   total: 1 | 2;
 }
 
-type BrowserCase = JSONReportTest & { file: string; title: string };
+type BrowserCase = JSONReportTest & {
+  file: string;
+  title: string;
+  tags: string[];
+  line: number;
+  column: number;
+};
 type BrowserCases = Map<string, BrowserCase>;
 
 export function readBrowserSlot(
@@ -42,7 +49,8 @@ function collectCases(suites: JSONReportSuite[], root: string, cases: BrowserCas
       for (const test of spec.tests) {
         const key = JSON.stringify([file, spec.id, test.projectId]);
         if (cases.has(key)) throw new Error(`Duplicate browser test: ${spec.title}.`);
-        cases.set(key, { ...test, file, title: spec.title });
+        const { title, tags, line, column } = spec;
+        cases.set(key, { ...test, file, title, tags, line, column });
       }
     }
     collectCases(suite.suites ?? [], root, cases);
@@ -58,20 +66,43 @@ function readCases(output: string) {
   return cases;
 }
 
-function requireRunnableFiles(all: BrowserCases, requiredFiles: Set<string>) {
+function requireQuizCases(all: BrowserCases) {
+  const missing = new Set(coreQuizSpecs.map((file) => resolve(file)));
+  const quizzes: BrowserCases = new Map();
+  for (const [key, test] of all) {
+    if (!test.tags.includes('ci')) continue;
+    if (!missing.delete(test.file)) throw new Error(`Unexpected @ci browser test: ${test.title}.`);
+    if (![test.line, test.column].every((part) => Number.isSafeInteger(part) && part > 0)) {
+      throw new Error(`Missing Playwright location for @ci browser test: ${test.title}.`);
+    }
+    quizzes.set(key, test);
+  }
+  if (missing.size) throw new Error(`Missing @ci browser test in ${[...missing].join(', ')}.`);
+  return quizzes;
+}
+
+function requireRunnableCases(
+  all: BrowserCases,
+  requiredFiles: Set<string>,
+  quizzes: BrowserCases,
+) {
   const found = new Set<string>();
-  for (const { file, title, expectedStatus } of all.values()) {
-    if (!requiredFiles.has(file)) continue;
+  const required: BrowserCases = new Map();
+  for (const [key, test] of all) {
+    const { file, title, expectedStatus } = test;
+    if (!requiredFiles.has(file) && !quizzes.has(key)) continue;
     if (expectedStatus !== 'passed') throw new Error(`Required browser test disabled: ${title}.`);
     found.add(file);
+    required.set(key, test);
   }
   const missing = [...requiredFiles].filter((file) => !found.has(file));
   if (missing.length) throw new Error(`No runnable browser tests in ${missing.join(', ')}.`);
+  return required;
 }
 
-function checkExecution(expected: BrowserCases, actual: BrowserCases, requiredFiles: Set<string>) {
+function checkExecution(expected: BrowserCases, actual: BrowserCases, required: BrowserCases) {
   if (actual.size !== expected.size) throw new Error('Browser execution did not match discovery.');
-  for (const [key, { file, title }] of expected) {
+  for (const [key, { title }] of expected) {
     const test = actual.get(key);
     if (!test) throw new Error(`Missing browser result: ${title}.`);
     if (
@@ -80,7 +111,7 @@ function checkExecution(expected: BrowserCases, actual: BrowserCases, requiredFi
       test.results[0].status === 'passed'
     )
       continue;
-    if (!requiredFiles.has(file) && isDocumentedSkip(test)) continue;
+    if (!required.has(key) && isDocumentedSkip(test)) continue;
     throw new Error(`Browser test did not pass: ${title}.`);
   }
 }
@@ -122,22 +153,23 @@ export function runBrowserChecks(plan: CiPlan, run = runPlaywright, slot?: Brows
     readCases(run(['--list', '--reporter=json', '--forbid-only', ...filters], true));
   // Discover without file filters so Playwright can reject imports between specs.
   const all = discover();
-  requireRunnableFiles(all, requiredFiles);
+  const quizzes = requireQuizCases(all);
+  const required = requireRunnableCases(all, requiredFiles, quizzes);
 
   const shard = slot?.total === 2 ? [`--shard=${slot.index + 1}/${slot.total}`] : [];
   const selection = selected.map((file) => `(^|/)${RegExp.escape(file)}$`);
-  const expected =
-    shard.length > 0
-      ? discover(shard)
-      : selected.length
-        ? new Map([...all].filter(([, test]) => requiredFiles.has(test.file)))
-        : all;
+  if (selected.length) {
+    for (const { file, line, column } of quizzes.values()) {
+      if (!requiredFiles.has(file)) selection.push(`^${RegExp.escape(file)}$:${line}:${column}`);
+    }
+  }
+  const expected = shard.length ? discover(shard) : selected.length ? required : all;
   if ([...expected.keys()].some((key) => !all.has(key))) {
     throw new Error('Browser shard discovery did not match the full suite.');
   }
 
   const args = ['--workers=2', '--forbid-only', '--reporter=line,json', ...shard, ...selection];
-  checkExecution(expected, readCases(run(args, false)), requiredFiles);
+  checkExecution(expected, readCases(run(args, false)), required);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

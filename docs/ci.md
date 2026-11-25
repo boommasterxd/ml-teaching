@@ -10,51 +10,67 @@ The dependency-free planner reads the complete merge-base-to-head Git diff. Rena
 include both endpoints, and deletions remain part of the scope. Its plan records the
 base, head and merge revisions. Consumers reject a different checked-out revision.
 
-| Complete changed scope                                                                                 | Selected work                                                                              |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| Nonempty root `docs/` files only                                                                       | Real successful final gate; no dependency installation, tests or build                     |
-| Only `*.test.ts`, `*.test.tsx` or `*.test.mjs` files under `test/unit/`                                | Static quality, production dependency audit and full unit coverage                         |
-| One eligible added or modified `test/e2e/*.spec.ts`                                                    | Full quality checks, native production build, five core browser specs and the changed spec |
-| Application, test fixtures, browser tests, assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and browser suite                              |
-| Empty diff or unavailable Git history                                                                  | All checks                                                                                 |
+| Complete changed scope                                                                                 | Selected work                                                                                                   |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Nonempty root `docs/` files only                                                                       | Real successful final gate; no dependency installation, tests or build                                          |
+| Only `*.test.ts`, `*.test.tsx` or `*.test.mjs` files under `test/unit/`                                | Static quality, production dependency audit and full unit coverage                                              |
+| Only allowlisted local Lighthouse scripts, optionally with unit tests                                  | Static quality, production dependency audit and full unit coverage                                              |
+| One eligible added or modified `test/e2e/*.spec.ts`                                                    | Full quality checks, native production build, five core browser specs, two core quiz cases and the changed spec |
+| Application, test fixtures, browser tests, assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and browser suite                                                   |
+| Empty diff or unavailable Git history                                                                  | All checks                                                                                                      |
+
+The local-tooling allowlist contains `scripts/check-lighthouse.ts` and
+`scripts/lighthouse-runtime.ts`. Either or both can change with unit tests and
+still select the quality job alone. Other mixed scopes select the full suite.
 
 The single-spec selection applies only when the complete diff is one regular
 added or modified `test/e2e/<lowercase-name>.spec.ts` file, the branch is up to
 date with its base, and the verified simulated merge tree matches the PR head
-tree. Other browser-test changes select the full browser suite; docs-only and
-unit-test-only scopes follow their rows in the table. The five mandatory core specs in
-`.github/scripts/browser-ci.ts` are `test/e2e/security-headers.spec.ts`,
+tree. Other browser-test changes select the full browser suite. The five mandatory
+core specs in `.github/scripts/browser-ci.ts` are `test/e2e/security-headers.spec.ts`,
 `test/e2e/site.spec.ts`, `test/e2e/initial-content.spec.ts`,
 `test/e2e/intent-navigation.spec.ts` and `test/e2e/training-bfcache.spec.ts`.
-For an eligible single-spec change, CI runs these five plus the changed spec,
-deduplicating it when the changed spec is already in the core set.
+For an eligible single-spec change, CI runs those files, the changed spec and
+two fixed `@ci` cases. `test/e2e/quiz.spec.ts` checks local answer explanations and
+keyboard focus on reset. `test/e2e/knn-quiz.spec.ts` checks retries, voting limits
+and new rounds. A changed file already in the selection runs once, and selecting
+a quiz file runs its tagged case as part of that file. Discovery requires exactly
+one runnable `@ci` case in each of the two quiz files and rejects the tag elsewhere.
 Unfiltered Playwright discovery checks that every selected file contains runnable
 tests. Each execution is checked against native discovery; missing, duplicate,
 unexpected or unsuccessful results fail. A non-required test may be skipped only
 with a documented reason. Invalid discovery fails the browser job. Deletions, renames, multiple changes
 and missing eligibility evidence retain the full browser suite.
 
-Selection and the final result gate use `ubuntu-slim`. Selected quality and browser
-jobs use regular runners; job-level conditions prevent allocation of unselected
+Selection and the final result gate use `ubuntu-slim`, as does Gitleaks. Their
+Node.js setup disables the action's automatic package-manager caching with
+`package-manager-cache: false`. Selected quality and browser jobs use regular
+runners. Job-level conditions prevent allocation of unselected
 substantive jobs. CI and Gitleaks each group new code and base-change runs by PR
 number. GitHub cancels an in-progress run or replaces a pending run in the same
 group when another run arrives. GitHub schedules by concurrency queue arrival,
 which can differ from revision order. Required checks still apply to the current
 revision. PR edits without a base change use a separate group for each simulated
 merge revision, allowing a running check to finish. Explicit PR reruns use their
-original run ID in a separate group. A code check and a metadata check can overlap
-until exact successful evidence is available. Manual Gitleaks scans use a separate
+original run ID in a separate group and require fresh checks. A partial rerun
+cannot approve a reuse plan from the first attempt. Manual Gitleaks scans use a separate
 group per ref and supersede earlier manual scans on that ref.
 The unconditional final `CI` check accepts successful selected jobs and explicitly
 excluded skipped jobs only. Invalid plans, planning failures, cancellations and
 unexpected skips fail.
 The workflow, planner and final validation run from the simulated PR merge checkout.
-After a title or description edit, CI and Gitleaks can reuse a successful result
-from the same workflow for the exact base, head and simulated merge revisions.
-They look for a fresh verification step in a successful required job. A reused
-step does not extend the seven-day verification window. Missing, failed or
-unavailable evidence falls back to normal check selection or scanning. Base
-changes run the regular checks.
+After an edit limited to the title or description, CI and Gitleaks can each reuse
+a successful result from the same repository, pull request and workflow for the
+exact base, head and simulated merge revisions. The required job must contain
+a successful verification step less than seven days old for those revisions, and
+the workflow must still report the same successful attempt. A reuse step does not
+extend that window.
+
+A metadata run can wait within a bounded lookup budget for an active code run for
+the exact pull request and revision set. It never waits for another metadata run.
+A missing match gets a short initial retry. Missing, failed, expired or unavailable
+evidence, including expiry of the lookup budget, falls back to ordinary check
+selection or scanning. Changes to the base run the regular checks.
 
 ## Dependency cache lifecycle
 
@@ -206,10 +222,10 @@ that Proxy remain forbidden.
 server, including accessibility and keyboard contracts. The local command remains
 unfiltered with `CI=true`. For the full suite, CI validates the plan and runs two
 Playwright shards on separate runners; the selected-spec plan uses one runner.
-Each runner installs dependencies, builds the application and limits Playwright to
-two workers. Full-suite shards use native discovery, and their results must match
-their discovered tests.
-It installs both lockfile-matched Chromium variants for
+Each browser runner installs dependencies, builds the application independently and
+limits Playwright to two workers. Full-suite shards use native discovery, and their
+results must match their discovered tests.
+Each browser runner installs both lockfile-matched Chromium variants for
 [the browser tests](development.md#checks). Browser launch, host dependency
 validation and the selected suite are blocking. Lighthouse runs locally as
 described in the [performance audit decision](decisions/performance-audits.md).

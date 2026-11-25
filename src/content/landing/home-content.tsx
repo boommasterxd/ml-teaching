@@ -146,7 +146,7 @@ export function HomePerspectives() {
 const questions = [
   [
     'Brauche ich eine Kamera?',
-    'Nein. Für die Bilderkennung kannst du Fotos von deinem Gerät auswählen. Für das Lernen durch Belohnung gibt es hier eine Vorschau.',
+    'Du kannst dein Bildmodell ohne Kamera trainieren, indem du Fotos von deinem Gerät auswählst. Für die Live-Vorhersage brauchst du eine Kamera.',
   ],
   [
     'Muss ich programmieren können?',

@@ -29,7 +29,7 @@ export const publicDiscoverySections = [
         path: learningPaths.imagePractice,
         title: 'Bildmodell trainieren',
         description:
-          'Interaktive Bildklassifikation mit Kamera oder eigenen Bildern. Wenn du zustimmst, lädt dein Browser das vortrainierte Modell MobileNetV2 über Dienste von Google und Kaggle. Training und Bilderkennung laufen in deinem Browser.',
+          'Trainiere dein Bildmodell mit Fotos von deinem Gerät. Für die Live-Vorhersage brauchst du eine Kamera. Wenn du zustimmst, lädt dein Browser das vortrainierte Modell MobileNetV2 über Dienste von Google und Kaggle. Training und Bilderkennung laufen in deinem Browser.',
       },
     ],
   },

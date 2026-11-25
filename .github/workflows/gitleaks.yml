@@ -1,4 +1,10 @@
 name: Secret scan
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && 'Manual secret scan'
+  || format('{0} PR {1} revisions {2} {3} {4}',
+  (github.event.action == 'edited' && !github.event.changes.base) && 'Metadata' || 'Check',
+  github.event.pull_request.number, github.event.pull_request.base.sha,
+  github.event.pull_request.head.sha, github.sha) }}
 
 on:
   pull_request:
@@ -77,11 +83,14 @@ jobs:
           # Gitleaks also reads source/.gitleaksignore independently of its flag.
           # There are no reviewed fingerprints; the Git range still scans this path.
           rm -f .gitleaksignore
-          "$RUNNER_TEMP/gitleaks" dir --config "$policy" --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow --timeout 180 --no-banner --redact --exit-code 1 .
+          scan() {
+            timeout --kill-after=5s 180s "$RUNNER_TEMP/gitleaks" "$@" --config "$policy" --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow --timeout 0 --no-banner --redact --exit-code 1
+          }
+          scan dir .
           if [ -n "$BASE_SHA" ]; then
-            "$RUNNER_TEMP/gitleaks" git --config "$policy" --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow --timeout 180 --no-banner --redact --exit-code 1 --log-opts="$BASE_SHA..$HEAD_SHA" .
+            scan git --log-opts="$BASE_SHA..$HEAD_SHA" .
           else
-            "$RUNNER_TEMP/gitleaks" git --config "$policy" --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow --timeout 180 --no-banner --redact --exit-code 1 .
+            scan git .
           fi
       - name: Verified PR revisions ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} ${{ github.sha }}
         if: github.event_name == 'pull_request' && steps.evidence.outputs.reused != 'true'

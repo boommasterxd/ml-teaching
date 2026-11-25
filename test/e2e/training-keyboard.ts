@@ -408,15 +408,23 @@ export async function openDeferredTrainingStep(
 }
 
 export async function expectKeyboardCapture(page: Page) {
-  const capture = page.getByRole('button', { name: 'Aufnehmen', exact: true }).first();
-  const stop = page.getByRole('button', { name: 'Aufnahme stoppen', exact: true });
+  const firstClass = page.getByRole('group', { name: 'Klasse 1', exact: true });
+  const capture = firstClass.getByRole('button', { name: 'Aufnehmen für Klasse 1', exact: true });
+  const stop = firstClass.getByRole('button', {
+    name: 'Aufnahme stoppen für Klasse 1',
+    exact: true,
+  });
+  const status = firstClass.getByRole('status').filter({ hasText: /^.*Klasse 1,/ });
   await capture.focus();
   await page.keyboard.press('Enter');
   await expect(stop).toBeFocused();
+  await expect(status).toHaveAttribute('aria-busy', 'true');
   await expect(page.getByText(/^[1-9] \/ 10 Bilder$/).first()).toBeVisible();
   await page.keyboard.press('Space');
   await expect(capture).toBeFocused();
   await expect(stop).toHaveCount(0);
+  await expect(status).toHaveAttribute('aria-busy', 'false');
+  await expect(status).toContainText(/Klasse 1, [1-9]\d* Bild/);
 }
 
 export async function expectPreviewDeletion(

@@ -321,7 +321,7 @@ test('a denied camera request keeps setup on the source page until the user cont
   await expect(page).toHaveURL(learningPaths.imagePractice);
   await expect(page.getByRole('heading', { name: 'Bilder sammeln', exact: true })).toBeFocused();
   await expect(
-    page.getByRole('button', { name: 'Bilder auswählen', exact: true }).first(),
+    page.getByRole('button', { name: 'Bilder auswählen für Klasse 1', exact: true }),
   ).toBeEnabled();
   const notices = page.getByRole('region', { name: 'Mitteilungen' });
   const notice = notices.getByRole('dialog', { name: /Kamerazugriff verweigert/ });

@@ -72,20 +72,23 @@ async function prepareImage(file: File, signal: AbortSignal) {
 /** Serialize originals globally; release the source only after feature extraction settles. */
 export async function processImageFiles(
   files: File[],
-  onImage: (image: HTMLImageElement) => void | Promise<void>,
+  onImage: (image: HTMLImageElement) => 'capacity' | void | Promise<'capacity' | void>,
   onError: (message: string) => void,
   signal: AbortSignal,
   hasCapacity: () => boolean = () => true,
-): Promise<void> {
-  for (const file of files) {
-    if (signal.aborted) return;
+): Promise<number> {
+  for (const [index, file] of files.entries()) {
+    if (signal.aborted) return 0;
     let release: (() => void) | undefined;
     try {
       release = await acquireImageUpload(signal);
-      if (signal.aborted || !hasCapacity()) return;
+      if (signal.aborted) return 0;
+      if (!hasCapacity()) return files.length - index;
       const prepared = await prepareImage(file, signal);
       try {
-        if (!signal.aborted) await onImage(prepared.image);
+        if (signal.aborted) return 0;
+        if (!hasCapacity() || (await onImage(prepared.image)) === 'capacity')
+          return files.length - index;
       } finally {
         prepared.dispose();
       }
@@ -98,4 +101,5 @@ export async function processImageFiles(
       release?.();
     }
   }
+  return 0;
 }

@@ -266,7 +266,7 @@ test('KNN keeps selected neighbors until a slider change is committed', async ({
   await expect(exercise.getByRole('status')).toContainText('Finde jetzt 1 Nachbarn.');
 });
 
-test('KNN exercise supports retries, voting limits, and new rounds', async ({ page }) => {
+test('KNN exercise supports retries, voting limits, and new rounds @ci', async ({ page }) => {
   const failures = diagnostics(page);
   const width = 800;
   await page.setViewportSize({ width, height: 1000 });

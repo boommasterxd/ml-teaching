@@ -3,8 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { readBrowserSlot, runBrowserChecks } from '../../../.github/scripts/browser-ci.ts';
 import { ciPlanVersion, type CiPlan } from '../../../.github/scripts/plan-ci.ts';
 
-const changed = 'test/e2e/quiz.spec.ts';
-const other = 'test/e2e/knn-quiz.spec.ts';
+const changed = 'test/e2e/hero-entry.spec.ts';
+const other = 'test/e2e/error-recovery-navigation.spec.ts';
+const everyday = { file: 'test/e2e/quiz.spec.ts', title: 'Everyday quiz', line: 43, tagged: true };
+const neighbors = { file: 'test/e2e/knn-quiz.spec.ts', title: 'KNN quiz', line: 269, tagged: true };
+const otherKnn = { file: neighbors.file, title: 'KNN secondary flow', line: 394 };
 const requiredConsent = 'test/e2e/training-bfcache.spec.ts';
 const core = [
   'test/e2e/security-headers.spec.ts',
@@ -13,6 +16,7 @@ const core = [
   'test/e2e/intent-navigation.spec.ts',
   requiredConsent,
 ];
+const coreCases = [...core, everyday, neighbors];
 const full = {
   version: ciPlanVersion,
   base: 'a'.repeat(40),
@@ -33,6 +37,8 @@ type Case = {
   expectedStatus?: Status;
   result?: Status;
   skipReason?: string;
+  line?: number;
+  tagged?: boolean;
 };
 
 function report(cases: (string | Case)[]) {
@@ -43,11 +49,16 @@ function report(cases: (string | Case)[]) {
       expectedStatus = 'passed',
       result,
       skipReason,
+      line = 1,
+      tagged = false,
     } = typeof entry === 'string' ? { file: entry } : entry;
     return {
       file: basename(file),
       id: title,
       title,
+      tags: tagged ? ['ci'] : [],
+      line,
+      column: 1,
       tests: [
         {
           projectId: 'chromium',
@@ -66,17 +77,20 @@ function report(cases: (string | Case)[]) {
   });
 }
 
-function passed(files: string[]) {
-  return files.map((file) => ({ file, result: 'passed' }) as const);
+function passed(cases: (string | Case)[]) {
+  return cases.map(
+    (entry) =>
+      ({ ...(typeof entry === 'string' ? { file: entry } : entry), result: 'passed' }) as const,
+  );
 }
 
 const runner = () => vi.fn<(args: string[], discovery: boolean) => string>();
 
 describe('CI browser execution', () => {
   it('discovers the entire suite and runs the core together with exactly the changed spec', () => {
-    const required = [...core, changed];
+    const required = [...coreCases, changed];
     const run = runner()
-      .mockReturnValueOnce(report([...required, other]))
+      .mockReturnValueOnce(report([...required, other, otherKnn]))
       .mockReturnValueOnce(report(passed(required)));
     runBrowserChecks(selected, run);
 
@@ -84,16 +98,42 @@ describe('CI browser execution', () => {
     const [args, discovery] = run.mock.calls[1];
     expect(discovery).toBe(false);
     expect(args.slice(0, execute.length)).toEqual(execute);
-    const patterns = args.slice(execute.length).map((pattern) => new RegExp(pattern));
-    expect(patterns).toHaveLength(required.length);
-    for (const file of required) {
+    const paths = args.slice(execute.length, -2);
+    const patterns = paths.map((pattern) => new RegExp(pattern));
+    expect(patterns).toHaveLength(core.length + 1);
+    for (const file of [...core, changed]) {
       expect(patterns.some((pattern) => pattern.test(`/checkout/${file}`))).toBe(true);
     }
     expect(patterns.some((pattern) => pattern.test(`/checkout/${other}`))).toBe(false);
+    expect(args.slice(-2)).toEqual(
+      [everyday, neighbors].map(({ file, line }) => `^${RegExp.escape(resolve(file))}$:${line}:1`),
+    );
+  });
+
+  it('runs all cases in a changed quiz file without selecting its tagged case twice', () => {
+    const required = [...coreCases, otherKnn];
+    const run = runner()
+      .mockReturnValueOnce(report([...required, other]))
+      .mockReturnValueOnce(report(passed(required)));
+    runBrowserChecks({ ...selected, spec: neighbors.file }, run);
+    expect(run.mock.calls[1][0].slice(execute.length)).toEqual([
+      ...[...core, neighbors.file].map((file) => `(^|/)${RegExp.escape(file)}$`),
+      `^${RegExp.escape(resolve(everyday.file))}$:${everyday.line}:1`,
+    ]);
+  });
+
+  it.each([
+    { cases: [...core, everyday, otherKnn], error: /Missing @ci browser test in .*knn-quiz\.spec/ },
+    { cases: [...coreCases, { ...otherKnn, tagged: true }], error: /Unexpected @ci browser test/ },
+    { cases: [...coreCases, { file: other, tagged: true }], error: /Unexpected @ci browser test/ },
+  ])('rejects incomplete or expanded quiz labels before execution', ({ cases, error }) => {
+    const run = runner().mockReturnValueOnce(report(cases));
+    expect(() => runBrowserChecks(selected, run)).toThrow(error);
+    expect(run).toHaveBeenCalledTimes(1);
   });
 
   it.each([full, selected])('rejects a missing core file in the $reason plan', (plan) => {
-    const files = [...core, changed].filter((file) => file !== requiredConsent);
+    const files = [...coreCases, changed].filter((entry) => entry !== requiredConsent);
     const run = runner().mockReturnValueOnce(report(files));
     expect(() => runBrowserChecks(plan, run)).toThrow(
       /No runnable browser tests in .*training-bfcache\.spec/,
@@ -105,7 +145,7 @@ describe('CI browser execution', () => {
     'rejects a required case marked as %s even when its file has another case',
     (expectedStatus) => {
       const run = runner().mockReturnValueOnce(
-        report([...core, changed, { file: changed, title: 'required case', expectedStatus }]),
+        report([...coreCases, changed, { file: changed, title: 'required case', expectedStatus }]),
       );
       expect(() => runBrowserChecks(selected, run)).toThrow(
         'Required browser test disabled: required case.',
@@ -116,7 +156,7 @@ describe('CI browser execution', () => {
 
   it('propagates a failing Playwright execution to its job', () => {
     const run = runner()
-      .mockReturnValueOnce(report([...core, changed]))
+      .mockReturnValueOnce(report([...coreCases, changed]))
       .mockImplementationOnce(() => {
         throw new Error('A selected test failed.');
       });
@@ -124,7 +164,7 @@ describe('CI browser execution', () => {
   });
 
   it('executes the full local suite without file filters or a shard', () => {
-    const files = [...core, changed, other];
+    const files = [...coreCases, changed, other];
     const run = runner()
       .mockReturnValueOnce(report(files))
       .mockReturnValueOnce(report(passed(files)));
@@ -137,55 +177,57 @@ describe('CI browser execution', () => {
 
   it('requires evidence for the same test identity even when the test count matches', () => {
     const run = runner()
-      .mockReturnValueOnce(report(core))
+      .mockReturnValueOnce(report(coreCases))
       .mockReturnValueOnce(
         report([
-          ...passed(core.filter((file) => file !== core[1])),
+          ...passed(coreCases.filter((entry) => entry !== core[1])),
           { file: core[1], title: 'different test', result: 'passed' },
         ]),
       );
     expect(() => runBrowserChecks(full, run)).toThrow('Missing browser result: site.spec.ts.');
   });
 
-  it('rejects a required case skipped during execution even with a documented reason', () => {
+  it('rejects a core quiz skipped during execution even with a documented reason', () => {
     const run = runner()
-      .mockReturnValueOnce(report(core))
+      .mockReturnValueOnce(report(coreCases))
       .mockReturnValueOnce(
         report([
-          ...passed(core.filter((file) => file !== requiredConsent)),
+          ...passed([...core, everyday]),
           {
-            file: requiredConsent,
+            ...neighbors,
             result: 'skipped',
             skipReason: 'Browser capability unavailable',
           },
         ]),
       );
-    expect(() => runBrowserChecks(full, run)).toThrow(
-      'Browser test did not pass: training-bfcache.spec.ts.',
-    );
+    expect(() => runBrowserChecks(full, run)).toThrow('Browser test did not pass: KNN quiz.');
   });
 
   it('permits only documented skips outside the required specs', () => {
-    const files = [...core, other];
+    const files = [...coreCases, other];
     const skip = { file: other, result: 'skipped' } as const;
     const run = runner()
       .mockReturnValueOnce(report(files))
       .mockReturnValueOnce(
-        report([...passed(core), { ...skip, skipReason: 'Optional capability unavailable' }]),
+        report([...passed(coreCases), { ...skip, skipReason: 'Optional capability unavailable' }]),
       )
       .mockReturnValueOnce(report(files))
-      .mockReturnValueOnce(report([...passed(core), skip]));
+      .mockReturnValueOnce(report([...passed(coreCases), skip]));
     expect(() => runBrowserChecks(full, run)).not.toThrow();
     expect(() => runBrowserChecks(full, run)).toThrow(
-      'Browser test did not pass: knn-quiz.spec.ts.',
+      'Browser test did not pass: error-recovery-navigation.spec.ts.',
     );
   });
 
   it.each([0, 1])('validates only native discovery results for shard slot %s', (index) => {
-    const shardFiles = [core[index], index === 0 ? changed : other];
+    const shardFiles = [
+      core[index],
+      index === 0 ? everyday : neighbors,
+      index === 0 ? changed : other,
+    ];
     const shard = `--shard=${index + 1}/2`;
     const run = runner()
-      .mockReturnValueOnce(report([...core, changed, other]))
+      .mockReturnValueOnce(report([...coreCases, changed, other, otherKnn]))
       .mockReturnValueOnce(report(shardFiles))
       .mockReturnValueOnce(report(passed(shardFiles)));
     runBrowserChecks(full, run, { index, total: 2 });

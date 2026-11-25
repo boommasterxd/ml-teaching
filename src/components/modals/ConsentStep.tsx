@@ -120,9 +120,9 @@ export default function ConsentStep({
                   Für 30 Minuten in diesem Tab merken
                 </FieldLabel>
                 <FieldDescription id="remember-training-consent-description">
-                  Deine Auswahl gilt bis zum Neuladen oder Schließen der Seite. Wenn du die Kamera
-                  erlaubst und dein Browser sie weiterhin freigibt, kann sie beim erneuten
-                  Trainingsstart automatisch angehen.
+                  Deine Auswahl gilt bis zu 30 Minuten, solange du im selben Tab auf der Website
+                  bleibst und sie nicht neu lädst. Wenn du die Kamera erlaubst und dein Browser sie
+                  weiterhin freigibt, kann sie beim erneuten Trainingsstart automatisch angehen.
                 </FieldDescription>
               </div>
             </Field>
@@ -130,8 +130,9 @@ export default function ConsentStep({
         </FieldSet>
 
         <FieldDescription id="consent-modal-desc" role="note" className="mt-3 sm:mt-6">
-          Auch ohne Zustimmung kannst du über Bilderkennung lesen. Du kannst sie beim Laden des
-          Modells und in den Einstellungen zum Bildtraining widerrufen.
+          Auch ohne Zustimmung kannst du über Bilderkennung lesen. Du kannst deine Einwilligung
+          während der Einrichtung und in den Einstellungen zum Bildtraining widerrufen. Wenn der
+          Arbeitsbereich vorbereitet wird, wähle „Abbrechen“.
         </FieldDescription>
       </DialogBody>
 

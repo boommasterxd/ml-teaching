@@ -165,14 +165,16 @@ of three nearest neighbors once and derives the highlighted points, votes and
 output from the same examples. Its Euclidean plot is a simplified teaching schema;
 the live classifier uses the installed library's normalized feature similarity.
 The illustration never invokes the actual model or processes user images.
-The shared header renders its triggers and loads the navigation rows and their
-icons on pointer entry, focus or pointer down. Base UI keeps the trigger and
-positions its popup with a loading or retry state when it opens before the code
-arrives. Animate UI owns entry and exit. The mobile panel takes its initial width
-from the toolbar anchor. Enabled rows prepare their destinations on navigation
-intent. The appearance popup loads its Base UI menu on intent. It anchors to the
-header on mobile and to its shared button on desktop. The button retains its
-role across loading, focus and dismissal.
+The shared header renders its triggers and prepares one module for the navigation
+and appearance menus on pointer entry, focus or pointer down. After hydration,
+a coarse pointer (`any-pointer: coarse`) also starts preparation. Both menus
+open on interaction. While the module loads, navigation shows feedback beside
+its trigger and the appearance button shows a spinner. Base UI positions the
+loaded popups. Animate UI owns entry and exit. The mobile panel takes its initial
+width from the toolbar anchor.
+Enabled rows prepare their destinations on navigation intent. The appearance
+popup anchors to the header on mobile and to its shared button on desktop. The
+button retains its role across loading, focus and dismissal.
 
 The everyday recognition quiz renders the same three matching and three nonmatching
 examples before and after hydration. Replay selects a different set from the 40-entry

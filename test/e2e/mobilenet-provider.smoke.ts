@@ -12,7 +12,7 @@ async function importSyntheticImage(page: Page) {
     .png()
     .toBuffer();
   const chooser = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: 'Bilder auswählen', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Bilder auswählen für Klasse 1', exact: true }).click();
   await (await chooser).setFiles({ name: 'synthetic.png', mimeType: 'image/png', buffer });
   await expect(
     page.getByText(`1 / ${ML.MIN_IMAGES_PER_CLASS} Bilder`, { exact: true }),
