@@ -6,7 +6,7 @@ import { toast } from '@/lib/toast';
 import Button from '../Button';
 import { ShieldCheck } from '../icons/shield-check';
 import { Spinner } from '../ui/spinner';
-import { useMenuModule } from '../use-menu-module';
+import { useDeferredModule } from '@/hooks/use-deferred-module';
 
 interface TrainingConsentControlsProps {
   visible: boolean;
@@ -36,7 +36,7 @@ export default function TrainingConsentControls({
   onExited,
 }: TrainingConsentControlsProps) {
   const slot = useSyncExternalStore(subscribeToFooter, getFooterSlot, getServerSlot);
-  const { module, failed, prepare } = useMenuModule(loadSettings);
+  const { module, failed, prepare } = useDeferredModule(loadSettings);
   const [opening, setOpening] = useState<Trigger | null>(null);
   const Dialog = module?.default;
   const available = visible && !blocked;

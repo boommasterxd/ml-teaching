@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatedFeedback } from '@/components/ui/animated-feedback';
 import { Slider } from '@/components/ui/slider';
 import { KNN_MAX_NEIGHBORS, KNN_MIN_NEIGHBORS } from '@/lib/knn-quiz';
+import { largeViewport } from '@/lib/media-queries';
 import type { KnnQuizState } from './useKnnQuiz';
 import {
   KnnQuizChoices,
@@ -30,7 +31,7 @@ export function KnnQuizInput({ state }: { state: KnnQuizState }) {
           alt={example.alt}
           width={80}
           height={80}
-          sizes="80px"
+          sizes={`${largeViewport} 80px, 64px`}
           className={knnQuizImageClass}
         />
       }

@@ -113,12 +113,16 @@ need to verify the public MobileNet provider. It requires the same local
 `npm run build` output and Playwright Chromium installation, a free port 3100,
 and network access to the configured model provider. Playwright starts the same
 native production server. The test verifies that model requests start only after
-the consent form is submitted. Its test-only transport fetches the public graph
-and weights with bounded downloads and manually checks each redirect against the
-allowed model file locations. Playwright fulfills the browser requests with those real
-assets. The browser runs feature extraction on one synthetic PNG generated in
-memory after declining camera access. Unexpected requests fail the test. If the
-provider or a download fails, check provider reachability before rerunning the test.
+the consent form is submitted. Its test-only transport fetches five known assets
+once each: `model.json` and the four weight shards from `group1-shard1of4.bin`
+through `group1-shard4of4.bin`. It checks each redirect along the approved HTTPS
+chain from `tfhub.dev` through `www.kaggle.com` to `storage.googleapis.com`.
+That allows up to 15 upstream GET requests and 24 MiB of decoded model data per
+test, with a 25-second deadline per asset including redirects. Playwright fulfills
+the browser requests with those real assets. The browser runs feature extraction
+on one synthetic PNG generated in memory after declining camera access.
+Unexpected requests fail the test. If the provider or a download fails, check
+provider reachability before rerunning the test.
 
 For local Lighthouse audits, install the version-matched Chromium Headless Shell
 with `npx playwright install chromium`, then build the site. Start the native

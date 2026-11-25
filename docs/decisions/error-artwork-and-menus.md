@@ -25,9 +25,15 @@ shader startup.
 
 ## Deferred menus
 
-The mobile legal menu and appearance menu share module loading, retry feedback
-and dismissal while the popup loads. Each trigger keeps its focus and press
-feedback during preparation. Intent prepares the content module. The mobile legal
-menu opens on explicit activation. The appearance menu also supports mouse hover
-through its Base UI trigger. Its chevron stays mounted during loading, with a
-separate spinner for pending feedback. Animate UI owns popup entry and exit.
+The header serves its navigation controls and appearance switch in the initial
+HTML. On a device with a coarse pointer, the header prepares one shared module
+after hydration so a first tap can reuse it. Other devices prepare it on
+pointer or focus intent. The module contains the full navigation and appearance
+popups, which mount on demand. A pending navigation opening carries focus
+to the corresponding interactive trigger. The appearance button and chevron
+stay mounted and anchor the loaded popup.
+
+The mobile legal menu prepares its own content on intent and opens on explicit
+activation. The shared pending dismissal supports Escape and outside activation.
+Each menu provides loading feedback and allows retry after a failed download.
+Base UI owns the loaded popups and Animate UI owns entry and exit motion.

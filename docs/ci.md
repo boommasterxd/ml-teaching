@@ -49,8 +49,6 @@ They look for a fresh verification step in a successful required job. A reused
 step does not extend the seven-day verification window. Missing, failed or
 unavailable evidence falls back to normal check selection or scanning. Base
 changes run the regular checks.
-The [security checks decision](decisions/ci-trust-boundary.md) records the accepted
-CI provenance and the complementary roles of Gitleaks and GitHub Secret Scanning.
 
 ## Dependency cache lifecycle
 
@@ -81,8 +79,22 @@ workflow after a `GITHUB_TOKEN` action.
 `.github/cache-policy.json` declares the managed family, producer and input
 boundaries. Cleanup runs from the current trusted `main` source after a successful
 cache producer, closed pull requests or declared workflow completion. It verifies
-replacement receipts and active runs before deleting eligible obsolete caches,
-rechecks the trusted branch identity and bounds deletion to 100 entries per run.
+replacement receipts and active runs, reads and validates the returned inventory pages,
+and refreshes the inventory, active runs and trusted branch identity before
+deletion. Each run deletes up to 100 revalidated cache IDs and checks the
+inventory again to confirm their removal.
+After pull request cache cleanup, each group of up to 20 default-branch cache
+deletions rechecks the cache inventory, replacement provenance, active workflow
+runs and current default-branch revision.
+
+For large inventories, the GitHub workflow run number rotates the window of
+identities checked. Planning verifies up to 100 distinct pull requests and 25
+CodeQL runs. A closed pull request that triggered cleanup has a reserved place
+in the window if its cache exists. Before deletion, cleanup rechecks up to 100
+pull request cache candidates. The summary counts deferred candidates separately
+from unverified pull request identities and CodeQL runs. Later lifecycle events
+plan from the current inventory and apply the same safeguards.
+
 Workflow completions and PR closures can both resume deferred main rotation using
 a verified producer receipt. Recovery queries each approved producer workflow
 directly so other workflow runs cannot displace eligible receipts from the bounded
@@ -130,8 +142,6 @@ development dependencies and reports findings at all severities. High and critic
 findings cause a nonzero exit status. Review development-only findings as well.
 The blocking typecheck also checks the Next.js configuration and hash-CSP build
 tooling as JavaScript through `tsconfig.build-tooling.json`.
-The [minimatch decision](decisions/minimatch-development-advisory.md) records the
-scope and remaining risk of the accepted development-only advisory.
 
 Application code, own tooling, root configurations and tests require at most
 100 lines per function, 500 lines per source file including CSS,
@@ -222,7 +232,8 @@ approval-required state because the updater uses `GITHUB_TOKEN`. The required
 checks still gate the merge. [GitHub token behavior](https://docs.github.com/en/actions/concepts/security/github_token#when-github_token-triggers-workflow-runs)
 
 GitHub Secret Scanning, repository push protection and CodeQL default setup are
-enabled alongside the required Gitleaks check. The
+enabled alongside the required Gitleaks check. Secret Scanning detects supported
+secrets on GitHub, and push protection blocks supported secrets during pushes. The
 [visibility decision](decisions/public-repository-visibility.md) records the
 accepted exposure of existing history.
 

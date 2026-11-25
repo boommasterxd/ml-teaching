@@ -14,10 +14,15 @@ import { routeSyntheticModel } from './synthetic-model';
 import { grantModelConsent } from './training-keyboard';
 import { expectPublicMain, expectReadable, expectReadableLink } from './initial-content-checks';
 
-async function expectPublicShell(page: Page) {
+async function expectPublicShell(page: Page, mobile = false) {
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
-  await expectReadable(navigation.getByRole('button', { name: 'Lernlabor', exact: true }));
-  await expectReadable(navigation.getByRole('button', { name: 'Rechtliches', exact: true }));
+  await expectReadableLink(navigation.getByRole('link', { name: 'ML Teaching – Startseite' }), '/');
+  if (mobile) {
+    await expectReadable(navigation.getByRole('button', { name: 'Menü', exact: true }));
+  } else {
+    await expectReadable(navigation.getByRole('button', { name: 'Lernlabor', exact: true }));
+    await expectReadable(navigation.getByRole('button', { name: 'Rechtliches', exact: true }));
+  }
   const footer = page
     .getByRole('contentinfo')
     .getByRole('navigation', { name: 'Rechtliche Links' });
@@ -57,7 +62,10 @@ const publicRoutes = [
 
 for (const path of publicRoutes) {
   test(`initial public content is readable before hydration at ${path}`, async ({ page }) => {
-    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.emulateMedia({
+      colorScheme: 'dark',
+      reducedMotion: path === '/' ? 'reduce' : 'no-preference',
+    });
     const failures = diagnostics(page);
     const scripts = await holdApplicationScripts(page);
     try {
@@ -127,34 +135,40 @@ for (const [path, status, heading, message, returnLabel, destination] of [
     '/',
   ],
 ] as const) {
-  test(`availability and the return link are readable before hydration at ${path}`, async ({
-    page,
-  }) => {
-    const scripts = await holdApplicationScripts(page);
-    try {
-      const response = await page.goto(path, { waitUntil: 'commit' });
-      expect(response?.status()).toBe(status);
-      await response?.finished();
-      await scripts.expectHeld();
-      const main = page.getByRole('main');
-      const title = main.getByRole('heading', { name: heading, exact: true });
-      const explanation = main.getByText(message, { exact: true });
-      const back = main.getByRole('link', { name: returnLabel, exact: true });
-      await expectReadable(title);
-      await expectReadable(explanation);
-      await expectReadable(back);
-      await expect(back).toHaveAttribute('href', destination);
-      await scripts.expectHeld();
-      scripts.release();
-      await page.waitForLoadState('load');
-      await expect(title).toBeVisible();
-      await expect(explanation).toBeVisible();
-      await back.press('Enter');
-      await expect(page).toHaveURL(destination);
-    } finally {
-      scripts.release();
-    }
-  });
+  for (const width of [390, 1280]) {
+    test(`availability and public navigation are readable before hydration at ${path} (${width}px)`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+      const scripts = await holdApplicationScripts(page);
+      try {
+        const response = await page.goto(path, { waitUntil: 'commit' });
+        expect(response?.status()).toBe(status);
+        await response?.finished();
+        await scripts.expectHeld();
+        const main = page.getByRole('main');
+        const title = main.getByRole('heading', { name: heading, exact: true });
+        const explanation = main.getByText(message, { exact: true });
+        const back = main.getByRole('link', { name: returnLabel, exact: true });
+        await expectReadable(title);
+        await expectReadable(explanation);
+        await expectReadableLink(back, destination);
+        await expectPublicShell(page, width === 390);
+        await scripts.expectHeld();
+        scripts.release();
+        await expect(page.getByRole('switch', { name: 'Dunkle Darstellung' })).toBeChecked();
+        await expectPublicShell(page, width === 390);
+        await expectReadable(title);
+        await expectReadable(explanation);
+        await expectReadableLink(back, destination);
+        await back.press('Enter');
+        await expect(page).toHaveURL(destination);
+      } finally {
+        scripts.release();
+      }
+    });
+  }
 }
 
 for (const [path, systemTheme] of [

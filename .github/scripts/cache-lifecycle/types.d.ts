@@ -56,6 +56,7 @@ export interface Options {
   eventName: string;
   event: Record<string, unknown>;
   runId: number;
+  runNumber: number;
   ref: string;
   sha: string;
   workflow: string;

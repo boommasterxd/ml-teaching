@@ -26,6 +26,7 @@ function main(env = process.env, args = process.argv.slice(2)) {
     repository: env.GITHUB_REPOSITORY || "",
     eventName: env.GITHUB_EVENT_NAME || "",
     runId: Number(env.GITHUB_RUN_ID),
+    runNumber: Number(env.GITHUB_RUN_NUMBER),
     ref: env.GITHUB_REF || "",
     sha: env.GITHUB_SHA || "",
     workflow: env.GITHUB_WORKFLOW || "",
@@ -37,7 +38,7 @@ function main(env = process.env, args = process.argv.slice(2)) {
   if (env.GITHUB_STEP_SUMMARY)
     fs.appendFileSync(
       env.GITHUB_STEP_SUMMARY,
-      `### Cache lifecycle\n\n${result.dryRun ? "Planned" : "Deleted"}: ${result.deleted.length}; deferred: ${result.deferred}; remaining: ${result.remainingCount} (${result.remainingBytes} bytes).\n`,
+      `### Cache lifecycle\n\n${result.dryRun ? "Planned" : "Deleted"}: ${result.deleted.length}; deferred: ${result.deferred}; remaining: ${result.remainingCount} (${result.remainingBytes} bytes).\n\nUnverified PR identities: ${result.unverifiedPullRequests}; unverified CodeQL runs: ${result.unverifiedCodeqlRuns}.\n`,
     );
   return result;
 }

@@ -10,6 +10,14 @@ async function expectReachable(action: Locator, singleLine = false) {
   await action.click({ trial: true });
   const labelFits = await action.evaluate((button, requireSingleLine) => {
     const bounds = button.getBoundingClientRect();
+    let leftEdge = bounds.left;
+    let rightEdge = bounds.right;
+    for (let parent = button.parentElement; parent; parent = parent.parentElement) {
+      if (!['hidden', 'clip'].includes(getComputedStyle(parent).overflowX)) continue;
+      const clip = parent.getBoundingClientRect();
+      leftEdge = Math.max(leftEdge, clip.left);
+      rightEdge = Math.min(rightEdge, clip.right);
+    }
     const text = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
     const range = document.createRange();
     while (text.nextNode()) {
@@ -18,7 +26,7 @@ async function expectReachable(action: Locator, singleLine = false) {
       const lines = range.getClientRects();
       if (requireSingleLine && lines.length !== 1) return false;
       for (const { left, right } of lines) {
-        if (left < bounds.left - 1 || right > bounds.right + 1) return false;
+        if (left < leftEdge - 1 || right > rightEdge + 1) return false;
       }
     }
     return true;
@@ -80,6 +88,32 @@ for (const failed of [false, true]) {
     }
   });
 }
+
+test('camera dialog actions remain visible and operable with custom text spacing', async ({
+  page,
+  baseURL,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 950 });
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await routeSyntheticModel(page, baseURL!);
+  await page.goto(learningPaths.imagePractice);
+  await grantModelConsent(page);
+  const camera = page.getByRole('dialog', { name: 'Berechtigung zur Kameranutzung' });
+  await expect(camera).toBeVisible();
+  await page.evaluate(() => {
+    const spacing = new CSSStyleSheet();
+    spacing.replaceSync(
+      '* { line-height: 1.5 !important; letter-spacing: .12em !important; word-spacing: .16em !important; } p { margin-bottom: 2em !important; }',
+    );
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, spacing];
+  });
+  for (const name of ['Ohne Kamera fortfahren', 'Einwilligung widerrufen', 'Erlauben']) {
+    await expectReachable(camera.getByRole('button', { name, exact: true }));
+  }
+  await camera.getByRole('button', { name: 'Ohne Kamera fortfahren', exact: true }).press('Enter');
+  await expect(camera).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Bilder sammeln' })).toBeFocused();
+});
 
 test('camera and class actions stay reachable when text size doubles', async ({
   page,

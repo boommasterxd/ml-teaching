@@ -185,27 +185,25 @@ maintained documentation change.
 
 ## Documentation Index
 
-| Document                                                                                               | Purpose                                                         |
-| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| [`docs/architecture.md`](docs/architecture.md)                                                         | Describes route, component and browser ML boundaries.           |
-| [`docs/ci.md`](docs/ci.md)                                                                             | Explains protected PR planning, jobs and quality controls.      |
-| [`docs/decisions/admin-ruleset-bypass.md`](docs/decisions/admin-ruleset-bypass.md)                     | Records the intentional ruleset bypass for the owner.           |
-| [`docs/decisions/children-training-consent.md`](docs/decisions/children-training-consent.md)           | Explains the scoped Article 8 GDPR decision for image training. |
-| [`docs/decisions/ci-trust-boundary.md`](docs/decisions/ci-trust-boundary.md)                           | Records CI provenance and complementary secret scanning.        |
-| [`docs/decisions/discovery-bot-protection.md`](docs/decisions/discovery-bot-protection.md)             | Records the accepted challenge for scripted public requests.    |
-| [`docs/decisions/error-artwork-and-menus.md`](docs/decisions/error-artwork-and-menus.md)               | Records the shared playback and menu-loading decisions.         |
-| [`docs/decisions/eslint-peer-compatibility.md`](docs/decisions/eslint-peer-compatibility.md)           | Records the temporary ESLint peer compatibility exception.      |
-| [`docs/decisions/hostinger-mail-retention.md`](docs/decisions/hostinger-mail-retention.md)             | Records mailbox recovery and the accepted backup gap.           |
-| [`docs/decisions/inline-navigation-feedback.md`](docs/decisions/inline-navigation-feedback.md)         | Records the scope and placement of navigation loading feedback. |
-| [`docs/decisions/minimatch-development-advisory.md`](docs/decisions/minimatch-development-advisory.md) | Records the limited development-only advisory acceptance.       |
-| [`docs/decisions/performance-audits.md`](docs/decisions/performance-audits.md)                         | Explains why Lighthouse runs locally outside merge checks.      |
-| [`docs/decisions/public-repository-visibility.md`](docs/decisions/public-repository-visibility.md)     | Records accepted exposure of existing repository history.       |
-| [`docs/decisions/pull-request-branch-retention.md`](docs/decisions/pull-request-branch-retention.md)   | Records intentional retention of merged pull request branches.  |
-| [`docs/decisions/ssg-and-csp.md`](docs/decisions/ssg-and-csp.md)                                       | Records static rendering and guarded CSP integration.           |
-| [`docs/decisions/training-visual-accessibility.md`](docs/decisions/training-visual-accessibility.md)   | Records accepted visual limitations of image training.          |
-| [`docs/decisions/vercel-challenge-hsts.md`](docs/decisions/vercel-challenge-hsts.md)                   | Records the accepted HSTS gap on Vercel challenge responses.    |
-| [`docs/decisions/vercel-revalidation-hsts.md`](docs/decisions/vercel-revalidation-hsts.md)             | Records the accepted HSTS gap on homepage revalidation.         |
-| [`docs/deployment.md`](docs/deployment.md)                                                             | Defines the Vercel release workflow and publication boundaries. |
-| [`docs/design-system.md`](docs/design-system.md)                                                       | Defines shared UI, motion, accessibility and integration rules. |
-| [`docs/development.md`](docs/development.md)                                                           | Documents runtime, commands and local verification.             |
-| [`docs/third-party-notices.md`](docs/third-party-notices.md)                                           | Documents upstream component and icon license notices.          |
+| Document                                                                                             | Purpose                                                         |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| [`docs/architecture.md`](docs/architecture.md)                                                       | Describes route, component and browser ML boundaries.           |
+| [`docs/ci.md`](docs/ci.md)                                                                           | Explains protected PR planning, jobs and quality controls.      |
+| [`docs/decisions/admin-ruleset-bypass.md`](docs/decisions/admin-ruleset-bypass.md)                   | Records the intentional ruleset bypass for the owner.           |
+| [`docs/decisions/children-training-consent.md`](docs/decisions/children-training-consent.md)         | Explains the scoped Article 8 GDPR decision for image training. |
+| [`docs/decisions/discovery-bot-protection.md`](docs/decisions/discovery-bot-protection.md)           | Records the accepted challenge for scripted public requests.    |
+| [`docs/decisions/error-artwork-and-menus.md`](docs/decisions/error-artwork-and-menus.md)             | Records the shared playback and menu-loading decisions.         |
+| [`docs/decisions/eslint-peer-compatibility.md`](docs/decisions/eslint-peer-compatibility.md)         | Records the temporary ESLint peer compatibility exception.      |
+| [`docs/decisions/hostinger-mail-retention.md`](docs/decisions/hostinger-mail-retention.md)           | Records mailbox recovery and the accepted backup gap.           |
+| [`docs/decisions/inline-navigation-feedback.md`](docs/decisions/inline-navigation-feedback.md)       | Records the scope and placement of navigation loading feedback. |
+| [`docs/decisions/performance-audits.md`](docs/decisions/performance-audits.md)                       | Explains why Lighthouse runs locally outside merge checks.      |
+| [`docs/decisions/public-repository-visibility.md`](docs/decisions/public-repository-visibility.md)   | Records accepted exposure of existing repository history.       |
+| [`docs/decisions/pull-request-branch-retention.md`](docs/decisions/pull-request-branch-retention.md) | Records intentional retention of merged pull request branches.  |
+| [`docs/decisions/ssg-and-csp.md`](docs/decisions/ssg-and-csp.md)                                     | Records static rendering and guarded CSP integration.           |
+| [`docs/decisions/training-visual-accessibility.md`](docs/decisions/training-visual-accessibility.md) | Records accepted visual limitations of image training.          |
+| [`docs/decisions/vercel-challenge-hsts.md`](docs/decisions/vercel-challenge-hsts.md)                 | Records the accepted HSTS gap on Vercel challenge responses.    |
+| [`docs/decisions/vercel-revalidation-hsts.md`](docs/decisions/vercel-revalidation-hsts.md)           | Records the accepted HSTS gap on homepage revalidation.         |
+| [`docs/deployment.md`](docs/deployment.md)                                                           | Defines the Vercel release workflow and publication boundaries. |
+| [`docs/design-system.md`](docs/design-system.md)                                                     | Defines shared UI, motion, accessibility and integration rules. |
+| [`docs/development.md`](docs/development.md)                                                         | Documents runtime, commands and local verification.             |
+| [`docs/third-party-notices.md`](docs/third-party-notices.md)                                         | Documents upstream component and icon license notices.          |

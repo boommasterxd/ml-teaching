@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { diagnostics, expectAccessible, settleEntryAnimations } from './browser-checks';
+import { learningPaths } from '../../src/lib/learning-paths';
 
 type HeroEntryProbe = {
   maxDisplacement: number;
@@ -43,6 +44,32 @@ async function expectStableHeroHandoff(page: Page) {
     ),
   ).toBe(0);
 }
+
+test('mobile home navigation reuses the poster prepared on focus', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const images: string[] = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).searchParams.get('url')?.includes('hero-glass-mobile'))
+      images.push(request.url());
+  });
+  await page.goto(learningPaths.hub);
+  await expect(page.locator('.header-menu-desktop')).toHaveCount(0);
+  const home = page.getByRole('banner').getByRole('link', { name: 'ML Teaching – Startseite' });
+  expect(images).toEqual([]);
+  await home.focus();
+  await expect.poll(() => images).toHaveLength(1);
+  await home.press('Enter');
+  const poster = page.locator('#home-hero-art picture img').first();
+  await expect
+    .poll(() =>
+      poster.evaluate((img: HTMLImageElement) => ({
+        source: img.currentSrc,
+        loaded: img.naturalWidth > 0,
+      })),
+    )
+    .toEqual({ source: images[0], loaded: true });
+  expect(images).toHaveLength(1);
+});
 
 test('a late Geist download keeps the first mobile headline in place', async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 823 });

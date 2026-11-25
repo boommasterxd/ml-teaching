@@ -7,16 +7,23 @@ export default function ErrorGlassFrame({
   children,
   fallback = false,
   pending = false,
+  preloadMobile,
   ...props
 }: ComponentProps<'div'> & {
   sources: ContourSources;
   fallback?: boolean;
   pending?: boolean;
+  preloadMobile?: boolean;
 }) {
   return (
     <div id="error-glass-art" className="error-glass-viewport" {...props}>
       <div className="hero-field-art">
-        <GlassArtworkPlaceholder sources={sources} fallback={fallback} pending={pending} />
+        <GlassArtworkPlaceholder
+          sources={sources}
+          fallback={fallback}
+          pending={pending}
+          preloadMobile={preloadMobile}
+        />
         {children}
       </div>
     </div>

@@ -21,7 +21,7 @@ import {
 import { useTrainingEngine, type TrainingEngine } from '@/hooks/useTrainingEngine';
 import { toast } from '@/lib/toast';
 import { prepareToastViewport } from '../toast-loader';
-import { useMenuModule } from '../use-menu-module';
+import { useDeferredModule } from '@/hooks/use-deferred-module';
 import type { SetupStep } from '../modals/SetupStepTransition';
 import TrainingConsentControls from './TrainingConsentControls';
 import {
@@ -109,8 +109,8 @@ function useTrainingEntryState() {
   const router = useRouter();
   const pathname = usePathname();
   const inTraining = pathname === learningPaths.imagePractice;
-  const setup = useMenuModule(loadSetup);
-  const workspace = useMenuModule(loadTrainingWorkspace, getPreparedTrainingWorkspace());
+  const setup = useDeferredModule(loadSetup);
+  const workspace = useDeferredModule(loadTrainingWorkspace, getPreparedTrainingWorkspace());
   const { module, prepare } = setup;
   const { prepare: prepareWorkspace } = workspace;
   const [entry, setEntry] = useState<Entry | null>(null);

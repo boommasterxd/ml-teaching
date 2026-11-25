@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useDeferredModule } from '@/hooks/use-deferred-module';
 import { prepareRoute } from '../prepare-route';
-import { useMenuModule } from '../use-menu-module';
 
 function loadDialog() {
   return import('./TrainingWithdrawalDialog');
@@ -18,7 +18,7 @@ interface Withdrawal {
 export function useTrainingWithdrawal(pathname: string | null, inTraining: boolean) {
   const router = useRouter();
   const [withdrawal, setWithdrawal] = useState<Withdrawal | null>(null);
-  const { module, prepare, failed } = useMenuModule(loadDialog);
+  const { module, prepare, failed } = useDeferredModule(loadDialog);
   if (withdrawal && withdrawal.pathname !== pathname) setWithdrawal(null);
 
   function begin(waitForExit: boolean, opener: HTMLElement | null) {
