@@ -141,7 +141,13 @@ function useCameraErrorNotice(error: AppError | null, canNotify: boolean) {
   }, [canNotify, error]);
 }
 
-function TrainingVisit({ initialWorkspace }: { initialWorkspace: boolean }) {
+function TrainingVisit({
+  initialWorkspace,
+  breadcrumbs,
+}: {
+  initialWorkspace: boolean;
+  breadcrumbs?: ReactNode;
+}) {
   const router = useRouter();
   const {
     engine,
@@ -186,6 +192,7 @@ function TrainingVisit({ initialWorkspace }: { initialWorkspace: boolean }) {
   return (
     <div className="bg-background text-foreground pb-10 sm:pb-16">
       <div className="training-workspace" inert={blocked}>
+        {breadcrumbs}
         {Workspace ? (
           <Workspace
             ready={ready}
@@ -217,7 +224,13 @@ function TrainingVisit({ initialWorkspace }: { initialWorkspace: boolean }) {
 }
 
 /** Keep the build-rendered setup in place while a visit loads its workspace. */
-export default function TrainingPage() {
+export default function TrainingPage({ breadcrumbs }: { breadcrumbs?: ReactNode }) {
   const { workspaceVersion } = useTrainingSession();
-  return <TrainingVisit key={workspaceVersion} initialWorkspace={workspaceVersion === 0} />;
+  return (
+    <TrainingVisit
+      key={workspaceVersion}
+      initialWorkspace={workspaceVersion === 0}
+      breadcrumbs={breadcrumbs}
+    />
+  );
 }

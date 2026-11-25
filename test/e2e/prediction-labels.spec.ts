@@ -137,15 +137,15 @@ test.describe('live prediction class filters', () => {
     const first = filters.getByRole('menuitemcheckbox', { name: 'Klasse 1', exact: true });
     const last = filters.getByRole('menuitemcheckbox', { name: 'Klasse 15', exact: true });
     const camera = chart.locator('[data-slot="prediction-live-point"]');
-    const paths = chart.locator('[data-slot="prediction-training-points"] path');
+    const markers = chart.locator('[data-slot="prediction-training-points"] [data-class-marker]');
     await chart.scrollIntoViewIfNeeded();
-    await expect(paths).toHaveCount(ML.MAX_CLASSES);
+    await expect(markers).toHaveCount(ML.MAX_CLASSES);
     await expect(camera).toBeVisible();
     await trigger.press('ArrowDown');
     await expect(all).toBeFocused();
     await expect(filters.getByRole('menuitemcheckbox')).toHaveCount(ML.MAX_CLASSES + 1);
     await page.keyboard.press('Space');
-    await expect(paths).toHaveCount(0);
+    await expect(markers).toHaveCount(0);
     await page.keyboard.press('ArrowDown');
     await expect(first).toBeFocused();
     await page.keyboard.press('Space');
@@ -155,7 +155,13 @@ test.describe('live prediction class filters', () => {
     await expect(last).toBeInViewport();
     await page.keyboard.press('Space');
     await expect(last).toHaveAttribute('aria-checked', 'true');
-    await expect(paths).toHaveCount(2);
+    await expect(markers).toHaveCount(2);
+    await expect(markers.first()).toHaveAttribute('data-class-marker', 'circle');
+    await expect(markers.last()).toHaveAttribute('data-class-marker', 'hourglass');
+    await expect(last.locator('[data-class-marker]')).toHaveAttribute(
+      'data-class-marker',
+      'hourglass',
+    );
     await expect(all).toHaveAttribute('aria-checked', 'mixed');
     await expect(camera).toBeVisible();
     await expectAccessible(page);
@@ -168,10 +174,11 @@ test.describe('live prediction class filters', () => {
     await trigger.tap();
     await last.tap();
     await expect(last).toHaveAttribute('aria-checked', 'false');
-    await expect(paths).toHaveCount(1);
+    await expect(markers).toHaveCount(1);
+    await expect(markers.first()).toHaveAttribute('data-class-marker', 'circle');
     await all.tap();
     await expect(all).toHaveAttribute('aria-checked', 'true');
-    await expect(paths).toHaveCount(ML.MAX_CLASSES);
+    await expect(markers).toHaveCount(ML.MAX_CLASSES);
     await expect(camera).toBeVisible();
     await expectAccessible(page);
     expect(styleViolations).toEqual([]);

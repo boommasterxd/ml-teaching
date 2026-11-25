@@ -397,6 +397,14 @@ share one scroll-parallax layer.
 The persistent SiteHeader places the brand and theme controls on either side of the centered
 navigation. The desktop shadcn Navigation Menu groups explanations and practice routes by
 subject under Lernlabor and collects the three information pages under Rechtliches.
+The image-recognition lesson and practice routes render a shared Breadcrumb
+navigation labeled `Seitenpfad`. Ancestor items use `IntentLink` with the
+`nav-back` transition type. The current page is plain text with
+`aria-current="page"`, and decorative separators are hidden from assistive
+technology. The ordered list wraps on narrow screens. The visible trail and
+`BreadcrumbList` structured data come from the same route entries. On the
+training route, the breadcrumb is inside the inert workspace while consent
+or another setup step blocks interaction.
 The lab overview precedes a single column of topics. Each topic lists its explanation
 before its exercise. Section labels align with the leading edge of the Animate UI
 icons. A lightbulb marks each explanation. Exercises use icons for their respective activities.
@@ -505,8 +513,11 @@ camera frame stretches to the bottom of the legend. The title identifies the 2D
 projection, and the figure caption explains the edge marker for assistive technology.
 Point positions are visual only. The predicted class and confidence values are
 available as text above the plot.
-The plot reuses the lesson's diamond, class palette and typography. Training
-classes use circles, squares and triangles in sequence. When shapes repeat, the
+The plot reuses the lesson's diamond, class palette and typography. Each of the
+15 supported classes has its own compact shape, starting with a circle, a square
+and a triangle. The plot and the legend or filter share that shape. It is assigned
+from the complete class order and stays stable when classes are renamed or hidden.
+Up to three classes use the inline legend. For larger class sets, the
 camera key shares a row with a single trigger for the shared shadcn dropdown.
 The preview placeholder reserves this row while the projection prepares.
 Pointer, keyboard and touch intent prepare the menu module. Its scrollable
@@ -517,8 +528,8 @@ soon as the rows appear.
 All classes are initially visible, and the first
 item toggles them together. The trigger summarizes the visible classes. The
 camera marker and projection scale remain stable even when no classes are
-selected. A packed SVG path per class keeps the point cloud separate from the
-Animate UI marker motion.
+selected. One packed SVG path per class renders the training points separately
+from the animated camera marker.
 The workspace panels, dialogs, gallery and camera preview use shared theme and media tokens.
 SiteBrand is a small client boundary so Animate UI's press Slot receives a concrete
 Link element. Passing the server-produced Link through that Slot can resolve to an

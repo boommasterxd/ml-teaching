@@ -199,6 +199,13 @@ lesson and practice by their canonical `LearningResource` identifiers. The
 homepage's JSON-LD graph identifies the publisher by name and links to the
 canonical imprint.
 
+The image recognition lesson and training page render breadcrumbs at build time.
+Both paths start at the learning hub. The training path also links back to the
+lesson. The shared route list drives the visible breadcrumbs and the matching
+`BreadcrumbList` JSON-LD with absolute canonical URLs. The static CSP includes
+the hash of the rendered JSON-LD. On the training page, the breadcrumbs sit
+inside the workspace and are inert while the consent dialog is open.
+
 The generated `robots.txt` uses a wildcard allow rule for all paths and lists the
 sitemap. Where services honor it, the rule allows search crawlers, model-training
 crawlers and user-initiated fetchers. Search indexing also depends on page-level

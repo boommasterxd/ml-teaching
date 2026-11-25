@@ -306,12 +306,16 @@ test('KNN exercise supports retries, voting limits, and new rounds', async ({ pa
   await page.keyboard.press('Enter');
   const feedback = exercise.locator('[data-slot="alert"]');
   await expect(feedback).toContainText('Zähle noch einmal.');
-  await expect(exercise.getByRole('status')).toContainText('wie viele Stimmen');
+  const status = exercise.getByRole('status');
+  await expect(status).toContainText('Fehlversuch 1: Zähle noch einmal');
   await expect(
     exercise.locator(
       ':is([role="alert"], [role="status"], [aria-live="assertive"], [aria-live="polite"])',
     ),
   ).toHaveCount(1);
+  await expect(wrongAnswer).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(status).toContainText('Fehlversuch 2: Zähle noch einmal');
   await expect(wrongAnswer).toBeFocused();
   await exercise.getByRole('button', { name: winner, exact: true }).focus();
   await page.keyboard.press('Enter');
@@ -415,6 +419,8 @@ for (const width of [390, 1280]) {
   }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    // Keep font metrics identical across documents to isolate scroll restoration from font timing.
+    await page.route('**/_next/static/media/*.woff2', (route) => route.abort());
     await page.goto(learningPaths.images);
     const exercise = page.getByRole('region', { name: 'Welche Nachbarn zählen?' });
     const heading = exercise.getByRole('heading', { name: 'Hund oder Katze?' });
@@ -431,6 +437,7 @@ for (const width of [390, 1280]) {
       await scripts.expectHeld();
       await expect(exercise.getByText('Die Übung wird geladen …')).toBeVisible();
       await expect.poll(async () => Math.abs((await height()) - readyHeight)).toBeLessThan(1);
+      await expect.poll(() => page.evaluate((y) => Math.abs(scrollY - y), scroll)).toBeLessThan(1);
     } finally {
       scripts.release();
     }

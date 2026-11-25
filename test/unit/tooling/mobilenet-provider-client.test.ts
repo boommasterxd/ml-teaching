@@ -1,9 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
-import { createModelDownloader } from '../../e2e/mobilenet-provider-client';
+import { describe, expect, it } from 'vitest';
+import { createModelRequestPolicy } from '../../e2e/mobilenet-provider-client';
 import contract from '../lib/fixtures/mobilenet-v2-embedding.json' with { type: 'json' };
 
 const graph = new URL(contract.modelUrl);
-const origin = 'http://127.0.0.1:3100';
 const kaggleDirectory =
   'https://www.kaggle.com/models/google/mobilenet-v2/tfJs/100-224-classification/2/';
 const storageDirectory = 'https://storage.googleapis.com/kagglesdsdata/models/2599/3646/';
@@ -17,6 +16,7 @@ const storageQuery = new URLSearchParams(
     'X-Goog-Signature',
   ].map((key) => [key, 'fixture']),
 );
+const graphName = 'model.json';
 
 function kaggle(file: string) {
   return new URL(file + '?tfjs-format=file&tfhub-redirect=true', kaggleDirectory);
@@ -26,184 +26,104 @@ function storage(file: string) {
   return new URL(file + '?' + storageQuery, storageDirectory);
 }
 
-function shard(index: number) {
-  return new URL(`group1-shard${index}of4.bin?tfjs-format=file`, graph);
-}
-
 function redirect(target: string | URL) {
-  return new Response(null, { status: 302, headers: { Location: String(target) } });
+  return [{ name: 'Location', value: String(target) }];
 }
 
-function modelFetch(final: (file: string) => Response) {
-  return vi.fn<typeof fetch>().mockImplementation(async (input) => {
-    const url = new URL(String(input));
-    const file = url.pathname.split('/').at(-1)!;
-    if (url.origin === graph.origin) return redirect(kaggle(file));
-    if (url.origin === kaggle('model.json').origin) return redirect(storage(file));
-    return final(file);
-  });
+function length(bytes: number) {
+  return [{ name: 'Content-Length', value: String(bytes) }];
 }
 
-describe('optional model provider transport', () => {
-  it('downloads the known graph and four weights once through their exact provider locations', async () => {
-    const fetchFile = modelFetch(
-      (file) =>
-        new Response(file, {
-          headers: {
-            'Content-Type': 'application/octet-stream',
-            'Access-Control-Allow-Origin': origin,
-            'Content-Encoding': 'gzip',
-            'Set-Cookie': 'provider-session=unused',
-          },
-        }),
-    );
-    const downloader = createModelDownloader(origin, fetchFile);
-    const originals = [graph, ...[1, 2, 3, 4].map(shard)];
-    try {
-      for (const original of originals) {
-        const file = original.pathname.split('/').at(-1)!;
-        expect(await downloader.download(original)).toEqual({
-          status: 200,
-          headers: {
-            'content-type': 'application/octet-stream',
-            'access-control-allow-origin': origin,
-          },
-          body: Buffer.from(file),
-        });
-      }
-      expect(fetchFile.mock.calls.map(([url]) => url)).toEqual(
-        originals.flatMap((url) => {
-          const name = url.pathname.split('/').at(-1)!;
-          return [url, kaggle(name), storage(name)];
-        }),
-      );
-      for (const [, options] of fetchFile.mock.calls) {
-        expect(options).toMatchObject({
-          method: 'GET',
-          redirect: 'manual',
-          credentials: 'omit',
-          headers: { Origin: origin },
-        });
-        expect(options?.body).toBeUndefined();
-      }
-    } finally {
-      downloader.close();
+type Policy = ReturnType<typeof createModelRequestPolicy>;
+
+function completeRedirects(policy: Policy, file: string) {
+  const initial = new URL(file + graph.search, graph);
+  policy.allowRequest(file, initial);
+  policy.allowResponse(file, 302, redirect(kaggle(file)));
+  policy.allowRequest(file + '-kaggle', kaggle(file), file);
+  policy.allowResponse(file + '-kaggle', 302, redirect(storage(file)));
+  const storageId = file + '-storage';
+  policy.allowRequest(storageId, storage(file), file + '-kaggle');
+  return storageId;
+}
+
+describe('native model traffic policy', () => {
+  it('accepts the bounded graph and four weights through both approved hops', () => {
+    const policy = createModelRequestPolicy();
+    const files = [graphName, ...[1, 2, 3, 4].map((index) => `group1-shard${index}of4.bin`)];
+    for (const file of files) {
+      const id = completeRedirects(policy, file);
+      expect(policy.allowResponse(id, 200, length(4 * 1024 * 1024))).toBe(file);
     }
   });
 
   it.each([
     ['an unlisted host', 'https://unlisted.example/model.json'],
-    ['a skipped provider stage', storage('model.json').href],
+    ['a skipped provider stage', storage(graphName).href],
     ['a different file', kaggle('group1-shard1of4.bin').href],
-    ['missing model parameters', new URL('model.json', kaggleDirectory).href],
-  ])('rejects %s without fetching the first redirect target', async (_scenario, target) => {
-    const fetchFile = vi.fn<typeof fetch>().mockResolvedValue(redirect(target));
-    const downloader = createModelDownloader(origin, fetchFile);
-
-    await expect(downloader.download(graph)).rejects.toThrow(
-      'Model redirect target is outside the permitted file locations',
+    ['missing model parameters', new URL(graphName, kaggleDirectory).href],
+  ])('rejects %s before approving the first redirect', (_scenario, target) => {
+    const policy = createModelRequestPolicy();
+    policy.allowRequest('graph', graph);
+    expect(() => policy.allowResponse('graph', 302, redirect(target))).toThrow(
+      'Model redirect is outside the permitted file locations.',
     );
-    expect(fetchFile).toHaveBeenCalledTimes(1);
-  });
-
-  it('requires the known storage file before following the second hop', async () => {
-    const fetchFile = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(redirect(kaggle('model.json')))
-      .mockResolvedValueOnce(redirect(storage('group1-shard1of4.bin')));
-    const downloader = createModelDownloader(origin, fetchFile);
-
-    await expect(downloader.download(graph)).rejects.toThrow(
-      'Model redirect target is outside the permitted file locations',
+    expect(() => policy.allowRequest('redirect', new URL(target), 'graph')).toThrow(
+      'Model request does not match its approved redirect.',
     );
-    expect(fetchFile).toHaveBeenCalledTimes(2);
   });
 
-  it('stops at the storage response and does not follow additional redirects', async () => {
-    const fetchFile = modelFetch((file) => redirect(storage(file)));
-    const downloader = createModelDownloader(origin, fetchFile);
-
-    await expect(downloader.download(graph)).rejects.toThrow(
-      'Expected a successful model file response',
+  it('rejects a storage request that differs from the exact approved target', () => {
+    const policy = createModelRequestPolicy();
+    const mirror = kaggle(graphName);
+    const target = storage(graphName);
+    policy.allowRequest('graph', graph);
+    policy.allowResponse('graph', 302, redirect(mirror));
+    policy.allowRequest('mirror', mirror, 'graph');
+    policy.allowResponse('mirror', 302, redirect(target));
+    const altered = new URL(target);
+    altered.searchParams.set('X-Goog-Signature', 'other');
+    expect(() => policy.allowRequest('storage', altered, 'mirror')).toThrow(
+      'Model request does not match its approved redirect.',
     );
-    expect(fetchFile).toHaveBeenCalledTimes(3);
   });
 
-  it('rejects a repeated file and prevents further downloads in the same run', async () => {
-    const fetchFile = modelFetch(() => new Response('model'));
-    const downloader = createModelDownloader(origin, fetchFile);
-
-    await downloader.download(graph);
-    await expect(downloader.download(graph)).rejects.toThrow('Model file was already requested');
-    await expect(downloader.download(shard(1))).rejects.toThrow();
-    expect(fetchFile).toHaveBeenCalledTimes(3);
+  it('rejects retries of the same file and unapproved entry paths', () => {
+    const policy = createModelRequestPolicy();
+    policy.allowRequest('first', graph);
+    expect(() => policy.allowRequest('retry', graph)).toThrow('Model file was already requested.');
+    expect(() => policy.allowRequest('other', new URL('unknown.bin', graph))).toThrow(
+      'Model request is outside the permitted file locations.',
+    );
   });
 
-  it('shares the byte limit across parallel file downloads and cancels both bodies', async () => {
-    const chunk = new Uint8Array(4 * 1024 * 1024);
-    const cancel = vi.fn();
-    const responses = new Map<string, Response>();
-    const fetchFile = modelFetch((file) => {
-      const response = new Response(
-        new ReadableStream<Uint8Array>({
-          pull(controller) {
-            controller.enqueue(chunk);
-          },
-          cancel,
-        }),
-      );
-      responses.set(file, response);
-      return response;
-    });
-    const downloader = createModelDownloader(origin, fetchFile);
-
-    const results = await Promise.allSettled([
-      downloader.download(shard(1)),
-      downloader.download(shard(2)),
-    ]);
-    expect(results.map(({ status }) => status)).toEqual(['rejected', 'rejected']);
-    expect(results).toContainEqual({
-      status: 'rejected',
-      reason: new Error('Model download exceeds the total size limit'),
-    });
-    expect(responses.size).toBe(2);
-    expect(cancel).toHaveBeenCalledTimes(2);
-    expect(Array.from(responses.values()).every(({ body }) => !body?.locked)).toBe(true);
-    expect(fetchFile.mock.calls.every(([, options]) => options?.signal?.aborted)).toBe(true);
+  it('rejects another redirect from storage', () => {
+    const policy = createModelRequestPolicy();
+    const id = completeRedirects(policy, graphName);
+    expect(() => policy.allowResponse(id, 302, redirect(storage(graphName)))).toThrow(
+      'Expected a successful model storage response.',
+    );
   });
 
-  it.each(['close', 'deadline'] as const)(
-    'releases an active body reader when the %s aborts the download',
-    async (termination) => {
-      const elapsed = new AbortController();
-      const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(elapsed.signal);
-      const started = Promise.withResolvers<void>();
-      const cancel = vi.fn();
-      const body = new ReadableStream<Uint8Array>(
-        {
-          pull() {
-            started.resolve();
-          },
-          cancel,
-        },
-        { highWaterMark: 0 },
-      );
-      const fetchFile = modelFetch(() => new Response(body));
-      const downloader = createModelDownloader(origin, fetchFile);
+  it.each([
+    ['without a content length', []],
+    ['with ambiguous lengths', [...length(12), ...length(18)]],
+    ['with an encoded body', [...length(12), { name: 'Content-Encoding', value: 'gzip' }]],
+  ])('rejects a model response %s', (_case, headers) => {
+    const policy = createModelRequestPolicy();
+    const id = completeRedirects(policy, graphName);
+    expect(() => policy.allowResponse(id, 200, headers)).toThrow(
+      'Model response has no bounded identity-encoded body.',
+    );
+  });
 
-      try {
-        const download = downloader.download(graph);
-        await started.promise;
-        if (termination === 'close') downloader.close();
-        else elapsed.abort();
-        await expect(download).rejects.toThrow();
-        expect(timeout).toHaveBeenCalledWith(25_000);
-        expect(cancel).toHaveBeenCalledOnce();
-        expect(body.locked).toBe(false);
-      } finally {
-        timeout.mockRestore();
-        downloader.close();
-      }
-    },
-  );
+  it('shares the byte limit across approved files before continuing their bodies', () => {
+    const policy = createModelRequestPolicy();
+    const graphId = completeRedirects(policy, graphName);
+    const shardId = completeRedirects(policy, 'group1-shard1of4.bin');
+    policy.allowResponse(graphId, 200, length(14 * 1024 * 1024));
+    expect(() => policy.allowResponse(shardId, 200, length(14 * 1024 * 1024))).toThrow(
+      'Model download exceeds its size limit.',
+    );
+  });
 });

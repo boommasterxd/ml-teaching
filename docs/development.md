@@ -71,24 +71,24 @@ prefetched before consent. See the [design system](design-system.md) for ownersh
 
 ## Checks
 
-| Command                     | Purpose                                                                   |
-| --------------------------- | ------------------------------------------------------------------------- |
-| `npm run format:check`      | Prettier for maintained source and documentation.                         |
-| `npm run lint`              | ESLint, React and enforceable complexity limits.                          |
-| `npm run typecheck`         | Generate route types and check application, build and cache tooling code. |
-| `npm run check:boundaries`  | Parse server/client route and transitive import boundaries.               |
-| `npm run check:quality`     | Enforce the source file-size limit.                                       |
-| `npm run check:dead-code`   | Discover unused files, dependencies and public exports.                   |
-| `npm run check:duplication` | Check handwritten source duplication at 50 tokens.                        |
-| `npm run test:coverage`     | All unit/integration tests with blocking coverage.                        |
-| `npm run test:e2e`          | Required browser suite against the existing native production build.      |
-| `npm run test:e2e:model`    | Optional browser smoke test for the public MobileNet model.               |
-| `npm run test:lighthouse`   | Mobile/desktop lab metrics with a production server on port 3100.         |
-| `npm run audit:production`  | Blocking high/critical production dependency audit.                       |
-| `npm run audit`             | Full local dependency audit including development tooling.                |
-| `npm run ui:audit`          | Inspect actual animation owners without changing source.                  |
-| `npm run ui:info`           | Inspect the configured shadcn foundation.                                 |
-| `npm run skills:list`       | List project-local Codex skills.                                          |
+| Command                     | Purpose                                                                  |
+| --------------------------- | ------------------------------------------------------------------------ |
+| `npm run format:check`      | Prettier for maintained source and documentation.                        |
+| `npm run lint`              | ESLint, React and enforceable complexity limits.                         |
+| `npm run typecheck`         | Generate isolated route types and check app, tests and tooling projects. |
+| `npm run check:boundaries`  | Parse server/client route and transitive import boundaries.              |
+| `npm run check:quality`     | Enforce the source file-size limit.                                      |
+| `npm run check:dead-code`   | Discover unused files, dependencies and public exports.                  |
+| `npm run check:duplication` | Check handwritten source duplication at 50 tokens.                       |
+| `npm run test:coverage`     | All unit/integration tests with blocking coverage.                       |
+| `npm run test:e2e`          | Required browser suite against the existing native production build.     |
+| `npm run test:e2e:model`    | Optional browser smoke test for the public MobileNet model.              |
+| `npm run test:lighthouse`   | Mobile/desktop lab metrics with a production server on port 3100.        |
+| `npm run audit:production`  | Blocking high/critical production dependency audit.                      |
+| `npm run audit`             | Full local dependency audit including development tooling.               |
+| `npm run ui:audit`          | Inspect actual animation owners without changing source.                 |
+| `npm run ui:info`           | Inspect the configured shadcn foundation.                                |
+| `npm run skills:list`       | List project-local Codex skills.                                         |
 
 Unit/integration tests mirror the application under `test/unit/hooks/`,
 `test/unit/lib/`, `test/unit/components/` and `test/unit/screens/`. Tooling gate
@@ -109,20 +109,23 @@ Playwright starts `npm start` on
 127.0.0.1:3100 and refuses to reuse an unrelated server. Build once first.
 
 Run `npm run test:e2e:model` separately from the required browser suite when you
-need to verify the public MobileNet provider. It requires the same local
-`npm run build` output and Playwright Chromium installation, a free port 3100,
-and network access to the configured model provider. Playwright starts the same
-native production server. The test verifies that model requests start only after
-the consent form is submitted. Its test-only transport fetches five known assets
-once each: `model.json` and the four weight shards from `group1-shard1of4.bin`
-through `group1-shard4of4.bin`. It checks each redirect along the approved HTTPS
-chain from `tfhub.dev` through `www.kaggle.com` to `storage.googleapis.com`.
-That allows up to 15 upstream GET requests and 24 MiB of decoded model data per
-test, with a 25-second deadline per asset including redirects. Playwright fulfills
-the browser requests with those real assets. The browser runs feature extraction
-on one synthetic PNG generated in memory after declining camera access.
-Unexpected requests fail the test. If the provider or a download fails, check
-provider reachability before rerunning the test.
+need to verify the public MobileNet provider. This opt-in check is not part of
+`npm run ci` or `npm run test:e2e`. It requires the same local `npm run build`
+output and Playwright Chromium installation, a free port 3100, and network access
+to the configured model provider. Playwright starts the same native production
+server. The test observes Chromium network traffic through the Chrome DevTools
+Protocol (CDP); model requests before consent fail the check. Only five assets
+are allowed, each once: `model.json` and the four weight shards from
+`group1-shard1of4.bin`
+through `group1-shard4of4.bin`. It validates each redirect along the approved
+HTTPS chain from `tfhub.dev` through `www.kaggle.com` to
+`storage.googleapis.com`. The limit is 15 upstream GET requests and 24 MiB of
+identity-encoded model data in total, with a 25-second deadline per asset including
+redirects. The browser follows the real provider responses; unexpected requests,
+redirects, response sizes or timeouts fail the check. After consent, it declines
+camera access and extracts features from one synthetic 16-by-16 PNG without
+opening a video stream. If the provider or a download fails, check provider
+reachability before rerunning the check.
 
 For local Lighthouse audits, install the version-matched Chromium Headless Shell
 with `npx playwright install chromium`, then build the site. Start the native
@@ -156,20 +159,36 @@ The report output includes the browser version, throttling profile, CPU benchmar
 Largest Contentful Paint and Total Blocking Time. A missed budget also prints the
 available LCP phases and up to five long tasks.
 
+Each route and device profile is handled independently. A document-status or
+Lighthouse/report error marks the affected profile failed, removes its stale or
+partial report where possible, and allows the remaining profiles and routes to
+run. A document-status failure applies to both profiles for that route. Low or
+invalid scores retain their reports for inspection. Chromium closes after the
+audit loop, and the command exits nonzero if any route/profile fails validation
+or does not score strictly above 95 for Performance.
+
 ## Build and recovery
 
 Run `npm run ci` before the final production build. It includes `npm run typecheck`,
-which is also available as a targeted standalone check. Native `next typegen`
-loads the production-build configuration, so the adapter conservatively
-invalidates an existing CSP success marker. Rebuild before starting production
-afterward.
+which is also available as a targeted standalone check. The command uses
+`scripts/generate-route-types.ts` to generate Next.js route types in a separate
+temporary project for each invocation. It checks the repository's TypeScript
+inputs against those generated types and then removes the temporary project.
+The repository's `next-env.d.ts` and production build output stay available.
+
+Do not substitute a direct `next typegen` invocation when preserving a verified
+production build matters. Without the wrapper's isolated configuration, Next.js
+loads the production-build configuration and can invalidate the existing CSP
+success marker. `npm start` validates that marker before native `next start` and
+refuses stale or missing build evidence; rebuild with `npm run build` if it was
+invalidated.
 
 `npm run build` invalidates any old CSP success marker, runs one native `next build`
 and verifies the resulting manifest. The production build uses
 `tsconfig.build.json` for application code, build configuration, CSP declarations
 and generated Next.js types. It inherits the project compiler options. The
-blocking `npm run typecheck` uses `tsconfig.json` for application code, tests and
-TypeScript tooling. It uses `tsconfig.build-tooling.json` to check the JavaScript
+blocking `npm run typecheck` uses `tsconfig.typecheck.json` for application code,
+tests and TypeScript tooling. It uses `tsconfig.build-tooling.json` to check the JavaScript
 types in the Next.js configuration and hash-CSP build tooling, and
 `tsconfig.cache-lifecycle.json` for the CommonJS cache runtime. `npm start` verifies
 the manifest again before native `next start`. A failed or modified build cannot

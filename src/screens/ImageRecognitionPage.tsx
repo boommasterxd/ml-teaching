@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Camera } from '@/components/icons/camera';
 import { Users } from '@/components/icons/users';
 import { Zap } from '@/components/icons/zap';
@@ -34,9 +35,10 @@ const steps = [
 ];
 
 /** The complete image-learning journey stays build-rendered and independent of the workspace. */
-export default function ImageRecognitionPage() {
+export default function ImageRecognitionPage({ breadcrumbs }: { breadcrumbs?: ReactNode }) {
   return (
     <div className="landing-page image-chapter">
+      {breadcrumbs && <div className="landing-container">{breadcrumbs}</div>}
       <ImageLearningHero />
       <ImageTechniqueSection />
       <ImageAnimationSection />

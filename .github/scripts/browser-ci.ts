@@ -7,7 +7,13 @@ import type { JSONReport, JSONReportSuite, JSONReportTest } from '@playwright/te
 import type { CiPlan } from './plan-ci.ts';
 import { checkoutPlanInput, validatePlan } from './validate-ci.ts';
 
-const coreSpecs = ['test/e2e/security-headers.spec.ts', 'test/e2e/site.spec.ts'];
+const coreSpecs = [
+  'test/e2e/security-headers.spec.ts',
+  'test/e2e/site.spec.ts',
+  'test/e2e/initial-content.spec.ts',
+  'test/e2e/intent-navigation.spec.ts',
+  'test/e2e/training-bfcache.spec.ts',
+];
 
 interface BrowserSlot {
   index: number;

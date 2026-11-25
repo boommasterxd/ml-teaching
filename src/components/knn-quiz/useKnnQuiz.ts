@@ -12,6 +12,7 @@ function initialState(k = 3) {
     k,
     selected: [] as string[],
     error: { id: null as string | null, attempt: 0 },
+    classMistakes: 0,
     result: null as 'correct' | 'incorrect' | null,
     announcement: '',
   };
@@ -66,12 +67,14 @@ export function useKnnQuiz() {
       if (current.selected.length !== current.k || current.result === 'correct') return current;
       const votes = countVotes(current.round.ranked.slice(0, current.k));
       const correct = signal === winningSignal(votes);
+      const classMistakes = correct ? current.classMistakes : current.classMistakes + 1;
       return {
         ...current,
+        classMistakes,
         result: correct ? 'correct' : 'incorrect',
         announcement: correct
           ? voteSentence(votes, current.k, signal)
-          : 'Zähle noch einmal, wie viele Stimmen Hund und Katze bekommen.',
+          : `Fehlversuch ${classMistakes}: Zähle noch einmal, wie viele Stimmen Hund und Katze bekommen.`,
       };
     });
   };

@@ -197,7 +197,7 @@ maintained documentation change.
 | [`docs/decisions/hostinger-mail-retention.md`](docs/decisions/hostinger-mail-retention.md)           | Records mailbox recovery and the accepted backup gap.           |
 | [`docs/decisions/inline-navigation-feedback.md`](docs/decisions/inline-navigation-feedback.md)       | Records the scope and placement of navigation loading feedback. |
 | [`docs/decisions/performance-audits.md`](docs/decisions/performance-audits.md)                       | Explains why Lighthouse runs locally outside merge checks.      |
-| [`docs/decisions/public-repository-visibility.md`](docs/decisions/public-repository-visibility.md)   | Records accepted exposure of existing repository history.       |
+| [`docs/decisions/public-repository-visibility.md`](docs/decisions/public-repository-visibility.md)   | Records the decision to keep the repository public.             |
 | [`docs/decisions/pull-request-branch-retention.md`](docs/decisions/pull-request-branch-retention.md) | Records intentional retention of merged pull request branches.  |
 | [`docs/decisions/ssg-and-csp.md`](docs/decisions/ssg-and-csp.md)                                     | Records static rendering and guarded CSP integration.           |
 | [`docs/decisions/training-visual-accessibility.md`](docs/decisions/training-visual-accessibility.md) | Records accepted visual limitations of image training.          |

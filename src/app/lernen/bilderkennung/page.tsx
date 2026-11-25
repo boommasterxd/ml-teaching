@@ -1,4 +1,5 @@
 import JsonLd from '@/components/JsonLd';
+import LearningBreadcrumbs from '@/components/LearningBreadcrumbs';
 import ImageRecognitionPage from '@/screens/ImageRecognitionPage';
 import { learningPaths } from '@/lib/learning-paths';
 import { learningResourceId, pageMetadata, siteConfig, webApplicationId } from '@/lib/site';
@@ -26,7 +27,9 @@ export default function ImageLearningPage() {
   return (
     <>
       <JsonLd data={structuredData} />
-      <ImageRecognitionPage />
+      <ImageRecognitionPage
+        breadcrumbs={<LearningBreadcrumbs currentPath={learningPaths.images} />}
+      />
     </>
   );
 }

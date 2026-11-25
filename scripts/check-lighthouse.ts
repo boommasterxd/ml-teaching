@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import { setTimeout as wait } from 'node:timers/promises';
@@ -130,30 +130,49 @@ function reportScores(report: Result, categories: string[], profile: Profile, re
     )
   ) {
     console.error(`${label}: Lighthouse did not return valid scores for all requested categories.`);
-    process.exitCode = 1;
+    return false;
   } else if (typeof scores.performance === 'number' && scores.performance <= performanceThreshold) {
     console.error(`${label}: Performance must exceed ${performanceThreshold * 100} points.`, {
       lcpPhases: lcpPhases(report),
       longTasks: longTasks(report),
     });
-    process.exitCode = 1;
+    return false;
+  }
+  return true;
+}
+
+interface AuditOptions {
+  all: boolean;
+  runtime: LighthouseRuntime;
+  port: number;
+  outputDirectory?: string;
+}
+
+interface AuditRoute {
+  url: URL;
+  status: number;
+  directory: string;
+  categories: string[];
+}
+
+async function reportFailure(reportPath: string, label: string, error: unknown) {
+  console.error(`${label}: Lighthouse audit failed.`, error);
+  try {
+    await unlink(reportPath);
+  } catch (cleanupError) {
+    if (cleanupError instanceof Error && 'code' in cleanupError && cleanupError.code === 'ENOENT')
+      return;
+    console.error(`${label}: Could not remove report at ${reportPath}.`, cleanupError);
   }
 }
 
-async function audit(
-  { path, status }: ReturnType<typeof auditTargets>[number],
-  { all, runtime, port }: { all: boolean; runtime: LighthouseRuntime; port: number },
+async function auditProfile(
+  { url, status, directory, categories }: AuditRoute,
+  profile: Profile,
+  { runtime, port }: AuditOptions,
 ) {
-  const url = new URL(path, origin);
-  await verifyDocument(url, status);
-  const directory = all
-    ? resolve(reportDirectory, 'routes', path.slice(1) || '_home')
-    : reportDirectory;
-  await mkdir(directory, { recursive: true });
-  const categories = all
-    ? ['performance']
-    : ['performance', 'accessibility', 'best-practices', 'seo'];
-  for (const profile of profiles) {
+  const reportPath = resolve(directory, `${profile}.json`);
+  try {
     const { stdout } = await execute(
       process.execPath,
       [
@@ -171,33 +190,75 @@ async function audit(
     );
     const report = JSON.parse(stdout) as Result;
     verifyReport(report, url, profile, runtime.version);
-    const reportPath = resolve(directory, `${profile}.json`);
     await writeFile(reportPath, stdout);
-    reportScores(report, categories, profile, reportPath);
+    return reportScores(report, categories, profile, reportPath);
+  } catch (error) {
+    await reportFailure(reportPath, `${url.pathname} ${profile}`, error);
+    return false;
   }
 }
 
-const argumentsList = process.argv.slice(2);
-const flags = new Set(argumentsList);
-if (
-  flags.size !== argumentsList.length ||
-  argumentsList.some((flag) => !['--all', '--locked'].includes(flag))
-) {
-  throw new Error('Usage: npm run test:lighthouse -- [--all] [--locked]');
-}
-const all = flags.has('--all');
-const runtime = await resolveLighthouse({ lockedFallback: flags.has('--locked') });
-console.log('Lighthouse', runtime);
-const browser = await chromium.launch({
-  headless: true,
-  args: ['--enable-automation', '--remote-debugging-port=0'],
-});
-try {
-  console.log('Chromium', browser.version());
-  const port = await debuggingPort(browser);
-  for (const target of auditTargets(all)) {
-    await audit(target, { all, runtime, port });
+async function auditRoute(route: AuditRoute, options: AuditOptions) {
+  try {
+    await verifyDocument(route.url, route.status);
+    await mkdir(route.directory, { recursive: true });
+  } catch (error) {
+    for (const profile of profiles) {
+      await reportFailure(
+        resolve(route.directory, `${profile}.json`),
+        `${route.url.pathname} ${profile}`,
+        error,
+      );
+    }
+    return false;
   }
-} finally {
-  await browser.close();
+
+  let passed = true;
+  for (const profile of profiles) {
+    if (!(await auditProfile(route, profile, options))) passed = false;
+  }
+  return passed;
 }
+
+export async function runAudits(options: AuditOptions) {
+  const { all, outputDirectory = reportDirectory } = options;
+  const categories = all
+    ? ['performance']
+    : ['performance', 'accessibility', 'best-practices', 'seo'];
+  let passed = true;
+  for (const { path, status } of auditTargets(all)) {
+    const url = new URL(path, origin);
+    const directory = all
+      ? resolve(outputDirectory, 'routes', path.slice(1) || '_home')
+      : outputDirectory;
+    if (!(await auditRoute({ url, status, directory, categories }, options))) passed = false;
+  }
+  return passed;
+}
+
+async function main() {
+  const argumentsList = process.argv.slice(2);
+  const flags = new Set(argumentsList);
+  if (
+    flags.size !== argumentsList.length ||
+    argumentsList.some((flag) => !['--all', '--locked'].includes(flag))
+  ) {
+    throw new Error('Usage: npm run test:lighthouse -- [--all] [--locked]');
+  }
+  const all = flags.has('--all');
+  const runtime = await resolveLighthouse({ lockedFallback: flags.has('--locked') });
+  console.log('Lighthouse', runtime);
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--enable-automation', '--remote-debugging-port=0'],
+  });
+  try {
+    console.log('Chromium', browser.version());
+    const port = await debuggingPort(browser);
+    if (!(await runAudits({ all, runtime, port }))) process.exitCode = 1;
+  } finally {
+    await browser.close();
+  }
+}
+
+if (import.meta.main) await main();

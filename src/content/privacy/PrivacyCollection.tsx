@@ -94,9 +94,12 @@ export const PrivacyCollection = (
     <p>
       Nach Googles Datenschutzerklärung ist Google Ireland Limited, Gordon House, Barrow Street,
       Dublin 4, Irland, für die Google-Dienste bei Nutzerinnen und Nutzern im Europäischen
-      Wirtschaftsraum verantwortlich. Kaggle Inc., 1600 Amphitheatre Parkway, Mountain View, CA
-      94043, USA, betreibt Kaggle und verarbeitet die Verbindungsdaten in eigener Verantwortlichkeit
-      zur Bereitstellung und Absicherung des Dienstes.
+      Wirtschaftsraum verantwortlich. Beim Abruf über seinen Modelldienst verarbeitet Google die
+      Verbindungsdaten in eigener Verantwortlichkeit, um den Download zu ermöglichen. Google nennt
+      für die Verarbeitung von IP-Adressen außerdem den Schutz seiner Dienste vor Missbrauch. Kaggle
+      Inc., 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA, betreibt Kaggle und verarbeitet
+      die Verbindungsdaten in eigener Verantwortlichkeit zur Bereitstellung und Absicherung des
+      Dienstes.
     </p>
     <h4>Bildtraining auf Ihrem Gerät</h4>
     <p>

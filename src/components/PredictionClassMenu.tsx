@@ -1,7 +1,7 @@
 'use client';
 
 import type { ComponentType } from 'react';
-import type { ClassMarker } from './PredictionDiagram';
+import type { ClassMarker } from './prediction-class-markers';
 import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
