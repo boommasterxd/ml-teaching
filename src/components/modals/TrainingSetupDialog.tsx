@@ -221,7 +221,7 @@ export default function TrainingSetupDialog({
     >
       <ModalContent className="@container/training-setup max-w-xl [--dialog-padding:1rem] sm:[--dialog-padding:1.5rem]">
         {step && (
-          <SetupStepTransition step={step}>
+          <SetupStepTransition step={step} animateHeight={step !== 'camera' || !cameraError}>
             {step === 'consent' && (
               <ConsentStep
                 declineAction={declineAction}

@@ -51,7 +51,7 @@ export default function TrainingGalleryFrame({
       }
       className={cn(
         '@container/gallery flex h-58 min-w-0 flex-col gap-1 overflow-clip rounded-2xl bg-muted/60 px-1.5 pt-1.5 dark:bg-background/40',
-        '@xl/training-class:h-auto @xl/training-class:[contain:size]',
+        '@training-class-wide/training-class:h-auto @training-class-wide/training-class:[contain:size]',
         classColorClasses(color),
         className,
       )}

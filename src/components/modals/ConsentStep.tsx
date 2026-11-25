@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import Link from '../IntentLink';
 import Button from '../Button';
 import { Checkbox } from '../ui/checkbox';
-import { DialogBody, DialogFooter, DialogTitle } from '../ui/dialog';
+import { DialogBody, DialogDescription, DialogFooter, DialogTitle } from '../ui/dialog';
 import {
   Field,
   FieldDescription,
@@ -67,10 +67,14 @@ export default function ConsentStep({
       </DialogTitle>
 
       <DialogBody className="py-0.5">
+        <DialogDescription id="consent-modal-desc" className="mb-2">
+          Du kannst deine Einwilligung während der Einrichtung und in den Einstellungen zum
+          Bildtraining widerrufen.
+        </DialogDescription>
         <FieldSet className="min-w-0">
           <FieldLegend className="sr-only">Einwilligungen</FieldLegend>
-          <FieldGroup className="gap-0 divide-y divide-border sm:rounded-2xl sm:border sm:border-border sm:bg-background/40 sm:px-5">
-            <Field orientation="horizontal" className="items-start gap-2.5 py-2 sm:gap-3 sm:py-4">
+          <FieldGroup className="gap-0 divide-y divide-border">
+            <Field orientation="horizontal" className="items-start gap-2.5 py-2 sm:gap-3 sm:py-3">
               <Checkbox
                 id="privacy-consent"
                 checked={privacyChecked}
@@ -90,7 +94,7 @@ export default function ConsentStep({
               </FieldLabel>
             </Field>
 
-            <Field orientation="horizontal" className="items-start gap-2.5 py-2 sm:gap-3 sm:py-4">
+            <Field orientation="horizontal" className="items-start gap-2.5 py-2 sm:gap-3 sm:py-3">
               <Checkbox
                 id="model-consent"
                 checked={modelChecked}
@@ -107,35 +111,33 @@ export default function ConsentStep({
                 </span>
               </FieldLabel>
             </Field>
-            <Field orientation="horizontal" className="items-start gap-2.5 py-2 sm:gap-3 sm:py-4">
+            <Field orientation="horizontal" className="items-start gap-2.5 py-2 sm:gap-3 sm:py-3">
               <Checkbox
                 id="remember-training-consent"
+                aria-labelledby="remember-training-consent-label"
                 aria-describedby="remember-training-consent-description"
                 checked={remember}
                 onCheckedChange={(checked) => setRemember(checked === true)}
                 className="mt-0.5 size-5"
               />
-              <div className="grid min-w-0 gap-1">
-                <FieldLabel htmlFor="remember-training-consent" className="font-normal">
+              <FieldLabel
+                htmlFor="remember-training-consent"
+                className="grid min-w-0 cursor-pointer gap-1 font-normal"
+              >
+                <span id="remember-training-consent-label">
                   Für 30 Minuten in diesem Tab merken
-                </FieldLabel>
-                <FieldDescription id="remember-training-consent-description">
+                </span>
+                <FieldDescription id="remember-training-consent-description" render={<span />}>
                   Deine Auswahl gilt bis zu 30 Minuten für weitere Trainingsstarts im selben Tab.
                   Ein laufendes Training kann über diese 30 Minuten hinaus weitergehen. Wenn du die
                   Website neu lädst oder verlässt, fragen wir beim nächsten Start erneut. Wenn du
                   die Kamera erlaubt hast und dein Browser sie weiterhin freigibt, kann sie bei
                   einem Start mit gemerkter Auswahl automatisch angehen.
                 </FieldDescription>
-              </div>
+              </FieldLabel>
             </Field>
           </FieldGroup>
         </FieldSet>
-
-        <FieldDescription id="consent-modal-desc" role="note" className="mt-3 sm:mt-6">
-          Auch ohne Zustimmung kannst du über Bilderkennung lesen. Du kannst deine Einwilligung
-          während der Einrichtung und in den Einstellungen zum Bildtraining widerrufen. Wenn der
-          Arbeitsbereich vorbereitet wird, wähle „Abbrechen“.
-        </FieldDescription>
       </DialogBody>
 
       <ConsentActions

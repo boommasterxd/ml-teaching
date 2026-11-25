@@ -192,7 +192,7 @@ export const PredictionLegend = memo(function PredictionLegend({
     <ul
       role="list"
       aria-label="Legende"
-      className="flex min-w-0 flex-wrap items-start justify-center gap-x-2 gap-y-1 text-xs leading-4 text-muted-foreground"
+      className="flex min-w-0 flex-wrap items-start justify-center gap-1 text-xs leading-4 text-muted-foreground sm:gap-x-2"
     >
       <li className="inline-flex items-center gap-1">
         <CameraLegendMarker />

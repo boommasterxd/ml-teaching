@@ -371,6 +371,12 @@ do not install a second UI foundation.
 
 ## Layout and interaction
 
+Learning pages, the image-training workspace and legal pages share the centered
+content width and responsive side padding. Training step transitions use that
+inset to move the outgoing panel past the viewport edge. The legal layout groups
+its navigation and document inside the shared width, with a separate reading
+measure for the text.
+
 The image-training workspace mounts one step at a time on the same route. It starts
 with the class collection, whose Cards share equal-height rows in two columns from
 Tailwind's `lg` breakpoint and stack on narrower screens. From `lg`, the Training
@@ -382,7 +388,7 @@ Prediction fills the workspace width at every breakpoint. Switching steps preser
 class data and the current model and stops any running prediction when leaving its step.
 Each class reserves space for its gallery toolbar and scrollable
 thumbnails from the empty state onward. With the camera enabled, the gallery and the capture
-surface share one row and height from 36 rem of class-card width. Narrower cards stack the
+surface share one row and height from 35 rem of class-card width. Narrower cards stack the
 two surfaces. The stacked gallery keeps room for two full rows of thumbnails at phone
 widths. The capture toggle spans the width below the video. A click, tap or keyboard
 activation toggles capture. Holding the touch button records until release or gesture
@@ -1029,8 +1035,11 @@ Each step change focuses the incoming heading. The outgoing panel becomes inert
 as it slides out of the layout. The incoming Animate UI Effect uses a short
 horizontal offset for the step change.
 The official Animate UI AutoHeight follows the active panel and can be interrupted
-by the next step. The initial panel has its natural height in static HTML without
-inline styles. CSS clips the transition and reserves room for focus outlines.
+by the next step. When the camera step shows an error or retries the request,
+the shared AnimatedFeedback owns the alert's fade and height. The setup frame
+follows its content's natural height so the footer moves with the dialog. The
+initial panel has its natural height in static HTML without inline styles. CSS
+clips the transition and reserves room for focus outlines.
 Reduced motion skips the slide and height animation.
 Later-opening product dialogs use Animate UI's portal for entry and exit. Closing
 releases modality and restores focus to the appropriate workspace control while

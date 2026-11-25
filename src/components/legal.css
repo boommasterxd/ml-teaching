@@ -5,10 +5,7 @@
   display: grid;
   align-items: start;
   gap: 2rem;
-  width: 100%;
-  max-width: 76rem;
-  margin-inline: auto;
-  padding: var(--legal-block-padding) clamp(1.25rem, 5vw, 4rem) 5rem;
+  padding-block: var(--legal-block-padding) 5rem;
 }
 .legal-sidebar {
   display: flex;
@@ -150,7 +147,6 @@
   .legal-layout {
     --legal-block-padding: 1.25rem;
     row-gap: 1rem;
-    padding-inline: clamp(0.85rem, 3vw, 2rem);
   }
   .document-title {
     font-size: clamp(1.5rem, 7vw, 2rem);
@@ -169,7 +165,7 @@
     overflow-wrap: anywhere;
   }
   .legal-mobile-navigation > :is([role='status'], [role='alert']) {
-    max-width: calc(100vw - 2 * clamp(0.85rem, 3vw, 2rem));
+    max-width: calc(100vw - 2 * var(--page-content-padding));
   }
 }
 @variant lg {

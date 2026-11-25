@@ -11,7 +11,7 @@ import {
 import { learningPaths } from '../../src/lib/learning-paths';
 import { headerLegalLinks } from '../../src/content/site-navigation';
 import { routeSyntheticModel } from './synthetic-model';
-import { grantModelConsent } from './training-keyboard';
+import { expectRememberConsentToggle, grantModelConsent } from './training-keyboard';
 import { expectPublicMain, expectReadable, expectReadableLink } from './initial-content-checks';
 
 async function expectPublicShell(page: Page, mobile = false) {
@@ -329,17 +329,12 @@ for (const [width, colorScheme] of [
       await expect(model).toHaveText(
         'Ich stimme zu, dass mein Browser das KI-Modell lädt. Google und Kaggle erhalten dabei meine IP-Adresse.',
       );
-      await expectReadable(dialog.getByRole('note'));
-      await expect(dialog.getByRole('note')).toContainText(
-        'Auch ohne Zustimmung kannst du über Bilderkennung lesen',
-      );
+      const withdrawalNotice =
+        'Du kannst deine Einwilligung während der Einrichtung und in den Einstellungen zum Bildtraining widerrufen.';
+      await expectReadable(dialog.getByText(withdrawalNotice, { exact: true }));
+      await expect(dialog).toHaveAccessibleDescription(withdrawalNotice);
       const choices = dialog.getByRole('checkbox');
       await expect(choices).toHaveCount(3);
-      const remember = dialog.getByRole('checkbox', {
-        name: 'Für 30 Minuten in diesem Tab merken',
-        exact: true,
-      });
-      await expect(remember).toBeVisible();
       for (const choice of await choices.all()) {
         await expectReadable(choice);
         await expect(choice).not.toBeChecked();
@@ -382,7 +377,7 @@ for (const [width, colorScheme] of [
         if (index === 0) await expect(confirm).toBeDisabled();
         else await expect(confirm).toBeEnabled();
       }
-      await expect(remember).not.toBeChecked();
+      await expectRememberConsentToggle(dialog);
       await expectAccessible(page);
       expect(await transitions()).toEqual([]);
       if (width === 390) {

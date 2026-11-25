@@ -1,6 +1,7 @@
 'use client';
 
 import { cva, type VariantProps } from 'class-variance-authority';
+import { useRender } from '@base-ui/react/use-render';
 import { cn } from '@/lib/utils';
 
 import { Label } from '@/components/ui/label';
@@ -105,19 +106,21 @@ function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>)
   );
 }
 
-function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
-  return (
-    <p
-      data-slot="field-description"
-      className={cn(
+function FieldDescription({ className, render, ...props }: useRender.ComponentProps<'p'>) {
+  return useRender({
+    defaultTagName: 'p',
+    render,
+    state: { slot: 'field-description' },
+    props: {
+      className: cn(
         'text-sm leading-normal font-normal text-muted-foreground group-has-[[data-orientation=horizontal]]/field:text-balance',
         'last:mt-0 nth-last-2:-mt-1 [[data-variant=legend]+&]:-mt-1.5',
         '[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary',
         className,
-      )}
-      {...props}
-    />
-  );
+      ),
+      ...props,
+    },
+  });
 }
 
 function FieldError({ className, ...props }: React.ComponentProps<'div'>) {

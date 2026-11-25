@@ -66,9 +66,11 @@ function StepPanel({
 export default function SetupStepTransition({
   step,
   children,
+  animateHeight = true,
 }: {
   step: SetupStep;
   children: ReactNode;
+  animateHeight?: boolean;
 }) {
   const [initialStep] = useState(step);
   const previousStep = useRef(step);
@@ -90,8 +92,8 @@ export default function SetupStepTransition({
       ref={viewport}
       initial={{}}
       style={{ overflow: undefined }}
-      animate={hydrated && !motionPreference.reduce ? undefined : heightOverride}
-      transition={flowMotion.enter}
+      animate={hydrated && animateHeight && !motionPreference.reduce ? undefined : heightOverride}
+      transition={animateHeight ? flowMotion.enter : { duration: 0 }}
       className="-m-(--step-focus-space) min-w-0 overflow-clip [--step-focus-space:8px]"
     >
       <div className="p-(--step-focus-space)">
