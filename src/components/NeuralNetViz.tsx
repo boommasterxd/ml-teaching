@@ -5,6 +5,7 @@ import { Effect } from '@animate-ui/react/primitives/effects/effect';
 import { Shine } from '@animate-ui/react/primitives/effects/shine';
 import {
   motionTokens,
+  ReducedMotionConfig,
   ReducedMotionContext,
   useReducedMotionSetting,
   useShouldReduceMotion,
@@ -20,6 +21,11 @@ import FeatureEngine from './network/FeatureEngine';
 import KnnEngine from './network/KnnEngine';
 import { FLOW_HEAD_PATHS, FLOW_PATHS, NetworkScene } from './network/NetworkScene';
 import { NETWORK_EXAMPLES, type ExampleSignal } from './network/examples';
+
+const voteFillTransition = {
+  ...motionTokens.transition.fill,
+  duration: ANIMATION.STEP_DURATION_MS / 1000,
+};
 
 function SignalFlow({ active, sequence }: { active: boolean; sequence: number }) {
   const reduce = useShouldReduceMotion();
@@ -93,13 +99,17 @@ function ResultBars({ signal, ready }: { signal: ExampleSignal; ready: boolean }
                 {ready ? `${votes} ${votes === 1 ? 'Stimme' : 'Stimmen'}` : '—'}
               </Text>
             </div>
-            <Progress
-              value={value}
-              aria-label={`Nachbarstimmen ${NETWORK_EXAMPLES[type].name}`}
-              aria-valuetext={
-                ready ? `${votes} von ${KNN_NEIGHBOR_COUNT} Stimmen` : 'Noch keine Stimmen'
-              }
-            />
+            {/* Motion reads its reduction setting when the indicator mounts. */}
+            <ReducedMotionConfig remount>
+              <Progress
+                value={value}
+                indicatorTransition={voteFillTransition}
+                aria-label={`Nachbarstimmen ${NETWORK_EXAMPLES[type].name}`}
+                aria-valuetext={
+                  ready ? `${votes} von ${KNN_NEIGHBOR_COUNT} Stimmen` : 'Noch keine Stimmen'
+                }
+              />
+            </ReducedMotionConfig>
           </div>
         );
       })}

@@ -79,6 +79,20 @@ export async function grantModelConsent(page: Page, remember = false) {
   await (await prepareModelConsent(page, remember)).click();
 }
 
+export async function expectRememberConsentToggle(dialog: Locator) {
+  const remember = dialog.getByRole('checkbox', {
+    name: 'Für 30 Minuten in diesem Tab merken',
+    exact: true,
+  });
+  const description = /^Deine Auswahl gilt bis zu 30 Minuten/;
+  await expect(remember).not.toBeChecked();
+  await expect(remember).toHaveAccessibleDescription(description);
+  await dialog.getByText(description).click();
+  await expect(remember).toBeChecked();
+  await remember.press('Space');
+  await expect(remember).not.toBeChecked();
+}
+
 type ConsentRequestState = { submitted: boolean; earlyAttempts: number };
 
 export async function observeModelConsentRequests(page: Page, modelDirectory: string) {

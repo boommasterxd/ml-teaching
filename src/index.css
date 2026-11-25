@@ -15,6 +15,24 @@
 @import './content/landing/home-experiment-panels.css';
 @import './site-foundation.css';
 
+:root {
+  --page-content-max-width: 80rem;
+  --page-content-padding: clamp(1.25rem, 5vw, 4rem);
+}
+
+@theme {
+  --container-training-class-wide: 35rem;
+}
+
+.landing-container,
+.training-workspace,
+.legal-layout {
+  width: 100%;
+  max-width: var(--page-content-max-width);
+  margin-inline: auto;
+  padding-inline: var(--page-content-padding);
+}
+
 .eyebrow {
   display: block;
   font-size: 0.7rem;
