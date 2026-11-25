@@ -14,6 +14,10 @@ for (const [surface, width, path, button, label] of [
       const transitions = await observeViewTransitions(page);
       await page.goto(path);
       const header = page.getByRole('navigation', { name: 'Hauptnavigation' });
+      // The static header renders both layouts until the interactive menu mounts.
+      await expect(
+        header.locator(surface === 'mobile' ? '.header-menu-desktop' : '.header-menu-mobile'),
+      ).toHaveCount(0);
       const trigger = header.getByRole('button', { name: button, exact: true });
       const link = header.getByRole('link', { name: label, exact: true });
       await trigger.press('Enter');
@@ -42,6 +46,7 @@ for (const suffix of ['?from=menu', '#main-content']) {
   test(`the same path remains navigable when the URL ends in ${suffix}`, async ({ page }) => {
     await page.goto('/datenschutz' + suffix);
     const header = page.getByRole('navigation', { name: 'Hauptnavigation' });
+    await expect(header.locator('.header-menu-mobile')).toHaveCount(0);
     await header.getByRole('button', { name: 'Rechtliches', exact: true }).press('Enter');
     await header.getByRole('link', { name: 'Datenschutz', exact: true }).press('Enter');
     await expect(page).toHaveURL('/datenschutz');
@@ -51,6 +56,7 @@ for (const suffix of ['?from=menu', '#main-content']) {
 test('a modified click on the current header link opens a new tab', async ({ page, context }) => {
   await page.goto('/datenschutz');
   const header = page.getByRole('navigation', { name: 'Hauptnavigation' });
+  await expect(header.locator('.header-menu-mobile')).toHaveCount(0);
   await header.getByRole('button', { name: 'Rechtliches', exact: true }).press('Enter');
   const newTab = context.waitForEvent('page');
   await header.getByRole('link', { name: 'Datenschutz', exact: true }).click({

@@ -173,7 +173,7 @@ async function recoveryLink(protocol: Protocol, page: string, destination: Desti
   const menu = await findVisibleCenter(
     protocol,
     page,
-    `[...document.querySelectorAll('nav button')].find((button) => button.textContent.trim() === 'Lernlabor')`,
+    `!document.querySelector('.header-menu-mobile') && document.querySelector('nav button[data-header-control="Lernlabor"]')`,
   );
   await protocol.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...menu }, page);
   const selector = JSON.stringify(`nav a[href="${destination}"]`);
