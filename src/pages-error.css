@@ -6,9 +6,9 @@
 
 /* Include the shell's deferred menus and error artwork in the native 500 document. */
 @source './pages';
-@source './components/{AnimatedLink,Button,Footer,HeaderMenuPanel,IntentLink,LinkNavigationIndicator,PublicErrorScene,Site*,animated-*,button-variants}.{ts,tsx}';
+@source './components/{AnimatedLink,Button,Footer,HeaderMenu*,IntentLink,LinkNavigationIndicator,PublicErrorScene,Site*,animated-*,button-variants}.{ts,tsx}';
 @source './components/theme';
 @source './components/icons';
 @source './components/animate-ui/icons';
 @source './components/hero/{ErrorGlassArtwork,ErrorGlassFrame,GlassArtworkPlaceholder,StaticContourPoster,TopographyField}.tsx';
-@source './components/ui/{action-feedback,alert,badge,button,dropdown-menu*,entry-*,menu-highlight,navigation-menu,spinner,switch,typography}.tsx';
+@source './components/ui/{action-feedback,alert,badge,button,dropdown-menu*,entry-*,menu-highlight,navigation-menu*,spinner,switch,typography}.tsx';

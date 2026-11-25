@@ -5,6 +5,7 @@ import { useInView } from 'motion/react';
 import Button from '@/components/Button';
 import { RotateCcw } from '@/components/icons/rotate-ccw';
 import { Text } from '@/components/ui/typography';
+import { createRetryableLoader } from '@/lib/create-retryable-loader';
 import {
   KnnQuizChoices,
   KnnQuizFigure,
@@ -13,14 +14,7 @@ import {
   KnnQuizRestart,
 } from './KnnQuizLayout';
 
-let pending: Promise<typeof import('./KnnQuiz')> | undefined;
-function prepareQuiz() {
-  pending ??= import('./KnnQuiz').catch((error: unknown) => {
-    pending = undefined;
-    throw error;
-  });
-  return pending;
-}
+const prepareQuiz = createRetryableLoader(() => import('./KnnQuiz'));
 
 export default function DeferredKnnQuiz() {
   const area = useRef<HTMLDivElement>(null);

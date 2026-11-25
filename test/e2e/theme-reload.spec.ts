@@ -83,3 +83,21 @@ test('the native error document restores a remembered theme without changing the
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expectCanonicalFavicon(page);
 });
+
+test('the appearance menu reuses the module loaded by the navigation', async ({ page }) => {
+  await page.goto('/lernen');
+  await expect(page.locator('.header-menu-mobile')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Lernlabor', exact: true }).press('Enter');
+  await expect(page.getByRole('link', { name: 'Lernlabor-Übersicht', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  const scripts = '**/_next/static/chunks/*.js';
+  await page.route(scripts, (route) => route.abort('failed'));
+  try {
+    await page.getByRole('button', { name: 'Darstellung einstellen' }).press('ArrowUp');
+    const menu = page.getByRole('menu', { name: 'Darstellung einstellen' });
+    await expect(menu.getByRole('menuitemcheckbox', { name: 'Auswahl merken' })).toBeFocused();
+  } finally {
+    await page.unroute(scripts);
+  }
+});

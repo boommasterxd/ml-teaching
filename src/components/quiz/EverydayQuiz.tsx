@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
+import { createRetryableLoader } from '@/lib/create-retryable-loader';
 import {
   QUIZ_CORRECT_COUNT,
   INITIAL_QUIZ_ROUND,
@@ -16,15 +17,7 @@ import { EntryReveal } from '@/components/ui/entry-reveal';
 import QuizChoice from './QuizChoice';
 
 type Feedback = typeof import('./quiz-feedback');
-let feedbackPromise: Promise<Feedback> | undefined;
-
-function prepareFeedback() {
-  feedbackPromise ??= import('./quiz-feedback').catch((error: unknown) => {
-    feedbackPromise = undefined;
-    throw error;
-  });
-  return feedbackPromise;
-}
+const prepareFeedback = createRetryableLoader(() => import('./quiz-feedback'));
 
 function useQuizFeedback() {
   const [feedback, setFeedback] = useState<Feedback | null>(null);

@@ -310,7 +310,7 @@ const touchOptions = {
 test.describe('touch gallery', () => {
   test.use(touchOptions);
 
-  test('holding a thumbnail selects it once and leaves short taps available', async ({
+  test('a held thumbnail selects only on release and leaves short taps available', async ({
     page,
     baseURL,
   }) => {
@@ -324,13 +324,26 @@ test.describe('touch gallery', () => {
     const thumbnail = gallery.getByRole('button', { name: 'Bild 1 vergrößern', exact: true });
     await thumbnail.scrollIntoViewIfNeeded();
     await thumbnail.tap({ trial: true });
-    const release = await beginTouchHold(thumbnail);
-    const first = gallery.getByRole('button', { name: 'Bild 1 auswählen', exact: true });
+    await page.clock.install();
+    const cancel = await beginTouchHold(thumbnail);
     try {
-      await expect(first).toHaveAttribute('aria-pressed', 'true');
+      await page.clock.runFor(500);
+      await expect(thumbnail).toBeVisible();
+    } finally {
+      await cancel('touchCancel');
+    }
+    await expect(thumbnail).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    const release = await beginTouchHold(thumbnail);
+    try {
+      await page.clock.runFor(500);
+      await expect(thumbnail).toBeVisible();
     } finally {
       await release();
     }
+    const first = gallery.getByRole('button', { name: 'Bild 1 auswählen', exact: true });
+    await expect(first).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByText('1 ausgewählt', { exact: true })).toBeVisible();
     await expect(page.getByRole('dialog')).toHaveCount(0);
 

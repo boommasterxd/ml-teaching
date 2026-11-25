@@ -144,6 +144,20 @@ function useDocumentNavigationPending() {
   return [pending, setPending] as const;
 }
 
+function navigationAllowed(
+  event: Parameters<NonNullable<IntentLinkProps['onNavigate']>>[0],
+  onNavigate: IntentLinkProps['onNavigate'],
+) {
+  let cancelled = false;
+  onNavigate?.({
+    preventDefault() {
+      cancelled = true;
+      event.preventDefault();
+    },
+  });
+  return !cancelled;
+}
+
 /** Native navigation warms its route payload only after pointer, keyboard or touch intent. */
 export default function IntentLink({
   onClick,
@@ -174,16 +188,13 @@ export default function IntentLink({
   const navigate: IntentLinkProps['onNavigate'] = (event) => {
     const anchor = activatedLink.current;
     activatedLink.current = null;
-    let cancelled = false;
-    onNavigate?.({
-      preventDefault() {
-        cancelled = true;
-        event.preventDefault();
-      },
-    });
-    if (cancelled || !anchor) return;
+    if (!navigationAllowed(event, onNavigate) || !anchor) return;
     const target = new URL(anchor.href);
     const current = window.location;
+    if (target.href === current.href && !target.href.includes('#')) {
+      event.preventDefault();
+      return;
+    }
     if (!entry || !startsTraining(target, current)) {
       // Next's Pages Router Link does not expose useLinkStatus.
       if (document.getElementById('error-recovery-speculation')) setDocumentPending(true);

@@ -36,17 +36,23 @@ Preview and Production deployments require explicit authorization. GitHub Action
 runs the required pull request checks, including the production dependency audit.
 Vercel owns publication, and GitHub Actions has no deployment workflow or token.
 
-The project uses `node scripts/ignore-build.ts` as its Ignore Build Step. The script compares
-`VERCEL_GIT_PREVIOUS_SHA`, the last successful deployment for that project and
-branch, with `VERCEL_GIT_COMMIT_SHA`, which must match the checked-out `HEAD`.
-It skips only a verified, nonempty delta containing maintained Markdown, declared
-test files, explicitly listed CI files or changes confined to the allowlisted
-quality scripts in `package.json`. The exact CI paths include the GitHub dependency
-cache and its maintenance tooling. Runtime, build, dependency, engine and unknown
-changes build. Missing history, divergent ancestry, malformed input, an empty diff
-or any Git error also build. Git reads have a five-second timeout and a bounded
-output buffer. Comparing the entire deployment gap preserves runtime changes from
-skipped intermediate commits.
+The project uses `node scripts/ignore-build.ts` as its Ignore Build Step. The script
+compares `VERCEL_GIT_PREVIOUS_SHA`, the last successful deployment for that project
+and branch, with `VERCEL_GIT_COMMIT_SHA`, which must match the checked-out `HEAD`.
+It skips a build only when the verified, nonempty diff contains changes exclusively
+within these categories:
+
+- Markdown files anywhere under `docs/`, plus the root `README.md` and `AGENTS.md`.
+- `.ts`, `.tsx` and `.mjs` files under `test/unit/` or `test/e2e/`, plus `test/setup.ts`.
+- CI and tooling paths listed explicitly in the [build filter](../scripts/ignore-build.ts).
+- `package.json` changes confined to script names on the build filter's allowlist.
+
+A change to `SECURITY.md`, a non-Markdown file under `docs/`, or any other path
+outside the allowlist triggers a build, even in a mixed diff. Changes to runtime,
+build, dependency or engine settings also trigger a build. Missing history,
+divergent ancestry, malformed input, an empty diff or any Git error also build.
+Git reads have a five-second timeout and a bounded output buffer. Comparing the
+entire deployment gap preserves runtime changes from skipped intermediate commits.
 
 Keep the native Git checkout metadata available to the Ignore Build Step. Vercel
 already excludes local `.git` metadata from CLI uploads by default.

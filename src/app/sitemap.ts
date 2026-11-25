@@ -1,16 +1,11 @@
 import type { MetadataRoute } from 'next';
-import { siteConfig } from '@/lib/site';
-import { learningPaths } from '@/lib/learning-paths';
+import { publicDiscoverySections, publicDiscoveryUrl } from '@/content/public-discovery';
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [
-    '/',
-    learningPaths.hub,
-    learningPaths.images,
-    learningPaths.imagePractice,
-    '/impressum',
-    '/datenschutz',
-    '/barrierefreiheit',
-  ].map((path) => ({
-    url: `${siteConfig.url}${path === '/' ? '' : path}`,
-  }));
+  return publicDiscoverySections.flatMap(({ pages }) =>
+    pages.map(({ path }) => {
+      const url = publicDiscoveryUrl(path);
+      return { url: path === '/' ? url.origin : url.href };
+    }),
+  );
 }

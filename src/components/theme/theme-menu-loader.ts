@@ -1,10 +1,6 @@
-let pending: Promise<typeof import('./ThemeMenu')> | undefined;
+import { loadSiteMenus } from '../site-menu-loader';
 
-/** Intent and activation share one chunk request; a rejected load remains retryable. */
-export function loadThemeMenu() {
-  pending ??= import('./ThemeMenu').catch((error: unknown) => {
-    pending = undefined;
-    throw error;
-  });
-  return pending;
+export async function loadThemeMenu() {
+  const { ThemeMenu } = await loadSiteMenus();
+  return { ThemeMenu };
 }

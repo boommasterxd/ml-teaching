@@ -1,4 +1,10 @@
-import { expect, test, type APIResponse, type Page } from '@playwright/test';
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type APIResponse,
+  type Page,
+} from '@playwright/test';
 import {
   diagnostics,
   expectAccessible,
@@ -11,6 +17,8 @@ import {
   settleLandingReveals,
 } from './training-keyboard';
 import { learningPaths } from '../../src/lib/learning-paths';
+import { siteConfig } from '../../src/lib/site';
+import { expectPageTransitions } from './intent-navigation-checks';
 
 async function observeMenuShifts(page: Page) {
   await page.evaluate(() => {
@@ -263,6 +271,7 @@ test('the transparent home header lets the hero receive clicks and keeps its nav
   await expect(page.getByRole('heading', { name: 'Dein Lernlabor', exact: true })).toBeVisible();
   await expect(surface).toHaveCSS('opacity', '1');
   expect(await nav.evaluate((node, original) => node === original, initialNav)).toBe(true);
+  await expectPageTransitions(page, transitions, 'forward');
 
   await brand.press('Enter');
   await expect(page).toHaveURL('/');
@@ -271,11 +280,7 @@ test('the transparent home header lets the hero receive clicks and keeps its nav
   ).toBeVisible();
   await expect(surface).toHaveCSS('opacity', '0');
   expect(await nav.evaluate((node, original) => node === original, initialNav)).toBe(true);
-  await settleEntryAnimations(page);
-  expect(await transitions()).toEqual([
-    { root: false, outgoingPages: 1, incomingPages: 1, back: false },
-    { root: false, outgoingPages: 1, incomingPages: 1, back: true },
-  ]);
+  await expectPageTransitions(page, transitions, 'forward', 'back');
   expect(failures).toEqual([]);
 });
 
@@ -323,6 +328,37 @@ async function expectInlineScriptBlocked(page: Page) {
   const document = page.locator('html');
   await expect(document).toHaveAttribute('data-csp-probe-violations', '1');
   await expect(document).not.toHaveAttribute('data-injected');
+}
+
+async function expectDiscoveryTargets(request: APIRequestContext) {
+  const [sitemap, llms] = await Promise.all([
+    request.get('/sitemap.xml'),
+    request.get('/llms.txt'),
+  ]);
+  expect(sitemap.status()).toBe(200);
+  expect(llms.status()).toBe(200);
+  const [xml, markdown] = await Promise.all([sitemap.text(), llms.text()]);
+  const root = siteConfig.url;
+  const canonical = (href: string) => (href === `${root}/` ? root : href);
+  const sitemapTargets = Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g), ([, href]) =>
+    canonical(href),
+  ).sort();
+  const llmsTargets = Array.from(markdown.matchAll(/\[[^\]\n]+\]\(([^)\n]+)\)/g), ([, href]) =>
+    canonical(href),
+  ).sort();
+  const expected = [
+    root,
+    ...[
+      learningPaths.hub,
+      learningPaths.images,
+      learningPaths.imagePractice,
+      '/impressum',
+      '/datenschutz',
+      '/barrierefreiheit',
+    ].map((path) => root + path),
+  ].sort();
+  expect(sitemapTargets).toEqual(expected);
+  expect(llmsTargets).toEqual(sitemapTargets);
 }
 
 test('static documents preserve strict CSP and visible content', async ({ page, request }) => {
@@ -375,11 +411,7 @@ test('static documents preserve strict CSP and visible content', async ({ page, 
     await expectAccessible(page);
     if (path === learningPaths.qLearning) await expectQLearningPlaceholder(page);
   }
-  const sitemap = await request.get('/sitemap.xml');
-  expect(sitemap.status()).toBe(200);
-  const xml = await sitemap.text();
-  expect(xml).toContain(`${learningPaths.images}</loc>`);
-  expect(xml).not.toContain(`${learningPaths.qLearning}</loc>`);
+  await expectDiscoveryTargets(request);
   const missingPath = '/this-page-does-not-exist';
   const missing = await request.get(missingPath);
   expect(missing.status()).toBe(404);

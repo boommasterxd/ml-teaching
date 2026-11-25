@@ -203,13 +203,203 @@ describe('cache lifecycle', () => {
     expect(api.removed).toEqual([]);
   });
 
-  it('fails closed when the deletion budget is exceeded', () => {
+  it('preserves main caches when the branch advances during the PR recheck', () => {
     const api = new FixtureApi();
     generations(api);
-    api.caches = Array.from({ length: 101 }, (_, i) => cache(i + 10, `npm-cache-linux-old-${i}`));
-    api.caches.push(cache(2, receipt.key, 'refs/heads/main', true));
-    expect(() => runLifecycle(options(api))).toThrow(/budget exceeded/i);
+    api.caches.push(cache(3, 'pr-closed', 'refs/pull/3/merge'));
+    api.prs[3] = { state: 'closed', head: { sha: previousHead, ref: 'branch-3' } };
+    const read = api.read.bind(api);
+    let prReads = 0;
+    vi.spyOn(api, 'read').mockImplementation((path) => {
+      if (path.endsWith('/pulls/3') && ++prReads === 2) api.moveHead = true;
+      return read(path);
+    });
+
+    expect(runLifecycle(options(api))).toMatchObject({ deferred: 1, remainingCount: 2 });
+    expect(api.removed).toEqual([3]);
+  });
+
+  it('preserves main caches when a consumer starts during PR cache removal', () => {
+    const api = new FixtureApi();
+    generations(api);
+    api.caches.push(cache(3, 'pr-closed', 'refs/pull/3/merge'));
+    api.prs[3] = { state: 'closed', head: { sha: previousHead, ref: 'branch-3' } };
+    const remove = api.remove.bind(api);
+    vi.spyOn(api, 'remove').mockImplementation((id) => {
+      remove(id);
+      api.runs = [run({ id: 30, status: 'in_progress', name: 'CI' })];
+    });
+
+    expect(runLifecycle(options(api))).toMatchObject({ deferred: 1, activeRuns: 1 });
+    expect(api.removed).toEqual([3]);
+  });
+
+  it.each(['main advances', 'replacement disappears'])(
+    'stops after the first main group when %s',
+    (change) => {
+      const api = new FixtureApi();
+      const old = Array.from({ length: 21 }, (_, index) =>
+        cache(index + 10, `npm-cache-linux-old-${index}`),
+      );
+      api.caches = [...old, cache(2, receipt.key, 'refs/heads/main', true)];
+      const remove = api.remove.bind(api);
+      vi.spyOn(api, 'remove').mockImplementation((id) => {
+        remove(id);
+        if (id !== old[19].id) return;
+        if (change === 'main advances') api.moveHead = true;
+        else api.caches = api.caches.filter((entry) => entry.id !== 2);
+      });
+
+      expect(runLifecycle(options(api))).toMatchObject({ deferred: 1 });
+      expect(api.removed).toEqual(old.slice(0, 20).map(({ id }) => id));
+      expect(api.caches).toContain(old[20]);
+    },
+  );
+
+  it('preserves CodeQL caches if the replacement run attempt changes during PR cleanup', () => {
+    const api = new FixtureApi();
+    const opts = options(api, 'workflow_run');
+    opts.policy.codeqlWorkflows = [codeqlWorkflow];
+    api.triggering = run({ id: 20, ...codeqlWorkflow, event: 'dynamic' });
+    api.caches = [
+      cache(1, codeqlKey(previousHead)),
+      cache(2, codeqlKey(opts.sha), 'refs/heads/main', true),
+      cache(3, 'pr-closed', 'refs/pull/3/merge'),
+    ];
+    api.prs[3] = { state: 'closed', head: { sha: previousHead, ref: 'branch-3' } };
+    const remove = api.remove.bind(api);
+    vi.spyOn(api, 'remove').mockImplementation((id) => {
+      remove(id);
+      api.triggering.run_attempt += 1;
+    });
+
+    expect(runLifecycle(opts)).toMatchObject({ deferred: 1, remainingCount: 2 });
+    expect(api.removed).toEqual([3]);
+  });
+
+  it('drains a verified backlog in successive batches and keeps the replacement', () => {
+    const api = new FixtureApi();
+    const old = Array.from({ length: 101 }, (_, i) => cache(i + 10, `npm-cache-linux-old-${i}`));
+    const replacement = cache(2, receipt.key, 'refs/heads/main', true);
+    const unknown = cache(3, 'unknown-main');
+    api.caches = [...old, replacement, unknown];
+    const opts = options(api);
+
+    expect(runLifecycle(opts)).toMatchObject({ deferred: 1, remainingCount: 3 });
+    expect(api.removed).toEqual(old.slice(0, 100).map(({ id }) => id));
+    expect(runLifecycle({ ...opts, runNumber: 2 })).toMatchObject({
+      deferred: 0,
+      remainingCount: 2,
+    });
+    expect(api.removed).toEqual(old.map(({ id }) => id));
+    expect(api.caches).toEqual([replacement, unknown]);
+  });
+
+  it('fills the batch with verified candidates when an earlier cache was accessed again', () => {
+    const api = new FixtureApi();
+    const old = Array.from({ length: 101 }, (_, i) => cache(i + 10, `npm-cache-linux-old-${i}`));
+    const replacement = cache(2, receipt.key, 'refs/heads/main', true);
+    api.caches = [...old, replacement];
+    const list = api.list.bind(api);
+    let inventories = 0;
+    vi.spyOn(api, 'list').mockImplementation((path) => {
+      if (path.includes('/actions/caches?') && ++inventories === 2)
+        old[0].last_accessed_at = '2026-02-02T00:00:00Z';
+      return list(path);
+    });
+
+    expect(runLifecycle(options(api))).toMatchObject({ deferred: 1, remainingCount: 2 });
+    expect(api.removed).toEqual(old.slice(1).map(({ id }) => id));
+    expect(api.caches).toEqual([old[0], replacement]);
+  });
+
+  it('reaches later PR identities when the first window contains open or busy PRs', () => {
+    const api = new FixtureApi();
+    api.caches = Array.from({ length: 101 }, (_, index) => {
+      const number = index + 1;
+      api.prs[number] = {
+        state: number < 100 ? 'open' : 'closed',
+        head: { sha: previousHead, ref: `branch-${number}` },
+      };
+      return cache(number, `pr-${number}`, `refs/pull/${number}/merge`);
+    });
+    api.runs = [run({ id: 30, status: 'in_progress', head_branch: 'branch-100' })];
+    const read = vi.spyOn(api, 'read');
+    const opts = options(api, 'workflow_run');
+
+    expect(runLifecycle(opts)).toMatchObject({ deleted: [], unverifiedPullRequests: 1 });
+    expect(read.mock.calls.filter(([path]) => path.includes('/pulls/'))).toHaveLength(100);
+    expect(runLifecycle({ ...opts, runNumber: 2 })).toMatchObject({ unverifiedPullRequests: 100 });
+    expect(api.removed).toEqual([101]);
+    expect(api.caches.map(({ id }) => id)).toContain(100);
+  });
+
+  it('rechecks the triggering closed PR even when it falls outside the current window', () => {
+    const api = new FixtureApi();
+    api.caches = Array.from({ length: 101 }, (_, index) => {
+      const number = index + 1;
+      api.prs[number] = {
+        state: number === 101 ? 'closed' : 'open',
+        head: { sha: previousHead, ref: `branch-${number}` },
+      };
+      return cache(number, `pr-${number}`, `refs/pull/${number}/merge`);
+    });
+    const opts = options(api, 'pull_request_target');
+    opts.event = { action: 'closed', pull_request: { number: 101 } };
+
+    expect(runLifecycle(opts)).toMatchObject({ deferred: 0, unverifiedPullRequests: 1 });
+    expect(api.removed).toEqual([101]);
+  });
+
+  it('defers PR caches if the PR reopened or acquired an active run before deletion', () => {
+    const api = new FixtureApi();
+    const opts = options(api, 'workflow_run');
+    const pr = { state: 'closed', head: { sha: previousHead, ref: 'branch-1' } };
+    api.prs = { 1: pr, 2: { ...pr, head: { ...pr.head, ref: 'branch-2' } } };
+    api.caches = [
+      cache(1, 'pr-reopened', 'refs/pull/1/merge'),
+      cache(2, 'pr-now-busy', 'refs/pull/2/head'),
+    ];
+    const list = api.list.bind(api);
+    let inventories = 0;
+    vi.spyOn(api, 'list').mockImplementation((path) => {
+      if (path.includes('/actions/caches?') && ++inventories === 2) {
+        pr.state = 'open';
+        api.runs.push(run({ id: 30, status: 'in_progress', head_branch: 'branch-2' }));
+      }
+      return list(path);
+    });
+    expect(runLifecycle(opts)).toMatchObject({ deleted: [], deferred: 2 });
     expect(api.removed).toEqual([]);
+  });
+
+  it('continues other cleanup when the CodeQL proof window is full', () => {
+    const api = new FixtureApi();
+    generations(api);
+    const opts = options(api, 'workflow_run');
+    opts.policy.codeqlWorkflows = [codeqlWorkflow];
+    api.codeqlRuns = Array.from({ length: 26 }, (_, index) =>
+      run({
+        id: index + 30,
+        ...codeqlWorkflow,
+        event: 'dynamic',
+        conclusion: index === 0 ? 'success' : 'failure',
+      }),
+    );
+    const snapshots = api.codeqlRuns.map(({ id }) =>
+      cache(id, codeqlKey(opts.sha, id), 'refs/heads/main', true),
+    );
+    api.caches.push(cache(3, codeqlKey(previousHead)), ...snapshots);
+    const read = vi.spyOn(api, 'read');
+
+    expect(runLifecycle(opts)).toMatchObject({ unverifiedCodeqlRuns: 1 });
+    expect(read.mock.calls.filter(([path]) => /\/actions\/runs\/[3-5]\d$/.test(path))).toHaveLength(
+      25,
+    );
+    expect(api.removed).toEqual([1]);
+    expect(runLifecycle({ ...opts, runNumber: 2 })).toMatchObject({ unverifiedCodeqlRuns: 25 });
+    expect(api.removed).toEqual([1, 3]);
+    expect(api.caches.slice(1)).toEqual(snapshots);
   });
 
   it('recovers a trusted producer receipt despite a full page of newer unrelated main runs', () => {

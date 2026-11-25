@@ -175,7 +175,7 @@
   padding-inline: 1.5rem;
 }
 
-@media (width >= 64rem) {
+@variant lg {
   .image-chapter .landing-technique-layout,
   .image-tip-layout {
     grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);

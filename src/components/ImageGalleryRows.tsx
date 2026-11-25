@@ -26,15 +26,18 @@ const thumbnailHoldSlopPx = 10;
 type ThumbnailPointerEvent = PointerEvent<HTMLButtonElement>;
 
 function useThumbnailPress(onHold: () => void, onClick: () => void) {
-  const hold = useRef<{ pointerId: number; x: number; y: number; timer: number } | null>(null);
+  const hold = useRef<{ pointerId: number; x: number; y: number; startedAt: number } | null>(null);
   const suppressPointerClick = useRef(false);
-  useEffect(() => () => window.clearTimeout(hold.current?.timer), []);
+
+  const takeHold = (event: ThumbnailPointerEvent) => {
+    const press = hold.current;
+    if (press?.pointerId !== event.pointerId) return;
+    hold.current = null;
+    return press;
+  };
 
   const cancelHold = (event: ThumbnailPointerEvent) => {
-    const press = hold.current;
-    if (!press || press.pointerId !== event.pointerId) return;
-    window.clearTimeout(press.timer);
-    hold.current = null;
+    if (takeHold(event)) suppressPointerClick.current = true;
   };
 
   return {
@@ -47,11 +50,7 @@ function useThumbnailPress(onHold: () => void, onClick: () => void) {
         pointerId,
         x: clientX,
         y: clientY,
-        timer: window.setTimeout(() => {
-          if (document.hidden) return;
-          suppressPointerClick.current = true;
-          onHold();
-        }, thumbnailHoldDelayMs),
+        startedAt: performance.now(),
       };
     },
     onPointerMove: (event: ThumbnailPointerEvent) => {
@@ -59,10 +58,22 @@ function useThumbnailPress(onHold: () => void, onClick: () => void) {
       if (!press || press.pointerId !== event.pointerId) return;
       if (Math.hypot(event.clientX - press.x, event.clientY - press.y) <= thumbnailHoldSlopPx)
         return;
-      suppressPointerClick.current = true;
       cancelHold(event);
     },
-    onPointerUp: cancelHold,
+    onPointerUp: (event: ThumbnailPointerEvent) => {
+      const press = takeHold(event);
+      if (!press) return;
+      const { clientX, clientY, currentTarget } = event;
+      const releaseTarget = currentTarget.ownerDocument.elementFromPoint(clientX, clientY);
+      const withinSlop = Math.hypot(clientX - press.x, clientY - press.y) <= thumbnailHoldSlopPx;
+      if (document.hidden || !withinSlop || !currentTarget.contains(releaseTarget)) {
+        suppressPointerClick.current = true;
+        return;
+      }
+      if (performance.now() - press.startedAt < thumbnailHoldDelayMs) return;
+      suppressPointerClick.current = true;
+      onHold();
+    },
     onPointerCancel: cancelHold,
     onPointerLeave: cancelHold,
     onLostPointerCapture: cancelHold,

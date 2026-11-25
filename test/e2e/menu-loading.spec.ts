@@ -14,7 +14,6 @@ for (const [surface, width, path, button, label] of [
       const transitions = await observeViewTransitions(page);
       await page.goto(path);
       const header = page.getByRole('navigation', { name: 'Hauptnavigation' });
-      // The static header renders both layouts until the interactive menu mounts.
       await expect(
         header.locator(surface === 'mobile' ? '.header-menu-desktop' : '.header-menu-mobile'),
       ).toHaveCount(0);
@@ -52,6 +51,25 @@ for (const suffix of ['?from=menu', '#main-content']) {
     await expect(page).toHaveURL('/datenschutz');
   });
 }
+
+test('current legal links keep focus without refreshing the page', async ({ page }) => {
+  const transitions = await observeViewTransitions(page);
+  await page.goto('/datenschutz');
+  await expect(page.locator('.header-menu-mobile')).toHaveCount(0);
+  const requests: string[] = [];
+  page.on('request', (request) => {
+    if (request.isNavigationRequest() || request.headers().rsc === '1')
+      requests.push(request.url());
+  });
+  for (const name of ['Rechtliche Links', 'Informationsseiten']) {
+    const link = page.getByRole('navigation', { name }).getByRole('link', { name: 'Datenschutz' });
+    await link.focus();
+    await link.press('Enter');
+    await expect(link).toBeFocused();
+  }
+  await expectPageTransitions(page, transitions);
+  expect(requests).toEqual([]);
+});
 
 test('a modified click on the current header link opens a new tab', async ({ page, context }) => {
   await page.goto('/datenschutz');
@@ -189,14 +207,14 @@ test('the desktop menu loads on intent and Escape cancels a cold opening', async
     await expect(trigger).toHaveAttribute('aria-busy', 'true');
     await page.keyboard.press('ArrowDown');
     await expect(trigger).toBeFocused();
+    expect(await trigger.evaluate((node, original) => node === original, originalTrigger)).toBe(
+      true,
+    );
     lateScripts.resolve();
     await page.unrouteAll({ behavior: 'wait' });
     await expect(overview).toBeVisible();
     await expect(overview).toBeInViewport();
     await expect(overview).toBeFocused();
-    expect(await trigger.evaluate((node, original) => node === original, originalTrigger)).toBe(
-      true,
-    );
     await expectAccessible(page);
     expect(failures).toEqual([]);
   } finally {
@@ -207,7 +225,6 @@ test('the desktop menu loads on intent and Escape cancels a cold opening', async
 
 test('a failed navigation chunk can be retried from the open menu', async ({ page }) => {
   await page.goto('/lernen');
-  // The initial static layout includes both breakpoint variants until hydration.
   await expect(page.locator('.header-menu-mobile')).toHaveCount(0);
   const assets = '**/_next/static/chunks/*.js';
   await page.route(assets, (route) => route.abort('failed'));
@@ -413,20 +430,23 @@ test.describe('mobile header menu', () => {
     isMobile: true,
     reducedMotion: 'reduce',
   });
-  test('an outside tap dismisses the menu and a second tap reopens it', async ({ page }) => {
+  test('tap opens the prepared menu and an outside tap dismisses it', async ({ page }) => {
     const failures = diagnostics(page);
+    const prepared = page.waitForResponse(async (response) => {
+      if (!response.ok() || !new URL(response.url()).pathname.endsWith('.js')) return false;
+      return (await response.text()).includes('Auswahl merken');
+    });
     await page.goto('/');
+    await prepared;
     const trigger = page.getByRole('button', { name: 'Menü', exact: true });
     const overview = page.getByRole('link', { name: 'Lernlabor-Übersicht' });
     const bar = page.getByRole('navigation', { name: 'Hauptnavigation' });
     const { x, width } = (await bar.boundingBox())!;
     await trigger.tap();
     await expect(overview).toBeVisible();
-
     await page.touchscreen.tap(x / 2, 360);
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect(overview).toHaveCount(0);
-
     await trigger.tap();
     await expect(overview).toBeVisible();
     const panel = page.locator('.header-menu-panel-mobile');
@@ -439,7 +459,6 @@ test.describe('mobile header menu', () => {
     await expectAccessible(page);
     expect(failures).toEqual([]);
   });
-
   test('the appearance menu aligns with the mobile header edges and follows the breakpoint', async ({
     page,
   }) => {

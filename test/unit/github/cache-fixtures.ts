@@ -52,6 +52,7 @@ export class FixtureApi implements Api {
   caches: Cache[] = [];
   runs: Run[] = [];
   otherCompletedRuns: Run[] = [];
+  codeqlRuns: Run[] = [];
   producer = run();
   triggering = run({ id: 20, name: 'CI', path: '.github/workflows/ci.yml' });
   prs: Record<number, { state: string; head: { sha: string; ref: string } }> = {};
@@ -91,6 +92,8 @@ export class FixtureApi implements Api {
     }
     if (path.endsWith('/actions/runs/10')) return this.producer;
     if (path.endsWith('/actions/runs/20')) return this.triggering;
+    const codeqlRun = this.codeqlRuns.find(({ id }) => path.endsWith(`/actions/runs/${id}`));
+    if (codeqlRun) return codeqlRun;
     throw new Error(`Unexpected read: ${path}`);
   }
 
@@ -120,6 +123,7 @@ export function options(api: FixtureApi, eventName = 'push'): Options {
     eventName,
     event: eventName === 'workflow_run' ? { action: 'completed', workflow_run: { id: 20 } } : {},
     runId: 10,
+    runNumber: 1,
     ref: 'refs/heads/main',
     sha: head,
     workflow: 'Warm',

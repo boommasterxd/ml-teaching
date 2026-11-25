@@ -219,16 +219,16 @@ describe('training image gallery', () => {
     vi.useFakeTimers();
     try {
       fireEvent.pointerDown(thumbnail, touch);
-      fireEvent.pointerMove(thumbnail, { ...touch, clientY: 20 });
       act(() => vi.advanceTimersByTime(600));
+      fireEvent.pointerMove(thumbnail, { ...touch, clientY: 20 });
       fireEvent.pointerUp(thumbnail, touch);
       fireEvent.click(thumbnail, { detail: 1 });
       expect(screen.queryByText(/\d ausgewählt/)).toBeNull();
       expect(onImageClick).not.toHaveBeenCalled();
 
       fireEvent.pointerDown(thumbnail, touch);
-      fireEvent.pointerCancel(thumbnail, touch);
       act(() => vi.advanceTimersByTime(600));
+      fireEvent.pointerCancel(thumbnail, touch);
       expect(screen.queryByText(/\d ausgewählt/)).toBeNull();
 
       fireEvent.pointerDown(thumbnail, touch);
@@ -240,6 +240,49 @@ describe('training image gallery', () => {
     }
     fireEvent.click(screen.getByRole('button', { name: 'Bild 1 vergrößern' }));
     expect(onImageClick).toHaveBeenCalledExactlyOnceWith(images[1]);
+  });
+
+  it('commits a held selection only on release over a visible part of the thumbnail', async () => {
+    const onImageClick = vi.fn();
+    render(
+      <ImageGallery
+        label={label}
+        images={[makeImage('first')]}
+        color="#dc2626"
+        onImageClick={onImageClick}
+        onRemoveImages={vi.fn()}
+      />,
+    );
+    const thumbnail = await screen.findByRole('button', { name: 'Bild 1 vergrößern' });
+    const priorHitTest = Object.getOwnPropertyDescriptor(document, 'elementFromPoint');
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: (x: number) => (x < 80 ? thumbnail.querySelector('img') : document.body),
+    });
+    const touch = { isPrimary: true, pointerId: 1, pointerType: 'touch', clientX: 78, clientY: 40 };
+    vi.useFakeTimers({ toFake: ['performance'] });
+    try {
+      fireEvent.pointerDown(thumbnail, touch);
+      act(() => vi.advanceTimersByTime(600));
+      expect(screen.queryByText('1 ausgewählt')).toBeNull();
+      fireEvent.pointerUp(thumbnail, { ...touch, clientX: 82 });
+      fireEvent.click(thumbnail, { detail: 1 });
+      expect(screen.queryByText('1 ausgewählt')).toBeNull();
+      expect(onImageClick).not.toHaveBeenCalled();
+
+      fireEvent.pointerDown(thumbnail, touch);
+      act(() => vi.advanceTimersByTime(600));
+      fireEvent.pointerUp(thumbnail, touch);
+      fireEvent.click(thumbnail, { detail: 1 });
+      expect(screen.getByRole('button', { name: 'Bild 1 auswählen', pressed: true })).toBe(
+        thumbnail,
+      );
+      expect(onImageClick).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+      if (priorHitTest) Object.defineProperty(document, 'elementFromPoint', priorHitTest);
+      else Reflect.deleteProperty(document, 'elementFromPoint');
+    }
   });
 
   it('preserves the focused image across column changes and offscreen range updates', async () => {
