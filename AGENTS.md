@@ -189,7 +189,6 @@ maintained documentation change.
 | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | [`docs/architecture.md`](docs/architecture.md)                                                       | Describes route, component and browser ML boundaries.           |
 | [`docs/ci.md`](docs/ci.md)                                                                           | Explains protected PR planning, jobs and quality controls.      |
-| [`docs/decisions/admin-ruleset-bypass.md`](docs/decisions/admin-ruleset-bypass.md)                   | Records the intentional ruleset bypass for the owner.           |
 | [`docs/decisions/children-training-consent.md`](docs/decisions/children-training-consent.md)         | Explains the scoped Article 8 GDPR decision for image training. |
 | [`docs/decisions/discovery-bot-protection.md`](docs/decisions/discovery-bot-protection.md)           | Records the accepted challenge for scripted public requests.    |
 | [`docs/decisions/error-artwork-and-menus.md`](docs/decisions/error-artwork-and-menus.md)             | Records the shared playback and menu-loading decisions.         |
@@ -201,8 +200,6 @@ maintained documentation change.
 | [`docs/decisions/pull-request-branch-retention.md`](docs/decisions/pull-request-branch-retention.md) | Records intentional retention of merged pull request branches.  |
 | [`docs/decisions/ssg-and-csp.md`](docs/decisions/ssg-and-csp.md)                                     | Records static rendering and guarded CSP integration.           |
 | [`docs/decisions/training-visual-accessibility.md`](docs/decisions/training-visual-accessibility.md) | Records accepted visual limitations of image training.          |
-| [`docs/decisions/vercel-challenge-hsts.md`](docs/decisions/vercel-challenge-hsts.md)                 | Records the accepted HSTS gap on Vercel challenge responses.    |
-| [`docs/decisions/vercel-revalidation-hsts.md`](docs/decisions/vercel-revalidation-hsts.md)           | Records the accepted HSTS gap on homepage revalidation.         |
 | [`docs/deployment.md`](docs/deployment.md)                                                           | Defines the Vercel release workflow and publication boundaries. |
 | [`docs/design-system.md`](docs/design-system.md)                                                     | Defines shared UI, motion, accessibility and integration rules. |
 | [`docs/development.md`](docs/development.md)                                                         | Documents runtime, commands and local verification.             |
