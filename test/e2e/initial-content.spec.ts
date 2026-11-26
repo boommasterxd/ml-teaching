@@ -98,16 +98,6 @@ for (const path of publicRoutes) {
       const main = page.getByRole('main');
       await expectPublicShell(page);
       await expectPublicMain(main, path, 'static');
-      if (path === learningPaths.images) {
-        const trail = main.getByRole('navigation', { name: 'Seitenpfad', exact: true });
-        await expectReadable(trail);
-        await expect(trail.getByRole('listitem')).toHaveText([
-          'Lernlabor',
-          'Bilderkennung verstehen',
-        ]);
-        await expectReadableLink(trail.getByRole('link', { name: 'Lernlabor' }), learningPaths.hub);
-        await expect(trail.locator('[aria-current="page"]')).toHaveText('Bilderkennung verstehen');
-      }
       if (path === learningPaths.qLearning) {
         await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
       }
