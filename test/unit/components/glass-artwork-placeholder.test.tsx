@@ -1,17 +1,17 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import GlassArtworkPlaceholder from '@/components/hero/GlassArtworkPlaceholder';
 import { heroPosterImages } from '@/components/hero/poster-assets';
 import { installBrowserHost, restoreBrowserHost } from '../helpers/browser-host';
 
 const loadingStatus = { name: 'Grafik wird geladen' };
 
-function artwork(pending: boolean, fallback = false) {
+function artwork(loading: boolean, fallback = false) {
   return (
     <GlassArtworkPlaceholder
       sources={heroPosterImages}
       fallback={fallback}
-      pending={pending}
+      loading={loading}
       shaderFirst
     />
   );
@@ -24,40 +24,22 @@ function liveSources(container: HTMLElement) {
 }
 
 describe('glass artwork loading feedback', () => {
-  beforeEach(() => {
-    installBrowserHost();
-    vi.useFakeTimers();
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-    restoreBrowserHost();
-  });
+  beforeEach(installBrowserHost);
+  afterEach(restoreBrowserHost);
 
-  it('keeps the poster restricted to reduced motion when the first frame is prompt', () => {
-    const { container, rerender } = render(artwork(true));
-    const initialMedia = liveSources(container);
-    expect(initialMedia).toEqual([
+  it('restricts the poster to reduced motion before showing loading feedback', () => {
+    const { container } = render(artwork(false));
+    expect(liveSources(container)).toEqual([
       '(width < 48rem) and (prefers-reduced-motion: reduce)',
       '(width >= 48rem) and (prefers-reduced-motion: reduce)',
     ]);
-    act(() => vi.advanceTimersByTime(499));
     expect(screen.queryByRole('status', loadingStatus)).toBeNull();
-    expect(liveSources(container)).toEqual(initialMedia);
-
-    rerender(artwork(false));
-    act(() => vi.advanceTimersByTime(500));
-    expect(screen.queryByRole('status', loadingStatus)).toBeNull();
-    expect(liveSources(container)).toEqual(initialMedia);
   });
 
-  it('offers the poster at 500 ms and stops waiting visually after it decodes', async () => {
-    const { container, rerender } = render(artwork(true));
+  it('offers the poster during loading and hides the spinner after it decodes', async () => {
+    const { container, rerender } = render(artwork(false));
     const initialMedia = liveSources(container);
-    act(() => vi.advanceTimersByTime(499));
-    expect(screen.queryByRole('status', loadingStatus)).toBeNull();
-    expect(liveSources(container)).toEqual(initialMedia);
-
-    act(() => vi.advanceTimersByTime(1));
+    rerender(artwork(true));
     expect(screen.getByRole('status', loadingStatus)).toBeTruthy();
     expect(liveSources(container)).toEqual(['(width < 48rem)', '(width >= 48rem)']);
 
@@ -81,11 +63,9 @@ describe('glass artwork loading feedback', () => {
   });
 
   it('offers the poster without showing a spinner after an immediate failure', () => {
-    const { container, rerender } = render(artwork(true));
-    act(() => vi.advanceTimersByTime(100));
+    const { container, rerender } = render(artwork(false));
     rerender(artwork(false, true));
     expect(liveSources(container)).toEqual(['(width < 48rem)', '(width >= 48rem)']);
-    act(() => vi.advanceTimersByTime(500));
     expect(screen.queryByRole('status', loadingStatus)).toBeNull();
   });
 });

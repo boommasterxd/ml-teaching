@@ -183,7 +183,7 @@ describe('active glass field ownership', () => {
         DOMRect.fromRect({ width: 580, height: 550 }),
       );
       const { container } = await renderField(
-        <TopographyField homeStartup onUnavailable={vi.fn()} onRendered={vi.fn()} />,
+        <TopographyField reveal="waiting" onUnavailable={vi.fn()} onRendered={vi.fn()} />,
       );
       const canvas = container.querySelector('canvas')!;
       const tick = activeFrame();

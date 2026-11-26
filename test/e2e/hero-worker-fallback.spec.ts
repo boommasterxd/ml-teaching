@@ -21,6 +21,51 @@ async function holdFirstWorkerDraw(page: Page) {
   });
 }
 
+async function expectFirstWorkerDrawHeld(page: Page) {
+  await expect
+    .poll(async () => {
+      await page.clock.runFor(16);
+      return page.evaluate(() => Boolean((window as HeldHeroDraw).releaseHeroDraw));
+    })
+    .toBe(true);
+}
+
+test('a quick first shader frame fades in without showing the spinner', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await holdFirstWorkerDraw(page);
+  const session = await page.context().newCDPSession(page);
+  // The mocked timer does not control the compositor's animation clock.
+  await session.send('Animation.enable');
+  await session.send('Animation.setPlaybackRate', { playbackRate: 0.25 });
+  const start = Date.now();
+  await page.clock.install({ time: start });
+  await page.clock.pauseAt(start + 10_000);
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expectFirstWorkerDrawHeld(page);
+
+  const spinner = page.getByRole('status', { name: 'Grafik wird geladen' });
+  const surface = page.locator('#home-hero-art .hero-field-canvas > [aria-hidden="true"]');
+  await expect(surface).toHaveCSS('opacity', '0');
+  await page.clock.runFor(150);
+  await expect(spinner).toHaveCount(0);
+  await page.evaluate(() => (window as HeldHeroDraw).releaseHeroDraw?.());
+  await expect
+    .poll(
+      async () => {
+        await page.clock.runFor(16);
+        const opacity = await surface.evaluate((node) => Number(getComputedStyle(node).opacity));
+        return opacity > 0 && opacity < 1;
+      },
+      { intervals: [20, 35, 50] },
+    )
+    .toBe(true);
+  await session.send('Animation.setPlaybackRate', { playbackRate: 1 });
+  await session.detach();
+  await page.clock.resume();
+  await expect(surface).toHaveCSS('opacity', '1');
+  await expect(spinner).toHaveCount(0);
+});
+
 test('a stalled first shader frame shows the spinner, then the single decoded fallback', async ({
   page,
 }) => {
@@ -42,12 +87,7 @@ test('a stalled first shader frame shows the spinner, then the single decoded fa
   await page.clock.pauseAt(start + 10_000);
   try {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await expect
-      .poll(async () => {
-        await page.clock.runFor(16);
-        return page.evaluate(() => Boolean((window as HeldHeroDraw).releaseHeroDraw));
-      })
-      .toBe(true);
+    await expectFirstWorkerDrawHeld(page);
     const spinner = page.getByRole('status', { name: 'Grafik wird geladen' });
     const field = page.locator('.hero-field');
     const poster = page.locator('#home-hero-art picture img');

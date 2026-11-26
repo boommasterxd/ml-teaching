@@ -186,10 +186,13 @@ describe('decorative hero lifetime', () => {
     expect(screen.queryByRole('status', { name: 'Grafik wird geladen' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Animationen fortsetzen' }));
-    await advance(1_999);
+    await advance(499);
+    expect(screen.queryByRole('status', { name: 'Grafik wird geladen' })).toBeNull();
+    await advance(1);
+    expect(screen.getByRole('status', { name: 'Grafik wird geladen' })).toBeTruthy();
+    await advance(1_499);
     expect(container.querySelector('canvas')).not.toBeNull();
     expect(artwork()).toBe(poster);
-    expect(screen.getByRole('status', { name: 'Grafik wird geladen' })).toBeTruthy();
     await advance(1);
     expect(container.querySelector('canvas')).toBeNull();
     expect(artwork()).toBe(poster);

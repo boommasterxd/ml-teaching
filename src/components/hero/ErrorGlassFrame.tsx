@@ -6,13 +6,13 @@ export default function ErrorGlassFrame({
   sources,
   children,
   fallback = false,
-  pending = false,
+  loading = false,
   preloadMobile,
   ...props
 }: ComponentProps<'div'> & {
   sources: ContourSources;
   fallback?: boolean;
-  pending?: boolean;
+  loading?: boolean;
   preloadMobile?: boolean;
 }) {
   return (
@@ -21,7 +21,7 @@ export default function ErrorGlassFrame({
         <GlassArtworkPlaceholder
           sources={sources}
           fallback={fallback}
-          pending={pending}
+          loading={loading}
           preloadMobile={preloadMobile}
         />
         {children}

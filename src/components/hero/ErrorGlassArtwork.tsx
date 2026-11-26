@@ -38,7 +38,7 @@ function ErrorGlassScene({
     showPoster,
     reduce,
     rendered,
-    pending,
+    loading,
     onRendered,
     onUnavailable,
     prepare,
@@ -51,7 +51,7 @@ function ErrorGlassScene({
       <ErrorGlassFrame
         sources={sources}
         fallback={showPoster || (initialPoster && !rendered)}
-        pending={pending}
+        loading={loading}
         preloadMobile={preloadMobile}
         ref={artwork}
         data-enhanced={(available && rendered) || undefined}
