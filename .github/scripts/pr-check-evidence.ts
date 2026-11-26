@@ -6,13 +6,14 @@ import type { CiRevisions } from './plan-ci.ts';
 const sha = /^[a-f0-9]{40}$/;
 const maxCandidateRuns = 5;
 const lookupLimits = {
-  ci: { checks: 20, requests: 24 },
-  gitleaks: { checks: 5, requests: 9 },
+  ci: { checks: 41, requests: 47, duration: 10 * 60_000 },
+  gitleaks: { checks: 5, requests: 9, duration: 90_000 },
 } as const;
 const workflows = { ci: 'CI', gitleaks: 'gitleaks' } as const;
 const activeStatuses = new Set(['queued', 'requested', 'pending', 'in_progress']);
 type Workflow = keyof typeof workflows;
 type ReadEvidence = (path: string) => Promise<unknown>;
+type Proof = 'verified' | 'reused' | 'unverified';
 
 interface Run {
   id: number;
@@ -99,19 +100,24 @@ export async function hasCheckEvidence(
   }
 
   const identity = `${revisions.base} ${revisions.head} ${revisions.merge}`;
-  const { checks, requests } = lookupLimits[workflow];
+  const { checks, requests, duration } = lookupLimits[workflow];
+  const deadline = performance.now() + duration;
   let remainingRequests: number = requests;
   const boundedGet: ReadEvidence = (path) => {
-    if (remainingRequests === 0) throw new Error('Evidence lookup request limit reached.');
+    if (remainingRequests === 0 || performance.now() >= deadline) {
+      throw new Error('Evidence lookup budget exhausted.');
+    }
     remainingRequests--;
     return get(path);
   };
   try {
     for (let check = 0; check < checks; check++) {
       const result = await findCheckEvidence(request, identity, boundedGet);
+      const remaining = deadline - performance.now();
+      if (remaining <= 0) return false;
       if (result === 'verified') return true;
       if (result === 'missing' && check === 0) await wait(2000);
-      else if (result === 'active' && check + 1 < checks) await wait(15_000);
+      else if (result === 'active' && check + 1 < checks) await wait(Math.min(15_000, remaining));
       else return false;
     }
   } catch {
@@ -173,8 +179,8 @@ function classifyRun(run: Run, request: EvidenceRequest) {
   return matchesPullRequest(run, request) ? 'candidate' : 'unverified';
 }
 
-async function findCheckEvidence(request: EvidenceRequest, identity: string, get: ReadEvidence) {
-  const { workflow, revisions, pullRequest } = request;
+async function readCandidateRuns(request: EvidenceRequest, get: ReadEvidence) {
+  const { workflow, revisions } = request;
   const filters = `event=pull_request&head_sha=${revisions.head}&per_page=${maxCandidateRuns}`;
   const { workflow_runs: runs, total_count: count } = (await get(
     `workflows/${workflow}.yml/runs?${filters}`,
@@ -183,43 +189,93 @@ async function findCheckEvidence(request: EvidenceRequest, identity: string, get
     total_count: number;
   };
   if (!isCompleteRunPage(runs, count) || !runs.every((run) => matchesWorkflow(run, request))) {
-    return 'unverified';
+    return null;
   }
+  return [...runs].sort((left, right) => right.run_number - left.run_number);
+}
+
+function sameCandidate(left: Run, right: Run, request: EvidenceRequest) {
+  return (
+    left.id === right.id &&
+    left.run_number === right.run_number &&
+    left.run_attempt === right.run_attempt &&
+    left.workflow_id === right.workflow_id &&
+    left.status === right.status &&
+    left.conclusion === right.conclusion &&
+    left.display_title === right.display_title &&
+    classifyRun(left, request) === classifyRun(right, request)
+  );
+}
+
+async function findCheckEvidence(request: EvidenceRequest, identity: string, get: ReadEvidence) {
+  const { pullRequest } = request;
+  const candidates = await readCandidateRuns(request, get);
+  if (!candidates) return 'unverified';
 
   const codeRunName = `Check PR ${pullRequest} revisions ${identity}`;
   const metadataRunName = `Metadata PR ${pullRequest} revisions ${identity}`;
-  const candidates = [...runs].sort((left, right) => right.run_number - left.run_number);
 
   for (const run of candidates) {
     const disposition = classifyRun(run, request);
     if (disposition === 'skip') continue;
     if (disposition === 'unverified') return 'unverified';
     const isCodeRun = run.display_title === codeRunName;
-    if (isCodeRun && activeStatuses.has(run.status) && run.conclusion === null) return 'active';
+    // Code checks use a separate concurrency group, so even a later code run
+    // can make progress. Waiting on another metadata run can block its start.
+    if (isCodeRun && activeStatuses.has(run.status) && run.conclusion === null) {
+      return 'active';
+    }
     if (run.status !== 'completed' || run.conclusion !== 'success') return 'unverified';
     if (!isCodeRun && run.display_title !== metadataRunName) return 'unverified';
-    const marker = `${isCodeRun ? 'Verified' : 'Reused'} PR revisions ${identity}`;
-    if (!(await inspectRun(run, request, marker, get))) return 'unverified';
-    if (isCodeRun) return 'verified';
+    const proof = await inspectRun(run, request, identity, isCodeRun, get);
+    if (proof === 'unverified') return proof;
+    if (proof === 'verified') {
+      const current = await readCandidateRuns(request, get);
+      return current?.length === candidates.length &&
+        current.every((run, index) => sameCandidate(run, candidates[index], request))
+        ? 'verified'
+        : 'unverified';
+    }
   }
   return 'missing';
 }
 
-async function inspectRun(run: Run, request: EvidenceRequest, marker: string, get: ReadEvidence) {
+function jobProof(job: Job, identity: string, isCodeRun: boolean): Proof {
+  const markers = job.steps?.filter(
+    (step) => step.conclusion === 'success' && /^(Verified|Reused) PR revisions /.test(step.name),
+  );
+  if (markers?.length !== 1 || !isFresh(markers[0])) return 'unverified';
+  const [{ name }] = markers;
+  if (name === `Verified PR revisions ${identity}`) return 'verified';
+  if (!isCodeRun && name === `Reused PR revisions ${identity}`) return 'reused';
+  return 'unverified';
+}
+
+async function inspectRun(
+  run: Run,
+  request: EvidenceRequest,
+  identity: string,
+  isCodeRun: boolean,
+  get: ReadEvidence,
+): Promise<Proof> {
   const { jobs, total_count: count } = (await get(
     `runs/${run.id}/attempts/${run.run_attempt}/jobs?per_page=100`,
   )) as {
     jobs: Job[];
     total_count: number;
   };
-  if (!Array.isArray(jobs) || count !== jobs.length || jobs.length > 100) return false;
+  if (!Array.isArray(jobs) || count !== jobs.length || jobs.length > 100) return 'unverified';
   const required = jobs.filter((job) => job.name === workflows[request.workflow]);
   const job = required[0];
   if (required.length !== 1 || job?.status !== 'completed' || job.conclusion !== 'success') {
-    return false;
+    return 'unverified';
   }
-  const steps = job.steps?.filter((step) => step.conclusion === 'success') ?? [];
-  if (!steps.some((step) => step.name === marker && isFresh(step))) return false;
+  const proof = jobProof(job, identity, isCodeRun);
+  if (proof === 'unverified') return proof;
+  return (await isCurrentSuccessfulAttempt(run, request, get)) ? proof : 'unverified';
+}
+
+async function isCurrentSuccessfulAttempt(run: Run, request: EvidenceRequest, get: ReadEvidence) {
   const latest = (await get(`runs/${run.id}`)) as Run;
   return (
     latest.id === run.id &&

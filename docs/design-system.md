@@ -74,7 +74,7 @@ The previews use small, fixed SVGs and require no ML model or simulation.
 The homepage and learning hub share their topics and destinations through
 `src/content/learning-areas.ts`; route actions use the native intent links.
 The homepage and learning hub use `LearningPracticeAction` for both subjects.
-A pending exercise displays “Noch nicht verfügbar” as the visible name of a disabled button.
+A pending exercise displays “Coming Soon” as the visible name of a disabled button.
 On the homepage, both actions follow the question “Willst du es selbst ausprobieren?”.
 The reward board remains visible during the shared preview cycle.
 The hero's fragment link focuses the combined experiments section and uses smooth
@@ -130,7 +130,7 @@ Photographic inputs use these assets rather than animal glyphs; decorative SVG
 scenes embed the same style-free image through a fixed-size foreignObject.
 The image explanation keeps the original six-section learning journey below its
 hero, with technique before the explanatory animation and training steps. Its workspace
-lives on a separate practice route. The hub displays one inactive “Noch nicht verfügbar” action
+lives on a separate practice route. The hub displays one inactive “Coming Soon” action
 for Q-learning while its explanation and practice are pending.
 The shared Lucide Brain glyph defines the brand. Its stroke uses the local primary color.
 The SVG favicon and PNG Apple icon use the same glyph.
@@ -418,6 +418,8 @@ The lab overview precedes a single column of topics. Each topic lists its explan
 before its exercise. Section labels align with the leading edge of the Animate UI
 icons. A lightbulb marks each explanation. Exercises use icons for their respective activities.
 Link text starts in the next column and availability occupies the trailing column.
+The desktop learning panel grows to fit its labels and status badges. On narrow
+mobile panels, the status can move below the label to keep both readable.
 Enabled rows trigger their icon on hover, keyboard focus and press. The current
 page or section owns the red label and icon. A single Animate UI Highlight
 follows the pointer or keyboard focus in each menu and returns to the current item
@@ -795,9 +797,11 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   and desktop WebP posters in `src/assets/hero/` show the shader's resting pose.
   They preserve the alpha channel so the themed stage shows through the glass.
   Next.js generates responsive optimizer URLs for the homepage, 404, 500 and
-  in-app recovery posters. Below `md`, the initial markup requests the optimized
-  still even when motion is enabled. On wider screens the still is available for
-  reduced motion, disabled scripting or the playback fallback states below.
+  in-app recovery posters. The homepage tries the shader first at every viewport
+  size when scripting and motion are available. Reduced motion and disabled
+  scripting select a responsive still from the initial markup. Navigation intent
+  warms that image only under reduced motion, and Save-Data skips speculative
+  route and image preparation.
   Both themes use the same ruby glass material. The loop turns and the droplets
   drift with moving highlights at up to 30 frames per second during autonomous
   playback. Each droplet follows its own path with a visible gap from the loop.
@@ -814,11 +818,15 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   expires after 7.8 seconds of active playback, excluding pause and offscreen time.
   The artwork itself accepts Enter and Space and keeps
   the normal pointer cursor. The only separate control pauses or resumes playback.
-  The initial markup reserves the artwork area and preloads the matching still
-  below the shared medium breakpoint. The native 500 page emits this preload in
-  its document head. The same picture remains mounted when the first
-  successful draw takes over. The shared Spinner mounts after 500 ms of active
-  waiting. The first successful draw or the end of waiting removes it.
+  The initial markup reserves the artwork area, and the same picture remains
+  mounted when the first successful draw takes over. The static error pages
+  preload the matching still below the shared medium breakpoint. The native
+  500 page emits this preload in its document head. The App Router recovery
+  screen requests its still as soon as it renders.
+  After 500 ms of active waiting for the first frame, the shared Spinner mounts.
+  On the homepage this also requests the matching still. Once it decodes, the
+  still replaces the Spinner while the renderer continues. A first draw or
+  the end of waiting also clears the Spinner.
   Where parallel compilation is available, the renderer checks the readiness of
   both GPU programs on its frame loop.
   Visibility and intent share one renderer import promise. The module can load
@@ -831,10 +839,11 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   WebGL context with standard derivatives before importing its shader renderer.
   The caller keeps one draw in flight and coalesces pending resizes. Browsers
   without canvas transfer use the same context requirements on the main thread.
-  On wider screens, reduced motion, disabled scripting, a pause before the first
-  draw, renderer failure or expiry of the two-second active first-frame deadline
-  makes the poster available. Narrow screens reuse the poster already requested
-  for the initial paint.
+  A renderer failure or a pause before the first draw selects the still on the
+  homepage without waiting for the Spinner. The two-second active first-frame
+  deadline ends renderer startup and keeps the still available. On the static
+  error pages, narrow viewports reuse their preloaded still and wider viewports
+  request it for reduced motion, disabled scripting or those fallback states.
   Reduced motion, a hidden tab or a lost context unmounts the enhancement and
   disposes its renderer. If the light-impulse button has focus, its removal
   returns focus to the adjacent playback control, including when the control is disabled.

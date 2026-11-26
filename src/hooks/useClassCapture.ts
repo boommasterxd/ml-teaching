@@ -171,11 +171,15 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
   const uploadRef = useRef<UploadBatch | null>(null);
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { cls: current } = latest.current;
-    const selectedCount = event.target.files?.length ?? 0;
-    const files = Array.from(event.target.files ?? []).slice(
-      0,
-      ML.MAX_IMAGES_PER_CLASS - current.images.length,
-    );
+    const selectedFiles = event.target.files;
+    const selectedCount = selectedFiles?.length ?? 0;
+    const capacity = Math.max(0, ML.MAX_IMAGES_PER_CLASS - current.images.length);
+    const files = selectedFiles
+      ? Array.from(
+          { length: Math.min(selectedCount, capacity) },
+          (_, index) => selectedFiles[index],
+        )
+      : [];
     event.target.value = '';
     if (!selectedCount || !latest.current.actions.onUploadStart()) return;
     cancelUpload(uploadRef.current);

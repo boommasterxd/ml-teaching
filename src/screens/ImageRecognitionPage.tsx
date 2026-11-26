@@ -18,19 +18,19 @@ const steps = [
     number: '01',
     Icon: Camera,
     title: 'Bilder sammeln',
-    text: 'Lege Klassen an. Mache für jede Klasse Fotos oder wähle Bilder von deinem Gerät.',
+    text: 'Lege Klassen an und füge für jede Klasse Bilder hinzu: mit der Kamera oder per Upload.',
   },
   {
     number: '02',
     Icon: Users,
     title: 'Modell trainieren',
-    text: 'Starte das Training. Das Modell lernt aus deinen Bildern, die Klassen zu unterscheiden.',
+    text: 'Starte das Training. Das Modell lernt, deine Klassen anhand der Bildmerkmale zu unterscheiden.',
   },
   {
     number: '03',
     Icon: Zap,
     title: 'Ergebnis testen',
-    text: 'Halte einen Gegenstand vor die Kamera. Wird er falsch erkannt? Trainiere mit weiteren Bildern.',
+    text: 'Zeige der Kamera ein neues Bild. Bei Verwechslungen helfen zusätzliche Trainingsbilder.',
   },
 ];
 

@@ -1,5 +1,6 @@
 import { memo, useState, useEffect, useRef, useCallback, useMemo, type RefObject } from 'react';
 import { useInView } from 'motion/react';
+import { createRetryableLoader } from '@/lib/create-retryable-loader';
 import Button from './Button';
 import TrainingGalleryFrame from './TrainingGalleryFrame';
 import { Trash2 } from './icons/trash2';
@@ -28,17 +29,9 @@ interface ImageGalleryProps {
 
 type GalleryRowsComponent = typeof import('./ImageGalleryRows').default;
 
-let pendingRows: Promise<GalleryRowsComponent> | undefined;
-
-function loadGalleryRows() {
-  pendingRows ??= import('./ImageGalleryRows')
-    .then(({ default: Rows }) => Rows)
-    .catch((error: unknown) => {
-      pendingRows = undefined;
-      throw error;
-    });
-  return pendingRows;
-}
+const loadGalleryRows = createRetryableLoader(
+  async () => (await import('./ImageGalleryRows')).default,
+);
 
 /** Warm the same local chunk from file selection and capture controls. */
 export function prepareImageGallery() {

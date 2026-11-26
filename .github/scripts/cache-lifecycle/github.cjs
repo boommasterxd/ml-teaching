@@ -20,6 +20,8 @@ const cliFailures = new Map([
   ["ETIMEDOUT", "timeout"],
   ["ENOBUFS", "output limit exceeded"],
 ]);
+class InventoryCountDrift extends Error {}
+
 /** @typedef {"read metadata" | "list inventory" | "delete cache" | "download producer receipts"} Operation */
 /** @typedef {(operation: Operation, args: string[]) => string} Invoke */
 
@@ -50,23 +52,29 @@ function hasWorkflowRunFilters(endpoint) {
   return workflowRunFilters.some((filter) => query.has(filter));
 }
 
+/** @param {unknown} total @param {string} field @param {string} endpoint */
+function inventoryTotal(total, field, endpoint) {
+  const count = Number(total);
+  if (!Number.isSafeInteger(total) || count < 0)
+    throw new Error("GitHub list inventory failed (invalid total count)");
+  // Filtered workflow-run searches can report only the first 1,000 matches.
+  if (field === "workflow_runs" && count >= 1000 && hasWorkflowRunFilters(endpoint))
+    throw new Error("GitHub list inventory failed (workflow run search limit reached)");
+  return count;
+}
+
 /** @param {unknown} pages @param {string} field @param {string} endpoint */
 function completeInventory(pages, field, endpoint) {
   if (!Array.isArray(pages) || pages.length === 0 || pages.length > 50)
     throw new Error("GitHub list inventory failed (invalid page count)");
-  const total = object(pages[0]).total_count;
-  if (!Number.isSafeInteger(total) || Number(total) < 0)
-    throw new Error("GitHub list inventory failed (invalid total count)");
-  // Filtered workflow-run searches can report only the first 1,000 matches.
-  if (field === "workflow_runs" && Number(total) >= 1000 && hasWorkflowRunFilters(endpoint))
-    throw new Error("GitHub list inventory failed (workflow run search limit reached)");
-
+  const total = inventoryTotal(object(pages[0]).total_count, field, endpoint);
   const ids = new Set();
+  let countChanged = false;
   const rows = pages.flatMap((raw) => {
     const page = object(raw);
     const items = page[field];
-    if (page.total_count !== total || !Array.isArray(items))
-      throw new Error("GitHub list inventory failed (inconsistent page)");
+    if (!Array.isArray(items)) throw new Error("GitHub list inventory failed (invalid page)");
+    if (inventoryTotal(page.total_count, field, endpoint) !== total) countChanged = true;
     for (const item of items) {
       const id = identifier(object(item).id);
       if (ids.has(id)) throw new Error("GitHub list inventory failed (duplicate ID)");
@@ -74,7 +82,9 @@ function completeInventory(pages, field, endpoint) {
     }
     return items;
   });
-  if (rows.length !== total) throw new Error("GitHub list inventory failed (incomplete row count)");
+  if (countChanged || rows.length !== total) {
+    throw new InventoryCountDrift("GitHub list inventory failed (incomplete row count)");
+  }
   return rows;
 }
 
@@ -107,18 +117,26 @@ function createGhApi(repository, runCommand = runGh) {
     read: (endpoint) =>
       parseJson(request("read metadata", endpoint, ["--method", "GET"]), "read metadata"),
     list: (endpoint, field) => {
-      const output = request("list inventory", endpoint, [
-        "--method",
-        "GET",
-        "--paginate",
-        "--slurp",
-      ]);
-      return completeInventory(parseJson(output, "list inventory"), field, endpoint);
+      const readPages = () => {
+        const output = request("list inventory", endpoint, [
+          "--method",
+          "GET",
+          "--paginate",
+          "--slurp",
+        ]);
+        return completeInventory(parseJson(output, "list inventory"), field, endpoint);
+      };
+      try {
+        return readPages();
+      } catch (error) {
+        if (!(error instanceof InventoryCountDrift)) throw error;
+        return readPages();
+      }
     },
     remove: (id) => {
       request("delete cache", `${base}actions/caches/${identifier(id)}`, ["--method", "DELETE"]);
     },
-    readReceipts: (runId, attempt) => downloadReceipts(api, repository, runId, attempt, invoke),
+    readReceipts: (origin) => downloadReceipts(api, repository, origin, invoke),
   };
   return api;
 }
@@ -132,8 +150,21 @@ function receiptStorage(action, reason) {
   }
 }
 
-/** @param {import('./types').Api} api @param {string} repository @param {number} runId @param {number} attempt @param {Invoke} invoke */
-function downloadReceipts(api, repository, runId, attempt, invoke) {
+/** @param {Record<string, unknown>} artifact @param {import('./types').ReceiptOrigin} origin */
+function matchesReceiptOrigin(artifact, origin) {
+  const run = object(artifact.workflow_run);
+  return (
+    run.id === origin.runId &&
+    run.head_sha === origin.head &&
+    run.head_branch === origin.branch &&
+    run.repository_id === origin.repositoryId &&
+    run.head_repository_id === origin.repositoryId
+  );
+}
+
+/** @param {import('./types').Api} api @param {string} repository @param {import('./types').ReceiptOrigin} origin @param {Invoke} invoke */
+function downloadReceipts(api, repository, origin, invoke) {
+  const { runId, attempt } = origin;
   const name = `cache-lifecycle-receipts-${identifier(attempt)}`;
   const artifacts = api
     .list(
@@ -147,11 +178,15 @@ function downloadReceipts(api, repository, runId, attempt, invoke) {
     artifacts.length !== 1 ||
     typeof artifacts[0].expired !== "boolean" ||
     !Number.isSafeInteger(artifacts[0].size_in_bytes) ||
+    Number(artifacts[0].size_in_bytes) <= 0 ||
     Number(artifacts[0].size_in_bytes) > 131072
   ) {
     throw new Error("Invalid or ambiguous producer receipt artifact");
   }
   if (artifacts[0].expired) return [];
+  if (!matchesReceiptOrigin(artifacts[0], origin)) {
+    throw new Error("Untrusted producer receipt artifact origin");
+  }
   const directory = receiptStorage(
     () => fs.mkdtempSync(path.join(os.tmpdir(), "cache-lifecycle-receipts-")),
     "temporary directory unavailable",
@@ -169,8 +204,14 @@ function downloadReceipts(api, repository, runId, attempt, invoke) {
       repository,
     ]);
     const file = path.join(directory, "replacements.json");
-    const size = receiptStorage(() => fs.statSync(file).size, "receipt file unavailable");
-    if (size > 65536) throw new Error("Producer receipt exceeds size budget");
+    const readReceiptInfo = () => ({
+      entries: fs.readdirSync(directory),
+      info: fs.lstatSync(file),
+    });
+    const { entries, info } = receiptStorage(readReceiptInfo, "receipt file unavailable");
+    if (entries.length !== 1 || !info.isFile() || info.size > 65536) {
+      throw new Error("Invalid or oversized producer receipt file");
+    }
     const output = receiptStorage(() => fs.readFileSync(file, "utf8"), "receipt file unreadable");
     const value = parseJson(output, "download producer receipts");
     if (!Array.isArray(value) || value.length > 20) throw new Error("Invalid producer receipts");

@@ -5,6 +5,7 @@ import {
   observeViewTransitions,
   settleEntryAnimations,
 } from './browser-checks';
+import { waitForReflow, withReflowDiagnostics } from './reflow-checks';
 
 type PageBackFlow = { back: boolean; outgoingRight: boolean; incomingLeft: boolean };
 type PageBackObserver = typeof window & { observedBackFlow: Promise<PageBackFlow | null>[] };
@@ -59,7 +60,12 @@ test('the mobile information menu stays reachable when text size doubles', async
   });
   const sidebar = page.locator('.legal-sidebar');
   const trigger = sidebar.getByRole('button', { name: 'Informationen', exact: true });
-  await expect(trigger).toBeInViewport({ ratio: 1 });
+  await waitForReflow(page);
+  const expectCompleteTrigger = () =>
+    withReflowDiagnostics(trigger, async () => {
+      await expect(trigger).toBeInViewport({ ratio: 1 });
+    });
+  await expectCompleteTrigger();
   await trigger.click({ trial: true });
   await trigger.press('Enter');
 
@@ -67,7 +73,7 @@ test('the mobile information menu stays reachable when text size doubles', async
   await expect(menu.getByRole('menuitem', { name: 'Datenschutz' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(trigger).toBeFocused();
-  await expect(trigger).toBeInViewport({ ratio: 1 });
+  await expectCompleteTrigger();
   await page.keyboard.press('Enter');
   await menu.getByRole('menuitem', { name: 'Datenschutz' }).press('Enter');
   await expect(page).toHaveURL(/\/datenschutz$/);

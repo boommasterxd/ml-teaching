@@ -28,7 +28,7 @@ jobs:
   plan:
     name: Select checks
     runs-on: ubuntu-slim
-    timeout-minutes: 7
+    timeout-minutes: 15
     outputs:
       plan: ${{ steps.plan.outputs.plan }}
       quality: ${{ steps.plan.outputs.quality }}

@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ThemeToggler } from '@animate-ui/react/primitives/effects/theme-toggler';
+import { parse, type DefaultTreeAdapterTypes } from 'parse5';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
@@ -16,6 +17,7 @@ import { config, proxy } from '../../src/proxy.dev';
 import { ERROR_RECOVERY_SPECULATION_RULES } from '@/lib/error-recovery-speculation';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 import { ERROR_RECOVERY_STYLES, VIEW_TRANSITION_RESET } from '@/lib/view-transition-styles';
+import { withNativeDevelopmentServer } from './helpers/native-development-server';
 
 const defaults = { defaultConfig: { pageExtensions: ['tsx', 'ts', 'jsx', 'js'] } };
 const origin = 'http://localhost:3101';
@@ -24,9 +26,62 @@ function sourceHash(inline: string) {
   return `'sha256-${createHash('sha256').update(inline).digest('base64')}'`;
 }
 
+function documentElements(node: DefaultTreeAdapterTypes.Node): DefaultTreeAdapterTypes.Element[] {
+  const descendants = 'childNodes' in node ? node.childNodes.flatMap(documentElements) : [];
+  return 'tagName' in node ? [node, ...descendants] : descendants;
+}
+
+function attribute(element: DefaultTreeAdapterTypes.Element, name: string) {
+  return element.attrs.find((entry) => entry.name === name)?.value;
+}
+
+async function expectNativeDocument(origin: string, signal: AbortSignal) {
+  const response = await fetch(`${origin}/lernen`, { redirect: 'error', signal });
+  expect(response.status).toBe(200);
+  expect(response.headers.get('content-type')).toContain('text/html');
+  const policy = response.headers.get('content-security-policy-report-only');
+  expect(policy).toContain("frame-ancestors 'none'");
+  expect(response.headers.has('content-security-policy')).toBe(false);
+  for (const header of ['cache-control', 'cdn-cache-control', 'vercel-cdn-cache-control']) {
+    expect(response.headers.get(header)?.split(/,\s*/)).toContain('no-store');
+  }
+  const nonce = policy?.match(/'nonce-([A-Za-z0-9+/]{24})'/)?.[1];
+  expect(nonce).toBeDefined();
+
+  const elements = documentElements(parse(await response.text()));
+  const metaPolicies = elements.filter(
+    (node) =>
+      node.tagName === 'meta' &&
+      attribute(node, 'http-equiv')?.toLowerCase().startsWith('content-security-policy'),
+  );
+  expect(metaPolicies).toHaveLength(0);
+  const scripts = elements.filter((node) => node.tagName === 'script');
+  const chunks = scripts.filter((node) => attribute(node, 'src')?.startsWith('/_next/static/'));
+  const hydration = scripts.filter((node) =>
+    node.childNodes.some((child) => 'value' in child && child.value.includes('self.__next_f')),
+  );
+  expect(chunks.length).toBeGreaterThan(0);
+  expect(hydration.length).toBeGreaterThan(0);
+  for (const script of [...chunks, ...hydration]) expect(attribute(script, 'nonce')).toBe(nonce);
+  return nonce;
+}
+
 afterEach(() => vi.unstubAllEnvs());
 
 describe('development-only CSP transport', () => {
+  it(
+    'reports each native development document with its own framework script nonce',
+    { timeout: 45_000 },
+    async () => {
+      await withNativeDevelopmentServer(async (serverOrigin) => {
+        const signal = AbortSignal.timeout(25_000);
+        const first = await expectNativeDocument(serverOrigin, signal);
+        const second = await expectNativeDocument(serverOrigin, signal);
+        expect(second).not.toBe(first);
+      });
+    },
+  );
+
   it('forwards a fresh trusted nonce and reports rather than enforcing the canonical policy', () => {
     vi.stubEnv('NODE_ENV', 'development');
     const request = new NextRequest(origin, {

@@ -10,6 +10,30 @@ export function navigationStatus(page: Page) {
   return page.getByRole('status').filter({ hasText: 'Seite wird geladen …' });
 }
 
+export async function expectHiddenNavigationStatus(page: Page, link: Locator, name: string) {
+  const status = navigationStatus(page);
+  await expect(status).toHaveText('Seite wird geladen …');
+  await expect(link).toHaveAccessibleName(name);
+  await expect
+    .poll(() =>
+      status.evaluate((node) => {
+        const bounds = node.getBoundingClientRect();
+        const style = getComputedStyle(node);
+        const clipped = ['hidden', 'clip'];
+        return {
+          outsideLink: !node.closest('a'),
+          outOfFlow: ['absolute', 'fixed'].includes(style.position),
+          clippedToPixel:
+            bounds.width <= 1 &&
+            bounds.height <= 1 &&
+            clipped.includes(style.overflowX) &&
+            clipped.includes(style.overflowY),
+        };
+      }),
+    )
+    .toEqual({ outsideLink: true, outOfFlow: true, clippedToPixel: true });
+}
+
 export function measureLinkLayout(link: Locator) {
   return link.evaluate((element) => {
     const anchor = element as HTMLAnchorElement;

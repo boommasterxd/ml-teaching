@@ -21,7 +21,7 @@ hostname/port options are sufficient.
 `npm run dev` starts native Next.js development. `src/proxy.dev.ts` supplies a fresh
 cryptographic nonce and CSP Report-Only header for development document requests.
 The policy also authorizes the exact trusted theme bootstrap, transition styles and
-error-page speculation rules by hash. Responses use private/no-store delivery
+error-page speculation rules by hash. Document responses use `no-store` delivery
 without an external report collector. Incoming nonce and
 CSP headers are overwritten. `next.config.mjs` enables the `dev.ts` extension only
 for the development-server phase; production does not discover this Proxy and

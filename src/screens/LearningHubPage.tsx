@@ -8,8 +8,8 @@ export default function LearningHubPage() {
   return (
     <div className="learning-hub landing-container">
       <LearningChapterIntro title="Dein Lernlabor">
-        Trainiere eine KI mit deinen Bildern. Schau dir an, wie eine Spielfigur aus Punkten lernt.
-        Das Lernlabor ist kostenlos.
+        Wie lernt eine KI, was du von ihr willst? Beim Bildtraining gibst du ihr Bilder mit Namen.
+        Beim Lernen durch Belohnung zeigen Punkte einer Spielfigur, welche Wege sich lohnen.
       </LearningChapterIntro>
       <LearningAreas idPrefix="hub" />
       <section className="learning-hub-ideas" aria-labelledby="hub-ideas-title">
@@ -18,10 +18,10 @@ export default function LearningHubPage() {
         </EntryReveal>
         <div className="learning-hub-prompts">
           <LearningPrompt title="Erkennt dein Modell die Tasse auch woanders?">
-            Fotografiere eine Tasse auf einem Heft und einen Stift auf dem Tisch. Sammle mindestens
-            zehn Bilder pro Gegenstand. Trainiere dein Modell und teste die Tasse auf dem Tisch.
-            Erkennt es die Tasse falsch? Fotografiere beide Gegenstände auf beiden Unterlagen und
-            trainiere erneut.
+            Fotografiere eine Tasse auf einem Heft und einen Stift auf dem Tisch. Sammle für beide
+            Klassen jeweils mindestens zehn Bilder. Trainiere dein Modell und teste dann die Tasse
+            auf dem Tisch. Verwechselt es sie? Ergänze Fotos von beiden Gegenständen auf beiden
+            Unterlagen und probiere es noch einmal.
           </LearningPrompt>
           <LearningPrompt title="Lohnt sich der längere Weg?">
             Stell dir vor, eine Spielfigur braucht sieben Schritte zum Stern und sechs zum Schatz.

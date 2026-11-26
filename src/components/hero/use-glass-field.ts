@@ -3,21 +3,14 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefCallback } from 'react';
 import { useInView } from 'motion/react';
 import { usePageVisible } from '@animate-ui/react/utils/use-page-visible';
+import { createRetryableLoader } from '@/lib/create-retryable-loader';
 import { useMotionStart } from '../ui/use-motion-start';
 import { useMotionPreference } from '../ui/use-motion-preference';
 
 type FieldComponent = typeof import('./TopographyField').default;
 
-let fieldModule: Promise<typeof import('./TopographyField')> | undefined;
+const prepareField = createRetryableLoader(() => import('./TopographyField'));
 const firstFrameDeadlineMs = 2_000;
-
-function prepareField() {
-  fieldModule ??= import('./TopographyField').catch((error: unknown) => {
-    fieldModule = undefined;
-    throw error;
-  });
-  return fieldModule;
-}
 
 function afterFirstPaint(prepare: () => void) {
   let frame = requestAnimationFrame(() => {

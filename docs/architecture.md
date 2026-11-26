@@ -95,9 +95,11 @@ route preparation runs for the fallback homepage link. Actual history traversal
 reuses the browser's entry and the router's stored state.
 
 For App Router destinations, intent warms the build-rendered RSC payload and
-the modules referenced by it. The homepage still is prepared for reduced motion.
-It and the image explanation photos use the same responsive asset selection
-during intent and destination rendering.
+the modules referenced by it. Intent preloads the homepage still only when the
+browser prefers reduced motion. The still and the image explanation photos use
+the same responsive asset selection during intent and destination rendering.
+When the browser reports Save-Data, the shared intent path skips route and image
+preparation. Links from the static 500 document also skip prerendering on intent.
 React Flow creates the destination's browser tree
 on actual navigation within the current document. Browser speculation prerenders
 a separate document, which cannot supply that same-document transition. Training
@@ -125,20 +127,22 @@ Turbopack chunking rules in local and Vercel builds. Optional menus, experiments
 and WebGL remain dynamically loaded.
 
 The homepage and static error pages deliver their headings, actions and reserved
-artwork area in static HTML. A responsive preload starts the optimized poster
-request below the shared medium breakpoint, and the static picture can paint
-before hydration. When the artwork and document are visible and motion is
-allowed, the client can load
-the shared module while waiting for paint. GPU setup begins on mount. Automatic
+artwork area in static HTML. The static error pages preload the optimized still
+below the shared medium breakpoint. The homepage tries the shader first at every
+viewport size when scripting and motion are available. Reduced motion and
+disabled scripting select the matching responsive still from the initial HTML.
+When the artwork and document are visible and motion is allowed, the client can
+load the shared module while waiting for paint. GPU setup begins on mount. Automatic
 startup on the native 500 page also waits for document load and, where supported,
 an idle opportunity. Pointer or keyboard intent can prepare the same module sooner.
-The loading indicator appears after 500 ms of active waiting. A two-second
-first-frame deadline ends waiting if the renderer has yet to draw. The resolved
-component mounts directly on the client without a second Lazy/Suspense reveal
-that could trigger a page update transition. On wider screens the poster loads
-on demand, including for reduced motion, disabled scripting and renderer failure.
-A successful first draw takes over the same artwork area without replacing the
-responsive picture.
+After 500 ms of active waiting for the first frame, the homepage requests the
+still and shows the loading indicator. Once the image decodes, it takes over from
+the indicator while the renderer continues. A failure or pause before the first
+draw shows the still immediately if already loaded or requests it on demand.
+A two-second first-frame deadline ends waiting and leaves the still in place.
+The resolved component mounts directly on the client without a second Lazy/Suspense
+reveal that could trigger a page update transition. A successful first draw takes
+over the same artwork area without replacing the responsive picture.
 Static asset imports give the native optimizer versioned poster URLs that the
 browser can reuse across visits. Each source uses the first candidate that reaches
 its native resolution, so equivalent optimizer requests share a cache entry.

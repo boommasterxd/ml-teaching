@@ -11,7 +11,7 @@ const {
   run,
   text,
 } = require("./planner.cjs");
-const { recoverReceipts } = require("./recovery.cjs");
+const { recoverReceipts, successfulWarmJob } = require("./recovery.cjs");
 const deletionLimit = 100;
 const mainBatchLimit = 20;
 const pullRequestLimit = 100;
@@ -108,6 +108,7 @@ function producerContext(options, rules, base, head) {
     (w) => w.name === source.name && w.path === source.path.split("@")[0],
   );
   if (
+    source.id !== options.runId ||
     options.ref !== `refs/heads/${rules.defaultBranch}` ||
     options.sha !== head ||
     !producer ||
@@ -118,18 +119,7 @@ function producerContext(options, rules, base, head) {
   ) {
     throw new Error("Untrusted producer context");
   }
-  const jobs = options.api
-    .list(
-      `${base}/actions/runs/${options.runId}/attempts/${source.run_attempt}/jobs?per_page=100`,
-      "jobs",
-    )
-    .map(object);
-  if (
-    !jobs.some(
-      (job) =>
-        job.name === producer.job && job.conclusion === "success" && job.status === "completed",
-    )
-  ) {
+  if (!successfulWarmJob(options.api, base, source, producer.job)) {
     throw new Error("Successful producer job has not been confirmed");
   }
 }
@@ -322,6 +312,16 @@ function processMainBatches(candidates, capacity, options, base, source) {
   return { deleted, activeCount };
 }
 
+/** @param {Options} options @param {Policy} rules @param {string} base @param {string} head */
+function readOptionalNpmReceipts(options, rules, base, head) {
+  try {
+    return recoverReceipts(options, rules, base, head);
+  } catch {
+    console.warn("Npm replacement receipts could not be verified; deferring npm cache rotation");
+    return [];
+  }
+}
+
 /** @param {Options} options */
 function runLifecycle(options) {
   identifier(options.runNumber);
@@ -332,7 +332,9 @@ function runLifecycle(options) {
   const caches = inventory(options.api, base);
   const active = activeRuns(options.api, base, options.runId);
   const prs = planPullRequests(caches, options, base, active);
-  const receipts = producer ? options.replacements : recoverReceipts(options, rules, base, head);
+  const receipts = producer
+    ? options.replacements
+    : readOptionalNpmReceipts(options, rules, base, head);
   const codeql = planCodeql(caches, options, head, base);
   /** @type {Candidate[]} */
   const candidates = [

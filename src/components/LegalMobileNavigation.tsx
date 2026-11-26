@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { LegalPage } from '@/content/site-navigation';
 import { createRetryableLoader } from '@/lib/create-retryable-loader';
+import { isLargeViewport, subscribeToLargeViewport } from '@/lib/media-queries';
 import { DeferredMenuLoadError } from './DeferredMenuLoadError';
 import { ChevronDown } from './icons/chevron-down';
 import { Alert, AlertDescription } from './ui/alert';
@@ -13,16 +14,61 @@ import { useMenuActivationFocus, useMenuModule, usePendingMenuDismissal } from '
 
 const loadMenu = createRetryableLoader(async () => (await import('./LegalMobileMenu')).default);
 
+function isSameTabPageChange(event: KeyboardEvent | MouseEvent) {
+  if (
+    event.defaultPrevented ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.shiftKey ||
+    (event instanceof MouseEvent && event.button !== 0) ||
+    !(event.target instanceof Element)
+  )
+    return false;
+
+  const link = event.target.closest<HTMLAnchorElement>('a[href]');
+  return (
+    link !== null &&
+    link.origin === window.location.origin &&
+    link.pathname !== window.location.pathname &&
+    (!link.target || link.target === '_self') &&
+    !link.hasAttribute('download')
+  );
+}
+
+function transferMenuFocus(area: HTMLDivElement | null) {
+  const focused = area?.ownerDocument.activeElement;
+  if (!(focused instanceof HTMLAnchorElement) || !focused.closest('[data-legal-mobile-menu]'))
+    return;
+  const desktopLinks = area
+    ?.closest('.legal-sidebar')
+    ?.querySelectorAll<HTMLAnchorElement>('.legal-navigation a[href]');
+  const destination = desktopLinks && [...desktopLinks].find((link) => link.href === focused.href);
+  destination?.focus({ preventScroll: true });
+}
+
 /** Keep the SSG trigger stable while the optional popup prepares. */
 export default function LegalMobileNavigation({ selectedValue }: { selectedValue: LegalPage }) {
-  const [open, setOpen] = useState(false);
+  const [openPage, setOpenPage] = useState<LegalPage | null>(null);
+  const open = openPage === selectedValue;
+  if (openPage !== null && !open) setOpenPage(null);
+
   const { module: Menu, failed, prepare } = useMenuModule(loadMenu, loadMenu.getLoaded());
   const pending = open && !Menu && !failed;
   const { area, trigger } = usePendingMenuDismissal({
     active: open && !Menu,
     popupSelector: '[data-legal-mobile-menu]',
-    onDismiss: () => setOpen(false),
+    onDismiss: () => setOpenPage(null),
   });
+  useEffect(() => {
+    if (!open) return;
+    return subscribeToLargeViewport(() => {
+      if (!isLargeViewport()) return;
+      transferMenuFocus(area.current);
+      setOpenPage(null);
+    });
+  }, [area, open]);
+
   const { trackMenuActivation, focusFirstHighlightedItem } = useMenuActivationFocus(trigger);
 
   return (
@@ -30,9 +76,15 @@ export default function LegalMobileNavigation({ selectedValue }: { selectedValue
       <DropdownMenu
         modal={false}
         open={open}
-        onOpenChange={(next, { event }) => {
+        onOpenChange={(next, details) => {
+          const { event, reason } = details;
+          if (!next && reason === 'item-press' && isSameTabPageChange(event)) {
+            // Keep the activated link available until the new page replaces this menu.
+            details.cancel();
+            return;
+          }
           trackMenuActivation(next, event);
-          setOpen(next);
+          setOpenPage(next ? selectedValue : null);
           if (next) prepare();
         }}
         onItemHighlighted={focusFirstHighlightedItem}

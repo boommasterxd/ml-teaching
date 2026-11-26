@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { learningPaths } from '@/lib/learning-paths';
 import { LinkNavigationContent, type LinkIcon } from './LinkNavigationIndicator';
-import { prepareRoute } from './prepare-route';
+import { canPrepareNavigation, prepareRoute } from './prepare-route';
 import { useTrainingEntry, type TrainingEntryOptions } from './training/TrainingEntryContext';
 
 type IntentLinkProps = ComponentProps<typeof Link> & {
@@ -107,7 +107,7 @@ function useLinkPreparation(
 ) {
   return useCallback(
     (anchor: HTMLAnchorElement) => {
-      if (!prepareOnIntent) return;
+      if (!prepareOnIntent || !canPrepareNavigation()) return;
       const target = new URL(anchor.href);
       const current = window.location;
       if (
