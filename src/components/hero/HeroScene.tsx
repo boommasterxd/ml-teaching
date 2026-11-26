@@ -116,7 +116,7 @@ function Scene({ children, sources }: HeroSceneProps) {
             {Field && (
               <div ref={fieldRef} className="contents">
                 <Field
-                  sharpDesktopStart
+                  homeStartup
                   paused={paused}
                   inView={inView}
                   onUnavailable={onUnavailable}

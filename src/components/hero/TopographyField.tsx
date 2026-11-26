@@ -105,14 +105,14 @@ export default function TopographyField({
   paused: userPaused = false,
   inView = true,
   shape = 'ring',
-  sharpDesktopStart = false,
+  homeStartup = false,
 }: {
   onUnavailable: () => void;
   onRendered: (ready: boolean) => void;
   paused?: boolean;
   inView?: boolean;
   shape?: GlassShape;
-  sharpDesktopStart?: boolean;
+  homeStartup?: boolean;
 }) {
   const surface = useRef<HTMLDivElement>(null);
   const playback = inView ? (userPaused ? 'paused' : 'running') : 'offscreen';
@@ -126,7 +126,7 @@ export default function TopographyField({
     onUnavailable,
     onRendered,
     shape,
-    sharpDesktopStart,
+    homeStartup,
   );
   const pointer = useFieldPointer(canvas, motion, paused);
 

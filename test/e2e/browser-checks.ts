@@ -201,9 +201,9 @@ export async function expectLiveSystemThemeChanges(page: Page, theme: Locator) {
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 }
 
-export async function expectThemeWipe(page: Page) {
-  await page.waitForFunction(() =>
-    document.getAnimations().some(({ effect }) => {
+export async function expectThemeWipe(page: Page, activateSwitch?: () => Promise<void>) {
+  const wipe = page.waitForFunction((observeSwitch) => {
+    const wiping = document.getAnimations().some(({ effect }) => {
       if (
         !(effect instanceof KeyframeEffect) ||
         effect.pseudoElement !== '::view-transition-new(root)'
@@ -218,8 +218,25 @@ export async function expectThemeWipe(page: Page) {
         /^inset\(0(?:px)? 100%(?: 0(?:px)?){0,2}\)$/.test(String(start?.clipPath)) &&
         /^inset\(0(?:px)?(?: 0(?:px)?){0,3}\)$/.test(String(end?.clipPath))
       );
-    }),
-  );
+    });
+    if (!wiping || !observeSwitch) return wiping;
+
+    const control = document.querySelector('[data-theme-switch]');
+    const thumb = control?.querySelector('[data-slot="switch-thumb"]');
+    if (!control || !thumb) return false;
+    const root = document.documentElement;
+    const name = getComputedStyle(control).viewTransitionName;
+    if (name === 'none') return false;
+
+    const old = getComputedStyle(root, `::view-transition-old(${name})`);
+    const live = getComputedStyle(root, `::view-transition-new(${name})`);
+    const track = control.getBoundingClientRect();
+    const handle = thumb.getBoundingClientRect();
+    // The 1 px track border is also present at both resting positions.
+    const betweenEnds = handle.left > track.left + 2 && handle.right < track.right - 2;
+    return old.display === 'none' && live.opacity === '1' && betweenEnds;
+  }, Boolean(activateSwitch));
+  await Promise.all([wipe, activateSwitch?.()]);
 }
 
 type TransitionSnapshot = {

@@ -3,39 +3,40 @@ export const PrivacyOverview = (
     <h2>1. Datenschutz auf einen Blick</h2>
     <h3>Kurz erklärt</h3>
     <p>
-      Wenn du die Website öffnest, erhält unser Hostinganbieter Vercel die Internetadresse deiner
-      Verbindung. Diese Adresse heißt IP-Adresse. Sie hilft dabei, dir die Seite zu schicken.
+      Wenn Sie die Website öffnen, erhält unser Hostinganbieter Vercel die Internetadresse Ihrer
+      Verbindung. Diese Adresse heißt IP-Adresse. Sie hilft dabei, Ihnen die Seite zu schicken.
     </p>
     <p>
-      Wenn du dem Bildtraining zustimmst, lädt dein Browser das KI-Modell bei Google und Kaggle.
-      Dabei erhalten beide deine IP-Adresse und erfahren zum Beispiel, welchen Browser du nutzt und
-      wann du das Modell abrufst. Deine Trainingsbilder und die daraus gewonnenen Daten bleiben in
-      deinem Browser. Über die Kamera entscheidest du extra. Auch ohne Zustimmung kannst du über
-      Bilderkennung lesen und dir auf der Startseite die Beispiele zum Lernen mit Belohnung ansehen.
+      Wenn Sie dem Bildtraining zustimmen, lädt Ihr Browser das KI-Modell bei Google und Kaggle.
+      Dabei erhalten beide Ihre IP-Adresse und erfahren zum Beispiel, welchen Browser Sie nutzen und
+      wann Sie das Modell abrufen. Ihre Trainingsbilder und die daraus gewonnenen Daten bleiben in
+      Ihrem Browser. Über die Kamera entscheiden Sie separat. Auch ohne Zustimmung können Sie über
+      Bilderkennung lesen und sich auf der Startseite die Beispiele zum Lernen mit Belohnung
+      ansehen.
     </p>
     <p>
-      Wenn du ‚Für 30 Minuten in diesem Tab merken‘ auswählst, hält die Website deine Einwilligungen
-      und die Kamerawahl vorübergehend im Arbeitsspeicher deines Browsers. Deine Auswahl gilt bis zu
+      Wenn Sie ‚Für 30 Minuten in diesem Tab merken‘ auswählen, hält die Website Ihre Einwilligungen
+      und die Kamerawahl vorübergehend im Arbeitsspeicher Ihres Browsers. Ihre Auswahl gilt bis zu
       30 Minuten für weitere Trainingsstarts im selben Tab. Ein laufendes Training kann über diese
-      30 Minuten hinaus weitergehen. Wenn du die Website neu lädst oder verlässt, fragt die
-      Lernfunktion beim nächsten Start erneut nach. Wenn du die Kamera erlaubt hast und dein Browser
-      sie weiterhin freigibt, kann sie bei einem Start mit gemerkter Auswahl automatisch angehen.
-      Beim Merken speichert die Website nur deine Auswahl.
+      30 Minuten hinaus weitergehen. Wenn Sie die Website neu laden oder verlassen, fragt die
+      Lernfunktion beim nächsten Start erneut nach. Wenn Sie die Kamera erlaubt haben und Ihr
+      Browser sie weiterhin freigibt, kann sie bei einem Start mit gemerkter Auswahl automatisch
+      angehen. Beim Merken speichert die Website nur Ihre Auswahl.
     </p>
     <p>
-      Mit „Kamera ausschalten“ beendest du die Kameranutzung. Deine bereits gesammelten Bilder und
-      dein Training bleiben im Browser erhalten.
+      Mit „Kamera ausschalten“ beenden Sie die Kameranutzung. Ihre bereits gesammelten Bilder und
+      Ihr Training bleiben im Browser erhalten.
     </p>
     <p>
-      Über „Einstellungen zum Bildtraining“ kannst du deine Einwilligung widerrufen. Die Kamera wird
+      Über „Einstellungen zum Bildtraining“ können Sie Ihre Einwilligung widerrufen. Die Kamera wird
       ausgeschaltet und die Website löscht die gemerkte Auswahl, die Trainingsbilder und das
       trainierte Modell. Google und Kaggle können Angaben zum früheren Abruf weiterhin speichern.
     </p>
     <p>
-      Du kannst uns fragen, welche Daten wir über dich haben, und verlangen, dass wir falsche Daten
-      berichtigen oder Daten löschen. Schreib uns an{' '}
+      Sie können uns fragen, welche Daten wir über Sie haben, und verlangen, dass wir falsche Daten
+      berichtigen oder Daten löschen. Schreiben Sie uns an{' '}
       <a href="mailto:yannickschaefer@boomapps.de">yannickschaefer@boomapps.de</a>. Die Einzelheiten
-      findest du in den Abschnitten unten.
+      finden Sie in den Abschnitten unten.
     </p>
     <h3>Datenerfassung auf dieser Website</h3>
     <h4>Wer ist verantwortlich für die Datenerfassung auf dieser Website?</h4>

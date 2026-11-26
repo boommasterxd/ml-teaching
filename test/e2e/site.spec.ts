@@ -318,8 +318,7 @@ test('theme changes preserve navigation and require explicit remembering across 
   await expectThemeControlAlignment(page);
   await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
   await theme.focus();
-  await page.keyboard.press('Space');
-  await expectThemeWipe(page);
+  await expectThemeWipe(page, () => page.keyboard.press('Space'));
   await expect(theme).toBeChecked();
   await expect(page.locator('html')).toHaveClass(/\bdark\b/);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
