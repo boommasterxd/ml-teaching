@@ -21,24 +21,33 @@ export function DropdownMenuContent({
   className,
   sideOffset = 4,
   align,
+  keepMounted,
   selectedValue,
   children,
   ...props
 }: Omit<Primitive.Popup.Props, 'render'> &
   MenuPosition & {
+    keepMounted?: boolean;
     selectedValue?: string;
     // Base UI 1.9 accepts false at runtime but omits initialFocus from Menu.Popup's types.
     initialFocus?: false;
   }) {
   return (
-    <Primitive.Portal>
+    <Primitive.Portal keepMounted={keepMounted}>
       <Primitive.Positioner
+        data-slot="dropdown-menu-positioner"
         anchor={anchor}
         align={align}
         sideOffset={sideOffset}
         collisionPadding={0}
         positionMethod="fixed"
         className="z-50"
+        // Preserve the captured box while Base UI keeps the closed menu invisible and inert.
+        render={
+          keepMounted
+            ? (positionerProps) => <div {...positionerProps} hidden={undefined} />
+            : undefined
+        }
       >
         <Primitive.Popup
           {...props}

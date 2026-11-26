@@ -69,6 +69,53 @@ test('changing the motion preference disables the theme wipe without losing the 
   expect(await transitions()).toEqual([]);
 });
 
+test('the appearance menu can fade out while the page theme wipe is active', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+  await page.goto('/impressum');
+  const menu = await openThemeMenu(page);
+  await expect(menu).toHaveCSS('opacity', '1');
+  const exit = page.waitForFunction(() => {
+    const popup = document.querySelector('[data-theme-menu][inert]');
+    const positioner = popup?.parentElement;
+    if (!popup || !positioner) return false;
+    const name = getComputedStyle(positioner).viewTransitionName;
+    const opacity = Number(getComputedStyle(popup).opacity);
+    const wiping = document.getAnimations().some(({ effect }) => {
+      if (!(effect instanceof KeyframeEffect)) return false;
+      const progress = effect.getComputedTiming().progress;
+      return (
+        effect.pseudoElement === '::view-transition-new(root)' &&
+        progress !== null &&
+        progress > 0 &&
+        progress < 1
+      );
+    });
+    if (!wiping || name === 'none' || opacity <= 0 || opacity >= 0.95) return false;
+    const root = document.documentElement;
+    return (
+      getComputedStyle(root, `::view-transition-old(${name})`).display === 'none' &&
+      getComputedStyle(root, `::view-transition-new(${name})`).opacity === '1'
+    );
+  });
+  await Promise.all([exit, menu.getByRole('menuitemradio', { name: 'Dunkel' }).press('Enter')]);
+  await expect(menu).toBeHidden();
+  await expect(
+    page.getByRole('button', { name: 'Darstellung einstellen', exact: true }),
+  ).toBeFocused();
+  await page.waitForFunction(() => {
+    if (!document.activeViewTransition?.types.has('animate-ui-theme')) return false;
+    return document.getAnimations().some(({ effect }) => {
+      return (
+        effect instanceof KeyframeEffect &&
+        effect.pseudoElement === '::view-transition-new(root)' &&
+        (effect.getComputedTiming().progress ?? 0) > 0.75
+      );
+    });
+  });
+  await expect(page.locator('[data-theme-menu]')).toHaveCount(0);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
 test('the native error document restores a remembered theme without changing the favicon URL', async ({
   page,
 }) => {

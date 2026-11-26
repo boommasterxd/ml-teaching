@@ -771,6 +771,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   root snapshots. The browser pauses pointer hit-testing during the capture;
   keyboard controls remain available. The header switch is captured separately
   for the theme wipe, so its live thumb spring is visible from the start.
+  The appearance popup is captured through its positioner, which keeps its
+  existing exit animation visible while the page wipe runs. After exit, the
+  hidden positioner stays available to the browser until that wipe finishes.
   The Base UI switch retains its DOM node. A second keyboard activation applies
   the latest choice and ends the active wipe. Reduced motion and browsers
   without View Transitions apply the selection directly.

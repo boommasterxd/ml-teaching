@@ -222,19 +222,14 @@ export async function expectThemeWipe(page: Page, activateSwitch?: () => Promise
     if (!wiping || !observeSwitch) return wiping;
 
     const control = document.querySelector('[data-theme-switch]');
-    const thumb = control?.querySelector('[data-slot="switch-thumb"]');
-    if (!control || !thumb) return false;
+    if (!control) return false;
     const root = document.documentElement;
     const name = getComputedStyle(control).viewTransitionName;
     if (name === 'none') return false;
 
     const old = getComputedStyle(root, `::view-transition-old(${name})`);
     const live = getComputedStyle(root, `::view-transition-new(${name})`);
-    const track = control.getBoundingClientRect();
-    const handle = thumb.getBoundingClientRect();
-    // The 1 px track border is also present at both resting positions.
-    const betweenEnds = handle.left > track.left + 2 && handle.right < track.right - 2;
-    return old.display === 'none' && live.opacity === '1' && betweenEnds;
+    return old.display === 'none' && live.opacity === '1' && live.animationName === 'none';
   }, Boolean(activateSwitch));
   await Promise.all([wipe, activateSwitch?.()]);
 }

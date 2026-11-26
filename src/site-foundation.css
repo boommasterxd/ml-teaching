@@ -1,3 +1,5 @@
+@import './components/theme/theme-wipe.css';
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
@@ -360,20 +362,6 @@
 .site-header [data-slot='switch-thumb'] {
   background: #f5f3f4;
   color: #282429;
-}
-/* Keep the live thumb visible ahead of the root wipe. Override ThemeToggler's capture reset. */
-:root:active-view-transition-type(animate-ui-theme) [data-theme-switch] {
-  view-transition-name: theme-switch !important;
-}
-::view-transition-old(theme-switch) {
-  display: none;
-}
-::view-transition-group(theme-switch),
-::view-transition-new(theme-switch) {
-  animation: none;
-}
-::view-transition-new(theme-switch) {
-  mix-blend-mode: normal;
 }
 .theme-switch-initial-moon,
 .dark [data-theme-switch][data-theme-initial] .theme-switch-initial-sun {

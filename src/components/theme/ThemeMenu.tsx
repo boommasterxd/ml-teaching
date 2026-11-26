@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useSyncExternalStore, type RefObject } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import { Sun } from '../icons/sun';
 import { Moon } from '../icons/moon';
 import { Smartphone } from '../icons/smartphone';
@@ -23,9 +23,11 @@ import { useTheme } from './ThemeProvider';
 function ThemeMenuChoices({
   firstItem,
   lastItem,
+  onThemeSelected,
 }: {
   firstItem: RefObject<HTMLElement | null>;
   lastItem: RefObject<HTMLElement | null>;
+  onThemeSelected: () => void;
 }) {
   const { preference, select, setRemember } = useTheme();
   const RememberIcon = preference.remember ? Check : X;
@@ -37,7 +39,9 @@ function ThemeMenuChoices({
           value={preference.selection}
           onValueChange={(value) => {
             const theme = parseTheme(value);
-            if (theme) select(theme);
+            if (!theme) return;
+            select(theme);
+            onThemeSelected();
           }}
         >
           <DropdownMenuRadioItem ref={firstItem} value="light">
@@ -88,6 +92,15 @@ export function ThemeMenu({
   const desktop = useSyncExternalStore(subscribeToMediumViewport, isMediumViewport, () => false);
   const firstItem = useRef<HTMLElement>(null);
   const lastItem = useRef<HTMLElement>(null);
+  const [capturedBy, setCapturedBy] = useState<ViewTransition | null>(null);
+
+  function retainPositioner() {
+    const wipe = document.activeViewTransition;
+    if (!wipe?.types?.has('animate-ui-theme')) return;
+    setCapturedBy(wipe);
+    const release = () => setCapturedBy((current) => (current === wipe ? null : current));
+    void wipe.finished.then(release, release);
+  }
 
   useEffect(() => {
     if (!opening || opening === 'hover') return;
@@ -141,11 +154,17 @@ export function ThemeMenu({
         align={desktop ? 'end' : 'center'}
         sideOffset={sideOffset}
         data-theme-menu=""
+        data-theme-menu-captured={capturedBy ? '' : undefined}
         aria-label="Darstellung einstellen"
+        keepMounted={Boolean(capturedBy)}
         onPointerEnter={onPointerEnter}
         onPointerLeave={onPointerLeave}
       >
-        <ThemeMenuChoices firstItem={firstItem} lastItem={lastItem} />
+        <ThemeMenuChoices
+          firstItem={firstItem}
+          lastItem={lastItem}
+          onThemeSelected={retainPositioner}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   );
