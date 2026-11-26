@@ -24,7 +24,8 @@
 .legal-navigation-group > p {
   padding-inline: 0.95rem;
 }
-.legal-sidebar [data-slot='button'] {
+.legal-sidebar .legal-back-link,
+.legal-mobile-navigation [data-slot='button'] {
   min-height: 2.75rem;
 }
 

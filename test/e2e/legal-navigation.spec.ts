@@ -2,6 +2,7 @@ import { expect, test, type Page, type Request } from '@playwright/test';
 import {
   diagnostics,
   expectAccessible,
+  holdApplicationScripts,
   observeViewTransitions,
   settleEntryAnimations,
 } from './browser-checks';
@@ -103,6 +104,36 @@ test('privacy references jump to the named section and continue keyboard navigat
 
   await page.keyboard.press('Tab');
   await expect(privacyDocument.locator('a[href^="tel:"]')).toBeFocused();
+});
+
+test('the desktop information card keeps its geometry through reload', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/datenschutz');
+  const card = page.getByRole('navigation', { name: 'Informationsseiten' });
+  const enhanced = card.locator('[data-slot="navigation-menu-list"]');
+  const geometry = () =>
+    card.evaluate((nav) =>
+      [nav, ...nav.querySelectorAll('a[href]')].map((element) => {
+        const { x, y, width, height } = element.getBoundingClientRect();
+        return { x, y, width, height };
+      }),
+    );
+  const scripts = await holdApplicationScripts(page);
+  try {
+    await page.reload({ waitUntil: 'commit' });
+    await scripts.expectHeld();
+    await expect(card.getByRole('link')).toHaveCount(3);
+    await expect(enhanced).toHaveCount(0);
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    const initial = await geometry();
+
+    scripts.release();
+    await expect(enhanced).toBeVisible();
+    await settleEntryAnimations(page);
+    expect(await geometry()).toEqual(initial);
+  } finally {
+    scripts.release();
+  }
 });
 
 test('desktop legal navigation stays reachable while the document scrolls', async ({ page }) => {

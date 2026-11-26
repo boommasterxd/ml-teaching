@@ -27,7 +27,7 @@ export function clientIcon<T extends string>(
         }
         aria-label={typeof props['aria-label'] === 'string' ? props['aria-label'] : undefined}
         role={typeof props.role === 'string' ? props.role : undefined}
-        fill={typeof props.fill === 'string' ? props.fill : undefined}
+        fill={typeof props.fill === 'string' ? props.fill : 'none'}
         strokeWidth={typeof props.strokeWidth === 'number' ? props.strokeWidth : undefined}
       />
     );
