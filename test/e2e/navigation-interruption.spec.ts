@@ -2,34 +2,29 @@ import { expect, test, type Page } from '@playwright/test';
 import { diagnostics, settleEntryAnimations } from './browser-checks';
 import { learningPaths } from '../../src/lib/learning-paths';
 
-type TransitionWindow = Window & { heldTransition?: ViewTransition };
+type HeldTransition = {
+  transition: ViewTransition;
+  release: () => void;
+};
+type TransitionWindow = Window & { heldTransition?: HeldTransition };
+type ExtendableTransition = ViewTransition & { waitUntil(promise: Promise<void>): void };
 
 function holdFirstPageTransition(page: Page) {
-  return page.addInitScript((destination) => {
+  return page.addInitScript(() => {
     const state: TransitionWindow = window;
     document.startViewTransition = new Proxy(document.startViewTransition, {
       apply(target, receiver, args) {
-        const transition = Reflect.apply(target, receiver, args) as ViewTransition;
-        if (!transition.types.has('nav-forward')) return transition;
+        const transition = Reflect.apply(target, receiver, args) as ExtendableTransition;
+        if (!transition.types.has('nav-forward') || state.heldTransition) return transition;
 
-        // Pause the first route's snapshots as soon as the browser creates them.
-        void transition.ready.then(
-          () => {
-            if (location.pathname !== destination || state.heldTransition) return;
-            const snapshots = document.getAnimations().filter(({ effect }) => {
-              const pseudo = effect instanceof KeyframeEffect ? effect.pseudoElement : '';
-              return /^::view-transition-(old|new)\(page-[ab]\)$/.test(pseudo ?? '');
-            });
-            if (!snapshots.length) return;
-            for (const snapshot of snapshots) snapshot.pause();
-            state.heldTransition = transition;
-          },
-          () => undefined,
-        );
+        // Keep the native transition pending independently of the CSS animation timing.
+        const hold = Promise.withResolvers<void>();
+        transition.waitUntil(hold.promise);
+        state.heldTransition = { transition, release: hold.resolve };
         return transition;
       },
     });
-  }, learningPaths.hub);
+  });
 }
 
 for (const touch of [false, true]) {
@@ -50,14 +45,17 @@ for (const touch of [false, true]) {
       const home = page.getByRole('banner').getByRole('link', { name: 'ML Teaching – Startseite' });
       if (touch) await start.tap();
       else await start.press('Enter');
+      await expect(page).toHaveURL(learningPaths.hub);
       const previous = await page.waitForFunction(
-        () => (window as TransitionWindow).heldTransition,
+        () => (window as TransitionWindow).heldTransition!,
       );
 
       try {
-        await expect(page).toHaveURL(learningPaths.hub);
         expect(
-          await previous.evaluate((transition) => document.activeViewTransition === transition),
+          await previous.evaluate(async ({ transition }) => {
+            await transition.ready;
+            return document.activeViewTransition === transition;
+          }),
         ).toBe(true);
         if (touch) await home.tap();
         else await home.press('Enter');
@@ -66,8 +64,9 @@ for (const touch of [false, true]) {
         await settleEntryAnimations(page);
         expect(failures).toEqual([]);
       } finally {
-        await previous.evaluate((transition) => {
-          if (transition) transition.skipTransition();
+        await previous.evaluate(({ transition, release }) => {
+          release();
+          transition.skipTransition();
         });
         await previous.dispose();
       }
