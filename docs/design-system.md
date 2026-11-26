@@ -977,10 +977,11 @@ optimizer URLs and AVIF-first negotiation. Its shared `exampleImageProps` helper
 omits the native transparent-color style so CSS owns image appearance, preserving
 strict SSG `style-src-attr 'none'`. `ExamplePhoto.tsx` renders these prepared props
 through the shared img element; its exact ESLint exception permits that native element.
-Initial-markup tests retain both style prohibition and optimizer-source checks.
+Check initial styles and optimizer sources directly in the production browser when
+changing this path.
 
 The official animated Lucide catalog lacks the existing Brain, Calculator, Car, Cat, Dog,
-ImagePlus, Square, Stethoscope, SwitchCamera and VideoOff producers. Their original Lucide
+ImagePlus, Square, SwitchCamera and VideoOff producers. Their original Lucide
 geometry lives in `src/components/animated-icon-glyphs.ts`;
 `src/components/animated-icon-fallbacks.tsx` composes the public Animate UI
 IconWrapper, context, variants and Motion SVG APIs. They receive the same

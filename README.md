@@ -76,7 +76,7 @@ for the hosting setup.
 npm run ci
 npm run audit
 npm run build
-npx playwright install chromium
+npx playwright install chromium --no-shell
 npm run test:e2e
 ```
 

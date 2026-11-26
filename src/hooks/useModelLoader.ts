@@ -12,13 +12,13 @@ import {
 import type { ErrorCategory } from '../types/errors';
 import type { Classifier, FeatureExtractor } from '../types/ml-models';
 
-export interface RetryOptions {
+interface RetryOptions {
   maxAttempts: number;
   baseDelayMs: number;
 }
 
 /** Sequential retries; an aborted or timed-out request is never duplicated. */
-export async function loadWithRetry<T>(
+async function loadWithRetry<T>(
   fn: () => Promise<T>,
   options: RetryOptions,
   signal: AbortSignal,

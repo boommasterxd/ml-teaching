@@ -3,7 +3,7 @@ import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import { setTimeout as wait } from 'node:timers/promises';
-import { promisify } from 'node:util';
+import { parseArgs, promisify } from 'node:util';
 import type { Result } from 'lighthouse/types/lh.js';
 import { chromium, type Browser } from '@playwright/test';
 import config from '../csp.config.mjs';
@@ -50,12 +50,17 @@ async function debuggingPort(browser: Browser) {
   }
 }
 
-function auditTargets(all: boolean) {
-  if (!all) return [{ path: '/', status: 200 }];
-  return [
-    ...config.routes.map((path) => ({ path, status: 200 })),
-    ...config.errorRoutes.map((path) => ({ path, status: Number(path.slice(1)) })),
-  ];
+function auditTarget(path: string): AuditRoute {
+  const error = config.errorRoutes.includes(path);
+  if (!error && !config.routes.includes(path)) {
+    throw new Error('Select a path from the public CSP routes.');
+  }
+  return {
+    url: new URL(path, origin),
+    status: error ? Number(path.slice(1)) : 200,
+    directory: path === '/' ? reportDirectory : resolve(reportDirectory, 'routes', path.slice(1)),
+    categories: error ? ['performance'] : ['performance', 'accessibility', 'best-practices', 'seo'],
+  };
 }
 
 /** Validate the actual status before letting Lighthouse audit an error document. */
@@ -142,10 +147,8 @@ function reportScores(report: Result, categories: string[], profile: Profile, re
 }
 
 interface AuditOptions {
-  all: boolean;
   runtime: LighthouseRuntime;
   port: number;
-  outputDirectory?: string;
 }
 
 interface AuditRoute {
@@ -220,33 +223,15 @@ async function auditRoute(route: AuditRoute, options: AuditOptions) {
   return passed;
 }
 
-export async function runAudits(options: AuditOptions) {
-  const { all, outputDirectory = reportDirectory } = options;
-  const categories = all
-    ? ['performance']
-    : ['performance', 'accessibility', 'best-practices', 'seo'];
-  let passed = true;
-  for (const { path, status } of auditTargets(all)) {
-    const url = new URL(path, origin);
-    const directory = all
-      ? resolve(outputDirectory, 'routes', path.slice(1) || '_home')
-      : outputDirectory;
-    if (!(await auditRoute({ url, status, directory, categories }, options))) passed = false;
-  }
-  return passed;
-}
-
 async function main() {
-  const argumentsList = process.argv.slice(2);
-  const flags = new Set(argumentsList);
-  if (
-    flags.size !== argumentsList.length ||
-    argumentsList.some((flag) => !['--all', '--locked'].includes(flag))
-  ) {
-    throw new Error('Usage: npm run test:lighthouse -- [--all] [--locked]');
-  }
-  const all = flags.has('--all');
-  const runtime = await resolveLighthouse({ lockedFallback: flags.has('--locked') });
+  const { values } = parseArgs({
+    options: {
+      route: { type: 'string', default: '/' },
+      locked: { type: 'boolean', default: false },
+    },
+  });
+  const route = auditTarget(values.route);
+  const runtime = await resolveLighthouse({ lockedFallback: values.locked });
   console.log('Lighthouse', runtime);
   const browser = await chromium.launch({
     headless: true,
@@ -255,7 +240,7 @@ async function main() {
   try {
     console.log('Chromium', browser.version());
     const port = await debuggingPort(browser);
-    if (!(await runAudits({ all, runtime, port }))) process.exitCode = 1;
+    if (!(await auditRoute(route, { runtime, port }))) process.exitCode = 1;
   } finally {
     await browser.close();
   }

@@ -6,50 +6,42 @@ installs the lockfile with `npm ci --no-audit`.
 
 ## Check selection
 
-The dependency-free planner reads the complete merge-base-to-head Git diff. Renames
-include both endpoints, and deletions remain part of the scope. Its plan records the
-base, head and merge revisions. Consumers reject a different checked-out revision.
+The dependency-free planner reads the complete merge-base-to-head Git diff, including
+both rename endpoints and deletions. It narrows the selection only when the head is
+up to date and the simulated merge tree matches it. The plan records the base, head
+and merge revisions. Consumers require the current checkout and event revisions.
 
-| Complete changed scope                                                                                 | Selected work                                                                                                   |
-| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| Nonempty diff of Markdown files under root `docs/` only                                                | Real successful final gate; no dependency installation, tests or build                                          |
-| Only `*.test.ts`, `*.test.tsx` or `*.test.mjs` files under `test/unit/`                                | Static quality, production dependency audit and full unit coverage                                              |
-| Only allowlisted local Lighthouse scripts, optionally with unit tests                                  | Static quality, production dependency audit and full unit coverage                                              |
-| One eligible added or modified `test/e2e/*.spec.ts`                                                    | Full quality checks, native production build, five core browser specs, two core quiz cases and the changed spec |
-| Application, test fixtures, browser tests, assets, configuration, dependencies, mixed or unknown scope | All quality checks, native production build and browser suite                                                   |
-| Empty diff or unavailable Git history                                                                  | All checks                                                                                                      |
+| Complete changed scope                                                                                           | Selected work                                             |
+| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Regular Markdown files under root `docs/` only                                                                   | Successful final gate on Slim                             |
+| Local Lighthouse scripts or the Dependabot schedule, optionally with docs                                        | Quality, production audit and build                       |
+| Known learning or training modules, or core test files                                                           | Quality, production audit, build and affected core groups |
+| Shared inputs, fixtures, test deletions, configuration, dependencies, empty diffs or uncertain history or impact | Quality, production audit, build and all core groups      |
 
-The local-tooling allowlist contains `scripts/check-lighthouse.ts` and
-`scripts/lighthouse-runtime.ts`. Either or both can change with unit tests and
-still select the quality job alone. Other mixed scopes select the full suite.
-The Markdown rule uses the same path predicate as the Vercel build filter.
-Other file types under `docs/` select full CI.
+The affected groups accumulate across the diff. New and modified unit test files
+select their own group. Changes to `test/e2e/training.spec.ts` or
+`test/e2e/delivery.spec.ts` select the matching group. The explicit source mapping
+in the [planner](../.github/scripts/plan-ci.ts) covers the quiz data and logic
+(`learning`) plus owned image import, model embedding and consent storage modules
+(`training` and `training-browser`). A shared or unclassified input selects the
+full suite. Only the standalone Lighthouse scripts and Dependabot schedule are
+allowlisted for code-bearing changes without test impact. The docs-only path uses
+the same Markdown predicate as the Vercel build filter.
 
-The single-spec selection applies only when the complete diff is one regular
-added or modified `test/e2e/<lowercase-name>.spec.ts` file, the branch is up to
-date with its base, and the verified simulated merge tree matches the PR head
-tree. Other browser-test changes select the full browser suite. The five mandatory
-core specs in `.github/scripts/browser-ci.ts` are `test/e2e/security-headers.spec.ts`,
-`test/e2e/site.spec.ts`, `test/e2e/initial-content.spec.ts`,
-`test/e2e/intent-navigation.spec.ts` and `test/e2e/training-bfcache.spec.ts`.
-For an eligible single-spec change, CI runs those files, the changed spec and
-two fixed `@ci` cases. `test/e2e/quiz.spec.ts` checks local answer explanations and
-keyboard focus on reset. `test/e2e/knn-quiz.spec.ts` checks retries, voting limits
-and new rounds. A changed file already in the selection runs once, and selecting
-a quiz file runs its tagged case as part of that file. Discovery requires exactly
-one runnable `@ci` case in each of the two quiz files and rejects the tag elsewhere.
-Unfiltered Playwright discovery checks that every selected file contains runnable
-tests. Each execution is checked against native discovery; missing, duplicate,
-unexpected or unsuccessful results fail. A non-required test may be skipped only
-with a documented reason. Invalid discovery fails the browser job. Deletions, renames, multiple changes
-and missing eligibility evidence retain the full browser suite.
+| Group              | Critical outcomes                                                                                                                         |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `learning`         | Correct everyday quiz feedback and nearest-neighbor voting                                                                                |
+| `training`         | Bounded local image import, consent expiry and revocation, safe camera, model and tensor disposal                                         |
+| `tooling`          | Revision-bound CI and release decisions, source boundaries, CSP integrity and safe cache retirement                                       |
+| `training-browser` | Consent before any model or camera access, local training and prediction, cleanup on withdrawal and actual back-forward cache restoration |
+| `delivery`         | Strict policy and cache headers on native HTTP responses, including errors and navigation payloads                                        |
 
 Selection and the final result gate use `ubuntu-slim`, as does Gitleaks. Their
 Node.js setup disables the action's automatic package-manager caching with
-`package-manager-cache: false`. Selected quality and browser jobs use regular
-runners. Job-level conditions prevent allocation of unselected
-substantive jobs. CI and Gitleaks each group new code and base-change runs by PR
-number. GitHub cancels an in-progress run or replaces a pending run in the same
+`package-manager-cache: false`. One regular runner performs the quality checks,
+build and selected tests. The docs-only and verified-revision paths skip that job.
+CI and Gitleaks group code and base-change runs by PR number. GitHub cancels an
+in-progress run or replaces a pending run in the same
 group when another run arrives. GitHub schedules by concurrency queue arrival,
 which can differ from revision order. Required checks still apply to the current
 revision. PR edits without a base change use a separate group for each simulated
@@ -57,9 +49,9 @@ merge revision, allowing a running check to finish. Explicit PR reruns use their
 original run ID in a separate group and require fresh checks. A partial rerun
 cannot approve a reuse plan from the first attempt. Manual Gitleaks scans use a separate
 group per ref and supersede earlier manual scans on that ref.
-The unconditional final `CI` check accepts successful selected jobs and explicitly
-excluded skipped jobs only. Invalid plans, planning failures, cancellations and
-unexpected skips fail.
+The unconditional final `CI` check requires successful planning and the exact
+result expected from the substantive job. Invalid or stale plans, test failures,
+cancellations and unexpected skips fail.
 The workflow, planner and final validation run from the simulated PR merge checkout.
 After an edit limited to the title or description, CI and Gitleaks can each reuse
 a successful result from the same repository, pull request and workflow for the
@@ -81,7 +73,7 @@ selection or scanning. Changes to the base run the regular checks.
 
 ## Dependency cache lifecycle
 
-PR quality and browser jobs restore only npm's `_cacache` content store.
+The PR quality job restores only npm's `_cacache` content store.
 `.github/scripts/cache.ts` computes the same install-input digest for PR jobs,
 the producer and reconciliation from `.npmrc`, `package.json` and `package-lock.json`.
 The `mlteaching-npm-v1-` prefix retains Linux x64, Node.js 26 and the active npm
@@ -171,10 +163,10 @@ retain the same file, function, complexity and duplication gates.
 
 ## Local interfaces and limits
 
-`npm run ci` runs formatting, ESLint, Next.js route type generation and TypeScript,
-source boundaries, file limits, Knip, duplication, the production dependency audit,
-and unit coverage. These commands also remain available individually in
-`package.json`. The production audit blocks high/critical production vulnerabilities
+`npm run ci:quality` runs formatting, ESLint, Next.js route type generation and
+TypeScript, source boundaries, file limits, Knip, duplication and the production
+dependency audit. `npm run ci` also runs the full unit suite. These checks remain
+available individually in `package.json`. The production audit blocks high/critical production vulnerabilities
 and audit execution failures; development dependencies remain installed. Before an
 authorized integration, run the separate local `npm run audit`. It includes
 development dependencies and reports findings at all severities. High and critical
@@ -191,12 +183,6 @@ test callbacks, nested helpers and lifecycle hooks retain the same limits. The
 wrapper delegates the installed ESLint core rule and fails closed if that rule's
 listener interface changes; fixtures protect the narrow exception.
 
-Unit coverage includes all hooks, libraries, handwritten client components and
-the training screen, native error recovery and the development-only CSP Proxy,
-including modules without tests. Build-only public documents,
-pure server shell components and upstream registry icons stay outside this unit
-scope; native build and production browser checks cover their integration.
-Coverage requires 85% lines, statements and functions, plus 80% branches.
 Duplication covers application source, tests, own tooling and declared root
 configurations; it may not exceed 5% with a minimum matching token length of 50. Inline
 ESLint configuration cannot suppress the architecture rules.
@@ -235,17 +221,18 @@ development-only CSP Proxy has an exact exception for its imports of
 that Proxy remain forbidden.
 
 `npm run build` uses the native Next.js build and its CSP verification hooks.
-`npm run test:e2e` runs the complete browser suite against the native production
-server, including accessibility and keyboard contracts. The local command remains
-unfiltered with `CI=true`. The browser job validates the plan, installs dependencies
-and builds the application once. It runs Playwright with two workers for both the
-full suite and the selected-spec plan to limit resource contention during browser
-ML tests. Every execution must match its expected test identities from native
-discovery.
-The job installs both lockfile-matched Chromium variants for
-[the browser tests](development.md#checks). Browser launch, host dependency
-validation and the selected suite are blocking. Lighthouse runs locally as
-described in the [performance audit decision](decisions/performance-audits.md).
+The quality job validates the plan, installs once and builds once. It runs Vitest
+and Playwright with native project or file filters for affected groups. Each group
+must report at least one passing test. Skipped or failed core tests fail the job.
+The full fallback runs both commands without selection filters. Local
+`npm test` and `npm run test:e2e` discover the full suites with or without
+`CI=true`; Playwright starts the native production server.
+
+The browser training group uses the lockfile-matched full Chromium in headless mode.
+The separate Headless Shell cannot restore a real document from the back-forward
+cache in this setup. The job installs only full Chromium when training browser tests
+are selected. The HTTP delivery checks need no browser binary. Playwright's host
+dependency validation and successful execution remain blocking.
 
 ## Security automation and release boundary
 

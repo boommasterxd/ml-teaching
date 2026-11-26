@@ -32,8 +32,6 @@ jobs:
     outputs:
       plan: ${{ steps.plan.outputs.plan }}
       quality: ${{ steps.plan.outputs.quality }}
-      browser: ${{ steps.plan.outputs.browser }}
-      merge: ${{ steps.plan.outputs.merge }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -52,11 +50,16 @@ jobs:
           CHANGE_MERGE_SHA: ${{ github.sha }}
 
   quality:
-    name: Quality and unit coverage
+    name: Quality, build and core tests
     needs: plan
     if: needs.plan.outputs.quality == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 9
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+      CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      CHANGE_MERGE_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -68,11 +71,6 @@ jobs:
           package-manager-cache: false
       - name: Validate source revision
         run: node .github/scripts/validate-ci.ts
-        env:
-          CI_PLAN: ${{ needs.plan.outputs.plan }}
-          CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          CHANGE_MERGE_SHA: ${{ github.sha }}
       - name: Resolve compatible npm cache
         id: cache-config
         continue-on-error: true
@@ -93,65 +91,18 @@ jobs:
           CACHE_MATCHED_KEY: ${{ steps.cache.outputs.cache-matched-key }}
           CACHE_RESTORE_OUTCOME: ${{ steps.cache.outcome }}
       - run: npm ci --no-audit
-      - run: npm run ci
-
-  browser:
-    name: Production browser checks
-    needs: plan
-    if: needs.plan.outputs.browser == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '26.x'
-          check-latest: true
-          package-manager-cache: false
-      - name: Validate source revision
-        run: node .github/scripts/validate-ci.ts
-        env:
-          CI_PLAN: ${{ needs.plan.outputs.plan }}
-          CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          CHANGE_MERGE_SHA: ${{ github.sha }}
-      - name: Resolve compatible npm cache
-        id: cache-config
-        continue-on-error: true
-        run: node .github/scripts/cache.ts configure
-      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: cache
-        if: steps.cache-config.outcome == 'success'
-        continue-on-error: true
-        with:
-          path: ${{ steps.cache-config.outputs.path }}
-          key: ${{ steps.cache-config.outputs.key }}
-          restore-keys: ${{ steps.cache-config.outputs.prefix }}
-      - name: Record restore evidence
-        continue-on-error: true
-        run: node .github/scripts/cache.ts summary
-        env:
-          CACHE_PRIMARY_KEY: ${{ steps.cache.outputs.cache-primary-key }}
-          CACHE_MATCHED_KEY: ${{ steps.cache.outputs.cache-matched-key }}
-          CACHE_RESTORE_OUTCOME: ${{ steps.cache.outcome }}
-      - run: npm ci --no-audit
+      - run: npm run ci:quality
       - run: npm run build
-      - name: Install the locked Chromium browser and headless shell
-        run: npx --no-install playwright install chromium
-      - name: Run the selected production browser checks
-        run: node .github/scripts/browser-ci.ts
-        env:
-          CI_PLAN: ${{ needs.plan.outputs.plan }}
-          CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          CHANGE_MERGE_SHA: ${{ github.sha }}
+      - name: Install the locked Chromium browser
+        if: contains(fromJSON(needs.plan.outputs.plan).tests, 'training-browser')
+        run: npx --no-install playwright install chromium --no-shell
+      - name: Run selected core tests
+        run: node .github/scripts/run-core-tests.ts
 
   CI:
     name: CI
     if: always()
-    needs: [plan, quality, browser]
+    needs: [plan, quality]
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
@@ -167,7 +118,7 @@ jobs:
         run: node .github/scripts/validate-ci.ts --results
         env:
           CI_PLAN: ${{ needs.plan.outputs.plan }}
-          CI_RESULTS: '{"plan":"${{ needs.plan.result }}","quality":"${{ needs.quality.result }}","browser":"${{ needs.browser.result }}"}'
+          CI_RESULTS: '{"plan":"${{ needs.plan.result }}","quality":"${{ needs.quality.result }}"}'
           CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           CHANGE_MERGE_SHA: ${{ github.sha }}

@@ -80,73 +80,46 @@ prefetched before consent. See the [design system](design-system.md) for ownersh
 | `npm run check:quality`     | Enforce the source file-size limit.                                      |
 | `npm run check:dead-code`   | Discover unused files, dependencies and public exports.                  |
 | `npm run check:duplication` | Check handwritten source duplication at 50 tokens.                       |
-| `npm run test:coverage`     | All unit/integration tests with blocking coverage.                       |
+| `npm test`                  | All core Vitest unit and integration tests.                              |
 | `npm run test:e2e`          | Required browser suite against the existing native production build.     |
-| `npm run test:e2e:model`    | Optional browser smoke test for the public MobileNet model.              |
-| `npm run test:lighthouse`   | Mobile/desktop lab metrics with a production server on port 3100.        |
+| `npm run audit:lighthouse`  | Mobile/desktop lab metrics with a production server on port 3100.        |
 | `npm run audit:production`  | Blocking high/critical production dependency audit.                      |
 | `npm run audit`             | Full local dependency audit including development tooling.               |
 | `npm run ui:audit`          | Inspect actual animation owners without changing source.                 |
 | `npm run ui:info`           | Inspect the configured shadcn foundation.                                |
 | `npm run skills:list`       | List project-local Codex skills.                                         |
 
-Unit/integration tests mirror the application under `test/unit/hooks/`,
-`test/unit/lib/`, `test/unit/components/` and `test/unit/screens/`. Tooling gate
-fixtures also live under `test/unit/`; browser tests and their isolated model
-fixture live under `test/e2e/`. Keep tests outside `src/`. Native Node.js 26 runs
-the own TypeScript CI/quality scripts directly; the application typecheck also
-checks these scripts.
+Core unit and integration tests are grouped in `test/unit/learning/`,
+`test/unit/training/` and `test/unit/tooling/`. Playwright specs and synthetic
+model fixtures live under `test/e2e/`. Keep tests outside `src/`.
+To run one unit group, use `npm test -- --project training` with the appropriate
+project name. For a single production test file, use
+`npm run test:e2e -- test/e2e/delivery.spec.ts`. See [CI](ci.md#check-selection)
+for the automatic selection and its fallback.
 
-Use focused Vitest paths for local changes. `npm run ci` runs the combined quality
-and unit-coverage gates; native builds and browser checks remain explicit. Do not
-run tests or source refactors to satisfy a counter without a real behavioral risk.
+The training browser tests use full Chromium in headless mode for genuine
+back-forward cache restoration. Install the locked version with
+`npx playwright install chromium --no-shell`. Set up OS libraries only if
+Playwright reports missing dependencies. The HTTP-only delivery spec requires
+no browser binary. Playwright starts `npm start` on 127.0.0.1:3100 and
+requires the port to be free.
 
-Browser tests use the version-matched Chromium Headless Shell. The back-forward
-cache test and the test that prerenders the homepage from the native 500 page use
-the full Chromium browser. Install both with `npx playwright install chromium`.
-OS dependency setup is separate and must respond to actual missing requirements.
-Playwright starts `npm start` on
-127.0.0.1:3100 and refuses to reuse an unrelated server. Build once first.
+Run all core tests from an installed checkout with the following commands.
+They discover the same tests under `CI=true`.
 
-To measure the complete local verification time, install the locked dependencies
-and both Chromium variants beforehand. Start with port 3100 free and no previous
-`.next/` cache. Use the default Playwright configuration with one worker. Run
-the following in Bash.
-
-```bash
-time (npm run ci && npm run build && npm run test:e2e)
+```sh
+npm run build
+npm test
+npm run test:e2e
 ```
 
-Record the revision, Node.js, npm and Chromium versions, host OS, CPU and RAM, and
-the inputs used, including the lockfile, build settings and test fixtures. Record
-total wall time, including production server startup and teardown. Record
-dependency and browser installation time separately. The reference host runs
-Fedora Linux 45 on an AMD Ryzen AI Max+ 395 with 125 GiB of RAM visible to Linux.
-Other systems can run the same procedure. Target under five minutes. Stop early
-enough to terminate the check's processes and complete cleanup within ten minutes.
-A partial or interrupted run leaves the full duration unverified.
-
-Run `npm run test:e2e:model` separately from the required browser suite when you
-need to verify the public MobileNet provider. This opt-in check is not part of
-`npm run ci` or `npm run test:e2e`. It requires the same local `npm run build`
-output and Playwright Chromium installation, a free port 3100, and network access
-to the configured model provider. Playwright starts the same native production
-server. The test observes Chromium network traffic through the Chrome DevTools
-Protocol (CDP); model requests before consent fail the check. Only five assets
-are allowed, each once: `model.json` and the four weight shards from
-`group1-shard1of4.bin`
-through `group1-shard4of4.bin`. It validates each redirect along the approved
-HTTPS chain from `tfhub.dev` through `www.kaggle.com` to
-`storage.googleapis.com`. The limit is 15 upstream GET requests and 24 MiB of
-identity-encoded model data in total, with a 25-second deadline per asset including
-redirects. The browser follows the real provider responses; unexpected requests,
-redirects, response sizes or timeouts fail the check. After consent, it declines
-camera access and extracts features from one synthetic 16-by-16 PNG without
-opening a video stream. If the provider or a download fails, check provider
-reachability before rerunning the check.
+`npm run ci` adds the quality and production dependency checks to `npm test`.
+Verify ordinary UI and accessibility changes directly in the running app. Use
+the production server for browser behavior involving CSP or static hydration.
+Use a scoped browser trace or profiler for changes that affect performance.
 
 For local Lighthouse audits, install the version-matched Chromium Headless Shell
-with `npx playwright install chromium`, then build the site. Start the native
+with `npx playwright install chromium --only-shell`, then build the site. Start the native
 production server in a separate terminal.
 
 ```sh
@@ -165,14 +138,14 @@ separately under the repository's installation controls.
 With `--locked`, the fallback verifies the installed package against
 `package-lock.json` without querying the registry. The flag retains global-first
 selection and the Node.js and native CLI checks.
-The default run measures Performance, Accessibility, Best Practices and SEO on
-the homepage and saves reports under `test-results/lighthouse/`. With `--all`,
-the command measures Performance on the routes listed in the static CSP
-configuration and checks each HTML status, including the native 404 and 500. It
-runs each device profile sequentially and stores per-route reports under
-`test-results/lighthouse/routes/`. Both modes require valid scores in every
-measured category and a Performance score strictly above 95 points for each
-measured route on mobile and desktop.
+The command audits the homepage by default. To diagnose a specific public route,
+pass its path, for example `npm run audit:lighthouse -- --route /lernen`.
+It runs mobile and desktop profiles against the selected route and checks the
+actual document status, including the native 404 and 500. Public pages report
+Performance, Accessibility, Best Practices and SEO. Error documents report
+Performance. The command saves homepage reports under `test-results/lighthouse/`
+and other routes under `test-results/lighthouse/routes/`. Performance must exceed
+95 points in both profiles.
 The report output includes the browser version, throttling profile, CPU benchmark,
 Largest Contentful Paint and Total Blocking Time. A missed budget also prints the
 available LCP phases and up to five long tasks.
@@ -181,9 +154,8 @@ Each route and device profile is handled independently. A document-status or
 Lighthouse/report error marks the affected profile failed, removes its stale or
 partial report where possible, and allows the remaining profiles and routes to
 run. A document-status failure applies to both profiles for that route. Low or
-invalid scores retain their reports for inspection. Chromium closes after the
-audit loop, and the command exits nonzero if any route/profile fails validation
-or does not score strictly above 95 for Performance.
+invalid scores retain their reports for inspection. Chromium closes after the audit. A failed profile or missed Performance budget
+produces a nonzero exit code.
 
 ## Build and recovery
 

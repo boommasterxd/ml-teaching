@@ -1,7 +1,5 @@
 import { QUIZ_EXAMPLES } from '@/content/recognition-examples';
 
-export { QUIZ_EXAMPLES } from '@/content/recognition-examples';
-
 export type QuizExample = (typeof QUIZ_EXAMPLES)[number];
 export type QuizId = QuizExample['id'];
 export const QUIZ_CORRECT_COUNT = 3;

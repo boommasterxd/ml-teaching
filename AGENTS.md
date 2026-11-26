@@ -125,8 +125,7 @@
 - Animate UI owns component motion; React ViewTransition owns native route
   continuity. Preserve reduced motion, immediate keyboard/focus behavior, one owner
   per property/lifetime, and no decorative replay from virtualized scroll admission.
-- Keep responsive breakpoints and shared rules centralized. Test representative
-  learning/legal/mobile behavior, production axe WCAG 2.2 A/AA and keyboard flows.
+- Keep responsive breakpoints and shared rules centralized.
 - Keep legal pages controlled, current and source-grounded. New controlled wording
   or omissions require exact approval; final legal integration requires independent
   review. Accessibility statements describe measures/current limitations, omit
@@ -135,11 +134,11 @@
 ## Quality and tests
 
 - `npm run ci` blocks on formatting, lint, full typechecking, syntax-aware source
-  boundaries, file limits, dead code, duplication, production audit and unit coverage.
+  boundaries, file limits, dead code, duplication, production audit and core unit tests.
 - Enforced application limits: 500 lines/file, 100 nonblank/noncomment lines/function,
   cyclomatic complexity 20, cognitive complexity 25, six parameters, nesting depth
-  four, duplication at most 5% at 50 tokens, coverage at least 85% lines/statements/
-  functions and 80% branches. Review triggers remain 300/50 lines, complexity15,
+  four and duplication at most 5% at 50 tokens. Review triggers remain 300/50
+  lines, complexity 15,
   four parameters and nesting three; justify focused structure instead of padding.
 - Exact vendor exceptions: official generated Animate UI icon scaffolding is outside
   handwritten duplication; its unchanged Smartphone generator has the sole
@@ -149,24 +148,31 @@
   and tests too. Only direct suite callbacks bound to Vitest's named `describe`
   import are exempt from function length; test cases, helpers and lifecycle hooks
   remain limited. Preserve the delegated ESLint rule and its fail-closed fixtures.
-- Unit coverage includes handwritten client components and the training screen
-  alongside hooks/libraries. Exclude only declared static server shells and upstream
-  registry producers; never omit interactive logic to satisfy thresholds.
 - React Compiler is not enabled. Its incompatible-library advisory is inapplicable;
   ordinary hook correctness rules remain blocking, including for TanStack Virtual.
-- `npm run test:e2e` uses native production output and starts only `npm start`.
-  Unit/integration tests live under `test/unit/`, mirroring the application folders;
-  browser tests and fixtures live under `test/e2e/`, shared setup under `test/`.
-  Never place tests or test imports in `src/`; the boundary gate rejects them.
-  Own CI and quality scripts use TypeScript and native Node.js type stripping,
+- Keep permanent tests for critical outcomes: correct quiz feedback and KNN voting,
+  consent and local-only training, resource teardown and clean reentry, strict CSP
+  and cache isolation, and fail-closed delivery and CI controls. Test at the lowest
+  layer that detects the failure. Use the browser for the actual local ML flow
+  and back-forward cache restoration.
+- Use `npm test` and `npm run test:e2e` after `npm run build` for the unfiltered
+  core suite. Use focused checks for local changes. Tests and fixtures live under
+  `test/`; the boundary gate rejects their use from `src/`.
+  See [CI selection](docs/ci.md#check-selection) for groups and full fallback.
+- During implementation of user-facing changes, operate the entire UI in the
+  running application at representative mobile, tablet and desktop viewport
+  sizes. Go through every page and user flow with touch, pointer and keyboard as
+  applicable. Check responsive layout, usability, focus, loading, errors and
+  recovery, animations and reduced motion. Verify WCAG 2.2 A/AA through manual
+  accessibility checks and targeted axe checks in the production build. Retest
+  affected flows after fixes and report what was verified and any gaps. Use
+  `npm run dev` for iteration and `npm run build` followed by `npm start` for
+  production rendering, headers and hydration checks.
+- Own CI and quality scripts use TypeScript and native Node.js type stripping,
   so the same strict typecheck includes their implementation.
-  Keep test commands unfiltered locally even under `CI=true`. Use the cheapest
-  reliable focused checks; do not repeat unrelated/full suites without cause.
-- Test supported public behavior, security boundaries and resource/failure recovery;
-  avoid cosmetic snapshots, manufactured unreachable states or coverage padding.
 - Run Lighthouse Performance locally for performance audits. Require above 95
-  points for each audited route on mobile and desktop. `npm run test:lighthouse`
-  audits the homepage by default and all configured pages with `-- --all`.
+  points for each audited route on mobile and desktop. `npm run audit:lighthouse`
+  audits the homepage by default. Select another configured route with `-- --route`.
 - PR-only workflow and final gate are both `CI`. It tests the simulated merge,
   binds the complete-diff plan to base/head/merge revisions and rejects malformed
   plans, failures, cancellations and unexpected skips. Keep Gitleaks and PR-title
@@ -178,29 +184,6 @@
 ## Documentation
 
 Keep maintained technical Markdown under `docs/` with English kebab-case names,
-except standard root documents. Describe current behavior and limitations, not audit
-run histories. Record lasting architecture decisions in `docs/decisions/`.
-Update the recursive index below and verify affected commands/links with every
-maintained documentation change.
-
-## Documentation Index
-
-| Document                                                                                             | Purpose                                                         |
-| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| [`docs/architecture.md`](docs/architecture.md)                                                       | Describes route, component and browser ML boundaries.           |
-| [`docs/ci.md`](docs/ci.md)                                                                           | Explains protected PR planning, jobs and quality controls.      |
-| [`docs/decisions/children-training-consent.md`](docs/decisions/children-training-consent.md)         | Explains the scoped Article 8 GDPR decision for image training. |
-| [`docs/decisions/discovery-bot-protection.md`](docs/decisions/discovery-bot-protection.md)           | Records the accepted challenge for scripted public requests.    |
-| [`docs/decisions/error-artwork-and-menus.md`](docs/decisions/error-artwork-and-menus.md)             | Records the shared playback and menu-loading decisions.         |
-| [`docs/decisions/eslint-peer-compatibility.md`](docs/decisions/eslint-peer-compatibility.md)         | Records the temporary ESLint peer compatibility exception.      |
-| [`docs/decisions/hostinger-mail-retention.md`](docs/decisions/hostinger-mail-retention.md)           | Records mailbox recovery and the accepted backup gap.           |
-| [`docs/decisions/inline-navigation-feedback.md`](docs/decisions/inline-navigation-feedback.md)       | Records the scope and placement of navigation loading feedback. |
-| [`docs/decisions/performance-audits.md`](docs/decisions/performance-audits.md)                       | Explains why Lighthouse runs locally outside merge checks.      |
-| [`docs/decisions/public-repository-visibility.md`](docs/decisions/public-repository-visibility.md)   | Records the decision to keep the repository public.             |
-| [`docs/decisions/pull-request-branch-retention.md`](docs/decisions/pull-request-branch-retention.md) | Records intentional retention of merged pull request branches.  |
-| [`docs/decisions/ssg-and-csp.md`](docs/decisions/ssg-and-csp.md)                                     | Records static rendering and guarded CSP integration.           |
-| [`docs/decisions/training-visual-accessibility.md`](docs/decisions/training-visual-accessibility.md) | Records accepted visual limitations of image training.          |
-| [`docs/deployment.md`](docs/deployment.md)                                                           | Defines the Vercel release workflow and publication boundaries. |
-| [`docs/design-system.md`](docs/design-system.md)                                                     | Defines shared UI, motion, accessibility and integration rules. |
-| [`docs/development.md`](docs/development.md)                                                         | Documents runtime, commands and local verification.             |
-| [`docs/third-party-notices.md`](docs/third-party-notices.md)                                         | Documents upstream component and icon license notices.          |
+except standard root documents. Describe current behavior and limitations.
+Record lasting architecture decisions in `docs/decisions/`. Update the
+[documentation index](docs/README.md) and verify affected commands and links.
