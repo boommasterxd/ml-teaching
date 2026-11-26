@@ -32,15 +32,20 @@ export const PrivacyInformation = (
     </p>
     <h3>Bereitstellung personenbezogener Daten</h3>
     <h4>Bereitstellung und erforderliche Angaben</h4>
+    <p>Die Nutzung der Lernfunktion und die Kontaktaufnahme sind freiwillig.</p>
     <p>
-      Die Nutzung der Lernfunktion und die Kontaktaufnahme sind freiwillig. Damit wir Ihnen die
-      angeforderte Seite oder Datei senden können, benötigt Vercel die IP-Adresse Ihrer Verbindung
-      und die Angabe, welche Seite oder Datei Ihr Browser anfordert. Die zusätzliche Protokollierung
-      für den sicheren Betrieb erläutern wir im Abschnitt „
-      <a href="#server-logs">Server-Log-Dateien</a>“. Für das Bildtraining können Sie Bilddateien
-      auswählen oder mit Ihrer Kamera Bilder aufnehmen. Die Bildbeispiele verbleiben in Ihrem
-      Browser. Für eine Antwort auf eine E-Mail-Anfrage benötigen wir eine erreichbare
-      E-Mail-Adresse und die zur Bearbeitung Ihres Anliegens erforderlichen Angaben.
+      Damit wir Ihnen die angeforderte Seite oder Datei senden können, benötigt Vercel die
+      IP-Adresse Ihrer Verbindung und die Angabe, welche Seite oder Datei Ihr Browser anfordert. Die
+      zusätzliche Protokollierung für den sicheren Betrieb erläutern wir im Abschnitt „
+      <a href="#server-logs">Server-Log-Dateien</a>“.
+    </p>
+    <p>
+      Für das Bildtraining können Sie Bilddateien auswählen oder mit Ihrer Kamera Bilder aufnehmen.
+      Die Bildbeispiele verbleiben in Ihrem Browser.
+    </p>
+    <p>
+      Für eine Antwort auf eine E-Mail-Anfrage benötigen wir eine erreichbare E-Mail-Adresse und die
+      zur Bearbeitung Ihres Anliegens erforderlichen Angaben.
     </p>
     <p>
       Es besteht keine gesetzliche oder vertragliche Pflicht, beim Besuch dieser Website
@@ -51,10 +56,15 @@ export const PrivacyInformation = (
     <h4>Folgen einer Nichtbereitstellung</h4>
     <p>
       Ohne die zur Übertragung erforderlichen Verbindungsdaten kann die Website nicht bereitgestellt
-      werden. Das Bildtraining startet nur, wenn Sie sowohl in die lokale Verarbeitung Ihrer Bilder
-      als auch in den Modell-Download einwilligen. Ohne Bildbeispiele kann kein eigener
-      Bildklassifikator trainiert werden. Ohne Kamerafreigabe bleibt die Kamera ausgeschaltet. Ohne
-      die für eine Antwort erforderlichen Kontaktangaben können wir eine Anfrage gegebenenfalls
+      werden.
+    </p>
+    <p>
+      Das Bildtraining startet nur, wenn Sie sowohl in die lokale Verarbeitung Ihrer Bilder als auch
+      in den Modell-Download einwilligen. Ohne Bildbeispiele kann kein eigener Bildklassifikator
+      trainiert werden. Ohne Kamerafreigabe bleibt die Kamera ausgeschaltet.
+    </p>
+    <p>
+      Ohne die für eine Antwort erforderlichen Kontaktangaben können wir eine Anfrage gegebenenfalls
       nicht beantworten.
     </p>
     <h3>Speicherdauer</h3>
@@ -79,11 +89,19 @@ export const PrivacyInformation = (
     <h3>Empfänger von personenbezogenen Daten</h3>
     <p>
       Vercel verarbeitet technische Daten zu Ihrem Besuch, um diese Website bereitzustellen und
-      abzusichern. Wenn Sie dem Modell-Download zustimmen, erhalten Google und Kaggle beim Abruf
-      Verbindungsdaten. Für E-Mail-Anfragen nutzen wir Hostinger. Bei Anrufen erhalten die
-      beteiligten Telekommunikationsanbieter Verbindungsdaten. Einzelheiten zu den Rechtsgrundlagen
-      und Datenschutzrollen finden Sie in den Abschnitten „<a href="#vercel">Vercel</a>“, „
-      <a href="#model-download">Download des KI-Modells</a>“ und „
+      abzusichern.
+    </p>
+    <p>
+      Wenn Sie dem Modell-Download zustimmen, erhalten Google und Kaggle beim Abruf
+      Verbindungsdaten.
+    </p>
+    <p>
+      Für E-Mail-Anfragen nutzen wir Hostinger. Bei Anrufen erhalten die beteiligten
+      Telekommunikationsanbieter Verbindungsdaten.
+    </p>
+    <p>
+      Einzelheiten zu den Rechtsgrundlagen und Datenschutzrollen finden Sie in den Abschnitten „
+      <a href="#vercel">Vercel</a>“, „<a href="#model-download">Download des KI-Modells</a>“ und „
       <a href="#contact-inquiries">Anfrage per E-Mail oder Telefon</a>“.
     </p>
     <h3 id="widerruf-der-einwilligung">Widerruf Ihrer Einwilligung zur Datenverarbeitung</h3>

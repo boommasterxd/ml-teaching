@@ -92,13 +92,13 @@ function playField(
   renderer: TopographyRenderer,
   values: FieldMotion,
   callbacks: { onUnavailable: () => void; onRendered: (ready: boolean) => void },
-  sharpDesktopStart: boolean,
+  homeStartup: boolean,
 ) {
   const { x, y, lift, ripples, playback } = values;
   const { onUnavailable, onRendered } = callbacks;
-  const quality = createTopographyQuality(
-    sharpDesktopStart && window.matchMedia(contourMedia.desktop).matches,
-  );
+  const desktop = homeStartup && window.matchMedia(contourMedia.desktop).matches;
+  const homeProfile = desktop ? 'home-desktop' : 'home-mobile';
+  const quality = createTopographyQuality(homeStartup ? homeProfile : 'standard');
   let bounds = canvas.getBoundingClientRect();
   const updateRaster = () =>
     resizeRaster(localRaster, bounds, renderer.maxRasterDimension, quality.current);
@@ -193,7 +193,7 @@ export function useTopographyRenderer(
   onUnavailable: () => void,
   onRendered: (ready: boolean) => void,
   shape: GlassShape,
-  sharpDesktopStart: boolean,
+  homeStartup: boolean,
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -215,7 +215,7 @@ export function useTopographyRenderer(
         renderer,
         values,
         { onUnavailable, onRendered },
-        sharpDesktopStart,
+        homeStartup,
       );
     };
     const fallbackUnavailable = () => {
@@ -244,6 +244,6 @@ export function useTopographyRenderer(
       stop?.();
       removeCanvas();
     };
-  }, [surface, values, onUnavailable, onRendered, shape, sharpDesktopStart]);
+  }, [surface, values, onUnavailable, onRendered, shape, homeStartup]);
   return canvasRef;
 }

@@ -170,7 +170,7 @@ describe('active glass field ownership', () => {
   });
 
   it.each([false, true])(
-    'adjusts both passes around sustained load with desktop start %s',
+    'raises both passes during startup and responds to sustained load (desktop: %s)',
     async (desktop) => {
       vi.stubGlobal('devicePixelRatio', 3);
       const match = vi.mocked(window.matchMedia);
@@ -183,7 +183,7 @@ describe('active glass field ownership', () => {
         DOMRect.fromRect({ width: 580, height: 550 }),
       );
       const { container } = await renderField(
-        <TopographyField sharpDesktopStart onUnavailable={vi.fn()} onRendered={vi.fn()} />,
+        <TopographyField homeStartup onUnavailable={vi.fn()} onRendered={vi.fn()} />,
       );
       const canvas = container.querySelector('canvas')!;
       const tick = activeFrame();
@@ -196,30 +196,27 @@ describe('active glass field ownership', () => {
           }
         });
       };
-      const lastDetail = () => host.draw.mock.lastCall![0].fieldScale;
-      expect(canvas.width).toBe(desktop ? 1160 : 290);
-      expect(lastDetail()).toBe(desktop ? 1.35 : 0.4);
-      runFrames(253, 16);
-      expect(canvas.width).toBe(1740);
-      expect(lastDetail()).toBe(1.7);
+      const expectQuality = (width: number, fieldScale: number) => {
+        expect(canvas.width).toBe(width);
+        expect(host.draw.mock.lastCall![0].fieldScale).toBe(fieldScale);
+      };
+      expectQuality(desktop ? 1160 : 870, desktop ? 1.35 : 1);
+      runFrames(20, 16);
+      expectQuality(desktop ? 1740 : 870, desktop ? 1.7 : 1);
+      runFrames(233, 16);
+      expectQuality(1740, 1.7);
       runFrames(19, 55);
-      expect(canvas.width).toBe(1160);
-      expect(lastDetail()).toBe(1.35);
+      expectQuality(1160, 1.35);
       runFrames(19, 55);
-      expect(canvas.width).toBe(870);
-      expect(lastDetail()).toBe(1);
+      expectQuality(870, 1);
       runFrames(19, 55);
-      expect(canvas.width).toBe(464);
-      expect(lastDetail()).toBe(0.65);
+      expectQuality(464, 0.65);
       runFrames(19, 55);
-      expect(canvas.width).toBe(290);
-      expect(lastDetail()).toBe(0.4);
+      expectQuality(290, 0.4);
       runFrames(220, 16);
-      expect(canvas.width).toBe(290);
-      expect(lastDetail()).toBe(0.4);
+      expectQuality(290, 0.4);
       runFrames(430, 16);
-      expect(canvas.width).toBe(1740);
-      expect(lastDetail()).toBe(1.7);
+      expectQuality(1740, 1.7);
     },
   );
 

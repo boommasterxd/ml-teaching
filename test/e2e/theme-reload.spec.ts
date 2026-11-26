@@ -69,6 +69,80 @@ test('changing the motion preference disables the theme wipe without losing the 
   expect(await transitions()).toEqual([]);
 });
 
+test('the appearance menu can fade out while the page theme wipe is active', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+  await page.goto('/impressum');
+  const menu = await openThemeMenu(page);
+  await expect(menu).toHaveCSS('opacity', '1');
+  const observation = await menu.evaluateHandle((popup) => {
+    const recorded = Promise.withResolvers<{
+      independentCapture: boolean;
+      fadedDuringWipe: boolean;
+      completedWipe: boolean;
+    }>();
+    const start = document.startViewTransition;
+    document.startViewTransition = new Proxy(start, {
+      apply(target, receiver, args) {
+        document.startViewTransition = start;
+        const transition = Reflect.apply(target, receiver, args) as ViewTransition;
+        const sample = async () => {
+          await transition.ready;
+          // The theme toggler starts the wipe in its own ready handler.
+          await Promise.resolve();
+          const root = document.documentElement;
+          const positioner = popup.parentElement;
+          const name = positioner && getComputedStyle(positioner).viewTransitionName;
+          const independentCapture = Boolean(
+            name &&
+            name !== 'none' &&
+            Number.isFinite(
+              parseFloat(getComputedStyle(root, `::view-transition-group(${name})`).width),
+            ) &&
+            getComputedStyle(root, `::view-transition-old(${name})`).display === 'none' &&
+            getComputedStyle(root, `::view-transition-new(${name})`).opacity === '1',
+          );
+          const wipe = document.getAnimations().find(({ effect }) => {
+            return (
+              effect instanceof KeyframeEffect &&
+              effect.pseudoElement === '::view-transition-new(root)'
+            );
+          });
+          let fadedDuringWipe = false;
+          while (wipe?.playState === 'running' && document.activeViewTransition === transition) {
+            if (popup.hasAttribute('inert') && Number(getComputedStyle(popup).opacity) <= 0.01) {
+              fadedDuringWipe = true;
+              break;
+            }
+            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          }
+          await transition.finished;
+          return {
+            independentCapture,
+            fadedDuringWipe,
+            completedWipe: wipe?.playState === 'finished',
+          };
+        };
+        void sample().then(recorded.resolve, recorded.reject);
+        return transition;
+      },
+    });
+    return { result: recorded.promise };
+  });
+  await menu.getByRole('menuitemradio', { name: 'Dunkel', exact: true }).press('Enter');
+  expect(await observation.evaluate(({ result }) => result)).toEqual({
+    independentCapture: true,
+    fadedDuringWipe: true,
+    completedWipe: true,
+  });
+  await observation.dispose();
+  await expect(menu).toBeHidden();
+  await expect(
+    page.getByRole('button', { name: 'Darstellung einstellen', exact: true }),
+  ).toBeFocused();
+  await expect(page.locator('[data-theme-menu]')).toHaveCount(0);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
 test('the native error document restores a remembered theme without changing the favicon URL', async ({
   page,
 }) => {

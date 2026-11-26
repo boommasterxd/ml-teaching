@@ -1,0 +1,27 @@
+/* Override ThemeToggler's capture reset for the live appearance controls. */
+:root:active-view-transition-type(animate-ui-theme) [data-theme-switch] {
+  view-transition-name: theme-switch !important;
+}
+
+/* Capture the positioner so the popup's own opacity and transform stay live inside it. */
+:root:active-view-transition-type(animate-ui-theme)
+  [data-slot='dropdown-menu-positioner']:has(> [data-theme-menu-captured]) {
+  view-transition-name: theme-menu !important;
+}
+
+::view-transition-old(theme-switch),
+::view-transition-old(theme-menu) {
+  display: none;
+}
+
+::view-transition-group(theme-switch),
+::view-transition-group(theme-menu),
+::view-transition-new(theme-switch),
+::view-transition-new(theme-menu) {
+  animation: none;
+}
+
+::view-transition-new(theme-switch),
+::view-transition-new(theme-menu) {
+  mix-blend-mode: normal;
+}

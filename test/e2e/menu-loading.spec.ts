@@ -137,11 +137,11 @@ test('the training menu item shows its own progress until the consent dialog ope
 }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/lernen');
+  await expect(page.locator('.header-menu-mobile')).toHaveCount(0);
   const menu = page.getByRole('button', { name: 'Lernlabor', exact: true });
   const entry = page.getByRole('link', { name: 'Bildmodell trainieren', exact: true });
   await menu.press('Enter');
   await expect(entry).toBeVisible();
-
   const scripts = '**/_next/static/chunks/*.js';
   const loading = Promise.withResolvers<void>();
   await page.route(scripts, async (route) => {

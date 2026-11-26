@@ -309,6 +309,8 @@ for (const intent of ['hover', 'keyboard'] as const) {
       await expectPageTransitions(page, transitions, 'forward', 'forward');
       await openOverview();
       await prepareOverview();
+      if (intent === 'keyboard') await expect(overview).toBeFocused();
+      await expect.poll(() => arrowOffset(overview)).toBeGreaterThan(0);
       await activateOverview();
       await expect(heading).toBeVisible();
       await expect(page).toHaveURL(learningPaths.hub);

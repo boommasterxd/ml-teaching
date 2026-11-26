@@ -356,9 +356,9 @@ active first-frame deadline switches to the optimized responsive poster.
 Pointer and keyboard intent prepare the shared renderer. The poster covers
 renderer failure, reduced motion, disabled scripting and a pause before the
 first frame. Recovery actions remain available throughout.
-The recovery artwork and the mobile homepage start both WebGL passes at a
-low resolution and increase quality only when frame timing allows it. The
-desktop homepage keeps its sharper initial frame.
+The recovery artwork starts both WebGL passes at a low resolution. The homepage
+starts at up to 1.5× display scaling on mobile and 2× on desktop. Each scene
+increases quality as frame timing allows.
 Visible scenes support pointer, touch and keyboard impulses and a pause control.
 The [playback and menu-loading decisions](decisions/error-artwork-and-menus.md)
 record why these interactions share their implementations.
@@ -769,10 +769,14 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   navigation, and only the homepage crossing opts into the recovery transition.
   Animate UI's ThemeToggler reveals the new theme from left to right with native
   root snapshots. The browser pauses pointer hit-testing during the capture;
-  keyboard controls remain available. The Base UI switch retains its DOM node
-  and thumb spring. A second keyboard activation applies the latest choice and
-  ends the active wipe. Reduced motion and browsers without View Transitions
-  apply the selection directly.
+  keyboard controls remain available. The header switch is captured separately
+  for the theme wipe, so its live thumb spring is visible from the start.
+  The appearance popup is captured through its positioner, which keeps its
+  existing exit animation visible while the page wipe runs. After exit, the
+  hidden positioner stays available to the browser until that wipe finishes.
+  The Base UI switch retains its DOM node. A second keyboard activation applies
+  the latest choice and ends the active wipe. Reduced motion and browsers
+  without View Transitions apply the selection directly.
   Each pathname change alternates the main content's capture name. This keeps
   the departing and arriving pages at their own sizes and scroll positions.
   External CSS animates their opacity, horizontal translation and blur and excludes
@@ -783,11 +787,14 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   the loop's reflections and refraction. Its front-surface search is bounded to the
   ring and its soft edge. The two ellipsoid droplets use direct ray intersections
   and surface normals. The second pass resolves edge coverage at output resolution.
-  Desktop homepage playback starts at up to 2× display
-  scaling, 300,000 field texels and 4,147,200 output pixels. Mobile and error artwork
-  start at up to 0.5× display scaling, 16,000 field texels and 100,000 output pixels.
-  Sustained frame cadence can raise
-  both passes to 3× display scaling, 600,000 field texels and 8,294,400 output pixels,
+  The homepage starts at up to 1.5× display scaling, 150,000 field texels and
+  2,073,600 output pixels on mobile. On desktop it starts at up to 2× display scaling,
+  300,000 field texels and 4,147,200 output pixels. Error artwork starts at up to
+  0.5× display scaling, 16,000 field texels and 100,000 output pixels.
+  Stable startup timing on the desktop homepage allows one early quality increase
+  after 300 ms. The one-second measurement window checks for sustained load in all
+  profiles. Sustained frame cadence can raise both passes
+  to 3× display scaling, 600,000 field texels and 8,294,400 output pixels,
   subject to GPU dimension limits. Sustained slow frames can lower the renderer
   to 0.5× display scaling, 16,000 field texels and 100,000 output pixels.
   After a reduction, six stable measurement windows allow

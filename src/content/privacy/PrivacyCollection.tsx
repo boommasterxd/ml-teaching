@@ -1,3 +1,6 @@
+const googlePrivacyUrl = 'https://policies.google.com/privacy?hl=de&gl=de';
+const kagglePrivacyUrl = 'https://www.kaggle.com/privacy';
+
 export const PrivacyCollection = (
   <>
     <h2>4. Datenerfassung auf dieser Website</h2>
@@ -96,14 +99,15 @@ export const PrivacyCollection = (
       können die Empfänger den Abruf diesem Lernangebot zuordnen.
     </p>
     <p>
-      Nach Googles Datenschutzerklärung ist Google Ireland Limited, Gordon House, Barrow Street,
-      Dublin 4, Irland, für die Google-Dienste bei Nutzerinnen und Nutzern im Europäischen
-      Wirtschaftsraum verantwortlich. Beim Abruf über seinen Modelldienst verarbeitet Google die
-      Verbindungsdaten in eigener Verantwortlichkeit, um den Download zu ermöglichen. Google nennt
-      für die Verarbeitung von IP-Adressen außerdem den Schutz seiner Dienste vor Missbrauch. Kaggle
-      Inc., 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA, betreibt Kaggle und verarbeitet
-      die Verbindungsdaten in eigener Verantwortlichkeit zur Bereitstellung und Absicherung des
-      Dienstes.
+      Nach <a href={googlePrivacyUrl}>Googles Datenschutzerklärung</a> ist Google Ireland Limited,
+      Gordon House, Barrow Street, Dublin 4, Irland, für die Google-Dienste bei Nutzerinnen und
+      Nutzern im Europäischen Wirtschaftsraum verantwortlich. Beim Abruf über seinen Modelldienst
+      verarbeitet Google die Verbindungsdaten in eigener Verantwortlichkeit, um den Download zu
+      ermöglichen. Google nennt für die Verarbeitung von IP-Adressen außerdem den Schutz seiner
+      Dienste vor Missbrauch. Kaggle Inc., 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA,
+      betreibt Kaggle und verarbeitet die Verbindungsdaten in eigener Verantwortlichkeit zur
+      Bereitstellung und Absicherung des Dienstes. Weitere Informationen finden Sie in der{' '}
+      <a href={kagglePrivacyUrl}>Datenschutzerklärung von Kaggle</a>.
     </p>
     <h4>Bildtraining auf Ihrem Gerät</h4>
     <p>
@@ -140,24 +144,23 @@ export const PrivacyCollection = (
       Ein Neuladen löscht keine bereits bei Google oder Kaggle angefallenen Verbindungsdaten. Google
       richtet die Aufbewahrung seiner Daten nach Datenart, Verwendungszweck und gesetzlichen
       Anforderungen, insbesondere Sicherheits- und Missbrauchsabwehrzwecken; Einzelheiten erläutert
-      die{' '}
-      <a href="https://policies.google.com/privacy?hl=de&amp;gl=de">
-        Datenschutzerklärung von Google
-      </a>
-      .
+      die <a href={googlePrivacyUrl}>Datenschutzerklärung von Google</a>.
     </p>
     <p>
       Kaggle bestimmt die Speicherdauer nach dem Zweck der Erhebung. Kaggle kann Daten länger
       aufbewahren, etwa zur Sicherheit, zur Missbrauchsabwehr oder zur Erfüllung gesetzlicher
       Pflichten. Weitere Informationen finden Sie in der{' '}
-      <a href="https://www.kaggle.com/privacy">Datenschutzerklärung von Kaggle</a>.
+      <a href={kagglePrivacyUrl}>Datenschutzerklärung von Kaggle</a>.
     </p>
     <h4>Übermittlungen in Drittländer</h4>
     <p>
       Beim Modell-Download können Verbindungsdaten an Google-Server außerhalb des Europäischen
-      Wirtschaftsraums, insbesondere in den USA, gelangen. Google LLC ist nach dem EU-US Data
-      Privacy Framework zertifiziert. Für Übermittlungen an erfasste US-Empfänger besteht ein
-      Angemessenheitsbeschluss nach Art. 45 DSGVO. Weitere Informationen enthalten{' '}
+      Wirtschaftsraums, insbesondere in den USA, gelangen. Google LLC ist nach dem{' '}
+      <a href="https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32023D1795">
+        EU-US Data Privacy Framework
+      </a>{' '}
+      zertifiziert. Für Übermittlungen an erfasste US-Empfänger besteht ein Angemessenheitsbeschluss
+      nach Art. 45 DSGVO. Weitere Informationen enthalten{' '}
       <a href="https://policies.google.com/privacy/frameworks?hl=de">
         Googles Angaben zu Datenübermittlungen
       </a>{' '}
@@ -176,7 +179,7 @@ export const PrivacyCollection = (
       teil. Für davon erfasste Übermittlungen gilt der Angemessenheitsbeschluss nach Art. 45 DSGVO.
       Soweit erforderlich, verwendet Kaggle nach eigenen Angaben Standardvertragsklauseln nach Art.
       46 DSGVO. Ansprechpartner für Auskünfte zu diesen Garantien nennt die{' '}
-      <a href="https://www.kaggle.com/privacy">Datenschutzerklärung von Kaggle</a>.
+      <a href={kagglePrivacyUrl}>Datenschutzerklärung von Kaggle</a>.
     </p>
     <h4>Zugriff auf Ihr Gerät</h4>
     <p>
