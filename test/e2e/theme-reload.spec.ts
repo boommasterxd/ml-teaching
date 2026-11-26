@@ -85,7 +85,7 @@ test('the appearance menu can fade out while the page theme wipe is active', asy
       const progress = effect.getComputedTiming().progress;
       return (
         effect.pseudoElement === '::view-transition-new(root)' &&
-        progress !== null &&
+        typeof progress === 'number' &&
         progress > 0 &&
         progress < 1
       );
