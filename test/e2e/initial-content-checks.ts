@@ -21,11 +21,22 @@ async function expectPainted(content: Locator) {
     .toBe(true);
 }
 
+async function expectImageBreadcrumbs(container: Locator, practice = false) {
+  const trail = container.getByRole('navigation', { name: 'Seitenpfad', includeHidden: true });
+  const names = ['Lernlabor', 'Bilderkennung verstehen'];
+  if (practice) names.push('Bildmodell trainieren');
+  await expectPainted(trail);
+  await expect(trail.getByRole('listitem', { includeHidden: true })).toHaveText(names);
+  const links = trail.getByRole('link', { includeHidden: true });
+  await expect(links).toHaveCount(practice ? 2 : 1);
+  await expect(links.first()).toHaveAttribute('href', learningPaths.hub);
+  if (practice) await expect(links.nth(1)).toHaveAttribute('href', learningPaths.images);
+  await expect(trail.locator('[aria-current="page"]')).toHaveText(names.at(-1)!);
+}
+
 export async function expectInertTrainingWorkspace(workspace: Locator) {
   await expect(workspace).toHaveJSProperty('inert', true);
-  const breadcrumb = workspace.locator('nav[aria-label="Seitenpfad"] [aria-current="page"]');
-  await expectPainted(breadcrumb);
-  await expect(breadcrumb).toHaveText('Bildmodell trainieren');
+  await expectImageBreadcrumbs(workspace, true);
   await expectPainted(workspace.getByText('Dein Bildmodell', { exact: true }));
   await expectPainted(workspace.getByText(/Benenne die Klassen nach den Motiven/));
 
@@ -147,6 +158,7 @@ async function expectLearningHub(main: Locator) {
 }
 
 async function expectImageContent(main: Locator) {
+  await expectImageBreadcrumbs(main);
   await expectReadable(main.getByText(/Das neuronale Netz MobileNet findet Merkmale/));
   await expectReadableLink(
     main.getByRole('link', { name: 'Eigenes Bildmodell trainieren', exact: true }),

@@ -1,3 +1,5 @@
+'use client';
+
 import type { ComponentProps } from 'react';
 import { AnimateIcon } from '@animate-ui/react/icons';
 import IntentLink from '@/components/IntentLink';
@@ -26,6 +28,7 @@ function BreadcrumbItem({
   animateSeparator = false,
   ...props
 }: ComponentProps<'li'> & { animateSeparator?: boolean }) {
+  // AnimateIcon's slot needs a concrete element created on this side of the RSC boundary.
   const item = (
     <li
       data-slot="breadcrumb-item"
