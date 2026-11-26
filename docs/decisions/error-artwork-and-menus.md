@@ -16,7 +16,8 @@ disabled scripting and unavailable WebGL use an optimized responsive still.
 The worker verifies WebGL support before loading its shader renderer.
 
 The homepage reserves the artwork area and tries the shader first at all viewport
-sizes when scripting and motion are available. After 500 ms of active waiting for
+sizes when scripting and motion are available. A first frame within 500 ms fades
+into the empty artwork area. After 500 ms of active waiting for
 the first frame, it requests the responsive still and shows a spinner. Once the
 still decodes, it replaces the spinner while the renderer continues. An earlier
 renderer failure requests the still immediately.

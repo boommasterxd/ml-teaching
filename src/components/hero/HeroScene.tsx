@@ -71,7 +71,8 @@ function Scene({ children, sources }: HeroSceneProps) {
     showPoster,
     reduce,
     rendered,
-    pending,
+    loading,
+    reveal,
     onRendered,
     onUnavailable,
     prepare,
@@ -110,13 +111,13 @@ function Scene({ children, sources }: HeroSceneProps) {
             <GlassArtworkPlaceholder
               sources={sources}
               fallback={showPoster || reduce}
-              pending={pending}
+              loading={loading}
               shaderFirst
             />
             {Field && (
               <div ref={fieldRef} className="contents">
                 <Field
-                  homeStartup
+                  reveal={reveal}
                   paused={paused}
                   inView={inView}
                   onUnavailable={onUnavailable}

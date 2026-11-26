@@ -8,8 +8,11 @@ import { useMotionStart } from '../ui/use-motion-start';
 import { useMotionPreference } from '../ui/use-motion-preference';
 
 type FieldComponent = typeof import('./TopographyField').default;
+export type GlassReveal = 'waiting' | 'fade' | 'ready';
+type FirstFrame = { phase: GlassReveal | 'loading'; startupPoster: boolean };
 
 const prepareField = createRetryableLoader(() => import('./TopographyField'));
+const loadingDelayMs = 500;
 const firstFrameDeadlineMs = 2_000;
 
 function afterFirstPaint(prepare: () => void) {
@@ -17,6 +20,43 @@ function afterFirstPaint(prepare: () => void) {
     frame = requestAnimationFrame(prepare);
   });
   return () => cancelAnimationFrame(frame);
+}
+
+function useFirstFrame(active: boolean, paused: boolean, onUnavailable: () => void) {
+  const [{ phase, startupPoster }, setFirstFrame] = useState<FirstFrame>({
+    phase: 'waiting',
+    startupPoster: false,
+  });
+  const rendered = phase === 'fade' || phase === 'ready';
+  const pending = active && !rendered;
+  if (!rendered && ((!pending && phase === 'loading') || (paused && !startupPoster))) {
+    setFirstFrame({ phase: 'waiting', startupPoster: startupPoster || paused });
+  }
+
+  const onRendered = useCallback((ready: boolean) => {
+    setFirstFrame((current) => {
+      if (!ready) return { ...current, phase: 'waiting' };
+      const fade = current.phase === 'waiting' && !current.startupPoster;
+      return { phase: fade ? 'fade' : 'ready', startupPoster: false };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!pending) return;
+    const loading = window.setTimeout(() => {
+      setFirstFrame((current) =>
+        current.phase === 'waiting' ? { ...current, phase: 'loading' } : current,
+      );
+    }, loadingDelayMs);
+    const deadline = window.setTimeout(onUnavailable, firstFrameDeadlineMs);
+    return () => {
+      window.clearTimeout(loading);
+      window.clearTimeout(deadline);
+    };
+  }, [onUnavailable, pending]);
+
+  const reveal: GlassReveal = phase === 'loading' ? 'waiting' : phase;
+  return { rendered, startupPoster, loading: pending && phase === 'loading', reveal, onRendered };
 }
 
 export function useGlassField(paused: boolean, viewportReady: boolean, deferStartup = false) {
@@ -28,17 +68,15 @@ export function useGlassField(paused: boolean, viewportReady: boolean, deferStar
   const [interested, setInterested] = useState(false);
   const [Field, setField] = useState<FieldComponent | null>(null);
   const [failed, setFailed] = useState(false);
-  const [rendered, setRendered] = useState(false);
-  const [startupPoster, setStartupPoster] = useState(false);
-  if (paused && !rendered && !startupPoster) setStartupPoster(true);
-  const onRendered = useCallback((ready: boolean) => {
-    setRendered(ready);
-    if (ready) setStartupPoster(false);
-  }, []);
   const onUnavailable = useCallback(() => setFailed(true), []);
-  const available = visible && !reduce && !failed && (inView || rendered) && (!paused || rendered);
-  const active = inView && available && !paused && viewportReady && (motionReady || interested);
-  const pending = active && !rendered;
+  const enabled = visible && !reduce && !failed;
+  const active = enabled && inView && !paused && viewportReady && (motionReady || interested);
+  const { rendered, startupPoster, loading, reveal, onRendered } = useFirstFrame(
+    active,
+    paused,
+    onUnavailable,
+  );
+  const available = enabled && (inView || rendered) && (!paused || rendered);
   const showField = viewportReady && available;
   const playbackControl = useRef<HTMLButtonElement>(null);
   const restoreFocus = useRef(false);
@@ -76,12 +114,6 @@ export function useGlassField(paused: boolean, viewportReady: boolean, deferStar
     };
   }, [active, onUnavailable]);
 
-  useEffect(() => {
-    if (!pending) return;
-    const deadline = window.setTimeout(onUnavailable, firstFrameDeadlineMs);
-    return () => window.clearTimeout(deadline);
-  }, [onUnavailable, pending]);
-
   const prepare = () => {
     if (reduce || failed) return;
     if (deferStartup) setInterested(true);
@@ -98,7 +130,8 @@ export function useGlassField(paused: boolean, viewportReady: boolean, deferStar
     showPoster: failed || startupPoster,
     reduce,
     rendered,
-    pending,
+    loading,
+    reveal,
     onRendered,
     onUnavailable,
     prepare,

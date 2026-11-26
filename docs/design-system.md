@@ -831,9 +831,10 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   500 page emits this preload in its document head. The App Router recovery
   screen requests its still as soon as it renders.
   After 500 ms of active waiting for the first frame, the shared Spinner mounts.
-  On the homepage this also requests the matching still. Once it decodes, the
-  still replaces the Spinner while the renderer continues. A first draw or
-  the end of waiting also clears the Spinner.
+  On the homepage, the Spinner also requests the matching still. Once it decodes,
+  the still replaces the Spinner while the renderer continues. A first draw or
+  the end of waiting also clears the Spinner. If the homepage draws the first frame
+  within 500 ms and no still is visible, only the canvas fades in over 200 ms.
   Where parallel compilation is available, the renderer checks the readiness of
   both GPU programs on its frame loop.
   Visibility and intent share one renderer import promise. The module can load

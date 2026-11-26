@@ -12,10 +12,13 @@ import {
   type RefObject,
 } from 'react';
 import { cancelFrame, frame, useMotionValue, useSpring } from 'motion/react';
+import { Effect } from '@animate-ui/react/primitives/effects/effect';
+import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
 import Button from '@/components/Button';
 import { GlassImpulses } from './glass-impulses';
 import type { GlassShape } from './topography-gl';
 import { useTopographyRenderer, type FieldPlayback } from './use-topography-renderer';
+import type { GlassReveal } from './use-glass-field';
 
 interface PointerPoint {
   clientX: number;
@@ -105,16 +108,17 @@ export default function TopographyField({
   paused: userPaused = false,
   inView = true,
   shape = 'ring',
-  homeStartup = false,
+  reveal,
 }: {
   onUnavailable: () => void;
   onRendered: (ready: boolean) => void;
   paused?: boolean;
   inView?: boolean;
   shape?: GlassShape;
-  homeStartup?: boolean;
+  reveal?: GlassReveal;
 }) {
   const surface = useRef<HTMLDivElement>(null);
+  const fade = useTempoTransition(motionTokens.transition.fade);
   const playback = inView ? (userPaused ? 'paused' : 'running') : 'offscreen';
   const paused = playback !== 'running';
   const motion = useFieldMotion(playback);
@@ -126,7 +130,7 @@ export default function TopographyField({
     onUnavailable,
     onRendered,
     shape,
-    homeStartup,
+    reveal !== undefined,
   );
   const pointer = useFieldPointer(canvas, motion, paused);
 
@@ -138,7 +142,19 @@ export default function TopographyField({
 
   return (
     <div className="hero-field-canvas">
-      <div ref={surface} className="size-full" aria-hidden="true" />
+      {reveal === undefined ? (
+        <div ref={surface} className="size-full" aria-hidden="true" />
+      ) : (
+        <Effect
+          ref={surface}
+          className="size-full"
+          aria-hidden="true"
+          fade
+          initial={false}
+          animate={reveal === 'waiting' ? 'hidden' : 'visible'}
+          transition={reveal === 'fade' ? fade : motionTokens.transition.instant}
+        />
+      )}
       <Button
         type="button"
         variant="ghost"
