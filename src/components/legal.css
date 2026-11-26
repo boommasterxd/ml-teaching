@@ -81,7 +81,6 @@
   letter-spacing: -0.025em;
   text-wrap: balance;
   hyphens: auto;
-  scroll-margin-top: calc(var(--header-height) + 2rem);
 }
 .legal-content h2 {
   @apply text-2xl font-semibold tracking-tight;
@@ -131,6 +130,7 @@
   color: var(--foreground);
 }
 .legal-content a:focus-visible,
+.legal-content :is(h2, h3, h4)[id]:focus-visible,
 .legal-sidebar a:focus-visible,
 .legal-sidebar button:focus-visible {
   outline: 2px solid var(--primary);

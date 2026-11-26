@@ -11,7 +11,9 @@ export const PrivacyInformation = (
       Die Datenübertragung im Internet, etwa per E-Mail, kann Sicherheitslücken aufweisen. Ein
       lückenloser Schutz der Daten vor dem Zugriff durch Dritte ist nicht möglich.
     </p>
-    <h3 id="verantwortliche-stelle">Hinweis zur verantwortlichen Stelle</h3>
+    <h3 id="verantwortliche-stelle" tabIndex={-1}>
+      Hinweis zur verantwortlichen Stelle
+    </h3>
     <p>Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:</p>
     <p>
       Yannick Schäfer
@@ -104,7 +106,9 @@ export const PrivacyInformation = (
       <a href="#vercel">Vercel</a>“, „<a href="#model-download">Download des KI-Modells</a>“ und „
       <a href="#contact-inquiries">Anfrage per E-Mail oder Telefon</a>“.
     </p>
-    <h3 id="widerruf-der-einwilligung">Widerruf Ihrer Einwilligung zur Datenverarbeitung</h3>
+    <h3 id="widerruf-der-einwilligung" tabIndex={-1}>
+      Widerruf Ihrer Einwilligung zur Datenverarbeitung
+    </h3>
     <p>
       Ihre Einwilligung zur Lernfunktion können Sie jederzeit mit Wirkung für die Zukunft
       widerrufen. Öffnen Sie „Einstellungen zum Bildtraining“ und wählen Sie „Einwilligung
@@ -120,7 +124,7 @@ export const PrivacyInformation = (
       Browser verfügbar. Wenn Sie die Kamera erneut einschalten möchten, fragt die Lernfunktion Ihre
       Zustimmung erneut ab.
     </p>
-    <h3>
+    <h3 id="right-to-object" tabIndex={-1}>
       Widerspruchsrecht gegen die Datenerhebung in besonderen Fällen sowie gegen Direktwerbung (Art.
       21 DSGVO)
     </h3>
@@ -143,7 +147,9 @@ export const PrivacyInformation = (
       PERSONENBEZOGENEN DATEN ANSCHLIESSEND NICHT MEHR ZUM ZWECKE DER DIREKTWERBUNG VERWENDET
       (WIDERSPRUCH NACH ART. 21 ABS. 2 DSGVO).
     </p>
-    <h3>Beschwerderecht bei der zuständigen Aufsichtsbehörde</h3>
+    <h3 id="complaint-right" tabIndex={-1}>
+      Beschwerderecht bei der zuständigen Aufsichtsbehörde
+    </h3>
     <p>
       Im Falle von Verstößen gegen die DSGVO steht den Betroffenen ein Beschwerderecht bei einer
       Aufsichtsbehörde, insbesondere in dem Mitgliedstaat ihres gewöhnlichen Aufenthalts, ihres
@@ -158,7 +164,9 @@ export const PrivacyInformation = (
       an einen anderen Verantwortlichen verlangen, erfolgt dies nur, soweit es technisch machbar
       ist.
     </p>
-    <h3>Auskunft, Berichtigung und Löschung</h3>
+    <h3 id="access-correction-erasure" tabIndex={-1}>
+      Auskunft, Berichtigung und Löschung
+    </h3>
     <p>
       Sie haben im Rahmen der geltenden gesetzlichen Bestimmungen jederzeit das Recht auf
       unentgeltliche Auskunft über Ihre gespeicherten personenbezogenen Daten, deren Herkunft und
@@ -166,7 +174,9 @@ export const PrivacyInformation = (
       Löschung dieser Daten. Hierzu sowie zu weiteren Fragen zum Thema personenbezogene Daten können
       Sie sich jederzeit an uns wenden.
     </p>
-    <h3>Recht auf Einschränkung der Verarbeitung</h3>
+    <h3 id="restriction-of-processing" tabIndex={-1}>
+      Recht auf Einschränkung der Verarbeitung
+    </h3>
     <p>
       Sie haben das Recht, die Einschränkung der Verarbeitung Ihrer personenbezogenen Daten zu
       verlangen. Hierzu können Sie sich jederzeit an uns wenden. Das Recht auf Einschränkung der
@@ -192,10 +202,10 @@ export const PrivacyInformation = (
       </li>
       <li>
         {' '}
-        Wenn Sie einen Widerspruch nach Art. 21 Abs. 1 DSGVO eingelegt haben, muss eine Abwägung
-        zwischen Ihren und unseren Interessen vorgenommen werden. Solange noch nicht feststeht,
-        wessen Interessen überwiegen, haben Sie das Recht, die Einschränkung der Verarbeitung Ihrer
-        personenbezogenen Daten zu verlangen.
+        Wenn Sie einen <a href="#right-to-object">Widerspruch nach Art. 21 Abs. 1 DSGVO</a>{' '}
+        eingelegt haben, muss eine Abwägung zwischen Ihren und unseren Interessen vorgenommen
+        werden. Solange noch nicht feststeht, wessen Interessen überwiegen, haben Sie das Recht, die
+        Einschränkung der Verarbeitung Ihrer personenbezogenen Daten zu verlangen.
       </li>
     </ul>
     <p>
