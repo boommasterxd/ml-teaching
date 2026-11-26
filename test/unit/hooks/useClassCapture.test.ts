@@ -111,11 +111,13 @@ describe('class image capture', () => {
     expect(callbacks.onUploadEnd).toHaveBeenCalledOnce();
   });
 
-  it('combines files skipped at selection and processing into one capacity report', async () => {
+  it('only reads files within capacity and reports files skipped at selection and processing', async () => {
     const cls = makeClass(ML.MAX_IMAGES_PER_CLASS - 2);
     const callbacks = actions();
     const { result } = renderHook(() => useClassCapture(cls, callbacks));
-    const files = ['first.png', 'second.png', 'third.png'].map((name) => new File(['a'], name));
+    const files = ['first.png', 'second.png'].map((name) => new File(['a'], name));
+    const readSkippedFile = vi.fn(() => new File(['a'], 'third.png'));
+    Object.defineProperty(files, 2, { get: readSkippedFile });
     const event = {
       target: { files, value: 'selected' },
     } as unknown as React.ChangeEvent<HTMLInputElement>;
@@ -123,6 +125,8 @@ describe('class image capture', () => {
 
     await act(async () => result.current.handleFileUpload(event));
 
+    expect(event.target.value).toBe('');
+    expect(readSkippedFile).not.toHaveBeenCalled();
     expect(processImageFiles).toHaveBeenCalledWith(
       files.slice(0, 2),
       expect.any(Function),

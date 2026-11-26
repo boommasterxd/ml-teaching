@@ -175,7 +175,7 @@ describe('decorative hero lifetime', () => {
     const artwork = () => container.querySelector('#home-hero-art picture img');
     const desktopMedia = () =>
       container.querySelector('#home-hero-art picture source:nth-child(2)')?.getAttribute('media');
-    await advance(800);
+    await advance(250);
     const poster = artwork();
     expect(poster).not.toBeNull();
     expect(desktopMedia()).toContain('prefers-reduced-motion');

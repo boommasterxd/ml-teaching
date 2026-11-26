@@ -37,13 +37,23 @@ export interface Run {
   status: string;
   conclusion: string | null;
   run_attempt: number;
+  workflow_id?: number;
+  repository?: { id: number; full_name: string };
+  head_repository?: { id: number; full_name: string };
   pull_requests?: { number: number }[];
+}
+export interface ReceiptOrigin {
+  runId: number;
+  attempt: number;
+  head: string;
+  branch: string;
+  repositoryId: number;
 }
 export interface Api {
   read(path: string): unknown;
   list(path: string, field: string): unknown[];
   remove(id: number): void;
-  readReceipts(runId: number, attempt: number): unknown[];
+  readReceipts(origin: ReceiptOrigin): unknown[];
 }
 export interface Candidate {
   cache: Cache;

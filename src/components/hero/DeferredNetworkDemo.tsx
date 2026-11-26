@@ -12,18 +12,11 @@ import {
 import { useNeuralNetAnimation } from '@/hooks/useNeuralNetAnimation';
 import { prepareExample } from '@/components/network/prepare-example';
 import type { ExampleSignal } from '@/components/network/examples';
+import { createRetryableLoader } from '@/lib/create-retryable-loader';
 
-let modulePromise: ReturnType<typeof importDemo> | undefined;
-function importDemo() {
-  return import('@/components/NeuralNetViz').then((module) => ({ default: module.NetworkDiagram }));
-}
-function prepareDemo() {
-  modulePromise ??= importDemo().catch((error: unknown) => {
-    modulePromise = undefined;
-    throw error;
-  });
-  return modulePromise;
-}
+const prepareDemo = createRetryableLoader(async () => ({
+  default: (await import('@/components/NeuralNetViz')).NetworkDiagram,
+}));
 const NetworkDiagram = lazy(prepareDemo);
 
 function useMountedRef() {

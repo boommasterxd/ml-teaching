@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { AnimateIcon } from '@animate-ui/react/icons';
+import { comingSoonLabel } from '@/content/learning-areas';
 import type { HeaderNavGroup, HeaderNavLink } from '@/content/site-navigation';
 import IntentLink from './IntentLink';
 import { ArrowRight } from './icons/arrow-right';
@@ -36,7 +37,9 @@ function Destination({
     return (
       <span aria-disabled="true" className="header-menu-row text-sm text-muted-foreground">
         {contents}
-        <Badge variant="secondary">Noch nicht verfügbar</Badge>
+        <Badge variant="secondary" lang="en">
+          {comingSoonLabel}
+        </Badge>
       </span>
     );
   }

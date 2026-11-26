@@ -65,11 +65,16 @@ After an edit limited to the title or description, CI and Gitleaks can each reus
 a successful result from the same repository, pull request and workflow for the
 exact base, head and simulated merge revisions. The required job must contain
 a successful verification step less than seven days old for those revisions, and
-the workflow must still report the same successful attempt. A reuse step does not
-extend that window.
+the workflow must still report the same successful attempt. A metadata run that
+completed the regular checks can supply that proof. A reuse step does not extend
+that window. Multiple successful verification or reuse markers make the attempt
+ambiguous.
 
-A metadata run can wait within a bounded lookup budget for an active code run for
-the exact pull request and revision set. It never waits for another metadata run.
+A metadata run can wait for an active code run for the exact pull request and
+revision set. The CI lookup is limited to ten minutes and a fixed number of API
+requests. Gitleaks keeps its shorter lookup budget. Metadata runs in the same
+revision group may be queued behind each other, so a metadata run never waits
+for another.
 A missing match gets a short initial retry. Missing, failed, expired or unavailable
 evidence, including expiry of the lookup budget, falls back to ordinary check
 selection or scanning. Changes to the base run the regular checks.
@@ -107,9 +112,11 @@ replacement receipts and active runs, reads and validates the returned inventory
 and refreshes the inventory, active runs and trusted branch identity before
 deletion. Each run deletes up to 100 revalidated cache IDs and checks the
 inventory again to confirm their removal.
-Inventory checks require complete counts and unique identities. Uncertain API
-results stop the affected cleanup. Diagnostics include the operation and error
-class without logging the underlying command or response.
+Inventory checks require complete counts and unique identities. A count mismatch
+allows one fresh, fully paginated read. Malformed pages, duplicate identities or
+another count mismatch stop the affected cleanup. Deletions run once per eligible
+cache ID. Diagnostics include the operation and error class without logging the
+underlying command or response.
 After pull request cache cleanup, each group of up to 20 default-branch cache
 deletions rechecks the cache inventory, replacement provenance, active workflow
 runs and current default-branch revision.
@@ -125,9 +132,14 @@ plan from the current inventory and apply the same safeguards.
 Workflow completions and PR closures can both resume deferred main rotation using
 a verified producer receipt. Recovery queries each approved producer workflow
 directly so other workflow runs cannot displace eligible receipts from the bounded
-search. It prefers the current revision and checks that producer inputs are unchanged
-before using an older receipt. An expired npm receipt leaves the npm generations in
-place while independently verified closed-PR and CodeQL cleanup can proceed.
+search. It selects the newest producer and checks that its inputs are unchanged
+before using a receipt from an ancestor. It verifies the producer's terminal
+attempt, its unique successful warmup job and the receipt's repository, branch,
+revision and attempt. A failed producer workflow can supply the receipt if the
+subsequent cache cleanup was its only failed job. A newer unverified producer
+prevents reuse of earlier receipts. An expired npm receipt leaves the npm
+generations in place while independently verified closed-PR and CodeQL cleanup can
+proceed.
 For main rotation, the active lifecycle workflow
 can proceed past queued or pending runs with the same verified GitHub workflow
 identity because the shared concurrency group serializes them. Other active runs

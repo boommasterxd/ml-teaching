@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { EntryReveal } from '@/components/ui/entry-reveal';
 import { Heading, Text } from '@/components/ui/typography';
 import { learningPaths } from '@/lib/learning-paths';
-import { rewardPracticeComingSoon } from '@/content/learning-areas';
+import { comingSoonLabel, rewardPracticeComingSoon } from '@/content/learning-areas';
 
 export default function RewardPracticePage() {
   return (
@@ -29,9 +29,11 @@ export default function RewardPracticePage() {
           </Heading>
           <EntryReveal kind="reading" asChild>
             {rewardPracticeComingSoon ? (
-              <Text>Die Übung ist noch nicht verfügbar.</Text>
+              <Text lang="en">{comingSoonLabel}</Text>
             ) : (
-              <Text>Wähle ein Ziel. Vergleiche die Wege zum Stern und zum Schatz.</Text>
+              <Text>
+                Wähle ein Ziel und vergleiche die Beispielwege der Figur zum Stern und zum Schatz.
+              </Text>
             )}
           </EntryReveal>
         </div>

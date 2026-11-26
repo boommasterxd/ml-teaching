@@ -45,8 +45,11 @@ async function expectStableHeroHandoff(page: Page) {
   ).toBe(0);
 }
 
-test('mobile home navigation reuses the poster prepared on focus', async ({ page }) => {
+test('mobile home navigation prepares the page while deferring shader fallback imagery', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   const images: string[] = [];
   page.on('request', (request) => {
     if (new URL(request.url()).searchParams.get('url')?.includes('hero-glass-mobile'))
@@ -56,19 +59,52 @@ test('mobile home navigation reuses the poster prepared on focus', async ({ page
   await expect(page.locator('.header-menu-desktop')).toHaveCount(0);
   const home = page.getByRole('banner').getByRole('link', { name: 'ML Teaching – Startseite' });
   expect(images).toEqual([]);
+  const pagePayload = page.waitForResponse((response) => {
+    const request = response.request();
+    return (
+      new URL(request.url()).pathname === '/' &&
+      request.headers().rsc === '1' &&
+      Boolean(request.headers()['next-router-segment-prefetch']?.endsWith('/__PAGE__'))
+    );
+  });
   await home.focus();
-  await expect.poll(() => images).toHaveLength(1);
+  const prepared = await pagePayload;
+  expect(prepared.ok()).toBe(true);
+  expect(await prepared.text()).toContain('Deine KI lernt.');
+  expect(images).toEqual([]);
   await home.press('Enter');
-  const poster = page.locator('#home-hero-art picture img').first();
-  await expect
-    .poll(() =>
-      poster.evaluate((img: HTMLImageElement) => ({
-        source: img.currentSrc,
-        loaded: img.naturalWidth > 0,
-      })),
-    )
-    .toEqual({ source: images[0], loaded: true });
-  expect(images).toHaveLength(1);
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});
+
+test('the mobile home still displays one optimized poster with JavaScript disabled', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+    baseURL,
+    javaScriptEnabled: false,
+    viewport: { width: 390, height: 844 },
+    reducedMotion: 'no-preference',
+  });
+  try {
+    const page = await context.newPage();
+    const posters: string[] = [];
+    page.on('request', (request) => {
+      if (new URL(request.url()).searchParams.get('url')?.includes('hero-glass-mobile'))
+        posters.push(request.url());
+    });
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    const poster = page.locator('#home-hero-art noscript img');
+    await expect(poster).toBeVisible();
+    await expect
+      .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
+      .toBeGreaterThan(1);
+    expect(posters).toEqual([await poster.evaluate((image: HTMLImageElement) => image.currentSrc)]);
+  } finally {
+    await context.close();
+  }
 });
 
 test('a late Geist download keeps the first mobile headline in place', async ({ page }) => {

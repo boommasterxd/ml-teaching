@@ -43,9 +43,10 @@ export const PrivacyInformation = (
       E-Mail-Adresse und die zur Bearbeitung Ihres Anliegens erforderlichen Angaben.
     </p>
     <p>
-      Es besteht keine gesetzliche oder vertragliche Pflicht, Bildbeispiele für die Lernfunktion zu
-      verwenden oder uns zu kontaktieren. Über diese Website werden keine Verbraucherverträge
-      angebahnt oder abgeschlossen.
+      Es besteht keine gesetzliche oder vertragliche Pflicht, beim Besuch dieser Website
+      Verbindungsdaten bereitzustellen, Bildbeispiele für die Lernfunktion zu verwenden oder uns zu
+      kontaktieren. Über diese Website werden keine Verbraucherverträge angebahnt oder
+      abgeschlossen.
     </p>
     <h4>Folgen einer Nichtbereitstellung</h4>
     <p>

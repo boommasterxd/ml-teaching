@@ -1,46 +1,66 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type SyntheticEvent } from 'react';
 import { Spinner } from '../ui/spinner';
 import { preloadContourPoster, type ContourSources } from './contour-poster';
 import StaticContourPoster from './StaticContourPoster';
 
 const loadingDelayMs = 500;
 
-function DelayedLoadingIndicator() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setVisible(true), loadingDelayMs);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  return visible ? (
-    <div className="hero-field-loading">
-      <Spinner aria-label="Grafik wird geladen" />
-    </div>
-  ) : null;
-}
-
 export default function GlassArtworkPlaceholder({
   sources,
   fallback,
   pending,
   preloadMobile = true,
+  shaderFirst = false,
 }: {
   sources: ContourSources;
   fallback: boolean;
   pending: boolean;
   preloadMobile?: boolean;
+  shaderFirst?: boolean;
 }) {
-  if (preloadMobile) preloadContourPoster(sources, 'mobile');
+  const [delayed, setDelayed] = useState(false);
+  const [posterReady, setPosterReady] = useState(false);
+  const waiting = pending && delayed;
+  const showFallback = fallback || (shaderFirst && waiting);
+  if (!pending && delayed) setDelayed(false);
+  if (!showFallback && posterReady) setPosterReady(false);
+  useEffect(() => {
+    if (!pending) return;
+    const timer = window.setTimeout(() => setDelayed(true), loadingDelayMs);
+    return () => window.clearTimeout(timer);
+  }, [pending]);
+
+  function markPosterReady(event: SyntheticEvent<HTMLImageElement>) {
+    const image = event.currentTarget;
+    if (image.naturalWidth <= 1) return;
+    const source = image.currentSrc;
+    void image.decode().then(
+      () => {
+        if (image.isConnected && image.currentSrc === source) setPosterReady(true);
+      },
+      () => {},
+    );
+  }
+
+  if (preloadMobile && !shaderFirst) preloadContourPoster(sources, 'mobile');
   return (
     <>
-      <StaticContourPoster sources={sources} desktopFallback={fallback} />
+      <StaticContourPoster
+        sources={sources}
+        fallback={showFallback}
+        shaderFirst={shaderFirst}
+        onLoad={shaderFirst && showFallback ? markPosterReady : undefined}
+      />
       <noscript>
-        <StaticContourPoster sources={sources} withoutScripting />
+        <StaticContourPoster sources={sources} shaderFirst={shaderFirst} withoutScripting />
       </noscript>
-      {pending && <DelayedLoadingIndicator />}
+      {waiting && !posterReady && (
+        <div className="hero-field-loading">
+          <Spinner aria-label="Grafik wird geladen" />
+        </div>
+      )}
     </>
   );
 }

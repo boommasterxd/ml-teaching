@@ -41,9 +41,13 @@ Open [localhost:3000](http://localhost:3000), choose **Bilderkennung** in the
 learning lab and open the practice page. The model downloads after you consent.
 Training requires at least two classes. Give every class a unique name and add at
 least ten images to each one.
-If it fails to load, check your connection and select **Erneut versuchen**.
+If the model fails to load, check your connection and select **Erneut versuchen**.
 See [development checks](docs/development.md#checks) for the model-provider smoke
 test.
+
+Before collecting your own files, check the
+[supported formats and size limits](docs/architecture.md#browser-ml-flow).
+If your browser cannot open a format such as HEIC or HEIF, try a JPEG or PNG copy.
 
 ## Data, providers and costs
 

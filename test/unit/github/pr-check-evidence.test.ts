@@ -51,14 +51,18 @@ function run(number: number, conclusion: string | null = 'success') {
   };
 }
 
-function jobs(name: string, completedAt = new Date().toISOString(), check = 'CI') {
+function jobs(names: string | string[], completedAt = new Date().toISOString(), check = 'CI') {
   return {
     jobs: [
       {
         name: check,
         status: 'completed',
         conclusion: 'success',
-        steps: [{ name, conclusion: 'success', completed_at: completedAt }],
+        steps: [names].flat().map((name) => ({
+          name,
+          conclusion: 'success',
+          completed_at: completedAt,
+        })),
       },
     ],
   };
@@ -109,7 +113,8 @@ describe('required checks after a pull request edit', () => {
       .mockResolvedValueOnce(jobs(reused))
       .mockResolvedValueOnce(metadata)
       .mockResolvedValueOnce(jobs(verified))
-      .mockResolvedValueOnce(run(1));
+      .mockResolvedValueOnce(run(1))
+      .mockResolvedValueOnce({ workflow_runs: [run(3, null), metadata, run(1)] });
 
     await expect(hasCheckEvidence(request, get)).resolves.toBe(true);
     expect(get.mock.calls.map(([path]) => path)).toEqual([
@@ -118,8 +123,48 @@ describe('required checks after a pull request edit', () => {
       'runs/2',
       'runs/1/attempts/2/jobs?per_page=100',
       'runs/1',
+      `workflows/ci.yml/runs?event=pull_request&head_sha=${revisions.head}&per_page=5`,
     ]);
   });
+
+  it('recognizes a full successful check performed for a metadata edit', async () => {
+    const metadata = { ...run(2), display_title: metadataTitle };
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce({ workflow_runs: [metadata] })
+      .mockResolvedValueOnce(jobs(verified))
+      .mockResolvedValueOnce(metadata)
+      .mockResolvedValueOnce({ workflow_runs: [metadata] });
+    await expect(hasCheckEvidence(request, get)).resolves.toBe(true);
+    expect(get).toHaveBeenCalledTimes(4);
+  });
+
+  it('rejects a result if the rechecked list includes a newer failed run', async () => {
+    const completed = run(2);
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce({ workflow_runs: [completed] })
+      .mockResolvedValueOnce(jobs(verified))
+      .mockResolvedValueOnce(completed)
+      .mockResolvedValueOnce({ workflow_runs: [run(4, 'failure'), completed] });
+    await expect(hasCheckEvidence(request, get)).resolves.toBe(false);
+  });
+
+  it.each([
+    [verified, reused],
+    [verified, verified],
+  ])(
+    'rejects ambiguous verification markers even with older successful evidence',
+    async (...markers) => {
+      const metadata = { ...run(2), display_title: metadataTitle };
+      const get = vi
+        .fn()
+        .mockResolvedValueOnce({ workflow_runs: [metadata, run(1)] })
+        .mockResolvedValueOnce(jobs(markers));
+      await expect(hasCheckEvidence(request, get)).resolves.toBe(false);
+      expect(get).toHaveBeenCalledTimes(2);
+    },
+  );
 
   it('waits for a later code run of the same PR and checks its completed attempt', async () => {
     const active = { ...run(4, null), display_title: codeTitle, status: 'in_progress' };
@@ -130,12 +175,46 @@ describe('required checks after a pull request edit', () => {
       .mockResolvedValueOnce({ workflow_runs: [active, run(3, null)] })
       .mockResolvedValueOnce({ workflow_runs: [completed, run(3, null)] })
       .mockResolvedValueOnce(jobs(verified))
-      .mockResolvedValueOnce(completed);
+      .mockResolvedValueOnce(completed)
+      .mockResolvedValueOnce({ workflow_runs: [completed, run(3, null)] });
     const wait = vi.fn().mockResolvedValue(undefined);
 
     await expect(hasCheckEvidence(request, get, wait)).resolves.toBe(true);
     expect(wait.mock.calls).toEqual([[2000], [15_000]]);
     expect(get).toHaveBeenNthCalledWith(4, 'runs/4/attempts/2/jobs?per_page=100');
+  });
+
+  it('waits long enough for a matching full CI run to complete', async () => {
+    const active = { ...run(2, null), status: 'in_progress' };
+    const completed = { ...active, status: 'completed', conclusion: 'success' };
+    const get = vi.fn();
+    for (let check = 0; check < 30; check++) {
+      get.mockResolvedValueOnce({ workflow_runs: [active] });
+    }
+    get
+      .mockResolvedValueOnce({ workflow_runs: [completed] })
+      .mockResolvedValueOnce(jobs(verified))
+      .mockResolvedValueOnce(completed)
+      .mockResolvedValueOnce({ workflow_runs: [completed] });
+    const wait = vi.fn().mockResolvedValue(undefined);
+
+    await expect(hasCheckEvidence(request, get, wait)).resolves.toBe(true);
+    expect(wait).toHaveBeenCalledTimes(30);
+    expect(wait).toHaveBeenLastCalledWith(15_000);
+  });
+
+  it('falls back without waiting for a newer metadata run queued in the same group', async () => {
+    const queued = {
+      ...run(4, null),
+      run_attempt: 1,
+      status: 'queued',
+      display_title: metadataTitle,
+    };
+    const get = vi.fn().mockResolvedValue({ workflow_runs: [queued, run(1)] });
+    const wait = vi.fn().mockResolvedValue(undefined);
+    await expect(hasCheckEvidence(request, get, wait)).resolves.toBe(false);
+    expect(wait).not.toHaveBeenCalled();
+    expect(get).toHaveBeenCalledOnce();
   });
 
   it('falls back when the API cannot associate the candidate with the same project and PR', async () => {
@@ -243,7 +322,8 @@ describe('required checks after a pull request edit', () => {
       .mockResolvedValueOnce(jobs(verified))
       .mockResolvedValueOnce({ workflow_runs: [completed] })
       .mockResolvedValueOnce(jobs(verified, undefined, 'gitleaks'))
-      .mockResolvedValueOnce(completed);
+      .mockResolvedValueOnce(completed)
+      .mockResolvedValueOnce({ workflow_runs: [completed] });
 
     await expect(hasCheckEvidence(scanner, get)).resolves.toBe(false);
     await expect(hasCheckEvidence(scanner, get)).resolves.toBe(true);

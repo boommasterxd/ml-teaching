@@ -107,7 +107,12 @@ function Scene({ children, sources }: HeroSceneProps) {
             initial={false}
             style={parallaxVisible ? { y: fieldY } : undefined}
           >
-            <GlassArtworkPlaceholder sources={sources} fallback={showPoster} pending={pending} />
+            <GlassArtworkPlaceholder
+              sources={sources}
+              fallback={showPoster || reduce}
+              pending={pending}
+              shaderFirst
+            />
             {Field && (
               <div ref={fieldRef} className="contents">
                 <Field

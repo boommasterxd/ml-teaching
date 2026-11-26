@@ -1,5 +1,6 @@
 import { expect, test, type Locator } from '@playwright/test';
 import { expectAccessible } from './browser-checks';
+import { waitForReflow, withReflowDiagnostics } from './reflow-checks';
 
 async function expectVisibleHeaderControls(header: Locator) {
   const result = await header.evaluate((nav) => {
@@ -33,16 +34,16 @@ test('enlarged header controls reflow without overlap or horizontal scrolling', 
   await page.setViewportSize({ width: 320, height: 760 });
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
   await page.goto('/barrierefreiheit');
-  await page.evaluate(async () => {
+  await page.evaluate(() => {
     document.documentElement.style.fontSize = '200%';
-    await document.fonts.ready;
   });
   const header = page.getByRole('navigation', { name: 'Hauptnavigation' });
   for (const width of [320, 390, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 760 });
     const menuLabel = width < 768 ? 'Menü' : 'Lernlabor';
     await expect(header.getByRole('button', { name: menuLabel, exact: true })).toBeVisible();
-    await expectVisibleHeaderControls(header);
+    await waitForReflow(page);
+    await withReflowDiagnostics(header, () => expectVisibleHeaderControls(header));
   }
   await page.setViewportSize({ width: 320, height: 760 });
   const navigation = header.getByRole('button', { name: 'Menü', exact: true });

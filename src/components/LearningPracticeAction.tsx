@@ -1,7 +1,7 @@
 import AnimatedLink from '@/components/AnimatedLink';
 import Button from '@/components/Button';
 import { ArrowRight } from '@/components/icons/arrow-right';
-import type { learningAreas } from '@/content/learning-areas';
+import { comingSoonLabel, type learningAreas } from '@/content/learning-areas';
 
 const actionClass = 'mobile-action h-auto min-h-11 max-w-full justify-self-start whitespace-normal';
 
@@ -17,11 +17,12 @@ export default function LearningPracticeAction({
       <Button
         id={id}
         disabled
+        lang="en"
         variant="secondary"
         size="lg"
         className={`${actionClass} learning-action-pending`}
       >
-        Noch nicht verfügbar
+        {comingSoonLabel}
       </Button>
     );
   }

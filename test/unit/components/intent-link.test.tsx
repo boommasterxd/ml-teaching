@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import IntentLink from '@/components/IntentLink';
 import AnimatedLink from '@/components/AnimatedLink';
+import { prepareRoute } from '@/components/prepare-route';
 import { TrainingEntryContext } from '@/components/training/TrainingEntryContext';
 import { learningPaths } from '@/lib/learning-paths';
 import ServerError, { getStaticProps } from '@/pages/500';
@@ -273,13 +274,67 @@ describe('intent-only native navigation', () => {
     expect(testRouter.prefetch).not.toHaveBeenCalled();
   });
 
-  it('warms the mobile and reduced-motion desktop posters with responsive selectors', async () => {
-    let matchingQuery = '(width < 48rem)';
+  it('respects Data Saver for routes and training preparation while keeping activation available', () => {
+    vi.stubGlobal('navigator', { connection: { saveData: true }, userAgent: navigator.userAgent });
+    const entry = { prepareEntry: vi.fn(), openEntry: vi.fn() };
+    render(
+      <TrainingEntryContext value={entry}>
+        <IntentLink href={learningPaths.images}>Bilderkennung</IntentLink>
+        <IntentLink href={learningPaths.imagePractice}>Bildmodell trainieren</IntentLink>
+      </TrainingEntryContext>,
+      { wrapper: LinkActivationHost },
+    );
+    const lesson = screen.getByRole('link', { name: 'Bilderkennung' });
+    const training = screen.getByRole('link', { name: 'Bildmodell trainieren' });
+    fireEvent.focus(lesson);
+    fireEvent.pointerEnter(training);
+    fireEvent.pointerDown(training, contact);
+    prepareRoute(testRouter, learningPaths.images);
+    expect(testRouter.prefetch).not.toHaveBeenCalled();
+    expect(entry.prepareEntry).not.toHaveBeenCalled();
+
+    fireEvent.click(lesson);
+    expect(testRouter.push).toHaveBeenCalledOnce();
+    fireEvent.click(training);
+    expect(entry.openEntry).toHaveBeenCalledExactlyOnceWith(training);
+  });
+
+  it('skips recovery document preparation while Data Saver is enabled', () => {
+    const connection = { saveData: true };
+    vi.stubGlobal('navigator', { connection, userAgent: navigator.userAgent });
+    vi.stubGlobal(
+      'HTMLScriptElement',
+      class extends HTMLScriptElement {
+        static supports(type: string) {
+          return type === 'speculationrules';
+        }
+      },
+    );
+    render(
+      <>
+        <script id="error-recovery-speculation" type="speculationrules" />
+        <IntentLink href="/lernen">Lernen</IntentLink>
+      </>,
+      { wrapper: AppRouterHost },
+    );
+    const link = screen.getByRole('link');
+    fireEvent.focus(link);
+    expect(link.hasAttribute('data-recovery-intent')).toBe(false);
+    connection.saveData = false;
+    fireEvent.focus(link);
+    expect(link.hasAttribute('data-recovery-intent')).toBe(true);
+  });
+
+  it('warms only reduced-motion posters for home intent and preserves lesson image preparation', async () => {
+    let mobile = true;
+    let reduced = false;
     const media = vi.mocked(window.matchMedia);
     const actual = media.getMockImplementation()!;
     media.mockImplementation((query) => ({
       ...actual(query),
-      matches: query === matchingQuery,
+      matches:
+        (mobile && query === '(width < 48rem)') ||
+        (reduced && query === '(prefers-reduced-motion: reduce)'),
     }));
     window.history.replaceState(null, '', '/impressum');
     render(
@@ -295,16 +350,24 @@ describe('intent-only native navigation', () => {
     expect(document.head.querySelector(photos)).toBeNull();
     const home = screen.getByRole('link', { name: 'Startseite' });
     fireEvent.focus(home);
+    await act(() => vi.dynamicImportSettled());
+    expect(document.head.querySelector(posters)).toBeNull();
+    expect(testRouter.prefetch).toHaveBeenCalledExactlyOnceWith('/');
+
+    reduced = true;
+    fireEvent.focus(home);
     await waitFor(() =>
-      expect(document.head.querySelector(posters)?.getAttribute('media')).toBe(matchingQuery),
+      expect(document.head.querySelector(posters)?.getAttribute('media')).toBe(
+        '(width < 48rem) and (prefers-reduced-motion: reduce)',
+      ),
     );
-    matchingQuery = '(prefers-reduced-motion: reduce)';
+    mobile = false;
     fireEvent.focus(home);
     await waitFor(() => {
       const hints = [...document.head.querySelectorAll(posters)];
       expect(hints.map((link) => link.getAttribute('media'))).toEqual([
-        '(width < 48rem)',
-        '(width >= 48rem)',
+        '(width < 48rem) and (prefers-reduced-motion: reduce)',
+        '(width >= 48rem) and (prefers-reduced-motion: reduce)',
       ]);
       expect(
         hints.every((link) => link.getAttribute('imagesrcset')?.startsWith('/_next/image?')),
@@ -312,7 +375,12 @@ describe('intent-only native navigation', () => {
     });
     fireEvent.pointerEnter(screen.getByRole('link', { name: 'Bilderkennung' }));
     await waitFor(() => expect(document.head.querySelectorAll(photos)).toHaveLength(2));
-    expect(testRouter.prefetch.mock.calls).toEqual([['/'], ['/'], ['/lernen/bilderkennung']]);
+    expect(testRouter.prefetch.mock.calls).toEqual([
+      ['/'],
+      ['/'],
+      ['/'],
+      ['/lernen/bilderkennung'],
+    ]);
   });
 
   it('prepares only other same-origin HTTP routes, retaining search and excluding fragments', () => {

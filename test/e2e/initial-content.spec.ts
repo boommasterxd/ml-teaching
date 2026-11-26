@@ -12,7 +12,12 @@ import { learningPaths } from '../../src/lib/learning-paths';
 import { headerLegalLinks } from '../../src/content/site-navigation';
 import { routeSyntheticModel } from './synthetic-model';
 import { expectRememberConsentToggle, grantModelConsent } from './training-keyboard';
-import { expectPublicMain, expectReadable, expectReadableLink } from './initial-content-checks';
+import {
+  expectInertTrainingWorkspace,
+  expectPublicMain,
+  expectReadable,
+  expectReadableLink,
+} from './initial-content-checks';
 
 async function expectPublicShell(page: Page, mobile = false) {
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation' });
@@ -141,7 +146,7 @@ for (const [path, status, heading, message, returnLabel, destination] of [
     learningPaths.qLearningPractice,
     200,
     'Lernen durch Belohnung',
-    'Die Übung ist noch nicht verfügbar.',
+    'Coming Soon',
     'Zum Lernlabor',
     learningPaths.hub,
   ],
@@ -315,6 +320,8 @@ for (const [width, colorScheme] of [
       expect(response?.status()).toBe(200);
       await response?.finished();
       await scripts.expectHeld();
+      const workspace = page.locator('.training-workspace');
+      await expectInertTrainingWorkspace(workspace);
       const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
       await expect(dialog.getByRole('heading')).toBeInViewport({ ratio: 1 });
       const local = dialog.locator('label[for="privacy-consent"]');
@@ -357,6 +364,7 @@ for (const [width, colorScheme] of [
       scripts.release();
       await page.waitForLoadState('load');
       await expect(dialog.and(page.locator('dialog:modal'))).toBeVisible();
+      await expectInertTrainingWorkspace(workspace);
       expect(await dialog.evaluate((node, original) => node === original, initialDialog)).toBe(
         true,
       );
@@ -399,14 +407,6 @@ test.describe('training entry with JavaScript disabled', () => {
 
   test('the initial consent can be declined using the keyboard', async ({ page }) => {
     await page.goto(learningPaths.imagePractice);
-    const workspace = page.locator('.training-workspace');
-    await expect(workspace).toHaveAttribute('inert', '');
-    await expect(
-      workspace.locator('nav[aria-label="Seitenpfad"] [aria-current="page"]'),
-    ).toHaveText('Bildmodell trainieren');
-    await expect(workspace.locator('#training-images')).toBeVisible();
-    await expect(workspace.locator('#class-name-class-1')).toHaveValue('Klasse 1');
-    await expect(workspace.locator('#class-name-class-2')).toHaveValue('Klasse 2');
     const dialog = page.getByRole('dialog', { name: 'Einwilligung zur Datenverarbeitung' });
     const cancel = dialog.getByRole('link', { name: 'Abbrechen', exact: true });
     await page.keyboard.press('Tab');

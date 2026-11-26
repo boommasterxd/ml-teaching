@@ -12,7 +12,7 @@ or CSP-only Proxy. Learning interactivity does not require request-time renderin
 models, camera images and classifier state belong only to the browser.
 
 Development uses `src/proxy.dev.ts` for nonce-based CSP Report-Only diagnostics
-and private/no-store responses. Native `pageExtensions` configuration discovers it
+and `no-store` document delivery. Native `pageExtensions` configuration discovers it
 only during the development-server phase. Production retains standard extensions,
 complete SSG and enforced hash CSP without a Proxy or root request dependencies.
 The shared nonce policy builder also validates exact hashes supplied by the

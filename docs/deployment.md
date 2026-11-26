@@ -67,6 +67,23 @@ bypass when manually redeploying. The source script does not establish a saved
 Ignore Build Step or other active project settings; verify both before relying on
 the filter.
 
+## Authorized manual Preview
+
+Use an authenticated Vercel CLI in the checkout already linked to this project.
+
+1. Confirm that the authorization covers the source to upload and the Preview
+   environment. Check the revision with `git rev-parse HEAD`, review local
+   changes and check the upload file set against [`.vercelignore`](../.vercelignore).
+   Record the reviewed revision and any local changes included in the upload.
+2. Run `vercel project inspect --scope boom-apps --non-interactive` in the project
+   root. Proceed only if it resolves to `boom-apps/ml-teaching`.
+3. Upload the reviewed source with
+   `vercel deploy --project ml-teaching --scope boom-apps --environment preview --non-interactive`.
+4. Inspect the returned deployment URL with `vercel inspect` and confirm the
+   project, Preview target and Ready status. Record the deployment ID and URL
+   together with the reviewed upload inputs. Use an authenticated browser to
+   check prerendered content, delivered headers and the consent flow on that URL.
+
 ## Security and data
 
 The central Next.js header configuration owns HSTS with a one-year lifetime,

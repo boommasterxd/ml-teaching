@@ -58,7 +58,7 @@ describe('header navigation', () => {
     expect(document.activeElement).toBe(overview);
     expect(screen.getByRole('link', { name: 'Bildmodell trainieren' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Simulation' })).toBeNull();
-    expect(screen.getAllByText('Noch nicht verfügbar')).toHaveLength(2);
+    expect(screen.getAllByText('Coming Soon')).toHaveLength(2);
     fireEvent.keyDown(overview, { key: 'Escape' });
     expect(document.activeElement).toBe(trigger);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');

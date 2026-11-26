@@ -18,18 +18,26 @@ interface ContourSource {
 
 export type ContourSources = PosterVariants<ContourSource>;
 
-export function contourPosterPreload(sources: ContourSources, variant: keyof ContourSources) {
+export function contourPosterPreload(
+  sources: ContourSources,
+  variant: keyof ContourSources,
+  media: string = contourMedia[variant],
+) {
   const { src, srcSet, sizes } = sources[variant];
   return {
     href: srcSet ? undefined : src,
     as: 'image',
-    media: contourMedia[variant],
+    media,
     imageSrcSet: srcSet,
     imageSizes: sizes,
     fetchPriority: 'high',
   } as const;
 }
 
-export function preloadContourPoster(sources: ContourSources, variant: keyof ContourSources) {
-  preload(sources[variant].src, contourPosterPreload(sources, variant));
+export function preloadContourPoster(
+  sources: ContourSources,
+  variant: keyof ContourSources,
+  media?: string,
+) {
+  preload(sources[variant].src, contourPosterPreload(sources, variant, media));
 }

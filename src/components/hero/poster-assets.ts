@@ -4,7 +4,13 @@ import digitsMobile from '@/assets/hero/error-glass-404-mobile.webp';
 import ringDesktop from '@/assets/hero/hero-glass.webp';
 import ringMobile from '@/assets/hero/hero-glass-mobile.webp';
 
-import { preloadContourPoster, type ContourSources, type PosterVariants } from './contour-poster';
+import { reducedMotionMedia } from '@/lib/media-queries';
+import {
+  contourMedia,
+  preloadContourPoster,
+  type ContourSources,
+  type PosterVariants,
+} from './contour-poster';
 
 type PosterSource = { src: StaticImageData; width: number; height: number };
 
@@ -64,5 +70,9 @@ export const errorDigitsPosterImages = /* @__PURE__ */ optimizedVariants(digitsP
 });
 
 export function preloadHeroPoster(variant: keyof ContourSources) {
-  preloadContourPoster(heroPosterImages, variant);
+  preloadContourPoster(
+    heroPosterImages,
+    variant,
+    `${contourMedia[variant]} and ${reducedMotionMedia}`,
+  );
 }

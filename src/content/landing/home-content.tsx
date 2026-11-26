@@ -20,9 +20,10 @@ export function HomeIntroduction() {
             Was ist künstliche Intelligenz?
           </Heading>
           <Text>
-            Mit künstlicher Intelligenz (KI) können Computer zum Beispiel Bilder zuordnen, Texte
-            übersetzen oder Spielzüge vorschlagen. Viele KI-Systeme lernen aus Beispielen oder
-            Rückmeldungen.
+            Künstliche Intelligenz (KI) umfasst Verfahren, mit denen Computer Muster erkennen,
+            Schlüsse ziehen oder Handlungen planen können. KI kann zum Beispiel Texte übersetzen,
+            Musik empfehlen oder Spielzüge vorschlagen. Viele KI-Systeme lernen aus Beispielen oder
+            durch Rückmeldungen.
           </Text>
         </div>
       </ScrollReveal>
@@ -46,7 +47,8 @@ export function HomePurpose() {
               Warum Kinder KI kennenlernen sollten.
             </CardTitle>
             <Text variant="lead" className="home-purpose-lead">
-              Entdecke beim Ausprobieren, wie KI lernt und wo sie sich irren kann.
+              Wir glauben, dass Kinder KI früh kennenlernen sollten: neugierig, spielerisch und mit
+              Raum für eigene Fragen.
             </Text>
           </CardHeader>
         </ScrollReveal>
@@ -54,12 +56,14 @@ export function HomePurpose() {
           <CardContent className="home-purpose-body px-0">
             <PurposeWaveform />
             <Text>
-              Warum kommt die KI zu diesem Ergebnis? Welche Beispiele fehlen ihr? Im Lernlabor
-              kannst du das selbst herausfinden.
+              KI prägt mit, wie wir Informationen finden, lernen und kreativ arbeiten. Kinder
+              sollten deshalb mehr kennenlernen als fertige Antworten auf einem Bildschirm. Sie
+              sollen auch fragen können: Wie entsteht dieses Ergebnis? Welche Beispiele fehlen? Und
+              wann liegt die KI daneben?
             </Text>
             <Text>
-              Sammle Bilder, trainiere ein Modell und prüfe, was es erkennt. Das Lernlabor ist
-              kostenlos.
+              Du sammelst Beispiele, testest dein Modell und prüfst seine Fehler. Das Lernangebot
+              ist kostenlos. Du brauchst keine Programmierkenntnisse.
             </Text>
           </CardContent>
         </ScrollReveal>
@@ -71,22 +75,24 @@ export function HomePurpose() {
 const perspectives = [
   {
     title: 'Neue Ideen entwickeln',
-    opportunity: 'KI kann dir Vorschläge zum Schreiben, Übersetzen und Gestalten machen.',
+    opportunity:
+      'KI kann beim Schreiben, Übersetzen und Gestalten unterstützen. Sie liefert Vorschläge, aus denen Menschen etwas Eigenes machen können.',
     limit:
-      'Auch ein überzeugender Text kann Fehler enthalten. Prüfe wichtige Aussagen mit verlässlichen Quellen.',
+      'Ein überzeugend klingender Text kann falsch sein. Prüfe wichtige Aussagen mit verlässlichen Quellen, statt sie einfach zu übernehmen.',
   },
   {
     title: 'Muster entdecken',
     opportunity:
-      'KI kann in vielen Bildern nach Mustern suchen, zum Beispiel auf Röntgenaufnahmen.',
-    limit: 'Fehlen dem Modell beim Lernen wichtige Beispiele, kann es später mehr Fehler machen.',
+      'In der Forschung kann KI helfen, große Datenmengen zu untersuchen, etwa Bilder aus der Medizin oder Beobachtungen der Umwelt.',
+    limit:
+      'Was ein Modell erkennt, hängt auch von seinen Trainingsdaten ab. Fehlen bestimmte Beispiele, können seine Ergebnisse einseitig oder unzuverlässig sein.',
   },
   {
     title: 'Entscheidungen unterstützen',
     opportunity:
-      'Eine Spielfigur probiert verschiedene Wege aus. An den Punkten erkennt sie, welche sich lohnen.',
+      'Beim Reinforcement Learning probiert eine Spielfigur verschiedene Aktionen aus. Aus den Belohnungen lernt sie, welche Entscheidungen sich auf Dauer lohnen.',
     limit:
-      'Menschen legen fest, wofür es Punkte gibt. Auch eine hohe Punktzahl kann zu unfairen Entscheidungen führen.',
+      'Menschen legen Ziele und Belohnungen fest. Eine gute Punktzahl bedeutet noch nicht, dass eine Entscheidung für alle Menschen gut oder fair ist.',
   },
 ] as const;
 
@@ -140,15 +146,15 @@ export function HomePerspectives() {
 const questions = [
   [
     'Brauche ich eine Kamera?',
-    'Zum Trainieren reichen Fotos von deinem Gerät. Für die Live-Vorhersage brauchst du eine Kamera.',
+    'Du kannst dein Bildmodell ohne Kamera trainieren, indem du Fotos von deinem Gerät auswählst. Für die Live-Vorhersage brauchst du eine Kamera.',
   ],
   [
     'Muss ich programmieren können?',
-    'Nein. Wähle Bilder aus und trainiere dein Modell direkt auf der Website.',
+    'Nein. Du startest mit Bildern, verständlichen Erklärungen und kleinen Aufgaben. Beim Bilderkennungsmodell legst du deine eigenen Gruppen an und probierst aus, wie das Modell neue Bilder zuordnet.',
   ],
   [
     'Ist jede KI ein Chatbot?',
-    'Nein. KI kann zum Beispiel auch Bilder zuordnen oder gesprochene Wörter erkennen.',
+    'Nein. Ein Chatbot ist nur eine mögliche Anwendung. Andere KI-Systeme erkennen Bilder, verarbeiten Sprache oder lernen, welche Aktion sie als Nächstes ausführen sollen.',
   ],
 ] as const;
 

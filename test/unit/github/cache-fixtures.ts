@@ -7,6 +7,7 @@ import type {
 } from '../../../.github/scripts/cache-lifecycle/types';
 
 const head = 'a'.repeat(40);
+const repository = { id: 101, full_name: 'owner/project' };
 export const previousHead = 'b'.repeat(40);
 export const receipt = { family: 'npm', prefix: 'npm-cache-linux-', key: 'npm-cache-linux-new' };
 const policy: Policy = {
@@ -44,7 +45,21 @@ export function run(overrides: Partial<Run> = {}): Run {
     status: 'completed',
     conclusion: 'success',
     run_attempt: 1,
+    workflow_id: 11,
+    repository,
+    head_repository: repository,
     ...overrides,
+  };
+}
+
+export function warmJob(source: Run, conclusion = 'success') {
+  return {
+    name: 'warm',
+    status: 'completed',
+    conclusion,
+    run_id: source.id,
+    run_attempt: source.run_attempt,
+    head_sha: source.head_sha,
   };
 }
 
@@ -54,9 +69,10 @@ export class FixtureApi implements Api {
   otherCompletedRuns: Run[] = [];
   codeqlRuns: Run[] = [];
   producer = run();
+  previousProducers: Run[] = [];
   triggering = run({ id: 20, name: 'CI', path: '.github/workflows/ci.yml' });
   prs: Record<number, { state: string; head: { sha: string; ref: string } }> = {};
-  jobs: unknown[] = [{ name: 'warm', status: 'completed', conclusion: 'success' }];
+  jobs?: unknown[];
   receipts: unknown[] = [receipt];
   files = ['src/app.ts'];
   removed: number[] = [];
@@ -84,11 +100,9 @@ export class FixtureApi implements Api {
       };
     const repositoryRuns = path.includes('/actions/runs?');
     if (repositoryRuns || path.includes('/actions/workflows/warm.yml/runs?')) {
-      const headSha = new URLSearchParams(path.split('?')[1]).get('head_sha');
-      const runs = repositoryRuns ? [...this.otherCompletedRuns, this.producer] : [this.producer];
-      return {
-        workflow_runs: runs.filter((item) => !headSha || item.head_sha === headSha).slice(0, 20),
-      };
+      const runs = [this.producer, ...this.previousProducers];
+      if (repositoryRuns) runs.push(...this.otherCompletedRuns);
+      return { total_count: runs.length, workflow_runs: runs.slice(0, 20) };
     }
     if (path.endsWith('/actions/runs/10')) return this.producer;
     if (path.endsWith('/actions/runs/20')) return this.triggering;
@@ -99,7 +113,7 @@ export class FixtureApi implements Api {
 
   list(path: string): unknown[] {
     if (path.includes('/actions/caches?')) return this.caches.map((item) => ({ ...item }));
-    if (path.includes('/jobs?')) return this.jobs;
+    if (path.includes('/jobs?')) return this.jobs ?? [warmJob(this.producer)];
     if (path.includes('/actions/runs?status=')) {
       const status = new URLSearchParams(path.split('?')[1]).get('status');
       return this.runs.filter((item) => item.status === status);

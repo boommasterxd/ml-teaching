@@ -91,7 +91,9 @@ export const PrivacyCollection = (
     <p>
       Nach Ihrer Einwilligung lädt Ihr Browser über Google und Kaggle ein vortrainiertes Modell, das
       die Lernfunktion zur Bilderkennung benötigt. Dabei erhalten beide Anbieter Ihre IP-Adresse
-      sowie technische Angaben wie Browserinformationen und den Zeitpunkt des Abrufs.
+      sowie technische Angaben wie Browserinformationen und den Zeitpunkt des Abrufs. Ihr Browser
+      kann den beteiligten Diensten außerdem den Domainnamen dieser Website übermitteln. Dadurch
+      können die Empfänger den Abruf diesem Lernangebot zuordnen.
     </p>
     <p>
       Nach Googles Datenschutzerklärung ist Google Ireland Limited, Gordon House, Barrow Street,
@@ -230,12 +232,15 @@ export const PrivacyCollection = (
       Hostinger speichert das Postfach und dessen Sicherungskopien nach eigenen Angaben in
       Deutschland oder Frankreich. Für die Bereitstellung und Absicherung des E-Mail-Dienstes setzt
       Hostinger Cloudflare, MailChannels und Proofpoint als Unterauftragsverarbeiter ein. Hostinger
-      prüft eingehende E-Mails auch auf Spam und kann die Filterung anhand des Umgangs mit
-      Spam-Nachrichten im Postfach verbessern. Dabei können Daten außerhalb des Europäischen
-      Wirtschaftsraums verarbeitet werden. Für Übermittlungen in Länder ohne
-      Angemessenheitsbeschluss sieht der Vertrag mit Hostinger EU-Standardvertragsklauseln gemäß
-      Art. 46 DSGVO vor. Die Auftragsverarbeitungsvereinbarung verweist auf den Text der Klauseln.
-      Weitere Angaben enthält die{' '}
+      prüft eingehende E-Mails in unserem Auftrag automatisch auf Spam. Verschieben wir Nachrichten
+      in den Spamordner oder zurück in den Posteingang, berücksichtigt Hostinger diese Einstufung,
+      um die Spam-Erkennung für unser Postfach anzupassen. Rechtsgrundlage für beide Vorgänge ist
+      Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse besteht darin, unerwünschte oder
+      schädliche Nachrichten zu erkennen und erwünschte Nachrichten zuverlässig zu empfangen. Dabei
+      können Daten außerhalb des Europäischen Wirtschaftsraums verarbeitet werden. Für
+      Übermittlungen in Länder ohne Angemessenheitsbeschluss sieht der Vertrag mit Hostinger
+      EU-Standardvertragsklauseln gemäß Art. 46 DSGVO vor. Die Auftragsverarbeitungsvereinbarung
+      verweist auf den Text der Klauseln. Weitere Angaben enthält die{' '}
       <a href="https://www.hostinger.com/legal/privacy-policy">
         Datenschutzerklärung von Hostinger
       </a>

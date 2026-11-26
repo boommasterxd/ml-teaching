@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createRetryableLoader } from '@/lib/create-retryable-loader';
 import type { FeatureProjection } from '@/lib/feature-projection';
 import type { MLClass } from '@/types/ml';
 
@@ -11,15 +12,10 @@ type ProjectionJob = {
   result?: PredictionSpaceResult;
 };
 
-let pendingModule: Promise<SpaceModule> | undefined;
-
-function loadSpace() {
-  pendingModule ??= import('@/components/PredictionSpace').catch((error: unknown) => {
-    pendingModule = undefined;
-    throw error;
-  });
-  return pendingModule;
-}
+const loadSpace = createRetryableLoader(async () => {
+  const { default: Space, fitFeatureProjection } = await import('@/components/PredictionSpace');
+  return { Space, fitFeatureProjection };
+});
 
 function matchesDataset(job: ProjectionJob, classes: readonly MLClass[]) {
   return (
@@ -53,7 +49,7 @@ export function usePredictionSpacePreparation(
       }
     };
     void loadSpace()
-      .then(async ({ default: Space, fitFeatureProjection }) => {
+      .then(async ({ Space, fitFeatureProjection }) => {
         signal.throwIfAborted();
         const model = await fitFeatureProjection(pending.classes, signal);
         finish({ Space, model });

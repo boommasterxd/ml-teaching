@@ -76,7 +76,7 @@ export function LearningContent() {
               <Text variant="muted">05 / Im Alltag</Text>
               <Heading id="section-examples">Wo steckt Bilderkennung drin?</Heading>
               <Text variant="lead">
-                Wähle die drei Beispiele, bei denen eine App etwas im Bild erkennt.
+                Wähle die drei Beispiele aus, bei denen Bilderkennung zum Einsatz kommt.
               </Text>
             </div>
           </ScrollReveal>
@@ -89,8 +89,8 @@ export function LearningContent() {
             <Text variant="muted">06 / KNN ausprobieren</Text>
             <Heading id="section-knn-quiz">Welche Nachbarn zählen?</Heading>
             <Text variant="lead">
-              Wähle die Punkte, die der Raute am nächsten sind. Entscheide dann, ob Hund oder Katze
-              gewinnt.
+              Finde die nächsten Nachbarn der Raute. Entscheide danach, welche Klasse die meisten
+              Stimmen bekommt.
             </Text>
           </div>
         </ScrollReveal>

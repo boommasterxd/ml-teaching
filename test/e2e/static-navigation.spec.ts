@@ -128,7 +128,9 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
   });
 }
 
-test('mobile uses one glass poster before hydration and after a context loss', async ({ page }) => {
+test('mobile defers the glass poster before hydration and restores it after context loss', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   const workers: string[] = [];
@@ -150,11 +152,7 @@ test('mobile uses one glass poster before hydration and after a context loss', a
   try {
     await page.goto('/', { waitUntil: 'commit' });
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(poster).toBeVisible();
-    await expect
-      .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
-      .toBeGreaterThan(1);
-    expect(posters).toEqual([await poster.evaluate((image: HTMLImageElement) => image.currentSrc)]);
+    expect(posters).toEqual([]);
     await expect(spinner).toHaveCount(0);
     await expect(page.locator('.hero-field canvas')).toHaveCount(0);
   } finally {
@@ -165,7 +163,7 @@ test('mobile uses one glass poster before hydration and after a context loss', a
   await expect(page.locator('.hero-field')).toHaveAttribute('data-enhanced', 'true');
   await expect(spinner).toHaveCount(0);
   await expect(poster).toBeHidden();
-  expect(posters).toHaveLength(1);
+  expect(posters.length).toBeLessThanOrEqual(1);
   expect(workers).toHaveLength(1);
   expect(new URL(workers[0]!).origin).toBe(new URL(page.url()).origin);
 
@@ -184,7 +182,9 @@ test('mobile uses one glass poster before hydration and after a context loss', a
   await expect
     .poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth))
     .toBeGreaterThan(1);
-  expect(posters).toEqual([await poster.evaluate((image: HTMLImageElement) => image.currentSrc)]);
+  expect([...new Set(posters)]).toEqual([
+    await poster.evaluate((image: HTMLImageElement) => image.currentSrc),
+  ]);
 });
 
 test('the homepage glass resumes on the same canvas after scrolling it out of view', async ({
@@ -290,7 +290,7 @@ function expectStrictCsp(response: APIResponse) {
 
 async function expectQLearningPlaceholder(page: Page) {
   const main = page.getByRole('main');
-  await expect(main.getByText('Die Einführung ist noch nicht verfügbar.')).toBeVisible();
+  await expect(main.getByText('Coming Soon')).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex,\s*follow/);
   await main.getByRole('link', { name: 'Zum Lernlabor', exact: true }).press('Enter');
   await expect(page).toHaveURL(learningPaths.hub);

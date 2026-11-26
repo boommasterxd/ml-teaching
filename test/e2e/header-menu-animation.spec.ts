@@ -15,6 +15,19 @@ test('switching to the shorter header menu keeps its animated and settled height
   await expect(panel).toHaveCSS('transform', 'none');
   await expect(panel).toHaveCSS('--popup-height', 'auto');
 
+  const rewards = panel.getByRole('list', { name: 'Reinforcement Learning', exact: true });
+  const reward = rewards.getByText('Lernen durch Belohnung', { exact: true });
+  await expect(reward).toBeVisible();
+  await expect(reward.locator('..').getByText('Coming Soon', { exact: true })).toBeVisible();
+  const labelFits = await reward.evaluate((label) => {
+    const range = document.createRange();
+    range.selectNodeContents(label);
+    const text = range.getClientRects();
+    const badge = label.nextElementSibling?.getBoundingClientRect();
+    return text.length === 1 && badge !== undefined && text[0].right < badge.left;
+  });
+  expect(labelFits).toBe(true);
+
   const target = await panel.evaluateHandle((node) => ({
     height: new Promise<number>((resolve) => {
       function captureHeight(event: Event) {
