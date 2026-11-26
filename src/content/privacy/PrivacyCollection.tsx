@@ -7,11 +7,12 @@ export const PrivacyCollection = (
     <h3>Speicherung und Zugriff auf Ihrem Gerät</h3>
     <p>
       Ihr Browser kann Dateien für die Anzeige der Website zwischenspeichern. Weitere Speicher- und
-      Auslesevorgänge betreffen eine gegebenenfalls erforderliche Sicherheitsprüfung durch Vercel,
-      die von Ihnen gespeicherte Darstellungswahl und die freiwillige Lernfunktion. Wann dies
-      geschieht und welche Daten betroffen sind, steht in den Abschnitten „
-      <a href="#vercel">Vercel</a>“, „<a href="#display-preferences">Darstellungseinstellungen</a>“
-      und „<a href="#ai-use">Einsatz von KI auf der Website</a>“.
+      Auslesevorgänge betreffen eine gegebenenfalls erforderliche{' '}
+      <a href="#automated-access-protection">Sicherheitsprüfung durch Vercel</a>, die von Ihnen
+      gespeicherte Darstellungswahl und die freiwillige Lernfunktion. Wann dies geschieht und welche
+      Daten betroffen sind, steht in den Abschnitten „<a href="#vercel">Vercel</a>“, „
+      <a href="#display-preferences">Darstellungseinstellungen</a>“ und „
+      <a href="#ai-use">Einsatz von KI auf der Website</a>“.
     </p>
     <p>
       Die Speicherung und das Auslesen von Informationen auf Ihrem Gerät richten sich nach § 25
@@ -22,7 +23,9 @@ export const PrivacyCollection = (
       Verarbeitung personenbezogener Daten benötigen wir zusätzlich eine Rechtsgrundlage nach der
       DSGVO.
     </p>
-    <h3 id="display-preferences">Darstellungseinstellungen</h3>
+    <h3 id="display-preferences" tabIndex={-1}>
+      Darstellungseinstellungen
+    </h3>
     <h4>Auswahl und lokale Speicherung</h4>
     <p>
       Sie können diese Website hell, dunkel oder entsprechend der Systemeinstellung Ihres Geräts
@@ -51,7 +54,9 @@ export const PrivacyCollection = (
       zulässt, können Sie die Auswahl nur für den aktuellen Besuch verwenden.
     </p>
     <p>Die Darstellungseinstellung ist unabhängig von Ihrer Einwilligung zur KI-Lernfunktion.</p>
-    <h3 id="server-logs">Server-Log-Dateien</h3>
+    <h3 id="server-logs" tabIndex={-1}>
+      Server-Log-Dateien
+    </h3>
     <h4>Protokolldaten, Zwecke und Rechtsgrundlage</h4>
     <p>
       Bei Aufrufen dieser Website verarbeitet Vercel technische Protokolldaten. Dazu gehören die
@@ -84,13 +89,17 @@ export const PrivacyCollection = (
       Wir leiten diese Protokolle nicht an weitere Dienste weiter und speichern keine eigenen
       Kopien.
     </p>
-    <h3 id="ai-use">Einsatz von KI auf der Website</h3>
+    <h3 id="ai-use" tabIndex={-1}>
+      Einsatz von KI auf der Website
+    </h3>
     <p>
       Wir setzen Künstliche Intelligenz (KI) auf dieser Website wie folgt ein: Mit der Lernfunktion
       können Sie anhand eigener Bildbeispiele einen Bildklassifikator trainieren und dessen
       Vorhersagen ausprobieren.
     </p>
-    <h4 id="model-download">Download des KI-Modells</h4>
+    <h4 id="model-download" tabIndex={-1}>
+      Download des KI-Modells
+    </h4>
     <p>
       Nach Ihrer Einwilligung lädt Ihr Browser über Google und Kaggle ein vortrainiertes Modell, das
       die Lernfunktion zur Bilderkennung benötigt. Dabei erhalten beide Anbieter Ihre IP-Adresse
@@ -109,7 +118,9 @@ export const PrivacyCollection = (
       Bereitstellung und Absicherung des Dienstes. Weitere Informationen finden Sie in der{' '}
       <a href={kagglePrivacyUrl}>Datenschutzerklärung von Kaggle</a>.
     </p>
-    <h4>Bildtraining auf Ihrem Gerät</h4>
+    <h4 id="local-image-training" tabIndex={-1}>
+      Bildtraining auf Ihrem Gerät
+    </h4>
     <p>
       Zum Training verarbeitet die Lernfunktion ausgewählte Bilddateien oder aufgenommene
       Kamerabilder und die daraus berechneten Merkmale. Bei der Live-Vorhersage wertet die Anwendung
@@ -181,7 +192,9 @@ export const PrivacyCollection = (
       46 DSGVO. Ansprechpartner für Auskünfte zu diesen Garantien nennt die{' '}
       <a href={kagglePrivacyUrl}>Datenschutzerklärung von Kaggle</a>.
     </p>
-    <h4>Zugriff auf Ihr Gerät</h4>
+    <h4 id="device-access" tabIndex={-1}>
+      Zugriff auf Ihr Gerät
+    </h4>
     <p>
       Die Lernfunktion greift erst nach Ihrer Zustimmung auf die von Ihnen ausgewählten Bilddateien
       beziehungsweise die freigegebene Kamera zu. Modellparameter und Trainingsdaten werden auf
@@ -208,7 +221,9 @@ export const PrivacyCollection = (
       Dieser Cache enthält keine von der Anwendung dorthin geschriebenen Trainingsbilder; seine
       Löschung können Sie über die Browsereinstellungen steuern.
     </p>
-    <h3 id="contact-inquiries">Anfrage per E-Mail oder Telefon</h3>
+    <h3 id="contact-inquiries" tabIndex={-1}>
+      Anfrage per E-Mail oder Telefon
+    </h3>
     <h4>Bearbeitung Ihrer Anfrage</h4>
     <p>
       Wenn Sie uns per E-Mail oder Telefon kontaktieren, verarbeiten wir die dabei mitgeteilten

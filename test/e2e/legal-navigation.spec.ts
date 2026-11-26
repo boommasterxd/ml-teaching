@@ -79,6 +79,32 @@ test('the mobile information menu stays reachable when text size doubles', async
   await expect(page).toHaveURL(/\/datenschutz$/);
 });
 
+test('privacy references jump to the named section and continue keyboard navigation there', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/datenschutz');
+  const privacyDocument = page.getByRole('region', { name: 'Datenschutzerklärung' });
+  const link = privacyDocument.getByRole('link', { name: 'Hinweis zur verantwortlichen Stelle' });
+  const heading = privacyDocument.getByRole('heading', {
+    name: 'Hinweis zur verantwortlichen Stelle',
+  });
+
+  await link.press('Enter');
+  await expect(page).toHaveURL(/\/datenschutz#verantwortliche-stelle$/);
+  await expect(heading).toBeFocused();
+  await expect(heading).toBeInViewport({ ratio: 1 });
+  const headerBottom = await page
+    .getByRole('banner')
+    .evaluate((header) => header.getBoundingClientRect().bottom);
+  expect(await heading.evaluate((target) => target.getBoundingClientRect().top)).toBeGreaterThan(
+    headerBottom,
+  );
+
+  await page.keyboard.press('Tab');
+  await expect(privacyDocument.locator('a[href^="tel:"]')).toBeFocused();
+});
+
 test('desktop legal navigation stays reachable while the document scrolls', async ({ page }) => {
   const failures = diagnostics(page);
   await page.setViewportSize({ width: 2325, height: 1291 });

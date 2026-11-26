@@ -1,7 +1,9 @@
 export const PrivacyHosting = (
   <>
     <h2>2. Hosting und Content Delivery Networks (CDN)</h2>
-    <h3 id="vercel">Vercel</h3>
+    <h3 id="vercel" tabIndex={-1}>
+      Vercel
+    </h3>
     <p>
       Diese Website wird extern gehostet. Anbieter der Hostingplattform ist Vercel Inc., 440 N
       Barranca Avenue #4133, Covina, CA 91723, USA; Datenschutzinformationen:{' '}
@@ -26,7 +28,9 @@ export const PrivacyHosting = (
       die ausdrücklich gewünschte Bereitstellung erforderlich ist, beruht sie auf § 25 Abs. 2 Nr. 2
       TDDDG.
     </p>
-    <h4>Schutz vor automatisierten Zugriffen</h4>
+    <h4 id="automated-access-protection" tabIndex={-1}>
+      Schutz vor automatisierten Zugriffen
+    </h4>
     <p>
       Bei Anfragen, die auf automatisierte Zugriffe hindeuten, kann Vercel vor dem Zugriff auf die
       Website eine Browserprüfung durchführen. Vercel wertet technische Merkmale Ihres Browsers und
