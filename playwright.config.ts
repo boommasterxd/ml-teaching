@@ -9,15 +9,20 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:3100',
     trace: 'retain-on-failure',
-    launchOptions: {
-      args: [
-        '--use-fake-ui-for-media-stream',
-        '--use-fake-device-for-media-stream',
-        '--enable-unsafe-swiftshader',
-      ],
-    },
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chromium',
+        launchOptions: {
+          args: ['--enable-unsafe-swiftshader'],
+          ignoreDefaultArgs: ['--disable-back-forward-cache'],
+        },
+      },
+    },
+  ],
   webServer: {
     command: 'npm start -- --hostname 127.0.0.1 --port 3100',
     url: 'http://127.0.0.1:3100',

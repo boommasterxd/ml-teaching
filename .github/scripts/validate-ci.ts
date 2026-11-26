@@ -1,17 +1,16 @@
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { ciPlanVersion, isBrowserSpec, type CiPlan, type CiRevisions } from './plan-ci.ts';
+import {
+  ciPlanVersion,
+  requiresQuality,
+  testGroups,
+  type CiPlan,
+  type CiRevisions,
+} from './plan-ci.ts';
 import { canReuseCheckEvidence, readEvent } from './pr-check-evidence.ts';
 
 const revision = /^[a-f0-9]{40}$/;
-const qualityOnlyReasons = ['unit-tests', 'local-tooling'];
-const reasons = new Set([
-  'docs',
-  'browser-spec',
-  'full',
-  'verified-revision',
-  ...qualityOnlyReasons,
-]);
+const reasons = new Set(['docs', 'no-impact', 'affected', 'full', 'verified-revision']);
 
 export function validatePlan(input: unknown, expected: CiRevisions, allowReuse = false): CiPlan {
   if (!input || typeof input !== 'object') throw new Error('Invalid CI plan.');
@@ -29,16 +28,23 @@ export function validatePlan(input: unknown, expected: CiRevisions, allowReuse =
       'CI evidence reuse requires the first attempt of a text-only pull request edit.',
     );
   }
-  const selectedSpec = plan.reason === 'browser-spec';
-  if (selectedSpec ? !('spec' in plan && isBrowserSpec(plan.spec)) : 'spec' in plan) {
-    throw new Error('Invalid browser selection for the CI plan.');
-  }
-  const browser = plan.reason === 'full' || selectedSpec;
-  const quality = browser || qualityOnlyReasons.includes(plan.reason);
-  if (plan.quality !== quality || plan.browser !== browser) {
-    throw new Error('CI work does not match its declared scope.');
-  }
+  validateSelection(plan);
   return plan as CiPlan;
+}
+
+function validateSelection({ reason, tests }: Partial<CiPlan>) {
+  if (
+    !Array.isArray(tests) ||
+    tests.some((group) => !testGroups.includes(group)) ||
+    new Set(tests).size !== tests.length
+  ) {
+    throw new Error('Invalid core test selection.');
+  }
+  const valid =
+    reason === 'affected'
+      ? tests.length > 0
+      : tests.length === (reason === 'full' ? testGroups.length : 0);
+  if (!valid) throw new Error('Core test selection does not match the CI plan.');
 }
 
 export function validateResults(
@@ -49,9 +55,9 @@ export function validateResults(
 ) {
   const plan = validatePlan(input, expected, allowReuse);
   if (results.plan !== 'success') throw new Error('CI planning did not succeed.');
-  for (const name of ['quality', 'browser'] as const) {
-    const required = plan[name] ? 'success' : 'skipped';
-    if (results[name] !== required) throw new Error(`Unexpected ${name} result: ${results[name]}`);
+  const required = requiresQuality(plan) ? 'success' : 'skipped';
+  if (results.quality !== required) {
+    throw new Error(`Unexpected quality result: ${results.quality}`);
   }
 }
 

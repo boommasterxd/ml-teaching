@@ -16,7 +16,6 @@ next-env.d.ts
 /.codex-attachments/
 
 # Verification artifacts
-coverage/
 playwright-report/
 test-results/
 lighthouse-report*.json

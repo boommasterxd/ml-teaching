@@ -5,11 +5,35 @@ import { isDocumentationPath } from '../../scripts/docs-path.ts';
 import { reusableCheck } from './pr-check-evidence.ts';
 
 const revision = /^[a-f0-9]{40}$/;
-const unitTest = /^test\/unit\/.+\.test\.(?:ts|tsx|mjs)$/;
-const localTools = new Set(['scripts/check-lighthouse.ts', 'scripts/lighthouse-runtime.ts']);
-const browserSpec = /^test\/e2e\/[a-z0-9][a-z0-9-]*\.spec\.ts$/;
 const rawChange = /^:([0-7]{6}) ([0-7]{6}) [a-f0-9]{40} [a-f0-9]{40} ([ADMT])$/;
-export const ciPlanVersion = 3;
+const localTools = new Set([
+  '.github/dependabot.yml',
+  'scripts/check-lighthouse.ts',
+  'scripts/lighthouse-runtime.ts',
+]);
+const learningSources = new Set([
+  'src/content/recognition-examples.ts',
+  'src/lib/knn-quiz.ts',
+  'src/lib/knn.ts',
+  'src/lib/recognition-quiz.ts',
+]);
+const trainingSources = new Set([
+  'src/lib/image-input-policy.ts',
+  'src/lib/image-upload-queue.ts',
+  'src/lib/image-upload.ts',
+  'src/lib/mobilenet-embedding.ts',
+  'src/lib/training-consent-storage.ts',
+]);
+const unitTest = /\.test\.(?:ts|tsx|mjs)$/;
+export const ciPlanVersion = 4;
+export const unitGroups = ['learning', 'training', 'tooling'] as const;
+export const browserSpecs = {
+  'training-browser': 'test/e2e/training.spec.ts',
+  delivery: 'test/e2e/delivery.spec.ts',
+} as const;
+type BrowserGroup = keyof typeof browserSpecs;
+type TestGroup = (typeof unitGroups)[number] | BrowserGroup;
+export const testGroups = [...unitGroups, 'training-browser', 'delivery'] as const;
 
 export interface CiRevisions {
   base: string;
@@ -17,37 +41,51 @@ export interface CiRevisions {
   merge: string;
 }
 
-interface GeneralWork {
-  quality: boolean;
-  browser: boolean;
-  reason: 'docs' | 'unit-tests' | 'local-tooling' | 'full' | 'verified-revision';
+interface Work {
+  reason: 'docs' | 'no-impact' | 'affected' | 'full' | 'verified-revision';
+  tests: TestGroup[];
 }
 
-interface SelectedBrowserWork {
-  quality: true;
-  browser: true;
-  reason: 'browser-spec';
-  spec: string;
-}
-
-type Work = GeneralWork | SelectedBrowserWork;
 export type CiPlan = CiRevisions & Work & { version: typeof ciPlanVersion };
 
-export function isBrowserSpec(path: unknown): path is string {
-  return typeof path === 'string' && path.endsWith('.spec.ts') && browserSpec.test(path);
+function affectedGroups(path: string): TestGroup[] | undefined {
+  if (localTools.has(path)) return [];
+  if (learningSources.has(path)) return ['learning'];
+  if (trainingSources.has(path)) return ['training', 'training-browser'];
+  if (unitTest.test(path)) {
+    const unit = unitGroups.find((group) => path.startsWith(`test/unit/${group}/`));
+    if (unit) return [unit];
+  }
+  const browser = (Object.keys(browserSpecs) as BrowserGroup[]).find(
+    (group) => path === browserSpecs[group],
+  );
+  if (browser) return [browser];
 }
 
-export function selectWork(paths: readonly string[]): GeneralWork {
-  if (paths.length > 0 && paths.every(isDocumentationPath)) {
-    return { quality: false, browser: false, reason: 'docs' };
+function selectWork(changes: ReturnType<typeof readChanges>): Work {
+  if (
+    changes.length &&
+    changes.every(({ path, document }) => document && isDocumentationPath(path))
+  ) {
+    return { reason: 'docs', tests: [] };
   }
-  if (paths.length > 0 && paths.every((path) => unitTest.test(path))) {
-    return { quality: true, browser: false, reason: 'unit-tests' };
+  const affected = new Set<TestGroup>();
+  for (const { path, regular, document } of changes) {
+    if (document && isDocumentationPath(path)) continue;
+    const groups = regular ? affectedGroups(path) : undefined;
+    if (!groups) return fullWork();
+    for (const group of groups) affected.add(group);
   }
-  if (paths.length > 0 && paths.every((path) => localTools.has(path) || unitTest.test(path))) {
-    return { quality: true, browser: false, reason: 'local-tooling' };
-  }
-  return { quality: true, browser: true, reason: 'full' };
+  const tests = testGroups.filter((group) => affected.has(group));
+  return { reason: tests.length ? 'affected' : 'no-impact', tests };
+}
+
+function fullWork(): Work {
+  return { reason: 'full', tests: [...testGroups] };
+}
+
+export function requiresQuality({ reason }: Work) {
+  return reason !== 'docs' && reason !== 'verified-revision';
 }
 
 function git(args: string[]) {
@@ -72,7 +110,8 @@ function readChanges(diff: string) {
     const regular =
       mode === '100644' &&
       ((status === 'A' && previousMode === '000000') || (status === 'M' && previousMode === mode));
-    changes.push({ path, regular });
+    const document = regular || (status === 'D' && previousMode === '100644' && mode === '000000');
+    changes.push({ path, regular, document });
   }
   return changes;
 }
@@ -91,22 +130,16 @@ export function createPlan({ base, head, merge }: CiRevisions, readGit = git): C
   if (![base, head, merge].every((value) => revision.test(value))) {
     throw new Error('CI requires complete base, head and merge revisions.');
   }
-  let work: Work = selectWork([]);
+  let work = fullWork();
   try {
     const ancestor = readGit(['merge-base', base, head]);
     if (!revision.test(ancestor)) throw new Error('Invalid merge base.');
     const changes = readChanges(
       readGit(['diff', '--raw', '--abbrev=40', '--no-renames', '-z', ancestor, head]),
     );
-    const [change] = changes;
-    work =
-      changes.length === 1 &&
-      change.regular &&
-      isBrowserSpec(change.path) &&
-      ancestor === base &&
-      sameMergeTree({ base, head, merge }, readGit)
-        ? { quality: true, browser: true, reason: 'browser-spec', spec: change.path }
-        : selectWork(changes.map(({ path }) => path));
+    if (changes.length && ancestor === base && sameMergeTree({ base, head, merge }, readGit)) {
+      work = selectWork(changes);
+    }
   } catch {
     // Missing history or an oversized diff must select all work.
   }
@@ -126,14 +159,17 @@ async function main() {
     ? {
         version: ciPlanVersion,
         ...revisions,
-        quality: false,
-        browser: false,
         reason: 'verified-revision',
+        tests: [],
       }
     : createPlan(revisions);
   const output = process.env.GITHUB_OUTPUT;
   if (!output) throw new Error('CI requires GITHUB_OUTPUT.');
-  for (const [key, value] of Object.entries({ plan: JSON.stringify(plan), ...plan })) {
+  const outputs = {
+    plan: JSON.stringify(plan),
+    quality: requiresQuality(plan),
+  };
+  for (const [key, value] of Object.entries(outputs)) {
     appendFileSync(output, `${key}=${value}\n`);
   }
 }

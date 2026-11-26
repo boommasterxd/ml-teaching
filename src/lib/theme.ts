@@ -3,7 +3,7 @@ export const supportedColorSchemes = 'light dark';
 const THEME_SELECTIONS = ['light', 'dark', 'system'] as const;
 export type ThemeSelection = (typeof THEME_SELECTIONS)[number];
 export type ResolvedTheme = Exclude<ThemeSelection, 'system'>;
-export const themeColors = { light: '#faf9fa', dark: '#000000' } as const;
+const themeColors = { light: '#faf9fa', dark: '#000000' } as const;
 
 export function parseTheme(value: unknown): ThemeSelection | null {
   return THEME_SELECTIONS.includes(value as ThemeSelection) ? (value as ThemeSelection) : null;

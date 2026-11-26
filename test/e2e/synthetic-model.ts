@@ -97,7 +97,7 @@ function isExpectedLocalRead(url: URL, request: Request) {
 export async function routeSyntheticModel(
   page: Page,
   baseURL: string,
-  respond: (route: Route, file: ModelFile) => void | Promise<void> = fulfillModelFile,
+  modelUnavailable = () => false,
 ) {
   const expectedOrigin = new URL(baseURL).origin;
   const modelRequests: ModelFile[] = [];
@@ -118,7 +118,8 @@ export async function routeSyntheticModel(
     const file = modelFiles.get(request.url());
     if (readsOnly && request.method() === 'GET' && file) {
       modelRequests.push(file);
-      return respond(route, file);
+      if (modelUnavailable()) return route.fulfill({ status: 503, headers: cors });
+      return fulfillModelFile(route, file);
     }
     // Report public route names and request metadata without URLs or bodies.
     unexpectedRequests.push({
@@ -131,10 +132,6 @@ export async function routeSyntheticModel(
     await route.abort();
   });
   return { modelRequests, unexpectedRequests };
-}
-
-export async function failSyntheticModel(route: Route) {
-  await route.fulfill({ status: 503, headers: cors, json: { error: 'Synthetic model outage' } });
 }
 
 async function fulfillModelFile(route: Route, file: ModelFile) {
