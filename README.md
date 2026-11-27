@@ -26,11 +26,13 @@
 
 ## Quick start
 
-Use Node.js 26.x LTS and npm. Training requires a browser with WebGL and access
-to the external MobileNet provider for the initial model download, including
-when running locally with your own image files. You can collect images from files
-and train without a camera. Live predictions require an active camera. Camera
-access requires separate consent, browser permission and HTTPS or localhost.
+Use Node.js 26.x LTS and npm. The site requires a modern browser that supports
+[Tailwind CSS 4](https://tailwindcss.com/docs/compatibility). The automated browser
+suite uses Chromium. Image training also requires WebGL and access to the
+MobileNet provider for the initial download, including on localhost. You can
+train from local files without a camera. Live predictions require an active
+camera. Camera access requires separate consent, browser permission and HTTPS
+or localhost.
 
 ```sh
 npm ci --no-audit
@@ -42,8 +44,7 @@ learning lab and open the practice page. The model downloads after you consent.
 Training requires at least two classes. Give every class a unique name and add at
 least ten images to each one.
 If the model fails to load, check your connection and select **Erneut versuchen**.
-See [development checks](docs/development.md#checks) for the model-provider smoke
-test.
+See [how to check the real model download](docs/development.md#check-the-model-download).
 
 Before collecting your own files, check the
 [supported formats and size limits](docs/architecture.md#browser-ml-flow).
@@ -92,8 +93,8 @@ processing run in the browser. See [architecture](docs/architecture.md) and the
 
 The repository owner and invited collaborators can open pull requests. Work on a
 branch and use English Conventional Commits. See [AGENTS.md](AGENTS.md) for
-repository rules and the documentation index. Merging and publication require
-explicit authorization.
+repository rules and the [documentation index](docs/README.md) for guides and
+decisions. Merging and publication require explicit authorization.
 
 Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 Application code uses the [MIT license](LICENSE.txt). See the

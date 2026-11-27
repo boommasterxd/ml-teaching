@@ -31,6 +31,9 @@ jobs:
     name: gitleaks
     runs-on: ubuntu-slim
     timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -51,6 +54,10 @@ jobs:
           CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           CHANGE_MERGE_SHA: ${{ github.sha }}
+          PR_CHECK_EVIDENCE_TOKEN: >-
+            ${{ github.run_attempt == 1 &&
+            (github.event.changes.title != null || github.event.changes.body != null) &&
+            github.token || '' }}
       - name: Run gitleaks
         if: steps.evidence.outputs.reused != 'true'
         env:

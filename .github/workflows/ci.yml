@@ -29,6 +29,9 @@ jobs:
     name: Select checks
     runs-on: ubuntu-slim
     timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
     outputs:
       plan: ${{ steps.plan.outputs.plan }}
       quality: ${{ steps.plan.outputs.quality }}
@@ -48,6 +51,11 @@ jobs:
           CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CHANGE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           CHANGE_MERGE_SHA: ${{ github.sha }}
+          PR_CHECK_EVIDENCE_TOKEN: >-
+            ${{ github.event.action == 'edited' && !github.event.changes.base &&
+            github.run_attempt == 1 &&
+            (github.event.changes.title != null || github.event.changes.body != null) &&
+            github.token || '' }}
 
   quality:
     name: Quality, build and core tests

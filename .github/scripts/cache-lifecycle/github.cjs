@@ -20,6 +20,13 @@ const cliFailures = new Map([
   ["ETIMEDOUT", "timeout"],
   ["ENOBUFS", "output limit exceeded"],
 ]);
+const inventoryCategories = new Map([
+  ["actions_caches", "caches"],
+  ["workflow_runs", "workflow runs"],
+  ["jobs", "workflow jobs"],
+  ["artifacts", "artifacts"],
+]);
+const inventoryRetryDelaysMs = [250, 1000];
 class InventoryCountDrift extends Error {}
 
 /** @typedef {"read metadata" | "list inventory" | "delete cache" | "download producer receipts"} Operation */
@@ -33,6 +40,11 @@ function runGh(args) {
     maxBuffer: 16 * 1024 * 1024,
     stdio: ["ignore", "pipe", "pipe"],
   });
+}
+
+/** @param {number} milliseconds */
+function waitForInventoryRetry(milliseconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
 }
 
 /** @param {string} output @param {Operation} operation @returns {unknown} */
@@ -83,13 +95,21 @@ function completeInventory(pages, field, endpoint) {
     return items;
   });
   if (countChanged || rows.length !== total) {
-    throw new InventoryCountDrift("GitHub list inventory failed (incomplete row count)");
+    const category = inventoryCategories.get(field) ?? "other";
+    throw new InventoryCountDrift(
+      `GitHub list inventory failed (incomplete row count: ${category})`,
+    );
   }
   return rows;
 }
 
-/** @param {string} repository @param {(args: string[]) => string} [runCommand] @returns {import('./types').Api} */
-function createGhApi(repository, runCommand = runGh) {
+/**
+ * @param {string} repository
+ * @param {(args: string[]) => string} [runCommand]
+ * @param {(milliseconds: number) => void} [wait]
+ * @returns {import('./types').Api}
+ */
+function createGhApi(repository, runCommand = runGh, wait = waitForInventoryRetry) {
   if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw new Error("Invalid repository");
   const base = `repos/${repository}/`;
   /** @type {Invoke} */
@@ -126,12 +146,15 @@ function createGhApi(repository, runCommand = runGh) {
         ]);
         return completeInventory(parseJson(output, "list inventory"), field, endpoint);
       };
-      try {
-        return readPages();
-      } catch (error) {
-        if (!(error instanceof InventoryCountDrift)) throw error;
-        return readPages();
+      for (const milliseconds of inventoryRetryDelaysMs) {
+        try {
+          return readPages();
+        } catch (error) {
+          if (!(error instanceof InventoryCountDrift)) throw error;
+          wait(milliseconds);
+        }
       }
+      return readPages();
     },
     remove: (id) => {
       request("delete cache", `${base}actions/caches/${identifier(id)}`, ["--method", "DELETE"]);

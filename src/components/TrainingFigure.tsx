@@ -1,6 +1,10 @@
 import { Effect } from '@animate-ui/react/primitives/effects/effect';
-import { motionTokens, useTempoTransition } from '@animate-ui/react/utils/motion';
-import { AnimatePresence, motion, useIsPresent, type Transition } from 'motion/react';
+import {
+  motionTokens,
+  ReducedMotionContext,
+  useTempoTransition,
+} from '@animate-ui/react/utils/motion';
+import { AnimatePresence, MotionConfig, useIsPresent, type Transition } from 'motion/react';
 import { memo } from 'react';
 import { CircleCheckBig } from './icons/animated-circle-check-big';
 import { Brain } from './icons/brain';
@@ -8,29 +12,37 @@ import { useMotionPreference } from './ui/use-motion-preference';
 
 const examplePositions = [10, 28, 46];
 const featurePaths = ['M21 10 C46 10 39 28 63 28', 'M21 28 H63', 'M21 46 C46 46 39 28 63 28'];
+const instant = { duration: 0 };
 
 function ClassifierNode({ complete }: { complete: boolean }) {
-  const { reduce } = useMotionPreference();
+  const { preference, reduce } = useMotionPreference();
   const present = useIsPresent();
   const fade = useTempoTransition(motionTokens.transition.fade);
 
   return (
-    <motion.div
-      hidden={reduce && !present}
-      initial={reduce ? false : { opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={reduce ? { duration: 0 } : fade}
-      className="absolute top-1/2 right-0 grid aspect-square w-[35%] -translate-y-1/2"
-    >
-      {complete ? (
-        <CircleCheckBig animation="draw-in" className="size-full text-success" />
-      ) : (
-        <span className="grid size-full place-items-center rounded-full border border-primary/25 bg-card">
-          <Brain className="size-7 sm:size-9" />
-        </span>
-      )}
-    </motion.div>
+    // Retarget the fade on preference changes without remounting the success icon.
+    <ReducedMotionContext value="never">
+      <Effect
+        fade
+        hidden={reduce && !present}
+        initial={reduce ? false : 'hidden'}
+        animate={reduce ? { opacity: 1, transition: instant } : 'visible'}
+        transition={reduce ? instant : fade}
+        className="absolute top-1/2 right-0 grid aspect-square w-[35%] -translate-y-1/2"
+      >
+        <ReducedMotionContext value={preference}>
+          <MotionConfig reducedMotion={preference}>
+            {complete ? (
+              <CircleCheckBig animation="draw-in" className="size-full text-success" />
+            ) : (
+              <span className="grid size-full place-items-center rounded-full border border-primary/25 bg-card">
+                <Brain className="size-7 sm:size-9" />
+              </span>
+            )}
+          </MotionConfig>
+        </ReducedMotionContext>
+      </Effect>
+    </ReducedMotionContext>
   );
 }
 
@@ -69,7 +81,7 @@ const TrainingFigure = memo(function TrainingFigure({
                 asChild
                 initial={false}
                 animate={{ pathLength: complete ? 1 : progress }}
-                transition={reduce ? { duration: 0 } : draw}
+                transition={reduce ? instant : draw}
               >
                 <path d={path} stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
               </Effect>

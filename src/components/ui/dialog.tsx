@@ -79,16 +79,27 @@ export function renderDialogSurface(element: ReactElement<ComponentProps<'div'>>
 
 export function DialogContent({
   className,
+  transition,
+  exitTransition,
   render,
   ...props
 }: Omit<ComponentProps<typeof DialogPrimitive.Popup>, 'className' | 'render'> & {
   className?: string;
   render: ReactElement<{ className?: string }>;
 }) {
+  const { reduce } = useMotionPreference();
   return (
     <DialogPrimitive.Popup
       data-slot="dialog-content"
-      className={cn(dialogSurface, className, render.props.className)}
+      className={cn(
+        dialogSurface,
+        className,
+        render.props.className,
+        // Animate UI queues the visible target after an initially hidden frame.
+        reduce && 'data-open:opacity-100! data-open:filter-none! data-closed:invisible',
+      )}
+      transition={reduce ? motionTokens.transition.instant : transition}
+      exitTransition={reduce ? motionTokens.transition.instant : exitTransition}
       render={renderDialogSurface(render)}
       {...props}
     />

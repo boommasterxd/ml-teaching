@@ -1,7 +1,8 @@
 import { imageDimensionsFromData } from 'image-dimensions';
 
-/** Bounds one original photo before the browser allocates its decoded surface. */
+/** Bounds each selection and each original before browser decoding. */
 export const IMAGE_INPUT_LIMITS = {
+  MAX_FILES_PER_BATCH: 200,
   MAX_BYTES: 32 * 1024 * 1024,
   MAX_PIXELS: 64_000_000,
   MAX_AXIS: 16_384,

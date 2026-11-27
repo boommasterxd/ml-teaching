@@ -269,8 +269,11 @@ selected point's ring. Changing K clears selections and feedback within the
 same point arrangement and input image. A new round generates a new arrangement.
 Standard Button hit areas remain separated and
 44px wide; the glyph inside owns the official Animate UI field-error shake recipe.
-Wrong-point tooltips survive focus scrolling and dismiss on Escape, blur or an
-outside press; a subsequent valid selection clears the previous mistake.
+An incorrect point selection opens the shared Tooltip at the selected point.
+The point is marked invalid and a polite status announces its number. Escape,
+focus leaving the point or an outside press dismisses the Tooltip. The
+[accepted overlap](decisions/training-visual-accessibility.md) applies on narrow
+screens.
 Animate UI Effect owns path drawing and its reduced-motion alternative; placement
 and Button press feedback remain separate properties/surfaces. The shared shadcn
 Slider uses Animate UI Base UI primitives for K=1 through 10 in steps of one,
@@ -345,23 +348,9 @@ in `src/components/legal.css`; route transitions retain the existing native owne
 
 The static 404 and 500 documents and the App Router recovery screen share
 `PublicErrorScene`. Status text and recovery actions remain visible in the initial
-render. The 404 uses three separately modeled glass digits in the shared
-Topography renderer. The 500 and recovery screen use its ring. Like the homepage,
-all three recovery views reserve the artwork area and start playback automatically
-when the artwork is visible. On the native 500 page, automatic WebGL startup waits
-until after document load, paint and an idle opportunity. Pointer or keyboard
-intent can start it sooner. The shared Spinner appears after 500 ms of active
-waiting and clears when the first frame is ready or loading stops. A two-second
-active first-frame deadline switches to the optimized responsive poster.
-Pointer and keyboard intent prepare the shared renderer. The poster covers
-renderer failure, reduced motion, disabled scripting and a pause before the
-first frame. Recovery actions remain available throughout.
-The recovery artwork starts both WebGL passes at a low resolution. The homepage
-starts at up to 1.5× display scaling on mobile and 2× on desktop. Each scene
-increases quality as frame timing allows.
-Visible scenes support pointer, touch and keyboard impulses and a pause control.
-The [playback and menu-loading decisions](decisions/error-artwork-and-menus.md)
-record why these interactions share their implementations.
+render. The 404 uses three separately modeled glass digits. The 500 and recovery
+screen use the same ring as the homepage. See
+[glass artwork playback](#glass-artwork-playback) for their shared behavior.
 
 Official project-local Codex guidance lives in `.agents/skills/shadcn/` and
 `.agents/skills/animate-ui/`, installed from `shadcn/ui` (canonical upstream
@@ -431,15 +420,19 @@ have a 44 px pointer target. Menu rows use compact spacing for mouse input and
 retain their larger touch targets on coarse-pointer devices.
 Below `md`, one Menü trigger exposes the same destinations. Unavailable learning items
 show their availability without a navigable URL. Enabled links use native intent preparation.
+
+### Header menu loading
+
 Both lightweight trigger lists are delivered in static HTML and CSS selects the
 visible list at the 48rem `md` breakpoint. The runtime viewport query and responsive
 poster selection share the same 48rem source in `src/lib/media-queries.ts`.
 The shared navigation control uses a Base
 UI button for the initial trigger. It shares its label, chevron and styles with
 the trigger inside the interactive menu. Once the browser resolves the viewport,
-it keeps just the matching trigger list. Both menus share one retryable module.
-The header prepares it after hydration on devices with a coarse pointer. Pointer
-and focus intent also prepare it, including a tap before preparation completes.
+it keeps just the matching trigger list. Navigation and appearance share one
+retryable module. `SiteNavigation` prepares it automatically after hydration on
+devices with a coarse pointer, unless the browser reports Save-Data. Pointer and
+focus intent can still prepare it, and opening either menu still loads it.
 The navigation hands off the active trigger, pending opening and keyboard focus
 when the module arrives. Crossing the breakpoint closes the old panel.
 Base UI owns keyboard navigation and the trigger-to-panel relationship.
@@ -453,6 +446,9 @@ destination routes.
 The header list applies isolation through CSS because Animate UI's list would
 emit an inline style in the static document.
 Header, footer and legal pages share the legal destinations.
+
+### Training workspace controls
+
 ThemeProvider and the shared header/footer sit outside the route
 ViewTransition. Theme changes update the root appearance without remounting the
 learning workspace. Three buttons mark the current training step and focus the
@@ -483,9 +479,10 @@ counter announces the class and final count after an import or capture. Below
 `md`, reaching the image limit opens the shared Tooltip above the one-line count.
 It stays open while the class is full. Wider viewports show the limit in the badge. The
 upload action describes the remaining capacity. The shared notification viewport,
-available with F6, retains one notification per class for failed files and files
-skipped at the class limit. A capacity-only notice uses the neutral information
-variant with a one-line reason. File errors retain their details.
+available with F6, retains one notification per class. The notice distinguishes
+failed files from files skipped at the [selection or class limit](architecture.md#browser-ml-flow).
+Limit-only notices use the neutral information variant. File errors retain
+their details.
 A persistent live status announces the selected image count during selection mode.
 Holding a thumbnail and releasing it within the same target enters selection mode
 and toggles that image. Moving away or cancelling the gesture leaves selection
@@ -703,21 +700,22 @@ announcement. The bar sits in the lower padding while the figure and status stay
 centered as a group. Pending messages reserve their wrapped height during training.
 Reduced motion applies
 progress updates without interpolation or the final animation wait.
-On training completion the brain fades out as the shared Animate UI CircleCheckBig
-glyph fades in and draws its check stroke from its initial hidden state. Returning
-to an existing training result shows the settled icon. Reduced motion shows the
-finished glyph without a draw or fade. The same glyph appears without an extra outline or badge
-in the KNN result and the consent withdrawal dialog. It also marks completed
-image counts, other correct answers, quiz completion and reward arrival.
+On training completion Animate UI `Effect` crossfades the classifier's brain
+glyph and the shared `CircleCheckBig` success icon as it draws its check stroke.
+Returning to an existing result shows the settled icon. Reduced motion shows
+the finished icon immediately. Motion preference changes update the effect while
+keeping the icon mounted. The same glyph appears without an extra outline or
+badge in the KNN result and the consent withdrawal dialog. It also marks
+completed image counts, other correct answers, quiz completion and reward arrival.
 
 Quiz completion and KNN answer feedback share `AnimatedFeedback`. Animate UI's
 `AutoHeight` owns expansion and collapse, including the space above the Alert;
 `Effect` owns its short fade and upward entrance. Presence retains outgoing content
 until exit finishes, while immediately hiding it from assistive technology. KNN
 answer corrections replay the content entrance without replacing the height owner.
-The correct class shows the animated check. The visible KNN feedback keeps its
-existing layout and animation. One persistent polite status region announces
-both outcomes, including the vote sentence and title on success.
+The correct class shows the animated check. The same polite status region that
+announces point selections also announces class answers, including the vote
+sentence and title on success.
 Reduced motion uses the library's instant height change and opacity feedback.
 KNN results, quiz completion and training completion share `success-surface`.
 It combines a thin green border, rounded corners and a light green tint over the
@@ -750,8 +748,9 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   from training to the homepage with `nav-back`. On other pages, the gray secondary
   action dismisses the confirmation in place.
   Concurrent theme, menu and route updates can supersede a pending native snapshot.
-  React may skip that visual transition to preserve synchronous interaction; do not
-  delay navigation or focus to serialize decorative work.
+  Activating an eligible route link starts navigation immediately. `IntentLink`
+  skips an earlier forward or backward transition only once its snapshot is
+  ready and that transition is still active.
   Source-page training setup uses its own dialog exit. Flow starts only after the
   portal has left the DOM, so the page snapshot contains the workspace alone.
   Direct entry opens the inline dialog immediately when consent is required.
@@ -783,92 +782,107 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   the document root from route captures. Motion's exact constant reset style
   is emitted during SSG for the shared legal selection and covered by the hash CSP.
   Destination preparation uses the native Next router cache.
-- The hero adapts the Animate UI Topography WebGL renderer. The first pass computes
-  the loop's reflections and refraction. Its front-surface search is bounded to the
-  ring and its soft edge. The two ellipsoid droplets use direct ray intersections
-  and surface normals. The second pass resolves edge coverage at output resolution.
-  The homepage starts at up to 1.5× display scaling, 150,000 field texels and
-  2,073,600 output pixels on mobile. On desktop it starts at up to 2× display scaling,
-  300,000 field texels and 4,147,200 output pixels. Error artwork starts at up to
-  0.5× display scaling, 16,000 field texels and 100,000 output pixels.
-  Stable startup timing on the desktop homepage allows one early quality increase
-  after 300 ms. The one-second measurement window checks for sustained load in all
-  profiles. Sustained frame cadence can raise both passes
-  to 3× display scaling, 600,000 field texels and 8,294,400 output pixels,
-  subject to GPU dimension limits. Sustained slow frames can lower the renderer
-  to 0.5× display scaling, 16,000 field texels and 100,000 output pixels.
-  After a reduction, six stable measurement windows allow
-  the next higher tier to be tried again. Quality changes retain the Canvas
-  and animation time.
-  The loop's cross-section varies gently around its circumference. Its mobile
-  and desktop WebP posters in `src/assets/hero/` show the shader's resting pose.
-  They preserve the alpha channel so the themed stage shows through the glass.
-  Next.js generates responsive optimizer URLs for the homepage, 404, 500 and
-  in-app recovery posters. The homepage tries the shader first at every viewport
-  size when scripting and motion are available. Reduced motion and disabled
-  scripting select a responsive still from the initial markup. Navigation intent
-  warms that image only under reduced motion, and Save-Data skips speculative
-  route and image preparation.
-  Both themes use the same ruby glass material. The loop turns and the droplets
-  drift with moving highlights at up to 30 frames per second during autonomous
-  playback. Each droplet follows its own path with a visible gap from the loop.
-  Hover and light pulses use the available display cadence.
-  Hovering pulls the glass toward the pointer. Motion measures the canvas at most
-  once per animation frame and applies the latest pointer position. Leaving, cancelling
-  or pausing playback clears queued movement. Clicking or tapping
-  a droplet intensifies its light and motion; the loop carries a light pulse
-  from the chosen angle. Overlapping pulses finish their full 2.6-second circuit.
-  The shader runs up to 32 at once within the GPU's uniform budget. Up to 16
-  activations can wait for a slot, including repeated taps at the same pixel.
-  Expired requests are discarded before new activations are admitted to a full
-  queue. If it is still full, the new activation is dropped. A queued activation
-  expires after 7.8 seconds of active playback, excluding pause and offscreen time.
-  The artwork itself accepts Enter and Space and keeps
-  the normal pointer cursor. The only separate control pauses or resumes playback.
-  The initial markup reserves the artwork area, and the same picture remains
-  mounted when the first successful draw takes over. The static error pages
-  preload the matching still below the shared medium breakpoint. The native
-  500 page emits this preload in its document head. The App Router recovery
-  screen requests its still as soon as it renders.
-  After 500 ms of active waiting for the first frame, the shared Spinner mounts.
-  On the homepage, the Spinner also requests the matching still. Once it decodes,
-  the still replaces the Spinner while the renderer continues. A first draw or
-  the end of waiting also clears the Spinner. If the homepage draws the first frame
-  within 500 ms and no still is visible, only the canvas fades in over 200 ms.
-  Where parallel compilation is available, the renderer checks the readiness of
-  both GPU programs on its frame loop.
-  Visibility and intent share one renderer import promise. The module can load
-  while the artwork waits for paint. GPU setup begins when the renderer mounts.
-  The native 500 page also waits for document load and, where supported, an idle opportunity. Pointer
-  or keyboard intent can start it sooner. See the
-  [shader playback decision](decisions/error-artwork-and-menus.md#shader-playback).
-  The resolved component mounts directly on the client after any incoming page
-  transition. With OffscreenCanvas support, a same-origin worker checks for a
-  WebGL context with standard derivatives before importing its shader renderer.
-  The caller keeps one draw in flight and coalesces pending resizes. Browsers
-  without canvas transfer use the same context requirements on the main thread.
-  A renderer failure or a pause before the first draw selects the still on the
-  homepage without waiting for the Spinner. The two-second active first-frame
-  deadline ends renderer startup and keeps the still available. On the static
-  error pages, narrow viewports reuse their preloaded still and wider viewports
-  request it for reduced motion, disabled scripting or those fallback states.
-  Reduced motion, a hidden tab or a lost context unmounts the enhancement and
-  disposes its renderer. If the light-impulse button has focus, its removal
-  returns focus to the adjacent playback control, including when the control is disabled.
-  The homepage and error artwork pause the render loop when the artwork leaves
-  the viewport and retain a single bounded canvas for the active page. Scrolling
-  back resumes the same frame without reinitializing WebGL. A pause before the
-  first frame shows the poster until playback draws a frame. After the first
-  frame, pausing retains the current GPU image,
-  stops frame, pointer-spring and ripple playback, and freezes parallax. Pausing
-  or scrolling away detaches the parallax scroll subscription. On resume, the
-  current scroll position updates the retained offset and playback continues at
-  the same animation time. Resizing can redraw the paused image without
-  advancing time. No CPU animation fallback runs. The scene performs
-  no ML inference or external data request.
-  The artwork responds to a completed tap and leaves touch scrolling available.
-  The headline pairs light type with a red accent. Its full text is visible in
-  static HTML.
+
+### Glass artwork playback
+
+The hero adapts the Animate UI Topography WebGL renderer. The first pass computes
+the loop's reflections and refraction. Its front-surface search is bounded to the
+ring and its soft edge. The two ellipsoid droplets use direct ray intersections
+and surface normals. The second pass resolves edge coverage at output resolution.
+
+The homepage starts at up to 1.5× display scaling, 150,000 field texels and
+2,073,600 output pixels on mobile. On desktop it starts at up to 2× display scaling,
+300,000 field texels and 4,147,200 output pixels. Error artwork starts at up to
+0.5× display scaling, 16,000 field texels and 100,000 output pixels.
+Stable startup timing on the desktop homepage allows one early quality increase
+after 300 ms. The one-second measurement window checks for sustained load in all
+profiles. Sustained frame cadence can raise both passes
+to 3× display scaling, 600,000 field texels and 8,294,400 output pixels,
+subject to GPU dimension limits. Sustained slow frames can lower the renderer
+to 0.5× display scaling, 16,000 field texels and 100,000 output pixels.
+After a reduction, six stable measurement windows allow the next higher tier
+to be tried again. Quality changes retain the canvas and animation time.
+
+The loop's cross-section varies gently around its circumference. Its mobile
+and desktop WebP posters in `src/assets/hero/` show the shader's resting pose.
+They preserve the alpha channel so the themed stage shows through the glass.
+Native optimizer URLs for the homepage, 404, 500 and in-app recovery posters
+are versioned by their static imports. Each source uses the first optimizer
+width that reaches its native resolution so equivalent requests can share a
+cache entry. The homepage tries the shader first at every viewport
+size when scripting and motion are available. Reduced motion and disabled
+scripting select a responsive still from the initial markup. Navigation intent
+warms that image only under reduced motion, and Save-Data skips speculative
+route and image preparation.
+
+Both themes use the same ruby glass material. The loop turns and the droplets
+drift with moving highlights at up to 30 frames per second during autonomous
+playback. Each droplet follows its own path with a visible gap from the loop.
+Hover and light pulses use the available display cadence.
+Hovering pulls the glass toward the pointer. Motion measures the canvas at most
+once per animation frame and applies the latest pointer position. Leaving, cancelling
+or pausing playback clears queued movement. Clicking or tapping
+a droplet intensifies its light and motion; the loop carries a light pulse
+from the chosen angle. Overlapping pulses finish their full 2.6-second circuit.
+The shader runs up to 32 at once within the GPU's uniform budget. Up to 16
+activations can wait for a slot, including repeated taps at the same pixel.
+Expired requests are discarded before new activations are admitted to a full
+queue. If it is still full, the new activation is dropped. A queued activation
+expires after 7.8 seconds of active playback, excluding pause and offscreen time.
+The artwork itself accepts Enter and Space and keeps
+the normal pointer cursor. The only separate control pauses or resumes playback.
+
+The initial markup reserves the artwork area, and the same picture remains
+mounted when the first successful draw takes over. The static error pages
+preload the matching still below the shared medium breakpoint. The native
+500 page emits this preload in its document head. The App Router recovery
+screen requests its still as soon as it renders.
+After 500 ms of active waiting for the first frame, the shared Spinner mounts.
+On the homepage, the Spinner also requests the matching still. Once it decodes,
+the still replaces the Spinner while the renderer continues. A first draw or
+the end of waiting also clears the Spinner. If the homepage draws the first frame
+within 500 ms and no still is visible, only the canvas fades in over 200 ms.
+Where parallel compilation is available, the renderer checks the readiness of
+both GPU programs on its frame loop.
+
+Visibility and intent share one renderer import promise. When the artwork and
+document are visible and motion is allowed, setup starts after the initial
+paint. The module can load while the artwork waits for paint. GPU setup begins
+when the renderer mounts. Automatic startup on the native 500 page also waits
+for document load and, where supported, an idle opportunity. Pointer or keyboard
+intent can prepare it sooner. See the
+[shader playback decision](decisions/error-artwork-and-menus.md#shader-playback).
+The resolved component mounts directly on the client after any incoming page
+transition to avoid a second Suspense reveal. With OffscreenCanvas support, a
+same-origin worker checks for a WebGL context with standard derivatives before
+importing its shader renderer.
+The caller keeps one draw in flight and coalesces pending resizes. Browsers
+without canvas transfer use the same context requirements on the main thread.
+
+A renderer failure or the two-second active first-frame deadline ends startup
+and shows the still. Pausing before the first draw also shows the still until
+playback draws a frame. Static error pages reuse the preloaded still on narrow
+viewports and request it on wider viewports as needed. Page exit, reduced
+motion, a hidden tab or a lost context releases the renderer. If the
+light-impulse button has focus, its removal returns focus to the adjacent
+playback control, including when the control is disabled.
+
+The homepage and error artwork pause the render loop when the artwork leaves
+the viewport and retain a single bounded canvas for the active page. Scrolling
+back resumes the same frame without reinitializing WebGL. After the first
+frame, pausing retains the current GPU image, stops the render loop, pointer
+spring and ripples, and freezes parallax. Pausing
+or scrolling away detaches the parallax scroll subscription. On resume, the
+current scroll position updates the retained offset and playback continues at
+the same animation time. Resizing can redraw the paused image without
+advancing time. No CPU animation fallback runs. The scene performs
+no ML inference or external data request.
+The artwork responds to a completed tap and leaves touch scrolling available.
+The headline pairs light type with a red accent. Its full text is visible in
+static HTML.
+
+### Component interactions
+
 - Animate UI owns action presses, dialog entry, checkbox indicators, progress and
   icon interaction. Shared `ActionFeedback` combines whole-control pointer hover,
   primary press and keyboard focus into one icon animation state for Button and
@@ -881,10 +895,8 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   link's prefetch mode, key or motion owner. The
   [inline navigation feedback decision](decisions/inline-navigation-feedback.md)
   defines spinner placement on the activated link. The static 500 document uses the
-  Speculation Rules described above. A new eligible route activation skips an
-  active forward or backward route capture so the new navigation can proceed.
-  Modal focus, entry playback and
-  consent-dependent effects remain tied to App Router navigation.
+  Speculation Rules described above. Modal focus, entry playback and consent-dependent
+  effects remain tied to App Router navigation.
 - Training step activation uses the native Flow keyframes from route changes
   with a shorter glide and a crossfade for the workspace. Explicit step changes
   from the step bar or panel actions capture the outgoing and incoming panels
@@ -1016,8 +1028,7 @@ static HTML policy. Each icon has its own client entry under `src/components/ico
 The shared `client-icon.tsx` hydration helper renders the same static Lucide glyphs
 and dimensions on the server, then uses the official Animate UI variants after
 hydration. Production consumers import the concrete icon entries directly so
-unrelated glyphs and animation producers stay out of their route graph. The
-server-neutral `icons.tsx` facade preserves the named import API for compatibility.
+unrelated glyphs and animation producers stay out of their route graph.
 Pure icon factory annotations permit unused producers to be removed without
 changing the mounted components or their motion owners.
 The static educational illustration shows an empty image placeholder, labeled feature
@@ -1038,8 +1049,9 @@ preference disables the press transform.
 The shared dialog uses Animate UI for the popup and scrim and React Remove Scroll
 with `removeScrollBar={false}`, `inert={false}` and pinch zoom enabled.
 The translucent scrim uses a flat color and keeps the native scrollbar visible.
-The regular dialog applies the scrim on opening before the popup becomes
-visible. Animate UI owns the popup entrance and the scrim's exit.
+Animate UI owns the popup entrance and the scrim's exit. With reduced motion,
+portal dialogs use instant transitions and their open state shows the popup at
+full opacity without blur from the first frame.
 
 Base UI's Popup requires a portal, which is mounted in the browser. The shared
 Dialog's `initialContent` variant renders an open native HTML dialog inline at build

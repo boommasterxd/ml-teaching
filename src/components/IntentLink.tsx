@@ -95,9 +95,14 @@ function skipActivePageTransition(target: URL, current: Location) {
   if (target.origin !== current.origin || target.pathname === current.pathname) return;
   const transition = document.activeViewTransition;
   if (!transition?.types?.size) return;
-  // React waits for its previous view transition before committing the next route.
-  if ([...transition.types].every((type) => type === 'nav-forward' || type === 'nav-back'))
-    transition.skipTransition();
+  if (![...transition.types].every((type) => type === 'nav-forward' || type === 'nav-back')) return;
+  // Skipping before the snapshot is ready makes React report the interruption as an error.
+  void transition.ready.then(
+    () => {
+      if (document.activeViewTransition === transition) transition.skipTransition();
+    },
+    () => {},
+  );
 }
 
 function useLinkPreparation(

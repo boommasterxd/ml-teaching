@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { ML } from '@/constants';
 
+z.config({ jitless: true });
+
 const trainingClassNameErrors = {
   empty: 'Gib der Klasse einen Namen',
   duplicate: 'Dieser Name wird schon verwendet',

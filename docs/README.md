@@ -17,7 +17,7 @@
 | [`docs/decisions/public-repository-visibility.md`](decisions/public-repository-visibility.md)   | Records the decision to keep the repository public.             |
 | [`docs/decisions/pull-request-branch-retention.md`](decisions/pull-request-branch-retention.md) | Records intentional retention of merged pull request branches.  |
 | [`docs/decisions/ssg-and-csp.md`](decisions/ssg-and-csp.md)                                     | Records static rendering and guarded CSP integration.           |
-| [`docs/decisions/training-visual-accessibility.md`](decisions/training-visual-accessibility.md) | Records accepted visual limitations of image training.          |
+| [`docs/decisions/training-visual-accessibility.md`](decisions/training-visual-accessibility.md) | Records accepted visual limitations of training and the quiz.   |
 | [`docs/deployment.md`](deployment.md)                                                           | Defines the Vercel release workflow and publication boundaries. |
 | [`docs/design-system.md`](design-system.md)                                                     | Defines shared UI, motion, accessibility and integration rules. |
 | [`docs/development.md`](development.md)                                                         | Documents runtime, commands and local verification.             |

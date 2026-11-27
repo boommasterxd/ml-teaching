@@ -118,6 +118,49 @@ Verify ordinary UI and accessibility changes directly in the running app. Use
 the production server for browser behavior involving CSP or static hydration.
 Use a scoped browser trace or profiler for changes that affect performance.
 
+### Check the model download
+
+Open `/lernen/bilderkennung/ausprobieren` on the running local app in a fresh
+browser profile with WebGL enabled. In DevTools, open the Network panel and
+confirm that no model request starts while consent is pending. Select both
+required checkboxes and choose **Zustimmen**. Confirm the download starts and
+the camera choice appears. Select **Ohne Kamera fortfahren** and check that the
+collection controls are usable. No camera or personal images are needed.
+If the download fails, inspect the failed model request, restore connectivity
+if needed, and select **Erneut versuchen**. The automated training flow uses a
+synthetic model fixture to exercise application behavior independently of the
+external provider.
+
+### Check accessibility in the production build
+
+Use `npm run build` and `npm start`, or reuse the running production build for the
+same source. Exercise the affected states at the relevant viewport sizes with
+keyboard, touch or pointer input. Check focus, labels and operation manually.
+Use a screen reader when spoken names or announcements change.
+
+For a targeted scan, get the path to the lockfile-installed axe-core script
+from Lighthouse's dependency tree:
+
+```sh
+node -p 'require("node:module").createRequire(require.resolve("lighthouse/package.json")).resolve("axe-core/axe.min.js")'
+```
+
+Copy that local script into a [Chromium DevTools snippet](https://developer.chrome.com/docs/devtools/javascript/snippets)
+and run it on the local page. Open each affected state, such as a menu, dialog
+or recovery view, then run this in the DevTools Console:
+
+```js
+await axe
+  .run({ runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] })
+  .then(({ violations, incomplete }) => ({ violations, incomplete }));
+```
+
+Run the snippet again after a full page load. Investigate violations and check
+incomplete results manually. Report the states checked and any remaining gaps
+alongside the manual findings.
+
+### Audit performance with Lighthouse
+
 For local Lighthouse audits, install the version-matched Chromium Headless Shell
 with `npx playwright install chromium --only-shell`, then build the site. Start the native
 production server in a separate terminal.

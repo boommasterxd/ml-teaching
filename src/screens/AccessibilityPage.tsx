@@ -26,9 +26,8 @@ export default function AccessibilityPage() {
           <li>Skip-Link zum Überspringen der Navigation</li>
           <li>Per Tastatur bedienbare Navigation durch Bildersammlung, Training und Vorhersage</li>
           <li>
-            Bei aktivierter Systemeinstellung für reduzierte Bewegung erscheinen Inhalte ohne
-            Einblendanimation. Die Lernschleife und die automatischen Lernbeispiele auf der
-            Startseite pausieren.
+            Bei aktivierter Systemeinstellung für reduzierte Bewegung pausieren die Lernschleife und
+            die automatischen Lernbeispiele auf der Startseite.
           </li>
           <li>Responsive Darstellung für verschiedene Bildschirmgrößen</li>
         </ul>
@@ -45,6 +44,11 @@ export default function AccessibilityPage() {
             Galerie lassen sich die Bilder über ihre Nummer zuordnen. Die Lernenden wählen ihre
             Trainingsbilder selbst aus oder nehmen sie mit der Kamera auf.
           </li>
+          <li>
+            In der KNN-Übung kann ein Hinweis nach einer falschen Auswahl auf schmalen Bildschirmen
+            einen Datenpunkt verdecken. Sobald der Hinweis geschlossen ist, können Sie den Punkt
+            antippen.
+          </li>
         </ul>
         <p>Bei Schwierigkeiten nutzen Sie bitte den unten angegebenen Kontakt.</p>
         <h2>Feedback</h2>
@@ -60,7 +64,7 @@ export default function AccessibilityPage() {
         </p>
         <h2>Stand</h2>
         <p>
-          Diese Seite wurde zuletzt am <time dateTime="2026-11-25">25. November 2026</time>{' '}
+          Diese Seite wurde zuletzt am <time dateTime="2026-11-27">27. November 2026</time>{' '}
           aktualisiert.
         </p>
         <p>
