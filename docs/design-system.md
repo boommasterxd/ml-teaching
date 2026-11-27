@@ -733,14 +733,17 @@ dialog has returned focus to the page. The notice respects viewport safe areas.
   inline styles and writes runtime rules into a style element. This integration
   keeps the animation rules in external CSS for the static site's strict hash CSP.
   Explicit return links use `nav-back` to mirror the direction. Header, footer
-  and ThemeProvider remain outside this persistent boundary. Query/hash changes and subsequent updates leave
-  the main content out of capture. Eligible browser Back and Forward traversals
-  use the Navigation API's precommit support when available; the legal Back control
+  and ThemeProvider remain outside the main content boundary. The transition overlay
+  clips to the viewport below the sticky header, which stays visible and interactive.
+  Query/hash changes and subsequent updates leave the main content out of capture.
+  Eligible browser Back and Forward traversals use the Navigation API's precommit
+  support when available. The legal Back control
   also applies Flow layers to native history traversal. The browser owns this capture
   because a cached history restore can bypass React's view transition. Capture
-  follows the matching history entry and rendered route commit. A repeated Back
-  action for the same destination keeps the pending traversal. A different Back
-  destination skips the superseded capture and uses native history. Interruption,
+  follows the matching history entry and rendered route commit. Intercepted browser
+  traversal restores the entry's scroll position before capturing the new view.
+  A repeated Back action for the same destination keeps the pending traversal. A
+  different Back destination skips the superseded capture and uses native history. Interruption,
   failed navigation or browser cancellation releases the pending capture.
   Reduced motion opts out of page capture. Unsupported browsers retain
   normal navigation. Full withdrawal clears the remembered consent and discards
