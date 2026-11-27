@@ -2,14 +2,16 @@
 
 ML Teaching is a German educational platform for learning about machine learning.
 Image classification is implemented. The homepage previews learning through rewards.
-Next.js App Router renders public content and metadata at build time. It has no Express server,
-React Router, API routes, database or authentication layer.
+Next.js App Router renders public content and metadata at build time, including
+the read-only `/llms.txt` route handler. The application needs no separate backend,
+database or authentication layer.
 
 ## Source boundaries
 
-- `src/app/`: Server Component route entrypoints, shared layout, native metadata,
-  robots, sitemap, static social image and error boundaries.
-- `src/screens/`: page compositions; only the learning workspace is a client root.
+- `src/app/`: Server Component page entrypoints, shared layout, metadata and
+  discovery routes, and error boundaries.
+- `src/screens/`: page compositions. `TrainingPage` and `TrainingWorkspace`
+  define explicit client boundaries for image training.
 - `src/components/`: shared product UI and the local shadcn/Animate UI compositions.
 - `src/components/hero/`: static landing posters and optional decorative/demo clients.
 - `src/components/icons/`: per-icon client entries with a shared style-free SSG fallback.
@@ -127,35 +129,12 @@ Turbopack chunking rules in local and Vercel builds. Optional menus, experiments
 and WebGL remain dynamically loaded.
 
 The homepage and static error pages deliver their headings, actions and reserved
-artwork area in static HTML. The static error pages preload the optimized still
-below the shared medium breakpoint. The homepage tries the shader first at every
-viewport size when scripting and motion are available. Reduced motion and
-disabled scripting select the matching responsive still from the initial HTML.
-When the artwork and document are visible and motion is allowed, the client can
-load the shared module while waiting for paint. GPU setup begins on mount. Automatic
-startup on the native 500 page also waits for document load and, where supported,
-an idle opportunity. Pointer or keyboard intent can prepare the same module sooner.
-After 500 ms of active waiting for the first frame, the homepage requests the
-still and shows the loading indicator. Once the image decodes, it takes over from
-the indicator while the renderer continues. A failure or pause before the first
-draw shows the still immediately if already loaded or requests it on demand.
-A two-second first-frame deadline ends waiting and leaves the still in place.
-The resolved component mounts directly on the client without a second Lazy/Suspense
-reveal that could trigger a page update transition. A successful first draw takes
-over the same artwork area without replacing the responsive picture.
-Static asset imports give the native optimizer versioned poster URLs that the
-browser can reuse across visits. Each source uses the first candidate that reaches
-its native resolution, so equivalent optimizer requests share a cache entry.
-During playback, elapsed time turns the loop and moves the two droplets along
-separate paths outside it.
-Local input deforms their surfaces and lights the glass. Explicit pause or scrolling
-the artwork out of view freezes playback on the retained canvas. These conditions
-also detach the homepage's parallax scroll subscription. Scrolling back resumes
-from the same animation time. Leaving the page, hiding the tab or requesting
-reduced motion releases the canvas and renderer. See the
-[playback decision](decisions/error-artwork-and-menus.md#shader-playback).
-This renderer is independent of consent-gated ML WebGL and processes no training
-data. The educational illustration starts with a server-rendered empty image placeholder,
+artwork area in static HTML. Their decorative WebGL renderer is independent of
+consent-gated ML WebGL and processes no training data. See
+[glass artwork playback](design-system.md#glass-artwork-playback) for loading,
+fallbacks and resource release.
+
+The educational illustration starts with a server-rendered empty image placeholder,
 labeled feature maps, neighbor points and class labels. Intent loads its animation module, prepares a
 hidden React Activity and warms the selected native optimized image. Persistent
 dog/cat Buttons record the choice; the sequence starts after image decoding and
@@ -169,13 +148,10 @@ of three nearest neighbors once and derives the highlighted points, votes and
 output from the same examples. Its Euclidean plot is a simplified teaching schema;
 the live classifier uses the installed library's normalized feature similarity.
 The illustration never invokes the actual model or processes user images.
-The shared header renders its triggers and prepares one module for the navigation
-and appearance menus on pointer entry, focus or pointer down. After hydration,
-a coarse pointer (`any-pointer: coarse`) also starts preparation. Both menus
-open on interaction. While the module loads, navigation shows feedback beside
-its trigger and the appearance button shows a spinner. Base UI positions the
-loaded popups. Animate UI owns entry and exit. The mobile panel takes its initial
-width from the toolbar anchor.
+The shared header renders its triggers in static HTML and loads one module for
+navigation and appearance. See [header menu loading](design-system.md#header-menu-loading)
+for preparation, loading feedback and focus handoff. The mobile panel takes its
+initial width from the toolbar anchor.
 Enabled rows prepare their destinations on navigation intent. The appearance
 popup anchors to the header on mobile and to its shared button on desktop. The
 button retains its role across loading, focus and dismissal.
@@ -268,19 +244,25 @@ how Article 8 GDPR applies to the current private educational offer.
    collection step and the trained prediction step request the stream while camera
    consent is active and the workspace is unpaused.
    Selected local files and captures are resized for local feature extraction.
-   The import rechecks class capacity after acquiring the shared upload slot and
-   stops the batch before reading another original if the class is full.
+   Each import considers the first 200 selected files. A separate limit of 200
+   saved images per class applies to imports and captures together. Rejected
+   files leave room for later files in the same selection. The import rechecks
+   class capacity after acquiring the shared upload slot and stops before reading
+   another original once the class is full.
    Import failures use the shared notification viewport and remain available until
    dismissed, superseded by a completed import, or cleared with the class or workspace.
-4. Training requires complete selected upload batches and no active image work.
-   New capture and file selection are disabled during training. It creates a
-   replacement KNN classifier from one normalized feature matrix per class. A stale
+4. Training can start after active imports and other image work finish.
+   New capture and file selection are disabled while training creates a replacement
+   KNN classifier from one normalized feature matrix per class. A stale
    or abandoned training run cannot publish its result. Retired classifiers and
    models are disposed after their active users release them.
 5. Prediction processes one frame at a time. Pausing the camera or hiding the
    document stops inference and releases the stream. Switching directly between
    collection and prediction reuses the stream, while entering training releases
-   it. Route cleanup stops camera tracks and disposes classifiers and models.
+   it. When consecutive inference errors reach the failure limit, the workspace
+   stops predicting and retires the classifier. It returns to training with its
+   examples and class names intact and asks the learner to train again. Route
+   cleanup stops camera tracks and disposes classifiers and models.
 
 Full training withdrawal clears the remembered choice, resets the workspace and
 releases training resources. The confirmation opens after the preceding dialog

@@ -12,6 +12,7 @@ import { usePathname } from 'next/navigation';
 import { isMediumViewport, subscribeToMediumViewport } from '@/lib/media-queries';
 import { currentHeaderItem, headerMenus, home, type HeaderMenuOpening } from './header-menu-model';
 import IntentLink from './IntentLink';
+import { canPrepareNavigation } from './prepare-route';
 import { loadSiteMenus, prepareSiteMenus } from './site-menu-loader';
 import { useMenuModule, usePendingMenuDismissal } from './use-menu-module';
 import { Alert, AlertDescription } from './ui/alert';
@@ -215,7 +216,7 @@ export default function SiteNavigation() {
     const touch = window.matchMedia('(any-pointer: coarse)');
 
     function prepareForTouch() {
-      if (touch.matches) prepareSiteMenus();
+      if (touch.matches && canPrepareNavigation()) prepareSiteMenus();
     }
 
     prepareForTouch();

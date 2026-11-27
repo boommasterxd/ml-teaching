@@ -40,11 +40,18 @@ test('canonical public HTML has strict security headers and its cache policy exc
   expect(payload.headers()['cache-control']).not.toContain('max-age=300');
 });
 
-test('the native error document keeps strict CSP and forbids storage', async ({ request }) => {
-  const response = await request.get('/404');
-  expect(response.status()).toBe(404);
-  expect(response.headers()['cache-control']).toBe('no-store');
-  expect(response.headers()['content-type']).toContain('text/html');
-  expectStrictPolicy(response);
-  expect(await response.text()).toContain('Seite nicht gefunden');
+test('native error documents keep strict CSP and /404 forbids storage', async ({ request }) => {
+  const errors = [
+    { path: '/404', status: 404, title: 'Seite nicht gefunden' },
+    { path: '/missing-delivery-test-page', status: 404, title: 'Seite nicht gefunden' },
+    { path: '/500', status: 500, title: 'Diese Seite konnte nicht geladen werden' },
+  ];
+  for (const { path, status, title } of errors) {
+    const response = await request.get(path, { maxRedirects: 0 });
+    expect(response.status(), path).toBe(status);
+    if (path === '/404') expect(response.headers()['cache-control']).toBe('no-store');
+    expect(response.headers()['content-type']).toContain('text/html');
+    expectStrictPolicy(response);
+    expect(await response.text()).toContain(title);
+  }
 });

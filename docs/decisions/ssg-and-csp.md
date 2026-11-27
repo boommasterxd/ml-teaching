@@ -64,6 +64,13 @@ origins. The decorative WebGL renderer permits the bundled same-origin worker
 through `worker-src 'self'`. It needs no blob or remote worker source and no WASM
 script permission.
 
+Training class-name validation configures Zod in `jitless` mode before creating
+schemas. TensorFlow.js loads after consent. Its bundled `long` dependency attempts
+to initialize optional WebAssembly acceleration for 64-bit integer arithmetic.
+The enforced policy blocks that attempt and the browser may log a CSP violation.
+The dependency falls back to its JavaScript implementation, so model setup can
+continue under the same policy.
+
 Public HTML has `public, max-age=300, must-revalidate`. The explicit local `/404`
 HTML response instead uses `Cache-Control: no-store`; the rule excludes RSC
 requests. Five minutes balances browser reuse with content freshness; other native RSC/error/variant behavior remains

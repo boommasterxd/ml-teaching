@@ -1,4 +1,5 @@
 const googlePrivacyUrl = 'https://policies.google.com/privacy?hl=de&gl=de';
+const googleDpfRegistryUrl = 'https://www.dataprivacyframework.gov/participant/5780';
 const kagglePrivacyUrl = 'https://www.kaggle.com/privacy';
 
 export const PrivacyCollection = (
@@ -113,9 +114,12 @@ export const PrivacyCollection = (
       Nutzern im Europäischen Wirtschaftsraum verantwortlich. Beim Abruf über seinen Modelldienst
       verarbeitet Google die Verbindungsdaten in eigener Verantwortlichkeit, um den Download zu
       ermöglichen. Google nennt für die Verarbeitung von IP-Adressen außerdem den Schutz seiner
-      Dienste vor Missbrauch. Kaggle Inc., 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA,
-      betreibt Kaggle und verarbeitet die Verbindungsdaten in eigener Verantwortlichkeit zur
-      Bereitstellung und Absicherung des Dienstes. Weitere Informationen finden Sie in der{' '}
+      Dienste vor Missbrauch.
+    </p>
+    <p>
+      Kaggle Inc., 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA, betreibt Kaggle und
+      verarbeitet die Verbindungsdaten in eigener Verantwortlichkeit zur Bereitstellung und
+      Absicherung des Dienstes. Weitere Informationen finden Sie in der{' '}
       <a href={kagglePrivacyUrl}>Datenschutzerklärung von Kaggle</a>.
     </p>
     <h4 id="local-image-training" tabIndex={-1}>
@@ -123,11 +127,13 @@ export const PrivacyCollection = (
     </h4>
     <p>
       Zum Training verarbeitet die Lernfunktion ausgewählte Bilddateien oder aufgenommene
-      Kamerabilder und die daraus berechneten Merkmale. Bei der Live-Vorhersage wertet die Anwendung
-      mit freigegebener Kamera laufend aktuelle Kamerabilder aus, um zu zeigen, welcher Ihrer
-      Klassen sie das Bild zuordnet. Das Training und die Live-Vorhersage laufen in Ihrem Browser.
-      Die Anwendung übermittelt dabei keine Bilddaten oder daraus berechneten Merkmale an einen
-      Server.
+      Kamerabilder und die daraus berechneten Merkmale.
+    </p>
+    <p>
+      Bei der Live-Vorhersage wertet die Anwendung mit freigegebener Kamera laufend aktuelle
+      Kamerabilder aus, um zu zeigen, welcher Ihrer Klassen sie das Bild zuordnet. Das Training und
+      die Live-Vorhersage laufen in Ihrem Browser. Die Anwendung übermittelt dabei keine Bilddaten
+      oder daraus berechneten Merkmale an einen Server.
     </p>
     <h4>Einwilligung und Widerruf</h4>
     <p>
@@ -175,10 +181,9 @@ export const PrivacyCollection = (
       <a href="https://policies.google.com/privacy/frameworks?hl=de">
         Googles Angaben zu Datenübermittlungen
       </a>{' '}
-      und das{' '}
-      <a href="https://www.dataprivacyframework.gov/participant/5780">offizielle DPF-Register</a>.
-      Für Übermittlungen, die kein Angemessenheitsbeschluss abdeckt, nutzt Google nach eigenen
-      Angaben bei Bedarf Standardvertragsklauseln nach Art. 46 DSGVO. Eine Kopie können Sie über{' '}
+      und das <a href={googleDpfRegistryUrl}>offizielle DPF-Register</a>. Für Übermittlungen, die
+      kein Angemessenheitsbeschluss abdeckt, nutzt Google nach eigenen Angaben bei Bedarf
+      Standardvertragsklauseln nach Art. 46 DSGVO. Eine Kopie können Sie über{' '}
       <a href="https://support.google.com/policies/answer/9581826?hl=de">
         Googles Datenschutzkontakt
       </a>{' '}
@@ -186,10 +191,11 @@ export const PrivacyCollection = (
     </p>
     <p>
       Beim Abruf über Kaggle können Verbindungsdaten in die USA übermittelt werden. Kaggle nimmt im
-      Rahmen der Zertifizierung seiner Muttergesellschaft Google LLC am EU-US Data Privacy Framework
-      teil. Für davon erfasste Übermittlungen gilt der Angemessenheitsbeschluss nach Art. 45 DSGVO.
-      Soweit erforderlich, verwendet Kaggle nach eigenen Angaben Standardvertragsklauseln nach Art.
-      46 DSGVO. Ansprechpartner für Auskünfte zu diesen Garantien nennt die{' '}
+      Rahmen der Zertifizierung seiner Muttergesellschaft Google LLC am{' '}
+      <a href={googleDpfRegistryUrl}>EU-US Data Privacy Framework</a> teil. Für davon erfasste
+      Übermittlungen gilt der Angemessenheitsbeschluss nach Art. 45 DSGVO. Soweit erforderlich,
+      verwendet Kaggle nach eigenen Angaben Standardvertragsklauseln nach Art. 46 DSGVO.
+      Ansprechpartner für Auskünfte zu diesen Garantien nennt die{' '}
       <a href={kagglePrivacyUrl}>Datenschutzerklärung von Kaggle</a>.
     </p>
     <h4 id="device-access" tabIndex={-1}>
@@ -249,16 +255,22 @@ export const PrivacyCollection = (
     <p>
       Hostinger speichert das Postfach und dessen Sicherungskopien nach eigenen Angaben in
       Deutschland oder Frankreich. Für die Bereitstellung und Absicherung des E-Mail-Dienstes setzt
-      Hostinger Cloudflare, MailChannels und Proofpoint als Unterauftragsverarbeiter ein. Hostinger
-      prüft eingehende E-Mails in unserem Auftrag automatisch auf Spam. Verschieben wir Nachrichten
-      in den Spamordner oder zurück in den Posteingang, berücksichtigt Hostinger diese Einstufung,
-      um die Spam-Erkennung für unser Postfach anzupassen. Rechtsgrundlage für beide Vorgänge ist
-      Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse besteht darin, unerwünschte oder
-      schädliche Nachrichten zu erkennen und erwünschte Nachrichten zuverlässig zu empfangen. Dabei
-      können Daten außerhalb des Europäischen Wirtschaftsraums verarbeitet werden. Für
-      Übermittlungen in Länder ohne Angemessenheitsbeschluss sieht der Vertrag mit Hostinger
-      EU-Standardvertragsklauseln gemäß Art. 46 DSGVO vor. Die Auftragsverarbeitungsvereinbarung
-      verweist auf den Text der Klauseln. Weitere Angaben enthält die{' '}
+      Hostinger Cloudflare, MailChannels und Proofpoint als Unterauftragsverarbeiter ein.
+    </p>
+    <p>
+      Hostinger prüft eingehende E-Mails in unserem Auftrag automatisch auf Spam. Verschieben wir
+      Nachrichten in den Spamordner oder zurück in den Posteingang, berücksichtigt Hostinger diese
+      Einstufung, um die Spam-Erkennung für unser Postfach anzupassen. Rechtsgrundlage für beide
+      Vorgänge ist Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse besteht darin,
+      unerwünschte oder schädliche Nachrichten zu erkennen und erwünschte Nachrichten zuverlässig zu
+      empfangen.
+    </p>
+    <p>
+      Bei der Bereitstellung und Absicherung des E-Mail-Dienstes können Daten außerhalb des
+      Europäischen Wirtschaftsraums verarbeitet werden. Für Übermittlungen in Länder ohne
+      Angemessenheitsbeschluss sieht der Vertrag mit Hostinger EU-Standardvertragsklauseln gemäß
+      Art. 46 DSGVO vor. Die Auftragsverarbeitungsvereinbarung verweist auf den Text der Klauseln.
+      Weitere Angaben enthält die{' '}
       <a href="https://www.hostinger.com/legal/privacy-policy">
         Datenschutzerklärung von Hostinger
       </a>

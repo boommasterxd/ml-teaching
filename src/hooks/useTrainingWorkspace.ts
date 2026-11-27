@@ -1,7 +1,7 @@
 /** Composes browser resources and local training data for the static training route. */
 import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 import { subscribeToVisibility } from '@/lib/document-visibility';
-import { IMAGE_UPLOAD_LIMIT_MESSAGE } from '@/lib/image-input-policy';
+import { IMAGE_INPUT_LIMITS, IMAGE_UPLOAD_LIMIT_MESSAGE } from '@/lib/image-input-policy';
 import { toast } from '@/lib/toast';
 import type { TrainingStep } from '@/components/training-panel-loading';
 import { ML } from '../constants';
@@ -44,9 +44,8 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
   const showCameraPrompt = consent.showCameraModal && canUseModels;
   const mainHeadingRef = useRef<HTMLHeadingElement>(null);
   const [cameraPaused, setCameraPaused] = useState(false);
-  const [predictionFailed, setPredictionFailed] = useState(false);
   const [predictionVisible, setPredictionVisible] = useState(false);
-  const predictionWanted = step === 'prediction' && hasTrainedModel && !predictionFailed;
+  const predictionWanted = step === 'prediction' && hasTrainedModel;
   const cameraNeeded = !cameraPaused && (step === 'images' || predictionWanted);
   useLayoutEffect(() => {
     setCameraNeeded(cameraNeeded);
@@ -73,11 +72,6 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
     stopPredicting,
   ]);
   useStopPredictionOnHide(stopPredicting);
-  function reportPredictionError(category: 'prediction', message: string) {
-    stopPredicting();
-    setPredictionFailed(true);
-    reportOperationError(category, message);
-  }
   const { retryCamera, toggleCamera } = camera;
   const { cameraConsent, requestCameraConsent } = consent;
   const startCamera = useCallback(() => {
@@ -87,7 +81,6 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
       return;
     }
     if (error?.category === 'camera') clearError();
-    setPredictionFailed(false);
     retryCamera();
   }, [cameraConsent, requestCameraConsent, error?.category, clearError, retryCamera]);
   const switchCamera = useCallback(() => {
@@ -100,10 +93,13 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
   }, [stopPredicting]);
   const invalidateModel = useCallback(() => {
     stopPredicting();
-    setPredictionFailed(false);
     setClassifier(null);
     setHasTrainedModel(false);
   }, [setClassifier, stopPredicting]);
+  function reportPredictionError(category: 'prediction', message: string) {
+    invalidateModel();
+    reportOperationError(category, message);
+  }
   return {
     error,
     consent,
@@ -117,8 +113,7 @@ function useTrainingResources(step: TrainingStep, engine: TrainingEngine) {
     },
     prediction,
     onPredictionVisibilityChange: setPredictionVisible,
-    canAutoStartPrediction:
-      visible && cameraConsent && !cameraPaused && !camera.hasFailed && !predictionFailed,
+    canAutoStartPrediction: visible && cameraConsent && !cameraPaused && !camera.hasFailed,
     invalidateModel,
     hasTrainedModel,
     setHasTrainedModel,
@@ -275,8 +270,7 @@ function useUploadNotifications() {
       if (active.current.delete(id)) toast.dismiss(id);
       return;
     }
-    const skipped = report.capacitySkipped ?? 0;
-    const total = report.total + skipped;
+    const total = report.total + report.capacitySkipped + report.batchSkipped;
     const title =
       total === 1
         ? 'Ein Bild konnte nicht hinzugefügt werden.'
@@ -285,7 +279,11 @@ function useUploadNotifications() {
     const remaining = report.total - details.length;
     if (remaining === 1) details.push('Eine weitere Datei ist fehlgeschlagen.');
     if (remaining > 1) details.push(`${remaining} weitere Dateien sind fehlgeschlagen.`);
-    if (skipped) details.push(IMAGE_UPLOAD_LIMIT_MESSAGE);
+    if (report.capacitySkipped) details.push(IMAGE_UPLOAD_LIMIT_MESSAGE);
+    if (report.batchSkipped)
+      details.push(
+        `Wähle pro Import höchstens ${IMAGE_INPUT_LIMITS.MAX_FILES_PER_BATCH} Dateien aus.`,
+      );
     if (report.total && report.className.trim()) details.unshift(report.className.trim());
     active.current.add(id);
     const showNotice = report.total ? toast.error : toast.info;

@@ -1,6 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import cachePolicy from '../../../.github/cache-policy.json';
 import { runLifecycle } from '../../../.github/scripts/cache-lifecycle/core.cjs';
+import { createGhApi } from '../../../.github/scripts/cache-lifecycle/github.cjs';
 import { cache, FixtureApi, generations, options, previousHead, run } from './cache-fixtures';
 
 const codeqlWorkflow = { name: 'Push on main', path: 'dynamic/github-code-scanning/codeql' };
@@ -23,7 +24,31 @@ it('removes only API-confirmed closed PR caches without an associated active run
   api.runs = [run({ id: 30, status: 'in_progress', head_branch: 'branch-3' })];
   const opts = options(api, 'pull_request_target');
   opts.event = { action: 'closed', pull_request: { number: 1 } };
+  const incomplete = JSON.stringify([{ total_count: 4, actions_caches: api.caches.slice(0, 1) }]);
+  const readInventory = vi.fn(() => incomplete);
+  const wait = vi.fn<(milliseconds: number) => void>();
+  const provider = createGhApi(opts.repository, readInventory, wait);
+  const list = api.list.bind(api);
+  vi.spyOn(opts.api, 'list').mockImplementation((endpoint, field) =>
+    field === 'actions_caches' ? provider.list(endpoint, field) : list(endpoint),
+  );
+
+  expect(() => runLifecycle(opts)).toThrow(
+    'GitHub list inventory failed (incomplete row count: caches)',
+  );
+  expect(readInventory).toHaveBeenCalledTimes(3);
+  expect(wait.mock.calls).toEqual([[250], [1000]]);
+  expect(api.removed).toEqual([]);
+
+  wait.mockClear();
+  readInventory
+    .mockReturnValueOnce(incomplete)
+    .mockReturnValueOnce(incomplete)
+    .mockImplementation(() =>
+      JSON.stringify([{ total_count: api.caches.length, actions_caches: api.caches }]),
+    );
   expect(runLifecycle(opts).deleted.map(({ id }) => id)).toEqual([1]);
+  expect(wait.mock.calls).toEqual([[250], [1000]]);
   expect(api.caches.map(({ id }) => id)).toEqual([2, 3, 4]);
 });
 

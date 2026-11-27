@@ -308,8 +308,9 @@ test('consent gates the private training flow, local examples drive predictions,
 
   await installCameraProbe(page);
   await page.goto(learningPaths.imagePractice);
+  const documentTimeOrigin = await page.evaluate(() => performance.timeOrigin);
   await expectFreshConsent(page);
-  const submit = await prepareModelConsent(page);
+  const submit = await prepareModelConsent(page, true);
   expect(network.modelRequests).toEqual([]);
   expect(await cameraTrackStates(page)).toEqual([]);
   await submit.click();
@@ -358,6 +359,7 @@ test('consent gates the private training flow, local examples drive predictions,
     .getByRole('link', { name: 'Eigenes Bildmodell trainieren', exact: true })
     .press('Enter');
   await expectFreshConsent(page);
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(documentTimeOrigin);
   expect(network.unexpectedRequests).toEqual([]);
   expect(errors).toEqual([]);
 });

@@ -63,10 +63,11 @@ that window. Multiple successful verification or reuse markers make the attempt
 ambiguous.
 
 A metadata run can wait for an active code run for the exact pull request and
-revision set. The CI lookup is limited to ten minutes and a fixed number of API
-requests. Gitleaks keeps its shorter lookup budget. Metadata runs in the same
-revision group may be queued behind each other, so a metadata run never waits
-for another.
+revision set. The first eligible attempt reads evidence through the GitHub
+Actions API with a read-only job token. The CI lookup is limited to ten minutes
+and a fixed number of API requests. Gitleaks keeps its shorter lookup budget.
+Metadata runs in the same revision group may be queued behind each other, so a
+metadata run never waits for another.
 A missing match gets a short initial retry. Missing, failed, expired or unavailable
 evidence, including expiry of the lookup budget, falls back to ordinary check
 selection or scanning. Changes to the base run the regular checks.
@@ -105,10 +106,10 @@ and refreshes the inventory, active runs and trusted branch identity before
 deletion. Each run deletes up to 100 revalidated cache IDs and checks the
 inventory again to confirm their removal.
 Inventory checks require complete counts and unique identities. A count mismatch
-allows one fresh, fully paginated read. Malformed pages, duplicate identities or
-another count mismatch stop the affected cleanup. Deletions run once per eligible
-cache ID. Diagnostics include the operation and error class without logging the
-underlying command or response.
+allows up to two fresh, fully paginated reads after short delays. Malformed pages,
+duplicate identities or a persistent count mismatch stop the affected cleanup.
+Deletions run once per eligible cache ID. Count mismatch errors name the inventory
+type. Diagnostics omit the underlying command and response.
 After pull request cache cleanup, each group of up to 20 default-branch cache
 deletions rechecks the cache inventory, replacement provenance, active workflow
 runs and current default-branch revision.

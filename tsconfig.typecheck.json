@@ -3,6 +3,6 @@
   "compilerOptions": {
     "incremental": false
   },
-  "include": ["**/*.ts", "**/*.tsx", "**/*.mts"],
+  "include": ["**/*.ts", "**/*.tsx", "**/*.mts", ".github/scripts/**/*.ts"],
   "exclude": ["node_modules", ".codex-attachments", ".vercel", "next-env.d.ts"]
 }

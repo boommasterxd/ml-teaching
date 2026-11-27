@@ -4,6 +4,8 @@ import { pathToFileURL } from 'node:url';
 import type { CiRevisions } from './plan-ci.ts';
 
 const sha = /^[a-f0-9]{40}$/;
+const githubApiOrigin = 'https://api.github.com';
+const dotSegment = /(?:^|\/)\.{1,2}(?:\/|$)/;
 const maxCandidateRuns = 5;
 const lookupLimits = {
   ci: { checks: 41, requests: 47, duration: 10 * 60_000 },
@@ -14,6 +16,8 @@ const activeStatuses = new Set(['queued', 'requested', 'pending', 'in_progress']
 type Workflow = keyof typeof workflows;
 type ReadEvidence = (path: string) => Promise<unknown>;
 type Proof = 'verified' | 'reused' | 'unverified';
+
+class EvidenceLookupError extends Error {}
 
 interface Run {
   id: number;
@@ -90,12 +94,14 @@ export async function hasCheckEvidence(
   request: EvidenceRequest,
   get: ReadEvidence,
   wait: (milliseconds: number) => Promise<void> = delay,
+  reportFallback?: (reason: string) => void,
 ) {
   const { workflow, revisions, pullRequest, runId, runNumber } = request;
   if (
     !Object.values(revisions).every((value) => sha.test(value)) ||
     ![pullRequest, runId, runNumber].every(isPositiveInteger)
   ) {
+    reportFallback?.('The pull request run identity was incomplete.');
     return false;
   }
 
@@ -105,7 +111,7 @@ export async function hasCheckEvidence(
   let remainingRequests: number = requests;
   const boundedGet: ReadEvidence = (path) => {
     if (remainingRequests === 0 || performance.now() >= deadline) {
-      throw new Error('Evidence lookup budget exhausted.');
+      throw new EvidenceLookupError('The evidence lookup budget was exhausted.');
     }
     remainingRequests--;
     return get(path);
@@ -114,15 +120,20 @@ export async function hasCheckEvidence(
     for (let check = 0; check < checks; check++) {
       const result = await findCheckEvidence(request, identity, boundedGet);
       const remaining = deadline - performance.now();
-      if (remaining <= 0) return false;
+      if (remaining <= 0)
+        throw new EvidenceLookupError('The evidence lookup budget was exhausted.');
       if (result === 'verified') return true;
       if (result === 'missing' && check === 0) await wait(2000);
       else if (result === 'active' && check + 1 < checks) await wait(Math.min(15_000, remaining));
-      else return false;
+      else break;
     }
-  } catch {
-    // Missing, malformed or inaccessible evidence requires a regular check.
+  } catch (error) {
+    reportFallback?.(
+      error instanceof EvidenceLookupError ? error.message : 'GitHub evidence could not be read.',
+    );
+    return false;
   }
+  reportFallback?.('No current successful attempt could be verified.');
   return false;
 }
 
@@ -304,14 +315,64 @@ export function readEvent(): unknown {
   }
 }
 
-export async function reusableCheck(workflow: Workflow, revisions: CiRevisions) {
-  const repository = process.env.GITHUB_REPOSITORY ?? '';
-  const event = readEvent();
+function reportEvidenceFallback(reason: string) {
+  console.warn(`PR check evidence unavailable. ${reason} Running regular checks.`);
+}
+
+function evidenceUrl(repository: string, path: string) {
+  const prefix = `/repos/${repository}/actions/`;
+  const [endpoint] = path.split('?', 1);
+  const pathname = `${prefix}${endpoint}`;
+  const url = new URL(`${prefix}${path}`, githubApiOrigin);
   if (
-    !canReuseCheckEvidence(event) ||
-    typeof event.number !== 'number' ||
-    !/^[\w.-]+\/[\w.-]+$/.test(repository)
+    !/^[\w.-]+(?:\/[\w.-]+)*$/.test(endpoint) ||
+    dotSegment.test(pathname) ||
+    url.origin !== githubApiOrigin ||
+    url.pathname !== pathname ||
+    url.hash
   ) {
+    throw new EvidenceLookupError('The GitHub evidence endpoint was invalid.');
+  }
+  return url;
+}
+
+async function readGitHubEvidence(repository: string, path: string, token: string) {
+  const response = await fetch(evidenceUrl(repository, path), {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      'Cache-Control': 'no-cache',
+    },
+    cache: 'no-cache',
+    redirect: 'error',
+    signal: AbortSignal.timeout(3000),
+  });
+  if (response.status !== 200) {
+    throw new EvidenceLookupError('GitHub rejected the evidence request.');
+  }
+  const age = response.headers.get('Age');
+  const received = Date.now() - Date.parse(response.headers.get('Date') ?? '');
+  if (age !== null || !(Math.abs(received) < 15_000)) {
+    throw new EvidenceLookupError('The GitHub evidence response was not fresh.');
+  }
+  return response.json();
+}
+
+export async function reusableCheck(workflow: Workflow, revisions: CiRevisions) {
+  const event = readEvent();
+  if (!canReuseCheckEvidence(event)) return false;
+  const repository = process.env.GITHUB_REPOSITORY ?? '';
+  if (
+    typeof event.number !== 'number' ||
+    !/^[\w.-]+\/[\w.-]+$/.test(repository) ||
+    dotSegment.test(repository)
+  ) {
+    reportEvidenceFallback('The pull request or repository identity was invalid.');
+    return false;
+  }
+  const token = process.env.PR_CHECK_EVIDENCE_TOKEN;
+  if (!token) {
+    reportEvidenceFallback('The GitHub job token was unavailable.');
     return false;
   }
   return hasCheckEvidence(
@@ -323,20 +384,9 @@ export async function reusableCheck(workflow: Workflow, revisions: CiRevisions) 
       runId: Number(process.env.GITHUB_RUN_ID),
       runNumber: Number(process.env.GITHUB_RUN_NUMBER),
     },
-    async (path) => {
-      const response = await fetch(`https://api.github.com/repos/${repository}/actions/${path}`, {
-        headers: { Accept: 'application/vnd.github+json', 'Cache-Control': 'no-cache' },
-        cache: 'no-cache',
-        redirect: 'error',
-        signal: AbortSignal.timeout(3000),
-      });
-      const age = response.headers.get('Age');
-      const received = Date.now() - Date.parse(response.headers.get('Date') ?? '');
-      if (response.status !== 200 || age !== null || !(Math.abs(received) < 15_000)) {
-        throw new Error('Fresh required check evidence is unavailable.');
-      }
-      return response.json();
-    },
+    (path) => readGitHubEvidence(repository, path, token),
+    delay,
+    reportEvidenceFallback,
   );
 }
 

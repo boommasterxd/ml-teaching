@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { CAMERA, ML } from '../constants';
+import { IMAGE_INPUT_LIMITS } from '../lib/image-input-policy';
 import { processImageFiles } from '../lib/image-upload';
 import type { MLClass, MLImage } from '../types/ml';
 import type React from 'react';
@@ -38,7 +39,8 @@ interface UploadFailureReport {
   className: string;
   total: number;
   details: string[];
-  capacitySkipped?: number;
+  capacitySkipped: number;
+  batchSkipped: number;
 }
 
 const uploadFailureDetailLimit = 5;
@@ -173,10 +175,9 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
     const { cls: current } = latest.current;
     const selectedFiles = event.target.files;
     const selectedCount = selectedFiles?.length ?? 0;
-    const capacity = Math.max(0, ML.MAX_IMAGES_PER_CLASS - current.images.length);
     const files = selectedFiles
       ? Array.from(
-          { length: Math.min(selectedCount, capacity) },
+          { length: Math.min(selectedCount, IMAGE_INPUT_LIMITS.MAX_FILES_PER_BATCH) },
           (_, index) => selectedFiles[index],
         )
       : [];
@@ -186,11 +187,12 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
     const controller = new AbortController();
     const version = current.captureVersion ?? 0;
     setUploadingVersion(version);
-    let capacitySkipped = selectedCount - files.length;
     const report: UploadFailureReport = {
       className: current.name,
       total: 0,
       details: [],
+      capacitySkipped: 0,
+      batchSkipped: selectedCount - files.length,
     };
     function reportFailure(message: string) {
       if (controller.signal.aborted) return;
@@ -219,7 +221,7 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
       },
     )
       .then((remaining) => {
-        capacitySkipped += remaining;
+        report.capacitySkipped = remaining;
       })
       .catch(() => {
         reportFailure('Die Bilder konnten nicht verarbeitet werden.');
@@ -230,8 +232,8 @@ export function useClassCapture(cls: MLClass, actions: CaptureActions) {
           const { cls, actions } = latest.current;
           if ((cls.captureVersion ?? 0) === version) {
             report.className = cls.name;
-            if (capacitySkipped) report.capacitySkipped = capacitySkipped;
-            actions.onUploadResult(current.id, report.total || capacitySkipped ? report : null);
+            const hasIssues = report.total + report.capacitySkipped + report.batchSkipped > 0;
+            actions.onUploadResult(current.id, hasIssues ? report : null);
           }
           setUploadingVersion(null);
         }
