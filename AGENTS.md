@@ -159,15 +159,16 @@
   core suite. Use focused checks for local changes. Tests and fixtures live under
   `test/`; the boundary gate rejects their use from `src/`.
   See [CI selection](docs/ci.md#check-selection) for groups and full fallback.
-- During implementation of user-facing changes, operate the entire UI in the
-  running application at representative mobile, tablet and desktop viewport
-  sizes. Go through every page and user flow with touch, pointer and keyboard as
-  applicable. Check responsive layout, usability, focus, loading, errors and
-  recovery, animations and reduced motion. Verify WCAG 2.2 A/AA through manual
-  accessibility checks and targeted axe checks in the production build. Retest
-  affected flows after fixes and report what was verified and any gaps. Use
-  `npm run dev` for iteration and `npm run build` followed by `npm start` for
-  production rendering, headers and hydration checks.
+- During implementation of user-facing changes, run the application and exercise
+  affected pages and user flows, including consumers of changed shared behavior.
+  Use representative mobile, tablet and desktop viewport sizes and touch, pointer
+  and keyboard input as relevant. Check applicable responsive layout, usability,
+  focus, loading, errors and recovery, animations, reduced motion and performance.
+  Verify affected WCAG 2.2 A/AA criteria through manual accessibility checks and
+  targeted axe checks in the production build. Confirm affected flows on the final
+  revision and report results and gaps. Use `npm run dev` for iteration and
+  `npm run build` followed by `npm start` for production rendering, headers and
+  hydration checks.
 - Own CI and quality scripts use TypeScript and native Node.js type stripping,
   so the same strict typecheck includes their implementation.
 - Run Lighthouse Performance locally for performance audits. Require above 95
