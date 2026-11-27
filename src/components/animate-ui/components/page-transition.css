@@ -10,6 +10,10 @@
   )::view-transition {
   pointer-events: none;
 }
+:root:active-view-transition-type(nav-forward, nav-back)::view-transition {
+  /* Clip the viewport below the sticky header, including for long captured pages. */
+  clip-path: inset(var(--header-height) 0 0);
+}
 :root:active-view-transition-type(nav-back) {
   --page-direction: -1;
 }
@@ -31,10 +35,6 @@
 ::view-transition-group(.training-flow) {
   animation: none;
 }
-::view-transition-image-pair(.page-flow) {
-  overflow: clip;
-}
-
 /* Animate UI's Flow keyframes use native content snapshots. */
 ::view-transition-new(.page-flow),
 ::view-transition-new(.page-fade),

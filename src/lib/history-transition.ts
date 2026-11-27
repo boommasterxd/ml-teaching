@@ -10,7 +10,7 @@ function observePageCommit(
   transition: ViewTransition,
   lifetime?: AbortSignal,
 ) {
-  const { promise, resolve } = Promise.withResolvers<void>();
+  const { promise, resolve } = Promise.withResolvers<boolean>();
   const { pathname } = new URL(destination.url);
   const listeners = new AbortController();
   // History can change before Next commits the destination content.
@@ -22,14 +22,14 @@ function observePageCommit(
       location.href === destination.url &&
       content.dataset.routePath === pathname
     )
-      finish();
+      finish(true);
   }
 
-  function finish() {
+  function finish(committed = false) {
     observer.disconnect();
     listeners.abort();
     lifetime?.removeEventListener('abort', cancel);
-    resolve();
+    resolve(committed);
   }
 
   function cancel() {
@@ -58,7 +58,7 @@ function observePageCommit(
   if (lifetime?.aborted) cancel();
   else lifetime?.addEventListener('abort', cancel, { once: true });
   // The browser may skip a capture, including when its own update deadline expires.
-  void transition.ready.catch(finish);
+  void transition.ready.catch(() => finish());
   checkCommit();
   return { promise, cancel };
 }
@@ -80,8 +80,11 @@ function animateBrowserTraversal(
   const matchesDestination = () =>
     navigation.currentEntry?.key === event.destination.key &&
     location.href === event.destination.url;
+  let updateDone: Promise<void> | undefined;
   event.intercept({
     focusReset: 'manual',
+    // Keep native scroll restoration pending while Next renders the destination.
+    handler: () => updateDone,
     precommitHandler() {
       const { promise: oldPageCaptured, resolve: allowTraversal } = Promise.withResolvers<void>();
       const transition = document.startViewTransition({
@@ -105,12 +108,15 @@ function animateBrowserTraversal(
           else signal.addEventListener('abort', checkInterruption, { once: true });
           allowTraversal();
           try {
-            await destination.promise;
+            if ((await destination.promise) && matchesDestination()) {
+              event.scroll();
+            }
           } finally {
             signal.removeEventListener('abort', checkInterruption);
           }
         },
       });
+      updateDone = transition.updateCallbackDone;
       historyTargets.set(transition, event.destination);
       // If a capture is interrupted, the browser must still be free to traverse.
       void transition.ready.catch(allowTraversal);
@@ -179,12 +185,12 @@ export function goBackWithTransition(navigation: Navigation, entry: NavigationHi
   const destination = { url: entry.url, key: entry.key };
   const transition = document.startViewTransition({
     types: ['nav-back', historyBackType],
-    update() {
+    async update() {
       const route = observePageCommit(content, navigation, destination, transition);
       const { committed, finished } = navigation.traverseTo(entry.key);
       void committed?.catch(route.cancel);
       void finished?.catch(route.cancel);
-      return route.promise;
+      await route.promise;
     },
   });
   historyTargets.set(transition, destination);
